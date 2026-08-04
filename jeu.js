@@ -2171,6 +2171,25 @@ function jouerSonScieBois() {
   }
 }
 
+function jouerSonVoixDialogue() {
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio.playDialogueVoice === "function") {
+    audio.playDialogueVoice(etat.volumeEffetsSonores);
+  }
+}
+
+function jouerVoixBulleDialogue(modal) {
+  if (!modal) return false;
+  const index = Math.max(0, Number(modal.dataset.dialogueIndex) || 0);
+  const ligne = modal.querySelectorAll(".intro-dialogue .intro-ligne")[index];
+  if (!ligne || !ligne.querySelector(".story-beat-bubble")) return false;
+  const cle = String(index);
+  if (modal.dataset.dialogueVoiceBeat === cle) return false;
+  modal.dataset.dialogueVoiceBeat = cle;
+  jouerSonVoixDialogue();
+  return true;
+}
+
 function demarrerMusiqueAmbiante() {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
   if (audio && typeof audio.startMusic === "function") {
@@ -3385,9 +3404,19 @@ function renduSequence() {
   renduStatsAttrapage();
 }
 
-function activerRecrutementDepuisCamp() {
-  const bouton = document.getElementById("bouton-sequence");
-  if (bouton) bouton.click();
+function activerRecrutementDepuisCamp(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!sequenceEstPrete() || etat.chatons < 3 || _recruitMiniJeuActif) return false;
+  if (campLogementSature()) {
+    afficherNotification("Camp full. Build and connect housing before recruiting another Cat.");
+    return false;
+  }
+  marquerSequencePrete();
+  ouvrirMiniJeuRecruit();
+  return true;
 }
 
 function renduVisiteurCampRecrutement() {
@@ -3412,14 +3441,18 @@ function renduVisiteurCampRecrutement() {
   const haut = 4 + 84 * progressionBornee;
   visiteur.style.setProperty("--camp-recruit-left", gauche.toFixed(2) + "%");
   visiteur.style.setProperty("--camp-recruit-top", haut.toFixed(2) + "%");
-  if (route) route.style.setProperty("--camp-recruit-progress", (progressionBornee * 100).toFixed(2));
+  if (route) {
+    route.querySelectorAll("[data-camp-recruit-paw-step]").forEach(function(patte) {
+      const etape = Number(patte.dataset.campRecruitPawStep);
+      patte.classList.toggle("camp-recruit-paw-reached", progressionBornee >= etape);
+    });
+  }
   const statut = _recruitMiniJeuActif
     ? "Talking to Bernardo"
     : (enCours ? "Approaching · " + formaterTemps(tempsRestantSequence()) : "Waiting for Bernardo");
-  const statutCourt = _recruitMiniJeuActif
-    ? "Talking"
-    : (enCours ? formaterTemps(tempsRestantSequence()) : "Ready");
-  ecrireTexte(document.getElementById("camp-recruit-visitor-status"), statutCourt);
+  const statutArrivee = document.getElementById("camp-recruit-arrival-status");
+  ecrireTexte(statutArrivee, enCours ? formaterTemps(tempsRestantSequence()) : "");
+  if (statutArrivee) statutArrivee.hidden = !enCours;
   visiteur.setAttribute("aria-label", prochainNom + " · " + statut);
   visiteur.classList.toggle("camp-recruit-visitor-arrived", !enCours);
 }
@@ -10326,6 +10359,10 @@ function releaseNotesNecessaires() {
   return etat.releaseNotesSeenVersion !== GAME_RELEASE_VERSION;
 }
 
+function releaseNotesAffichablesAuDemarrage(partieExistante) {
+  return !!partieExistante && campDebloque() && releaseNotesNecessaires();
+}
+
 function mettreAJourCompteAReboursNotes() {
   const bouton = document.getElementById("release-notes-close");
   const compteur = document.getElementById("release-notes-countdown");
@@ -10569,6 +10606,7 @@ function fermerStoryAdventure() {
   if (storyEstVue("story3TransitionVue")) return;
   marquerStoryVue("story3TransitionVue");
   masquerCiblePrologue();
+  preparerPremierAffichageCampPrototype();
   definirModePrologue(false);
   if (!etat.sequenceEnCours) demarrerRechargeCatch();
   rendu();
@@ -10741,7 +10779,9 @@ function afficherModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
   if (STORIES.some(function(s) { return s.id === id; })) {
+    delete el.dataset.dialogueVoiceBeat;
     DIALOGUE_DATA.resetModal(el);
+    jouerVoixBulleDialogue(el);
     if (["ecran-intro", "ecran-story-1", "ecran-story-2", "ecran-story-3"].includes(id)) {
       definirModePrologue(true);
       masquerCiblePrologue();
@@ -10793,7 +10833,10 @@ document.addEventListener("click", function(event) {
     : null;
   if (!modal || modal.style.display === "none") return;
   if (event.target.closest("button, a, input, select, textarea, [role=button]")) return;
-  if (DIALOGUE_DATA.advanceModal(modal)) event.preventDefault();
+  if (DIALOGUE_DATA.advanceModal(modal)) {
+    jouerVoixBulleDialogue(modal);
+    event.preventDefault();
+  }
 });
 
 document.addEventListener("keydown", function(event) {
@@ -10802,7 +10845,10 @@ document.addEventListener("keydown", function(event) {
       && event.target.closest("button, a, input, select, textarea, [role=button]")) return;
   const modal = dialogueOuvertAuPremierPlan();
   if (!modal || modal.dataset.dialogueHydrated !== "true") return;
-  if (DIALOGUE_DATA.advanceModal(modal)) event.preventDefault();
+  if (DIALOGUE_DATA.advanceModal(modal)) {
+    jouerVoixBulleDialogue(modal);
+    event.preventDefault();
+  }
 });
 
 function verifierStoryModals() {
@@ -10941,25 +10987,33 @@ const CAMP_PROTOTYPE_INITIAL_LAYOUT = Object.freeze([
   Object.freeze({
     uid: "camp-initial-sawmill",
     type: "sawmill",
-    x: 6,
+    x: 10,
     y: 4,
-    rotation: 90,
+    rotation: 0,
     tier: 1
   }),
   Object.freeze({
     uid: "camp-initial-catchen",
     type: "catchen",
-    x: 8,
-    y: 4,
-    rotation: 90,
+    x: 11,
+    y: 7,
+    rotation: 270,
     tier: 1
   }),
   Object.freeze({
     uid: "camp-initial-pawsonry",
     type: "pawsonry",
+    x: 6,
+    y: 10,
+    rotation: 0,
+    tier: 1
+  }),
+  Object.freeze({
+    uid: "camp-initial-tree",
+    type: "tree",
     x: 8,
     y: 7,
-    rotation: 90,
+    rotation: 0,
     tier: 1
   })
 ]);
@@ -10986,6 +11040,20 @@ function assurerBatimentsInitiauxCampPrototype(layout) {
     if (!chevauche) source.push(Object.assign({}, initial));
   });
   return source;
+}
+
+function migrerOrientationCatchenInitialeCampPrototype(layout) {
+  return (Array.isArray(layout) ? layout : []).map(function(item) {
+    if (
+      !item
+      || item.uid !== "camp-initial-catchen"
+      || item.type !== "catchen"
+      || item.x !== 11
+      || item.y !== 7
+      || campPrototypeApi.normaliserRotation(item.rotation) !== 90
+    ) return item;
+    return Object.assign({}, item, { rotation: 270 });
+  });
 }
 
 let campPrototypeLayout = creerLayoutInitialCampPrototype();
@@ -11491,7 +11559,6 @@ function terminerReparationsCamp(maintenant) {
       + (reparation.buildingId === "sawmill" ? "Wood Work unlocked." : ""));
   });
   sauvegarder();
-  fermerMenuInteractionCampPrototype();
   rendu();
   renduCampPrototype();
   if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
@@ -11599,7 +11666,6 @@ function terminerAmeliorationsCamp(maintenant) {
   });
   sauvegarderCampPrototype();
   sauvegarder();
-  fermerMenuInteractionCampPrototype();
   rendu();
   renduCampPrototype();
   if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
@@ -11654,6 +11720,7 @@ function typeCampPrototypeModifiable(typeId) {
   );
   return Boolean(
     type
+    && type.id !== "tree"
     && !verrouilleParReparation
     && (DEV_MODE || type.category === "house" || Boolean(CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id])
       || Boolean(CAMP_BUILDING_CONSTRUCTION_CONFIG[type.id]))
@@ -12072,6 +12139,7 @@ function chargerCampPrototype() {
   let demolitionsBrutes = Array.isArray(camp.demolitions) ? camp.demolitions : [];
   let adapterAncienLayout = false;
   let migrationPrototype = camp.prototypeMigrationVersion < 1;
+  let migrationOrientationCatchen = camp.prototypeMigrationVersion < 2;
   try {
     if (migrationPrototype && typeof localStorage !== "undefined") {
       const courant = localStorage.getItem(CAMP_PROTOTYPE_STORAGE_KEY);
@@ -12095,6 +12163,9 @@ function chargerCampPrototype() {
       if (terrainStocke !== null) terrainBrut = JSON.parse(terrainStocke);
       if (demolitionsStockees !== null) demolitionsBrutes = JSON.parse(demolitionsStockees);
       adapterAncienLayout = brut !== null && terrainCourant === null;
+    }
+    if (migrationOrientationCatchen) {
+      dispositionBrute = migrerOrientationCatchenInitialeCampPrototype(dispositionBrute);
     }
     campPrototypeTerrain = campPrototypeApi.normaliserTerrain(
       terrainBrut
@@ -12131,7 +12202,7 @@ function chargerCampPrototype() {
     campPrototypeTerrain = campPrototypeApi.creerTerrainInitial();
     campPrototypeDemolitions = [];
   }
-  camp.prototypeMigrationVersion = 1;
+  camp.prototypeMigrationVersion = 2;
   normaliserDemolitionsCampPrototype();
   if (reconcilierMaisonsCampChargees()) {
     synchroniserEtatCampDepuisPrototype();
@@ -12143,8 +12214,10 @@ function chargerCampPrototype() {
     synchroniserEtatCampDepuisPrototype();
   }
   synchroniserEtatCampDepuisPrototype();
-  if (migrationPrototype) {
+  if (migrationPrototype || migrationOrientationCatchen) {
     sauvegarder();
+  }
+  if (migrationPrototype) {
     supprimerAncienStockageCampPrototype();
   }
 }
@@ -12193,7 +12266,7 @@ function reinitialiserCampPrototypeNouvellePartie() {
   campPrototypeMessage = "";
   campPrototypePincement = null;
   etat.camp = stateCore.makeCampState();
-  etat.camp.prototypeMigrationVersion = 1;
+  etat.camp.prototypeMigrationVersion = 2;
   synchroniserEtatCampDepuisPrototype();
   annulerAppuiProlongeCampPrototype();
 
@@ -12384,7 +12457,7 @@ function centrePincementCampPrototype(touches) {
 }
 
 function demarrerPincementCampPrototype(event) {
-  if (!DEV_MODE || event.touches.length !== 2) return;
+  if (event.touches.length !== 2 || (!DEV_MODE && !campDebloque())) return;
   const distance = distancePincementCampPrototype(event.touches);
   if (distance <= 0) return;
   const interaction = campPrototypePointeur;
@@ -12669,7 +12742,7 @@ function gererClicActionMenuCampPrototype(event) {
   executerActionMenuCampPrototype(action, event);
 }
 
-function ouvrirMenuInteractionCampPrototype(uid) {
+function ouvrirMenuInteractionCampPrototype(uid, options) {
   if ((!DEV_MODE && !campDebloque()) || campPrototypeModeEdition) return false;
   const item = itemCampPrototype(uid);
   const type = item && typeCampPrototype(item.type);
@@ -12680,7 +12753,8 @@ function ouvrirMenuInteractionCampPrototype(uid) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
-  if (campPrototypeInteractionUid === uid && !menu.hidden) {
+  const conserverOuvert = Boolean(options && options.conserverOuvert);
+  if (campPrototypeInteractionUid === uid && !menu.hidden && !conserverOuvert) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
@@ -12766,7 +12840,7 @@ function activerItemCampPrototype(uid) {
   }
 }
 
-function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind) {
+function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
   if ((!DEV_MODE && !campDebloque()) || campPrototypeModeEdition) return false;
   const cible = cibleDemolitionCampPrototype(targetUid, targetKind);
   const menu = document.getElementById("camp-prototype-interaction-menu");
@@ -12781,7 +12855,8 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind) {
     return false;
   }
   const interactionUid = cleCibleDemolitionCampPrototype(cible.uid, cible.kind);
-  if (campPrototypeInteractionUid === interactionUid && !menu.hidden) {
+  const conserverOuvert = Boolean(options && options.conserverOuvert);
+  if (campPrototypeInteractionUid === interactionUid && !menu.hidden && !conserverOuvert) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
@@ -12814,6 +12889,38 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind) {
   if (declencheur) declencheur.setAttribute("aria-expanded", "true");
   campPrototypeInteractionUid = interactionUid;
   menu.hidden = false;
+  return true;
+}
+
+function rafraichirMenuInteractionCampPrototype() {
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (!menu || menu.hidden) return false;
+  const interactionKind = menu.dataset.interactionKind;
+  const campUid = menu.dataset.campUid;
+  const obstacleUid = menu.dataset.obstacleUid;
+  const demolitionTargetKind = menu.dataset.demolitionTargetKind;
+  const boutonActif = menu.contains(document.activeElement)
+    && document.activeElement.dataset
+      ? document.activeElement.dataset.campMenuAction || null
+      : null;
+  const restaure = interactionKind === "building"
+    ? ouvrirMenuInteractionCampPrototype(campUid, { conserverOuvert: true })
+    : (interactionKind === "demolition"
+        ? ouvrirMenuDemolitionCampPrototype(
+            obstacleUid,
+            demolitionTargetKind,
+            { conserverOuvert: true }
+          )
+        : false);
+  if (!restaure) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  synchroniserDeclencheurMenuCampPrototype();
+  if (boutonActif) {
+    const nouveauBouton = menu.querySelector('[data-camp-menu-action="' + boutonActif + '"]');
+    if (nouveauBouton) nouveauBouton.focus({ preventScroll: true });
+  }
   return true;
 }
 
@@ -13617,7 +13724,6 @@ function terminerDemolitionsCampPrototype(maintenant) {
   sauvegarder();
   campPrototypeDerniereSecondeDemolition = null;
   if ((document.body.dataset.ongletActif || "gang") === "camp") {
-    fermerMenuInteractionCampPrototype();
     renduCampPrototype();
   }
   if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
@@ -14009,23 +14115,49 @@ function rendreContinuationCloturesRiveCampPrototype(zonesConquises) {
   });
 }
 
+function actualiserMasquageJardinsVoisinsCampPrototype() {
+  const zonesExplorees = new Set(Array.isArray(etat.zonesExplorees) ? etat.zonesExplorees : []);
+  const explorationParJardin = { redGarden: "C1", greenGarden: "E1" };
+  const classeGardeParJardin = {
+    redGarden: "camp-neighbor-red-unknown",
+    greenGarden: "camp-neighbor-green-unknown"
+  };
+  const carte = document.querySelector(".camp-prototype-map");
+  document.querySelectorAll("[data-camp-neighbor-zone]").forEach(function(masqueVoisin) {
+    const gardenId = masqueVoisin.dataset.campNeighborZone;
+    const explorationId = explorationParJardin[gardenId];
+    const decouvert = Boolean(explorationId && zonesExplorees.has(explorationId));
+    const classeGarde = classeGardeParJardin[gardenId];
+    if (carte && classeGarde) carte.classList.toggle(classeGarde, !decouvert);
+    masqueVoisin.hidden = decouvert;
+    masqueVoisin.dataset.campNeighborState = explorationCampFonctionnelle()
+      ? "exploration-available"
+      : "unknown";
+  });
+}
+
+function preparerPremierAffichageCampPrototype() {
+  const carte = document.querySelector(".camp-prototype-map");
+  const rideau = document.getElementById("camp-prototype-first-reveal-cover");
+  if (carte) carte.classList.add("camp-prototype-map-preparing");
+  if (rideau) rideau.hidden = false;
+  actualiserMasquageJardinsVoisinsCampPrototype();
+}
+
+function finaliserPremierAffichageCampPrototype() {
+  const carte = document.querySelector(".camp-prototype-map");
+  const rideau = document.getElementById("camp-prototype-first-reveal-cover");
+  if (carte) carte.classList.remove("camp-prototype-map-preparing");
+  if (rideau) rideau.hidden = true;
+}
+
 function actualiserCloturesCampPrototype(zonesConquises) {
   const zones = zonesConquises instanceof Set
     ? zonesConquises
     : new Set(campPrototypeTerrain.claimedZoneIds);
   rendreCloturesCampPrototype(zones);
   rendreContinuationCloturesRiveCampPrototype(zones);
-  const zonesExplorees = new Set(Array.isArray(etat.zonesExplorees) ? etat.zonesExplorees : []);
-  const explorationParJardin = { redGarden: "C1", greenGarden: "E1" };
-  document.querySelectorAll("[data-camp-neighbor-zone]").forEach(function(masqueVoisin) {
-    const gardenId = masqueVoisin.dataset.campNeighborZone;
-    const explorationId = explorationParJardin[gardenId];
-    const decouvert = Boolean(explorationId && zonesExplorees.has(explorationId));
-    masqueVoisin.hidden = decouvert;
-    masqueVoisin.dataset.campNeighborState = explorationCampFonctionnelle()
-      ? "exploration-available"
-      : "unknown";
-  });
+  actualiserMasquageJardinsVoisinsCampPrototype();
 }
 
 function rendreTerrainCampPrototype(presencesCamp) {
@@ -14568,6 +14700,7 @@ function batimentsBloquesCampPrototype(evaluation) {
     const type = typeCampPrototype(item.type);
     const connexion = connexions[item.uid];
     if (!type || !type.access || !connexion || connexion.active) return null;
+    if (CAMP_BUILDING_REPAIR_DURATIONS[item.type] && !batimentCampRepare(item.type)) return null;
     const placement = placementCampPrototypePourItem(item.uid);
     return {
       uid: item.uid,
@@ -14985,7 +15118,7 @@ function renduCampPrototype() {
   rendrePaletteCampPrototype();
   rendreTerrainCampPrototype(presencesCamp);
   rendreItemsCampPrototype(presencesCamp);
-  synchroniserDeclencheurMenuCampPrototype();
+  rafraichirMenuInteractionCampPrototype();
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(campPrototypeMessage);
   requestAnimationFrame(function() {
@@ -14994,6 +15127,7 @@ function renduCampPrototype() {
       campPrototypeCameraInitialisee = true;
     }
     actualiserCadrageMobileCampPrototype();
+    requestAnimationFrame(finaliserPremierAffichageCampPrototype);
   });
 }
 
@@ -16414,7 +16548,13 @@ function changerOnglet(id) {
     explorationMobileTypeMission = "campaigns";
   }
   document.body.classList.remove("interface-compacte");
+  const premierAffichageCamp = id === "camp"
+    && (!Array.isArray(etat.ongletsVisites) || !etat.ongletsVisites.includes("camp"));
+  if (premierAffichageCamp) preparerPremierAffichageCampPrototype();
   marquerOngletVisite(id);
+  // The Camp panel becomes visible before its heavier render is scheduled.
+  // Apply neighbor masks synchronously so no undiscovered garden can flash.
+  if (id === "camp") actualiserMasquageJardinsVoisinsCampPrototype();
   IDS_ONGLETS.forEach(function(tab) {
     const actif = id === tab;
     const panneau = document.getElementById("contenu-" + tab);
@@ -17144,8 +17284,6 @@ function montrerOiseau() {
   jouerSonAilesOiseau();
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "inline-flex";
-  // The Bird action lives in the fixed part of the resource rail, so it stays
-  // visible regardless of the player's horizontal resource position.
   var dbg = document.getElementById("bird-debug-btn");
   if (dbg) dbg.style.display = "none";
 }
@@ -17159,7 +17297,7 @@ function demarrerBirdMiniJeu() {
   _birdDir = 1;
   ouvrirDialogueModal("bird-minijeu", {
     focusSelector: ".bird-catch-btn",
-    returnFocusSelector: "#bouton-sequence"
+    returnFocusSelector: "#bird-btn"
   });
   var carte = document.querySelector('.bird-minijeu-carte');
   if (carte) {
@@ -17324,7 +17462,7 @@ function lancerOuvertureInitiale() {
 
 if (redemarrageMajeurRequis) {
   ouvrirDialogueModal("save-upgrade-modal", { focusSelector: "#save-upgrade-restart" });
-} else if (releaseNotesNecessaires()) {
+} else if (releaseNotesAffichablesAuDemarrage(partieExistante)) {
   afficherNotesVersion(lancerOuvertureInitiale);
 } else {
   lancerOuvertureInitiale();

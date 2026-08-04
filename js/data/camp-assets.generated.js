@@ -340,6 +340,27 @@
                   "right": 271,
                   "bottom": 563
                 }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "any-cell-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }
@@ -1804,6 +1825,27 @@
                   "right": 271,
                   "bottom": 563
                 }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "any-cell-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }

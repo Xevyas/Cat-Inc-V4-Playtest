@@ -243,7 +243,21 @@
     });
   }
 
-  const CATCHEN_ACCESS = singleEntranceAccess(2, 1);
+  const CATCHEN_ACCESS = Object.freeze({
+    activationPolicy: "all-ports-reachable",
+    ports: Object.freeze([
+      Object.freeze({
+        id: "access-1",
+        side: "south",
+        cellPolicy: "any-cell-reachable",
+        approachCells: Object.freeze([
+          Object.freeze({ x: 0, y: 1 }),
+          Object.freeze({ x: 1, y: 1 })
+        ]),
+        minimumReachableCells: 1
+      })
+    ])
+  });
   const PAWSONRY_ACCESS = singleEntranceAccess(2, 2);
   const TRAINING_CENTER_ACCESS = singleEntranceAccess(3, 4);
   const OPERATIONS_TABLE_ACCESS = singleEntranceAccess(2, 1);
@@ -595,6 +609,32 @@
       asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     })
   ]);
+  const HOME_OBSTACLE_BLUEPRINT = Object.freeze([
+    Object.freeze({ id: "tallGrass", x: 6, y: 4 }),
+    Object.freeze({ id: "tallGrass", x: 7, y: 4 }),
+    Object.freeze({ id: "tallGrass", x: 6, y: 5 }),
+    Object.freeze({ id: "tallGrass", x: 7, y: 5 }),
+    Object.freeze({ id: "tallGrass", x: 6, y: 6 }),
+    Object.freeze({ id: "pebblePile", x: 7, y: 6 }),
+    Object.freeze({ id: "flowerBush", x: 8, y: 6 }),
+    Object.freeze({ id: "flowerBush", x: 10, y: 6 }),
+    Object.freeze({ id: "pebblePile", x: 7, y: 7 }),
+    Object.freeze({ id: "pebblePile", x: 10, y: 7 }),
+    Object.freeze({ id: "greenBush", x: 6, y: 8 }),
+    Object.freeze({ id: "tallGrass", x: 10, y: 8 }),
+    Object.freeze({ id: "thornBush", x: 6, y: 9 }),
+    Object.freeze({ id: "thornBush", x: 8, y: 9 }),
+    Object.freeze({ id: "thornBush", x: 10, y: 9 }),
+    Object.freeze({ id: "stoneBlockPile", x: 8, y: 10 }),
+    Object.freeze({ id: "stoneBlockPile", x: 10, y: 10 })
+  ]);
+  const INITIAL_CLEARED_CELLS = Object.freeze([
+    "8:4", "9:4", "10:4", "11:4",
+    "8:5", "9:5", "10:5", "11:5",
+    "6:7", "8:7", "9:7", "11:7",
+    "8:8", "9:8", "11:8",
+    "6:10", "7:10", "6:11", "7:11"
+  ]);
   const DEMOLITION_BASE_DURATION_SECONDS = 10 * 60;
 
   function entier(value) {
@@ -662,10 +702,43 @@
 
   function creerLayoutObstacles() {
     const obstacles = [];
-    const cellulesOccupees = new Set(cellulesRectangle(INITIAL_BUILDABLE_RECT).map(function(cellule) {
-      return cleCellule(cellule.x, cellule.y);
-    }));
-    const zoneIds = Object.keys(TERRITORY_ZONES);
+    const cellulesOccupees = new Set(INITIAL_CLEARED_CELLS);
+    HOME_OBSTACLE_BLUEPRINT.forEach(function(definition) {
+      const type = OBSTACLE_TYPES.find(function(candidat) { return candidat.id === definition.id; });
+      const zone = TERRITORY_ZONES.home;
+      if (!type) return;
+      const cellules = cellulesRectangle({
+        x: definition.x,
+        y: definition.y,
+        width: type.width,
+        height: type.height
+      });
+      if (
+        cellules.length !== type.width * type.height
+        || cellules.some(function(cellule) {
+          return !celluleDansZone(zone, cellule.x, cellule.y)
+            || cellulesOccupees.has(cleCellule(cellule.x, cellule.y));
+        })
+      ) return;
+      cellules.forEach(function(cellule) { cellulesOccupees.add(cleCellule(cellule.x, cellule.y)); });
+      obstacles.push(Object.freeze({
+        uid: zone.id + ":" + definition.x + ":" + definition.y,
+        id: type.id,
+        label: type.label,
+        width: type.width,
+        height: type.height,
+        asset: type.asset,
+        zoneId: zone.id,
+        x: definition.x,
+        y: definition.y,
+        cells: Object.freeze(cellules.map(function(cellule) {
+          return Object.freeze({ x: cellule.x, y: cellule.y });
+        }))
+      }));
+    });
+    const zoneIds = Object.keys(TERRITORY_ZONES).filter(function(zoneId) {
+      return zoneId !== "home";
+    });
     zoneIds.forEach(function(zoneId, zoneIndex) {
       const zone = TERRITORY_ZONES[zoneId];
       for (let y = zone.y; y < zone.y + zone.height; y += 1) {
@@ -727,9 +800,7 @@
     return {
       version: 4,
       claimedZoneIds: ["home"],
-      clearedCells: cellulesRectangle(INITIAL_BUILDABLE_RECT).map(function(cellule) {
-        return cleCellule(cellule.x, cellule.y);
-      })
+      clearedCells: INITIAL_CLEARED_CELLS.slice()
     };
   }
 
@@ -1419,6 +1490,8 @@
     runtimeVisualForTier: runtimeVisualForTier,
     CONNECTION_ORIGIN_CELLS: CONNECTION_ORIGIN_CELLS,
     INITIAL_BUILDABLE_RECT: INITIAL_BUILDABLE_RECT,
+    INITIAL_CLEARED_CELLS: INITIAL_CLEARED_CELLS,
+    HOME_OBSTACLE_BLUEPRINT: HOME_OBSTACLE_BLUEPRINT,
     TERRITORY_ZONES: TERRITORY_ZONES,
     OBSTACLE_TYPES: OBSTACLE_TYPES,
     OBSTACLE_LAYOUT: OBSTACLE_LAYOUT,

@@ -11,9 +11,16 @@
     rewardChest: "Sounds/Other/Reward Chest.mp3",
     repair: "Sounds/Other/Repair.mp3",
     handsawWood: "Sounds/Other/Handsaw Wood.mp3",
+    dialogueVoices: Object.freeze([
+      "Sounds/Voices/Kid voice var 1.wav",
+      "Sounds/Voices/Kid voice var 2.wav",
+      "Sounds/Voices/Kid voice var 3.wav"
+    ]),
     music: "Sounds/Music/Base Music Test.ogg"
   });
   let assignmentMeowIndex = 0;
+  let lastDialogueVoiceIndex = -1;
+  let dialogueVoiceAudio = null;
   let musicAudio = null;
 
   function clampVolume(value) {
@@ -23,12 +30,29 @@
   }
 
   function play(source, volume) {
-    if (typeof root.Audio !== "function") return;
+    if (typeof root.Audio !== "function") return null;
     const audio = new root.Audio(source);
     audio.preload = "auto";
     audio.volume = clampVolume(volume);
     const promise = audio.play();
     if (promise && typeof promise.catch === "function") promise.catch(function() {});
+    return audio;
+  }
+
+  function playDialogueVoice(volume) {
+    const choices = SOURCES.dialogueVoices.map(function(source, index) {
+      return { source: source, index: index };
+    }).filter(function(choice) {
+      return choice.index !== lastDialogueVoiceIndex;
+    });
+    if (!choices.length) return;
+    const selected = choices[Math.floor(Math.random() * choices.length)];
+    lastDialogueVoiceIndex = selected.index;
+    if (dialogueVoiceAudio) {
+      dialogueVoiceAudio.pause();
+      try { dialogueVoiceAudio.currentTime = 0; } catch (error) {}
+    }
+    dialogueVoiceAudio = play(selected.source, volume);
   }
 
   function ensureMusic(volume) {
@@ -86,6 +110,9 @@
     },
     playHandsawWood: function(volume) {
       play(SOURCES.handsawWood, volume);
+    },
+    playDialogueVoice: function(volume) {
+      playDialogueVoice(volume);
     },
     startMusic: function(volume) {
       startMusic(volume);
