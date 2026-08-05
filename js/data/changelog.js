@@ -146,6 +146,51 @@
     })
   ]);
 
+  const release0039Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "The Base Camp now drives early progression: repair the Sawmill, produce Planks, expand Cat capacity, clear Junk, restore workshops and build the Operations Table to unlock Exploration.",
+        "Camp repairs, construction, upgrades and Junk clearing now finish in a ready state that the player validates, including after an offline return.",
+        "Camp Junk now has access rules, Cat-level requirements and occasional visible resource finds that support the opening progression.",
+        "Camp Appeal now controls visitor arrival speed, while connected housing controls how many Cats can join the gang.",
+        "Manual Focus can now accelerate active Camp repairs, construction, upgrades and Junk clearing."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Visitor arrival now uses the original rising recruitment curve divided by the Camp Appeal multiplier, making early recruits progressively more demanding.",
+        "Decorations contribute Appeal only when their Camp area is reachable; player-built structures do not block that connection.",
+        "Bernardo no longer contributes worker or Explorator bonuses and starts with no Prestige bonus at level 0."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Completed Camp actions and recruitable visitors now use a stronger green target aura and can be validated directly from their portrait.",
+        "The Camp top bar now shows Cats, capacity and Appeal, while Cat markers can be hidden when a clearer map view is needed.",
+        "Mobile Camp controls stay reachable at the bottom, pinch zoom follows the two-finger target and the camera can pan across both axes.",
+        "The Appeal breakdown now opens above the Camp instead of being clipped by the map."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Junk and damaged workshops can no longer be selected through inaccessible terrain.",
+        "Completed offline Junk actions no longer trap their assigned Cat.",
+        "Camp elements with an active Camp action can no longer be moved until that action is resolved.",
+        "The Bird event is available only when its Tree is reachable, and its Manual Focus reward is visible again."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "Bernardo now supervises the Camp from the roof instead of acting as a worker, with updated guidance and progression dialogue."
+      ])
+    })
+  ]);
+
   const release0035Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -173,7 +218,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0038",
+    baseVersion: "0.0039",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -186,6 +231,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0039",
+      date: "2026-08-05",
+      categories: release0039Categories
+    }),
     Object.freeze({
       version: "0.0038",
       date: "2026-07-28",

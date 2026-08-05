@@ -17,6 +17,102 @@
   --map-cell:        50px;
 }
 
+/* Camp progression HUD and lightweight Bernardo guidance. */
+.camp-appeal-wrap-topbar {
+  align-self: center;
+  margin-inline: 2px 6px;
+}
+.camp-appeal-wrap-topbar[hidden],
+.camp-quick-dialogue[hidden],
+.camp-supervisor-bernardo[hidden] {
+  display: none !important;
+}
+.camp-quick-dialogue {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 120;
+  display: grid;
+  width: min(520px, calc(100vw - 24px));
+  grid-template-columns: 48px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid #dbc6ae;
+  border-radius: 15px;
+  background: rgba(255, 250, 242, .98);
+  box-shadow: 0 10px 30px rgba(58, 38, 23, .25);
+  transform: translateX(-50%);
+}
+.camp-quick-dialogue > img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+.camp-quick-dialogue strong { color: #874617; font-size: .72rem; }
+.camp-quick-dialogue p { margin: 2px 0 0; color: #574435; font-size: .75rem; line-height: 1.3; }
+.camp-quick-dialogue > button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #729757;
+  color: white;
+  font-weight: 900;
+}
+.camp-supervisor-bernardo {
+  position: absolute;
+  left: 50%;
+  top: 8.5%;
+  z-index: 7;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.camp-supervisor-bernardo > span {
+  display: block;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border: 3px solid #fff6dd;
+  border-radius: 50%;
+  background: #fff6dd;
+  box-shadow: 0 4px 12px rgba(48, 32, 19, .42);
+}
+.camp-supervisor-bernardo img { width: 100%; height: 100%; object-fit: contain; }
+body.camp-cat-icons-hidden .camp-resident-cats,
+body.camp-cat-icons-hidden .camp-location-cats,
+body.camp-cat-icons-hidden .camp-task-worker,
+body.camp-cat-icons-hidden .camp-supervisor-bernardo {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  #camp-prototype-zoom-value { display: none; }
+  .camp-prototype-viewport.camp-mobile-home-only { overflow-x: auto !important; }
+  .camp-prototype-edit-dock {
+    position: fixed;
+    bottom: calc(var(--hauteur-navigation-mobile) + 7px);
+    z-index: 103;
+  }
+  .camp-prototype-category-sheet {
+    position: fixed;
+    bottom: calc(var(--hauteur-navigation-mobile) + 75px);
+    z-index: 104;
+  }
+  body[data-onglet-actif="camp"] .camp-quick-dialogue {
+    bottom: calc(var(--hauteur-navigation-mobile) + 76px);
+  }
+  body .camp-quick-dialogue {
+    bottom: calc(var(--hauteur-navigation-mobile) + 8px);
+    grid-template-columns: 42px minmax(0, 1fr) 34px;
+  }
+  body .camp-quick-dialogue > img { width: 42px; height: 42px; }
+  body .camp-quick-dialogue p { font-size: .7rem; }
+  body .camp-appeal-wrap-topbar { margin-inline: 0 3px; }
+  .camp-appeal-summary { padding: 4px 5px; font-size: .58rem; }
+}
+
 /* ===========================================================================
    CAMP-FIRST APPLICATION SHELL
    The Camp is the spatial home of the game. Desktop spends horizontal space
@@ -235,6 +331,35 @@
 }
 .camp-recruit-visitor:focus-visible { outline: none; }
 .camp-recruit-visitor img { width: clamp(28px, 3.3vw, 43px); }
+.camp-recruit-visitor-ready {
+  isolation: isolate;
+}
+.camp-recruit-visitor-ready::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  border: 4px solid rgba(255, 237, 156, .96);
+  border-radius: 50%;
+  box-shadow: 0 0 0 10px rgba(255, 245, 199, .25), 0 0 42px rgba(255, 224, 111, .94);
+  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+  pointer-events: none;
+}
+.camp-recruit-visitor-ready::after {
+  content: "";
+  position: absolute;
+  inset: -34%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
+  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.camp-recruit-visitor-ready img,
+.camp-recruit-visitor-ready .camp-recruit-visitor-question {
+  position: relative;
+  z-index: 1;
+}
 
 body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   width: min(280px, calc(100vw - 32px));
@@ -316,6 +441,23 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   .camp-prototype-neighbor-mask::after { font-size: .42rem; }
   .camp-prototype-fence { width: 3.2%; }
   .camp-recruit-visitor img { width: clamp(28px, 9vw, 38px); }
+}
+
+/* Final mobile Camp overrides: keep construction controls within thumb reach
+   and preserve horizontal camera movement at every zoom level. */
+@media (max-width: 768px) {
+  #camp-prototype-zoom-value { display: none !important; }
+  .camp-prototype-viewport.camp-mobile-home-only { overflow-x: auto !important; }
+  .camp-prototype-edit-dock {
+    position: fixed;
+    bottom: calc(var(--hauteur-navigation-mobile) + 7px);
+    z-index: 103;
+  }
+  .camp-prototype-category-sheet {
+    position: fixed;
+    bottom: calc(var(--hauteur-navigation-mobile) + 75px);
+    z-index: 104;
+  }
 }
 
 /* Progressive story presentation: previous beats rise as the new one appears below. */
@@ -532,6 +674,18 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   pointer-events: none;
   opacity: 1;
 }
+.camp-prototype-item button.camp-task-worker-ready,
+.camp-prototype-obstacle button.camp-task-worker-ready {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
 .camp-prototype-item .camp-task-worker span,
 .camp-prototype-obstacle .camp-task-worker span {
   margin: 0;
@@ -549,9 +703,63 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   background: conic-gradient(#842c25 var(--camp-task-progress), rgba(105, 68, 51, .2) 0);
   box-shadow: 0 2px 8px rgba(50, 35, 22, .38), 0 0 0 1px rgba(91, 40, 32, .3);
 }
+.camp-task-worker-ready .camp-task-progress-ring {
+  isolation: isolate;
+  background: conic-gradient(#2d9b58 100%, #2d9b58 0);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, .96),
+    0 0 0 7px rgba(255, 226, 112, .72),
+    0 0 30px rgba(255, 218, 85, .96);
+}
+.camp-task-worker-ready .camp-task-progress-ring::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  border: 4px solid rgba(255, 237, 156, .96);
+  border-radius: 50%;
+  box-shadow: 0 0 0 10px rgba(255, 245, 199, .25), 0 0 42px rgba(255, 224, 111, .94);
+  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+  pointer-events: none;
+}
+.camp-task-worker-ready .camp-task-progress-ring::after {
+  content: "";
+  position: absolute;
+  inset: -34%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
+  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.camp-task-manual-focus-active:not(.camp-task-worker-ready) .camp-task-progress-ring {
+  animation: camp-manual-focus-pulse .8s ease-in-out infinite alternate;
+  box-shadow: 0 0 0 3px rgba(255, 215, 92, .92), 0 0 18px rgba(236, 148, 32, .78);
+}
+@keyframes camp-task-ready-pulse {
+  0% { opacity: 1; transform: scale(.82); }
+  72%, 100% { opacity: 0; transform: scale(1.55); }
+}
+@keyframes camp-task-ready-glow {
+  from { opacity: .42; transform: scale(.94); }
+  to { opacity: .9; transform: scale(1.12); }
+}
+@keyframes camp-manual-focus-pulse {
+  to { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camp-task-worker-ready .camp-task-progress-ring::before,
+  .camp-task-worker-ready .camp-task-progress-ring::after,
+  .camp-recruit-visitor-ready::before,
+  .camp-recruit-visitor-ready::after,
+  .camp-task-manual-focus-active .camp-task-progress-ring {
+    animation: none;
+  }
+}
 .camp-prototype-item .camp-task-progress-ring .camp-task-worker-portrait,
 .camp-prototype-obstacle .camp-task-progress-ring .camp-task-worker-portrait {
   position: relative;
+  z-index: 1;
   width: var(--camp-cat-marker-size, 36px);
   height: var(--camp-cat-marker-size, 36px);
   flex-basis: var(--camp-cat-marker-size, 36px);
@@ -727,7 +935,7 @@ body[data-onglet-actif="camp"].camp-recruitment-unlocked[data-dev-mode="true"] .
   -webkit-user-drag: none;
 }
 .camp-prototype-fence-edge-foreground {
-  z-index: 4;
+  z-index: 14;
   filter: none;
 }
 .camp-prototype-category-icon-fence {
@@ -3434,10 +3642,10 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
   display: inline-flex;
 }
 .camp-appeal-details {
-  position: absolute;
+  position: fixed;
   left: 50%;
   top: calc(100% + 8px);
-  z-index: 14;
+  z-index: 240;
   display: grid;
   width: min(330px, calc(100vw - 32px));
   max-height: min(58vh, 440px);
@@ -3450,7 +3658,7 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
   box-shadow: 0 12px 28px rgba(53, 35, 20, .26);
   color: #50371f;
   font-size: .68rem;
-  transform: translateX(-50%);
+  transform: none;
 }
 .camp-appeal-details[hidden] { display: none; }
 .camp-appeal-details > strong {
@@ -4022,6 +4230,10 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   min-height: 0;
   overflow: hidden;
 }
+.camp-prototype-house-plot.camp-recruit-capacity-visible {
+  z-index: 15;
+  overflow: visible;
+}
 .camp-prototype-house {
   position: absolute;
   inset: 0;
@@ -4178,6 +4390,27 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   display: grid;
   animation: camp-recruit-question-pop .38s cubic-bezier(.2, .85, .25, 1.25) both;
 }
+.camp-recruit-capacity-message {
+  position: absolute;
+  left: -16px;
+  top: calc(100% + 8px);
+  z-index: 3;
+  width: min(190px, 46vw);
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 2px solid #8e522c;
+  border-radius: 10px;
+  background: rgba(255, 249, 232, .98);
+  color: #5c321d;
+  box-shadow: 0 4px 12px rgba(49, 32, 19, .3);
+  font-size: clamp(.56rem, 1.05vw, .72rem);
+  font-weight: 850;
+  line-height: 1.25;
+  text-align: center;
+  transform: none;
+  pointer-events: none;
+}
+.camp-recruit-capacity-message[hidden] { display: none; }
 @keyframes camp-recruit-question-pop {
   from { opacity: 0; transform: translateY(4px) scale(.65); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -4489,6 +4722,43 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 .camp-prototype-interaction-menu button:focus-visible {
   outline: 3px solid rgba(39, 131, 79, .32);
   outline-offset: 2px;
+}
+.camp-prototype-interaction-menu .camp-task-claim-action {
+  grid-auto-flow: column;
+  gap: 5px;
+  width: auto;
+  min-width: max-content;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #fff;
+  background: #2d9b58;
+}
+.camp-prototype-interaction-menu .camp-task-claim-action:hover {
+  background: #247f49;
+}
+.camp-prototype-interaction-menu .camp-task-claim-action strong {
+  font-size: .72rem;
+}
+.camp-prototype-interaction-menu .camp-task-manual-focus-action {
+  width: auto;
+  min-width: 54px;
+  padding: 0 9px;
+  border-color: #d68a25;
+  border-radius: 999px;
+  color: #7a4712;
+  background: #fff3c7;
+  font-size: .68rem;
+}
+.camp-junk-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: .7rem;
+}
+.camp-junk-reward img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 .camp-prototype-interaction-menu .camp-prototype-demolition-action {
   border-color: #b96528;
@@ -10899,7 +11169,9 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   .camp-prototype-river { border-radius: 0 0 8px 8px; }
   .camp-prototype-help { font-size: .62rem; }
   .camp-prototype-category-sheet {
-    bottom: max(86px, calc(76px + env(safe-area-inset-bottom)));
+    position: fixed;
+    bottom: calc(var(--hauteur-navigation-mobile) + 75px);
+    z-index: 104;
     width: calc(100% - 16px);
     max-height: 45dvh;
     padding: 10px;
@@ -10923,7 +11195,9 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
     height: 27px;
   }
   .camp-prototype-edit-dock {
-    bottom: max(7px, env(safe-area-inset-bottom));
+    position: fixed;
+    bottom: calc(var(--hauteur-navigation-mobile) + 7px);
+    z-index: 103;
     gap: 8px;
   }
   .camp-prototype-edit-dock > button {
@@ -12208,8 +12482,16 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   .onglet-icone { width: 31px; height: 31px; flex-basis: 31px; }
 
   .camp-prototype-viewport { max-height: none; padding-bottom: 82px; }
-  .camp-prototype-viewport.camp-mobile-home-only { overflow-x: hidden; }
+  .camp-prototype-viewport.camp-mobile-home-only { overflow-x: auto; }
   .camp-prototype-neighbor-mask::after { font-size: .42rem; }
   .camp-prototype-fence { width: 3.2%; }
   .camp-recruit-visitor img { width: clamp(28px, 9vw, 38px); }
+}
+
+/* Keep the ready state readable even between the two animated aura peaks. */
+.camp-recruit-visitor-ready img {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, .96),
+    0 0 0 7px rgba(255, 226, 112, .72),
+    0 0 30px rgba(255, 218, 85, .96);
 }

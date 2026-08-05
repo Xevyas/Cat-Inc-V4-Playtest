@@ -23,7 +23,7 @@ function makeWorkRecipeSlots(n) {
 
 function makeCampState() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     prototypeMigrationVersion: 0,
     recruitmentFormulaVersion: 0,
     layout: [],
@@ -34,7 +34,14 @@ function makeCampState() {
     repairs: {},
     constructions: {},
     houseConstructions: {},
-    upgrades: {}
+    upgrades: {},
+    progression: {
+      introCompleted: false,
+      junkClearingUnlocked: false,
+      operationsTableUnlocked: false,
+      quickDialogueQueue: [],
+      quickDialoguesSeen: []
+    }
   };
 }
 
@@ -78,6 +85,7 @@ function creerEtatInitial() {
   volumeEffetsSonores:     0.3,
   volumeMusique:           0,
   autoBuildWoodHouses:       false,
+  hideCampCatIcons:          false,
   // Resources hidden from the compact top rail. An empty list means every
   // unlocked resource is displayed by default.
   resourceBarHidden:       [],

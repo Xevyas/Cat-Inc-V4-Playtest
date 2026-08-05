@@ -108,6 +108,12 @@
       access: Object.prototype.hasOwnProperty.call(revision, "access")
         ? runtimeAccess(revision.access, fallback.access)
         : fallback.access,
+      minCatLevel: revision.gameplay && Number.isInteger(revision.gameplay.minCatLevel)
+        ? revision.gameplay.minCatLevel
+        : fallback.minCatLevel,
+      durationSeconds: revision.gameplay && Number.isInteger(revision.gameplay.clearDurationSeconds)
+        ? revision.gameplay.clearDurationSeconds
+        : fallback.durationSeconds,
       runtimeTier: revision.tier,
       runtimeRevision: revision.revision,
       runtimeStatus: revision.status
@@ -398,59 +404,71 @@
       color: "toy",
       category: "decoration"
     }),
-    junkGreenBush: Object.freeze({
+    junkGreenBush: runtimeItem("junkGreenBush", {
       id: "junkGreenBush",
       label: "Green Bush",
       width: 2,
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
+      minCatLevel: 0,
+      durationSeconds: 20 * 60
     }),
-    junkThornBush: Object.freeze({
+    junkThornBush: runtimeItem("junkThornBush", {
       id: "junkThornBush",
       label: "Thorny Bramble Bush",
       width: 2,
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
+      minCatLevel: 2,
+      durationSeconds: 20 * 60
     }),
-    junkFlowerBush: Object.freeze({
+    junkFlowerBush: runtimeItem("junkFlowerBush", {
       id: "junkFlowerBush",
       label: "Flowering Bush",
       width: 2,
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
+      minCatLevel: 0,
+      durationSeconds: 20 * 60
     }),
-    junkPebblePile: Object.freeze({
+    junkPebblePile: runtimeItem("junkPebblePile", {
       id: "junkPebblePile",
       label: "Pile of Pebbles",
       width: 1,
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
+      minCatLevel: 0,
+      durationSeconds: 10 * 60
     }),
-    junkStoneBlockPile: Object.freeze({
+    junkStoneBlockPile: runtimeItem("junkStoneBlockPile", {
       id: "junkStoneBlockPile",
       label: "Pile of Stone Blocks",
       width: 2,
       height: 2,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
+      minCatLevel: 4,
+      durationSeconds: 80 * 60
     }),
-    junkTallGrass: Object.freeze({
+    junkTallGrass: runtimeItem("junkTallGrass", {
       id: "junkTallGrass",
       label: "Tall Green Grass",
       width: 1,
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
+      minCatLevel: 0,
+      durationSeconds: 10 * 60
     }),
     road: Object.freeze({
       id: "road",
@@ -565,47 +583,76 @@
     const zone = TERRITORY_ZONES[zoneId];
     return total + zone.width * zone.height;
   }, 0);
+  function runtimeObstacle(runtimeTypeId, fallback) {
+    const revision = runtimeRevision(runtimeTypeId, 1);
+    if (!revision) return Object.freeze(fallback);
+    return Object.freeze({
+      ...fallback,
+      label: revision.name || fallback.label,
+      width: revision.width,
+      height: revision.height,
+      minCatLevel: revision.gameplay && Number.isInteger(revision.gameplay.minCatLevel)
+        ? revision.gameplay.minCatLevel
+        : fallback.minCatLevel,
+      durationSeconds: revision.gameplay && Number.isInteger(revision.gameplay.clearDurationSeconds)
+        ? revision.gameplay.clearDurationSeconds
+        : fallback.durationSeconds,
+      asset: runtimeSpritePath(revision.sprites && revision.sprites.down, revision) || fallback.asset
+    });
+  }
   const OBSTACLE_TYPES = Object.freeze([
-    Object.freeze({
+    runtimeObstacle("junkGreenBush", {
       id: "greenBush",
       label: "Green bush",
       width: 2,
       height: 1,
+      minCatLevel: 0,
+      durationSeconds: 20 * 60,
       asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     }),
-    Object.freeze({
+    runtimeObstacle("junkThornBush", {
       id: "thornBush",
       label: "Thorny bramble bush",
       width: 2,
       height: 1,
+      minCatLevel: 2,
+      durationSeconds: 20 * 60,
       asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     }),
-    Object.freeze({
+    runtimeObstacle("junkFlowerBush", {
       id: "flowerBush",
       label: "Flowering bush",
       width: 2,
       height: 1,
+      minCatLevel: 0,
+      durationSeconds: 20 * 60,
       asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     }),
-    Object.freeze({
+    runtimeObstacle("junkPebblePile", {
       id: "pebblePile",
       label: "Pile of pebbles",
       width: 1,
       height: 1,
+      minCatLevel: 0,
+      durationSeconds: 10 * 60,
       asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     }),
-    Object.freeze({
+    runtimeObstacle("junkStoneBlockPile", {
       id: "stoneBlockPile",
       label: "Pile of stone blocks",
       width: 2,
       height: 2,
+      minCatLevel: 4,
+      durationSeconds: 80 * 60,
       asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     }),
-    Object.freeze({
+    runtimeObstacle("junkTallGrass", {
       id: "tallGrass",
       label: "Tall green grass",
       width: 1,
       height: 1,
+      minCatLevel: 0,
+      durationSeconds: 10 * 60,
       asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     })
   ]);
@@ -615,7 +662,14 @@
     Object.freeze({ id: "tallGrass", x: 6, y: 5 }),
     Object.freeze({ id: "tallGrass", x: 7, y: 5 }),
     Object.freeze({ id: "tallGrass", x: 6, y: 6 }),
-    Object.freeze({ id: "pebblePile", x: 7, y: 6 }),
+    // This one-time early reward softens the opening without making every
+    // junk deterministic loot. It is revealed only when the cleanup is ready.
+    Object.freeze({
+      id: "pebblePile",
+      x: 7,
+      y: 6,
+      reward: Object.freeze({ resourceId: "pebbleBricks", quantity: 1 })
+    }),
     Object.freeze({ id: "flowerBush", x: 8, y: 6 }),
     Object.freeze({ id: "flowerBush", x: 10, y: 6 }),
     Object.freeze({ id: "pebblePile", x: 7, y: 7 }),
@@ -727,6 +781,9 @@
         label: type.label,
         width: type.width,
         height: type.height,
+        minCatLevel: type.minCatLevel,
+        durationSeconds: type.durationSeconds,
+        reward: definition.reward || null,
         asset: type.asset,
         zoneId: zone.id,
         x: definition.x,
@@ -774,6 +831,9 @@
             label: selection.type.label,
             width: selection.type.width,
             height: selection.type.height,
+            minCatLevel: selection.type.minCatLevel,
+            durationSeconds: selection.type.durationSeconds,
+            reward: null,
             asset: selection.type.asset,
             zoneId: zone.id,
             x: x,
@@ -949,6 +1009,9 @@
   }
 
   function dureeDemolitionObstacle(obstacle) {
+    if (obstacle && Number.isFinite(obstacle.durationSeconds) && obstacle.durationSeconds > 0) {
+      return obstacle.durationSeconds;
+    }
     const cellules = obstacle && Array.isArray(obstacle.cells)
       ? obstacle.cells.length
       : 0;

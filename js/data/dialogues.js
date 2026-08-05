@@ -19,6 +19,8 @@
     Object.freeze({ id: "ecran-story-1", name: "Bernardo's plan begins", flag: "story1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." }) }),
     Object.freeze({ id: "ecran-story-2", name: "Mochi joins the gang", flag: "story2Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Mochi_Final.png", alt: "Portrait of Mochi." }) }),
     Object.freeze({ id: "ecran-story-3", name: "The adventure begins", flag: "story3Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo addresses two other kittens in the garden." }) }),
+    Object.freeze({ id: "ecran-story-camp-intro", name: "A garden to rebuild", flag: "storyCampIntroVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo, Mochi and Luna inspect their cluttered new garden." }) }),
+    Object.freeze({ id: "ecran-story-camp-full", name: "Room for one more", flag: "storyCampFullVue", asset: Object.freeze({ type: "icon", src: "img/Buildings/Cardboard Box_Final.png", alt: "A Cardboard Box shelter." }) }),
     Object.freeze({ id: "ecran-story-manual-focus", name: "A Little Encouragement", flag: "storyManualFocusVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo preparing to encourage the workers." }) }),
     Object.freeze({ id: "ecran-story-4", name: "Our first creation", flag: "story4Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 4.png", alt: "Three kittens admire their first cardboard shelter." }) }),
     Object.freeze({ id: "ecran-story-basic-wood", name: "Beyond Cardboard", flag: "storyBasicWoodVue", asset: Object.freeze({ type: "icon", src: "img/resources/Basic Wood_Final.png?v=0.0029", alt: "A stack of sturdy Basic Wood logs." }) }),
@@ -216,6 +218,58 @@ const SCENE_BEATS = Object.freeze({
       "html": "Get on your paws, both of you. We start now."
     }
   ],
+  "ecran-story-camp-intro": [
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "This garden looked much tidier from the street."
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "From the street, you were looking at a sandwich wrapper."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "The mess can wait. That old workshop is a Sawmill, and it only needs a few minor repairs. Once one of you gets it running, we can start producing proper building material."
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "One of us?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "I will supervise from somewhere with a clear view. You and Luna will handle the work."
+    }
+  ],
+  "ecran-story-camp-full": [
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "The visitor made it! Why are they still waiting outside?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "Because there is no room left under the porch. We have filled every dry corner."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "Then we need additional shelters. We can build simple Cardboard Boxes and connect them to the Camp. That will give every new Cat a place in the Gang."
+    }
+  ],
   "ecran-story-manual-focus": [
     {
       "classes": [
@@ -265,7 +319,7 @@ const SCENE_BEATS = Object.freeze({
       "classes": [],
       "speakerClass": "bernard",
       "speakerName": "Bernardo",
-      "html": "What matters is focusing that encouragement at the right moment, because a well-timed push can speed up Gathering or Processing. If I am the one working, I can focus that energy on my own task."
+      "html": "What matters is focusing that encouragement at the right moment. From my post, I can direct that energy toward Work or any active repair, cleanup, construction or upgrade in the Camp."
     },
     {
       "classes": [],
@@ -279,7 +333,7 @@ const SCENE_BEATS = Object.freeze({
       ],
       "speakerClass": null,
       "speakerName": null,
-      "html": "Manual Focus is now unlocked. Each click on the active Gathering or Processing panel stores 0.8 seconds of ×2 speed, up to 30 seconds. The remaining boost automatically follows the next phase of the same recipe, but focusing another recipe resets the reserve."
+      "html": "Manual Focus is now unlocked. Each click on an active Work phase or Camp task stores 0.8 seconds of ×2 speed, up to 30 seconds. Focusing another action resets the reserve."
     }
   ],
   "ecran-story-4": [
@@ -389,7 +443,7 @@ const SCENE_BEATS = Object.freeze({
       ],
       "speakerClass": null,
       "speakerName": null,
-      "html": "Basic Wood is now available."
+      "html": "Resources have multiple tiers. The Basic Wood Planks recipe is now available, but the current Sawmill cannot process it yet."
     },
     {
       "classes": [
@@ -397,7 +451,7 @@ const SCENE_BEATS = Object.freeze({
       ],
       "speakerClass": null,
       "speakerName": null,
-      "html": "Resources have multiple tiers. New tiers of Wood, Food and Rock will become available as rewards for different actions, discoveries and missions."
+      "html": "Upgrade the existing Sawmill to Tier 2 for 5 Cardboard Planks and 2 Pebble Bricks. Other Work buildings will follow the same rule when their Tier 2 recipes are discovered."
     }
   ],
   "ecran-story-5": [

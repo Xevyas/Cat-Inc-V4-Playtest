@@ -10,14 +10,14 @@
   const STORAGE_NAMESPACE = "catInc.v4.dev";
   const SAVE_KEY = STORAGE_NAMESPACE + ".save";
   const SAVE_RECOVERY_KEY = STORAGE_NAMESPACE + ".saveRecovery";
-  // Version 2 introduces recipe slots and deliberately starts a new save era.
-  // Version 0/1 saves belong to the former independent Gathering/Processing model.
-  const SAVE_VERSION = 2;
+  // Version 3 starts the redesigned Camp progression. Camp jobs now remain
+  // pending at 100% until the player validates them, so older saves are reset.
+  const SAVE_VERSION = 3;
   const ONGLETS_VALIDES = ["gang", "camp", "work", "buildings", "facilities", "explorations", "inventaire", "logs"];
   const WORK_FAMILIES = ["wood", "food", "rock"];
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
-  const CAMP_SCHEMA_VERSION = 1;
+  const CAMP_SCHEMA_VERSION = 2;
   const RESOURCE_BAR_KEYS = [
     "cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks",
     "salads", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood"
@@ -42,7 +42,7 @@ function validerStructureSauvegarde(d) {
 
   if (!Number.isInteger(d.saveVersion) || d.saveVersion < 0) return "Invalid save version.";
   if (d.saveVersion > SAVE_VERSION) return "This save was created by a newer version of Cat Inc.";
-  if (d.saveVersion < SAVE_VERSION) return "This save uses the previous Work system and requires a new game.";
+  if (d.saveVersion < SAVE_VERSION) return "This save uses the previous Camp progression and requires a new game.";
 
   const champsTableaux = [
     "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies",
@@ -125,7 +125,7 @@ function validerStructureSauvegarde(d) {
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
     "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremiereReussie",
-    "managersDebloques", "tutorialCompletionPopupSeen", "managerRoleTutorialShown"
+    "managersDebloques", "tutorialCompletionPopupSeen", "managerRoleTutorialShown", "hideCampCatIcons"
   ];
   for (const cle of champsBooleens) {
     if (d[cle] !== undefined && typeof d[cle] !== "boolean") return "Invalid boolean field: " + cle + ".";
@@ -147,6 +147,15 @@ function validerStructureSauvegarde(d) {
   }
   if (d.resourceBarHidden && !d.resourceBarHidden.every(function(id) { return RESOURCE_BAR_KEYS.includes(id); })) {
     return "Invalid resource bar preferences.";
+  }
+
+  const nombreKitties = Math.max(
+    Number.isInteger(d.chatons) ? d.chatons : 0,
+    Array.isArray(d.kittiesData) ? d.kittiesData.length : 0
+  );
+  function indexKittyValide(kittyIndex, nullable) {
+    if (nullable && kittyIndex === null) return true;
+    return Number.isInteger(kittyIndex) && kittyIndex >= 0 && kittyIndex < nombreKitties;
   }
 
   if (d.camp !== undefined) {
@@ -171,9 +180,21 @@ function validerStructureSauvegarde(d) {
     if (!estObjetSauvegarde(camp.repairs)
         || !estObjetSauvegarde(camp.constructions)
         || !estObjetSauvegarde(camp.houseConstructions)
-        || !estObjetSauvegarde(camp.upgrades)) {
+        || !estObjetSauvegarde(camp.upgrades)
+        || !estObjetSauvegarde(camp.progression)) {
       return "Invalid Camp job data.";
     }
+    const progressionCamp = camp.progression;
+    if (["introCompleted", "junkClearingUnlocked", "operationsTableUnlocked"].some(function(cle) {
+      return typeof progressionCamp[cle] !== "boolean";
+    })) return "Invalid Camp progression data.";
+    if (!["quickDialogueQueue", "quickDialoguesSeen"].every(function(cle) {
+      return Array.isArray(progressionCamp[cle])
+        && progressionCamp[cle].length <= 128
+        && progressionCamp[cle].every(function(id) {
+          return typeof id === "string" && id.length > 0 && id.length <= 100 && !/[<>]/.test(id);
+        });
+    })) return "Invalid Camp quick dialogue data.";
     if (camp.terrain !== null && !estObjetSauvegarde(camp.terrain)) return "Invalid Camp terrain.";
     const layoutValide = camp.layout.every(function(item) {
       return estObjetSauvegarde(item)
@@ -191,6 +212,23 @@ function validerStructureSauvegarde(d) {
         && ["horizontal", "vertical"].includes(edge.orientation);
     });
     if (!cloturesValides) return "Invalid Camp fence edge.";
+    const demolitionsValides = camp.demolitions.every(function(demolition) {
+      return estObjetSauvegarde(demolition)
+        && typeof demolition.obstacleUid === "string"
+        && demolition.obstacleUid.length > 0
+        && demolition.obstacleUid.length <= 160
+        && !/[<>]/.test(demolition.obstacleUid)
+        && ["terrain", "layout"].includes(demolition.targetKind)
+        && indexKittyValide(demolition.kittyIndex, false)
+        && typeof demolition.startTs === "number"
+        && Number.isFinite(demolition.startTs)
+        && demolition.startTs >= 0
+        && typeof demolition.duree === "number"
+        && Number.isFinite(demolition.duree)
+        && demolition.duree > 0
+        && typeof demolition.readyToClaim === "boolean";
+    });
+    if (!demolitionsValides) return "Invalid Camp demolition data.";
     if (!camp.repairedBuildingIds.every(function(id) { return CAMP_BUILDING_IDS.includes(id); })) {
       return "Invalid repaired Camp building data.";
     }
@@ -201,7 +239,8 @@ function validerStructureSauvegarde(d) {
           && estObjetSauvegarde(reparation)
           && indexKittyValide(reparation.kittyIndex, false)
           && typeof reparation.startTs === "number" && Number.isFinite(reparation.startTs) && reparation.startTs >= 0
-          && typeof reparation.duree === "number" && Number.isFinite(reparation.duree) && reparation.duree > 0;
+          && typeof reparation.duree === "number" && Number.isFinite(reparation.duree) && reparation.duree > 0
+          && typeof reparation.readyToClaim === "boolean";
       });
     if (!reparationsCampValides) return "Invalid Camp repair data.";
     const constructionsCampValides = Object.keys(camp.houseConstructions).length <= 128
@@ -214,7 +253,8 @@ function validerStructureSauvegarde(d) {
           && typeof construction.startTs === "number" && Number.isFinite(construction.startTs) && construction.startTs >= 0
           && typeof construction.duree === "number" && Number.isFinite(construction.duree) && construction.duree > 0
           && typeof construction.coutCardboardPlanks === "number"
-          && Number.isFinite(construction.coutCardboardPlanks) && construction.coutCardboardPlanks >= 0;
+          && Number.isFinite(construction.coutCardboardPlanks) && construction.coutCardboardPlanks >= 0
+          && typeof construction.readyToClaim === "boolean";
       });
     if (!constructionsCampValides) return "Invalid Camp house construction data.";
     const buildingConstructionIds = ["operationsTable", "jobCenter", "trainingCenter", "laboratory", "storage"];
@@ -227,6 +267,7 @@ function validerStructureSauvegarde(d) {
           && indexKittyValide(construction.kittyIndex, false)
           && typeof construction.startTs === "number" && Number.isFinite(construction.startTs) && construction.startTs >= 0
           && typeof construction.duration === "number" && Number.isFinite(construction.duration) && construction.duration > 0
+          && typeof construction.readyToClaim === "boolean"
           && estObjetSauvegarde(construction.costs)
           && Object.keys(construction.costs).length <= 8
           && Object.keys(construction.costs).every(function(resourceId) {
@@ -248,6 +289,7 @@ function validerStructureSauvegarde(d) {
           && Number.isInteger(upgrade.targetTier) && upgrade.targetTier === upgrade.startTier + 1 && upgrade.targetTier <= 100
           && typeof upgrade.startTs === "number" && Number.isFinite(upgrade.startTs) && upgrade.startTs >= 0
           && typeof upgrade.duration === "number" && Number.isFinite(upgrade.duration) && upgrade.duration > 0
+          && typeof upgrade.readyToClaim === "boolean"
           && estObjetSauvegarde(upgrade.costs)
           && Object.keys(upgrade.costs).length <= upgradeResources.length
           && Object.keys(upgrade.costs).every(function(resourceId) {
@@ -315,14 +357,6 @@ function validerStructureSauvegarde(d) {
     if (!kittiesValides) return "Invalid cat data.";
   }
 
-  const nombreKitties = Math.max(
-    Number.isInteger(d.chatons) ? d.chatons : 0,
-    Array.isArray(d.kittiesData) ? d.kittiesData.length : 0
-  );
-  function indexKittyValide(kittyIndex, nullable) {
-    if (nullable && kittyIndex === null) return true;
-    return Number.isInteger(kittyIndex) && kittyIndex >= 0 && kittyIndex < nombreKitties;
-  }
   if (d.reparationsCamp && !Object.values(d.reparationsCamp).every(function(reparation) {
     return indexKittyValide(reparation.kittyIndex, false);
   })) {
@@ -493,7 +527,7 @@ function analyserSauvegardeBrute(raw) {
       incompatible: true,
       ancienneVersion: version,
       data: data,
-      erreur: "This save uses the previous Work system and requires a new game."
+      erreur: "This save uses the previous Camp progression and requires a new game."
     };
   }
   const erreur = validerStructureSauvegarde(data);
@@ -540,6 +574,7 @@ function analyserSauvegardeBrute(raw) {
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
     autoBuildWoodHouses:       etat.autoBuildWoodHouses,
+    hideCampCatIcons:          etat.hideCampCatIcons,
     resourceBarHidden:       etat.resourceBarHidden,
     scieriBloquee:              etat.scieriBloquee,
     basicSawmillBloquee:        etat.basicSawmillBloquee,
@@ -663,6 +698,7 @@ function analyserSauvegardeBrute(raw) {
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0;
   etat.autoBuildWoodHouses       = d.autoBuildWoodHouses || false;
+  etat.hideCampCatIcons          = d.hideCampCatIcons === true;
   etat.resourceBarHidden = Array.isArray(d.resourceBarHidden)
     ? Array.from(new Set(d.resourceBarHidden.filter(function(id) { return RESOURCE_BAR_KEYS.includes(id); })))
     : [];
@@ -710,6 +746,20 @@ function analyserSauvegardeBrute(raw) {
     ? campSource.houseConstructions
     : (estObjetSauvegarde(d.constructionsMaisonsCamp) ? d.constructionsMaisonsCamp : {});
   etat.camp.upgrades = estObjetSauvegarde(campSource.upgrades) ? campSource.upgrades : {};
+  const progressionSource = estObjetSauvegarde(campSource.progression)
+    ? campSource.progression
+    : {};
+  etat.camp.progression = {
+    introCompleted: progressionSource.introCompleted === true,
+    junkClearingUnlocked: progressionSource.junkClearingUnlocked === true,
+    operationsTableUnlocked: progressionSource.operationsTableUnlocked === true,
+    quickDialogueQueue: Array.isArray(progressionSource.quickDialogueQueue)
+      ? progressionSource.quickDialogueQueue.slice(0, 128)
+      : [],
+    quickDialoguesSeen: Array.isArray(progressionSource.quickDialoguesSeen)
+      ? progressionSource.quickDialoguesSeen.slice(0, 128)
+      : []
+  };
 
   etat.cathouses          = d.cathouses          || [];
   etat.cathouseCount      = d.cathouseCount      || 0;
