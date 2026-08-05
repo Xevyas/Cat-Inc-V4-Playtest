@@ -7,7 +7,7 @@
 
   // V4 environments must never read or overwrite V3 browser data. The
   // Playtest deployment will use its own namespace when publication begins.
-  const STORAGE_NAMESPACE = "catInc.v4.dev";
+  const STORAGE_NAMESPACE = "catInc.v4.playtest";
   const SAVE_KEY = STORAGE_NAMESPACE + ".save";
   const SAVE_RECOVERY_KEY = STORAGE_NAMESPACE + ".saveRecovery";
   // Version 3 starts the redesigned Camp progression. Camp jobs now remain
