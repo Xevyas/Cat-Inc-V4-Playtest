@@ -11,7 +11,8 @@ function makeWorkRecipeSlot() {
     phaseProgress: 0,
     outputCarry: 0,
     gatheredInputs: {},
-    reservedInputs: {}
+    reservedInputs: {},
+    birdCardboardPieces: 0
   };
 }
 
@@ -34,11 +35,15 @@ function makeCampState() {
     repairs: {},
     constructions: {},
     houseConstructions: {},
+    housingAssignments: {},
+    groundRewards: {},
     upgrades: {},
     progression: {
       introCompleted: false,
       junkClearingUnlocked: false,
       operationsTableUnlocked: false,
+      storageShedUnlocked: false,
+      sawmillTutorialStage: "inactive",
       quickDialogueQueue: [],
       quickDialoguesSeen: []
     }
@@ -93,6 +98,7 @@ function creerEtatInitial() {
   // Bird event progression. The first event is deliberately fixed at five
   // minutes; later events return to the normal random schedule.
   birdPremierSpawnTs:      Date.now() + 5 * 60 * 1000,
+  birdPremierDeclenche:     false,
   birdPremiereReussie:     false,
   birdPityEchecs:           0,
 

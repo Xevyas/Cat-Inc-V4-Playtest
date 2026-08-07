@@ -18,6 +18,15 @@
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
   const CAMP_SCHEMA_VERSION = 2;
+  const SAWMILL_TUTORIAL_STAGES = [
+    "inactive", "sawmill", "work-action", "wood-slot-1-recipe",
+    "wood-slot-1-cat", "wood-slot-2-recipe", "wood-slot-2-cat",
+    "return-camp", "confirm-camp", "complete"
+  ];
+  const SAWMILL_TUTORIAL_STAGE_INDEX = SAWMILL_TUTORIAL_STAGES.reduce(function(index, stage, position) {
+    index[stage] = position;
+    return index;
+  }, {});
   const RESOURCE_BAR_KEYS = [
     "cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks",
     "salads", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood"
@@ -31,6 +40,65 @@ function donneesSauvegardeReconnaissables(d) {
   if (!estObjetSauvegarde(d)) return false;
   const champsConnus = ["chatons", "wood", "cardboard", "cardboardPieces", "kittiesData", "workRecipeSlots"];
   return champsConnus.some(function(cle) { return d[cle] !== undefined; });
+}
+
+function deriverEtapeTutorielSawmill(d, campSource, progressionSource) {
+  if (Number(d.chatons) >= 4 || d.sequenceEnCours === true) return "complete";
+  const repaired = Array.isArray(campSource.repairedBuildingIds)
+    ? campSource.repairedBuildingIds.includes("sawmill")
+    : (Array.isArray(d.batimentsCampRepares) && d.batimentsCampRepares.includes("sawmill"));
+  if (!repaired || Number(d.chatons) !== 3) return "inactive";
+  const slots = d.workRecipeSlots && Array.isArray(d.workRecipeSlots.wood)
+    ? d.workRecipeSlots.wood
+    : [];
+  const first = slots[0];
+  const second = slots[1];
+  const cardboard = function(slot) { return slot && slot.recipeId === "cardboardPlanks"; };
+  const namedIndex = function(name) {
+    return Array.isArray(d.kittiesData)
+      ? d.kittiesData.findIndex(function(kitty) { return kitty && kitty.nom === name; })
+      : -1;
+  };
+  const mochi = namedIndex("Mochi");
+  const luna = namedIndex("Luna");
+  const firstRecipe = cardboard(first);
+  const firstCat = firstRecipe && first.kittyIndex === mochi;
+  const secondRecipe = cardboard(second);
+  const complete = firstCat && secondRecipe && second.kittyIndex === luna;
+  let derived = "sawmill";
+  let achievedLevel = 0;
+  if (firstRecipe) {
+    derived = "wood-slot-1-cat";
+    achievedLevel = 1;
+  }
+  if (firstCat) {
+    derived = "wood-slot-2-recipe";
+    achievedLevel = 2;
+  }
+  if (firstCat && secondRecipe) {
+    derived = "wood-slot-2-cat";
+    achievedLevel = 3;
+  }
+  if (complete) {
+    derived = "return-camp";
+    achievedLevel = 4;
+  }
+
+  const persisted = progressionSource && progressionSource.sawmillTutorialStage;
+  if (!SAWMILL_TUTORIAL_STAGES.includes(persisted)) return derived;
+  if (persisted === "complete") return "complete";
+  if (persisted === "confirm-camp" && complete) return "confirm-camp";
+  const prerequisiteLevel = {
+    inactive: 0, sawmill: 0, "work-action": 0, "wood-slot-1-recipe": 0,
+    "wood-slot-1-cat": 1, "wood-slot-2-recipe": 2,
+    "wood-slot-2-cat": 3, "return-camp": 4, "confirm-camp": 4
+  }[persisted];
+  if (prerequisiteLevel > achievedLevel) return derived;
+  const achievedIndex = SAWMILL_TUTORIAL_STAGE_INDEX[derived];
+  const persistedIndex = SAWMILL_TUTORIAL_STAGE_INDEX[persisted];
+  // A persisted step may stay at or below the authoritative slot state, but
+  // never remain beyond a prerequisite that is missing after a reload.
+  return persistedIndex >= achievedIndex ? persisted : derived;
 }
 
 function validerStructureSauvegarde(d) {
@@ -124,7 +192,7 @@ function validerStructureSauvegarde(d) {
   const champsBooleens = [
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
-    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremiereReussie",
+    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
     "managersDebloques", "tutorialCompletionPopupSeen", "managerRoleTutorialShown", "hideCampCatIcons"
   ];
   for (const cle of champsBooleens) {
@@ -180,6 +248,8 @@ function validerStructureSauvegarde(d) {
     if (!estObjetSauvegarde(camp.repairs)
         || !estObjetSauvegarde(camp.constructions)
         || !estObjetSauvegarde(camp.houseConstructions)
+        || (camp.housingAssignments !== undefined && !estObjetSauvegarde(camp.housingAssignments))
+        || (camp.groundRewards !== undefined && !estObjetSauvegarde(camp.groundRewards))
         || !estObjetSauvegarde(camp.upgrades)
         || !estObjetSauvegarde(camp.progression)) {
       return "Invalid Camp job data.";
@@ -188,6 +258,14 @@ function validerStructureSauvegarde(d) {
     if (["introCompleted", "junkClearingUnlocked", "operationsTableUnlocked"].some(function(cle) {
       return typeof progressionCamp[cle] !== "boolean";
     })) return "Invalid Camp progression data.";
+    if (progressionCamp.storageShedUnlocked !== undefined
+        && typeof progressionCamp.storageShedUnlocked !== "boolean") {
+      return "Invalid Camp storage progression data.";
+    }
+    if (progressionCamp.sawmillTutorialStage !== undefined
+        && !SAWMILL_TUTORIAL_STAGES.includes(progressionCamp.sawmillTutorialStage)) {
+      return "Invalid Sawmill tutorial stage.";
+    }
     if (!["quickDialogueQueue", "quickDialoguesSeen"].every(function(cle) {
       return Array.isArray(progressionCamp[cle])
         && progressionCamp[cle].length <= 128
@@ -202,7 +280,18 @@ function validerStructureSauvegarde(d) {
         && typeof item.type === "string" && item.type.length > 0 && item.type.length <= 80
         && Number.isInteger(item.x) && Number.isInteger(item.y)
         && (item.tier === undefined || (Number.isInteger(item.tier) && item.tier > 0 && item.tier <= 100))
-        && (item.rotation === undefined || [0, 90, 180, 270].includes(item.rotation));
+        && (item.rotation === undefined || [0, 90, 180, 270].includes(item.rotation))
+        && (item.lawRank === undefined || (Number.isInteger(item.lawRank) && item.lawRank > 0))
+        && (item.paidCosts === undefined || (
+          estObjetSauvegarde(item.paidCosts)
+          && Object.keys(item.paidCosts).length <= 8
+          && Object.keys(item.paidCosts).every(function(resourceId) {
+            return /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
+              && typeof item.paidCosts[resourceId] === "number"
+              && Number.isFinite(item.paidCosts[resourceId])
+              && item.paidCosts[resourceId] >= 0;
+          })
+        ));
     });
     if (!layoutValide) return "Invalid Camp layout item.";
     const cloturesValides = (camp.fences || []).every(function(edge) {
@@ -254,9 +343,54 @@ function validerStructureSauvegarde(d) {
           && typeof construction.duree === "number" && Number.isFinite(construction.duree) && construction.duree > 0
           && typeof construction.coutCardboardPlanks === "number"
           && Number.isFinite(construction.coutCardboardPlanks) && construction.coutCardboardPlanks >= 0
+          && (construction.lawRank === undefined
+            || (Number.isInteger(construction.lawRank) && construction.lawRank > 0))
+          && (construction.paidCosts === undefined || (
+            estObjetSauvegarde(construction.paidCosts)
+            && Object.keys(construction.paidCosts).length <= 8
+            && Object.keys(construction.paidCosts).every(function(resourceId) {
+              return /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
+                && typeof construction.paidCosts[resourceId] === "number"
+                && Number.isFinite(construction.paidCosts[resourceId])
+                && construction.paidCosts[resourceId] >= 0;
+            })
+          ))
           && typeof construction.readyToClaim === "boolean";
       });
     if (!constructionsCampValides) return "Invalid Camp house construction data.";
+    const housingAssignmentsSource = camp.housingAssignments || {};
+    const housingAssignmentsValides = Object.keys(housingAssignmentsSource).length <= 128
+      && Object.keys(housingAssignmentsSource).every(function(kittyIndex) {
+        return /^(0|[1-9][0-9]*)$/.test(kittyIndex)
+          && indexKittyValide(Number(kittyIndex), false)
+          && typeof housingAssignmentsSource[kittyIndex] === "string"
+          && housingAssignmentsSource[kittyIndex].length > 0
+          && housingAssignmentsSource[kittyIndex].length <= 160
+          && !/[<>]/.test(housingAssignmentsSource[kittyIndex]);
+      });
+    if (!housingAssignmentsValides) return "Invalid Camp housing assignment data.";
+    const groundRewardsSource = camp.groundRewards || {};
+    const groundRewardsValides = Object.keys(groundRewardsSource).length <= 256
+      && Object.keys(groundRewardsSource).every(function(uid) {
+        const reward = groundRewardsSource[uid];
+        return typeof uid === "string" && uid.length > 0 && uid.length <= 160 && !/[<>]/.test(uid)
+          && estObjetSauvegarde(reward)
+          && typeof reward.resourceId === "string" && /^[A-Za-z][A-Za-z0-9]*$/.test(reward.resourceId)
+          && reward.resourceId.length <= 80
+          && typeof reward.quantity === "number" && Number.isFinite(reward.quantity)
+          && reward.quantity > 0 && reward.quantity <= 1000000
+          && (reward.targetKind === undefined || ["terrain", "layout"].includes(reward.targetKind))
+          && (reward.foundBy === undefined || (typeof reward.foundBy === "string"
+            && reward.foundBy.length <= 160 && !/[<>]/.test(reward.foundBy)))
+          && (reward.anchor === undefined || (
+            estObjetSauvegarde(reward.anchor)
+            && Number.isInteger(reward.anchor.x) && reward.anchor.x >= 0
+            && Number.isInteger(reward.anchor.y) && reward.anchor.y >= 0
+            && Number.isInteger(reward.anchor.width) && reward.anchor.width > 0
+            && Number.isInteger(reward.anchor.height) && reward.anchor.height > 0
+          ));
+      });
+    if (!groundRewardsValides) return "Invalid Camp ground reward data.";
     const buildingConstructionIds = ["operationsTable", "jobCenter", "trainingCenter", "laboratory", "storage"];
     const constructionsBatimentsValides = Object.keys(camp.constructions).length <= 128
       && Object.keys(camp.constructions).every(function(uid) {
@@ -266,9 +400,21 @@ function validerStructureSauvegarde(d) {
           && buildingConstructionIds.includes(construction.type)
           && indexKittyValide(construction.kittyIndex, false)
           && typeof construction.startTs === "number" && Number.isFinite(construction.startTs) && construction.startTs >= 0
-          && typeof construction.duration === "number" && Number.isFinite(construction.duration) && construction.duration > 0
-          && typeof construction.readyToClaim === "boolean"
-          && estObjetSauvegarde(construction.costs)
+           && typeof construction.duration === "number" && Number.isFinite(construction.duration) && construction.duration > 0
+           && typeof construction.readyToClaim === "boolean"
+           && (construction.lawRank === undefined
+             || (Number.isInteger(construction.lawRank) && construction.lawRank > 0))
+           && (construction.paidCosts === undefined || (
+             estObjetSauvegarde(construction.paidCosts)
+             && Object.keys(construction.paidCosts).length <= 8
+             && Object.keys(construction.paidCosts).every(function(resourceId) {
+               return /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
+                 && typeof construction.paidCosts[resourceId] === "number"
+                 && Number.isFinite(construction.paidCosts[resourceId])
+                 && construction.paidCosts[resourceId] >= 0;
+             })
+           ))
+           && estObjetSauvegarde(construction.costs)
           && Object.keys(construction.costs).length <= 8
           && Object.keys(construction.costs).every(function(resourceId) {
             return typeof resourceId === "string" && /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
@@ -558,6 +704,7 @@ function analyserSauvegardeBrute(raw) {
     spherePerks:            etat.spherePerks,
     workBoostFinTs:         etat.workBoostFinTs,
     birdPremierSpawnTs:      etat.birdPremierSpawnTs,
+    birdPremierDeclenche:    etat.birdPremierDeclenche,
     birdPremiereReussie:     etat.birdPremiereReussie,
     birdPityEchecs:          etat.birdPityEchecs,
     sequenceEnCours:         etat.sequenceEnCours,
@@ -640,6 +787,9 @@ function analyserSauvegardeBrute(raw) {
     const assignerVisageChaton = typeof options.assignerVisageChaton === "function"
       ? options.assignerVisageChaton
       : function() { return null; };
+    const normaliserVisageChaton = typeof options.normaliserVisageChaton === "function"
+      ? options.normaliserVisageChaton
+      : null;
     const d = JSON.parse(JSON.stringify(data));
     const etat = stateCore.creerEtatInitial(maintenant);
 
@@ -681,6 +831,7 @@ function analyserSauvegardeBrute(raw) {
   etat.birdPremierSpawnTs     = Number.isFinite(d.birdPremierSpawnTs)
     ? d.birdPremierSpawnTs
     : maintenant + 5 * 60 * 1000;
+  etat.birdPremierDeclenche   = d.birdPremierDeclenche === true;
   etat.birdPremiereReussie    = d.birdPremiereReussie === true;
   etat.birdPityEchecs         = Number.isInteger(d.birdPityEchecs) ? Math.max(0, d.birdPityEchecs) : 0;
 
@@ -745,6 +896,12 @@ function analyserSauvegardeBrute(raw) {
   etat.camp.houseConstructions = estObjetSauvegarde(campSource.houseConstructions)
     ? campSource.houseConstructions
     : (estObjetSauvegarde(d.constructionsMaisonsCamp) ? d.constructionsMaisonsCamp : {});
+  etat.camp.housingAssignments = estObjetSauvegarde(campSource.housingAssignments)
+    ? campSource.housingAssignments
+    : {};
+  etat.camp.groundRewards = estObjetSauvegarde(campSource.groundRewards)
+    ? campSource.groundRewards
+    : {};
   etat.camp.upgrades = estObjetSauvegarde(campSource.upgrades) ? campSource.upgrades : {};
   const progressionSource = estObjetSauvegarde(campSource.progression)
     ? campSource.progression
@@ -753,6 +910,8 @@ function analyserSauvegardeBrute(raw) {
     introCompleted: progressionSource.introCompleted === true,
     junkClearingUnlocked: progressionSource.junkClearingUnlocked === true,
     operationsTableUnlocked: progressionSource.operationsTableUnlocked === true,
+    storageShedUnlocked: progressionSource.storageShedUnlocked === true,
+    sawmillTutorialStage: deriverEtapeTutorielSawmill(d, campSource, progressionSource),
     quickDialogueQueue: Array.isArray(progressionSource.quickDialogueQueue)
       ? progressionSource.quickDialogueQueue.slice(0, 128)
       : [],
@@ -915,7 +1074,8 @@ function analyserSauvegardeBrute(raw) {
     // Balance update: the former default manager speed was ×2. Existing
     // current-era saves are converted once so managers use ×1.5 too.
     if (k.managerMult === undefined || k.managerMult === 2) k.managerMult = 1.5;
-    if (!k.visage) k.visage = assignerVisageChaton(k.nom);
+    if (normaliserVisageChaton) k.visage = normaliserVisageChaton(k);
+    else if (!k.visage) k.visage = assignerVisageChaton(k.nom);
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
     if (k.metier === "camp-engineer" && k.engineerRank === undefined) k.engineerRank = 1;
   });
@@ -933,6 +1093,7 @@ function analyserSauvegardeBrute(raw) {
     analyserSauvegardeBrute: analyserSauvegardeBrute,
     creerDonneesSauvegarde: creerDonneesSauvegarde,
     serialiserEtat: serialiserEtat,
-    migrerDonneesSauvegarde: migrerDonneesSauvegarde
+    migrerDonneesSauvegarde: migrerDonneesSauvegarde,
+    deriverEtapeTutorielSawmill: deriverEtapeTutorielSawmill
   });
 })(typeof window !== "undefined" ? window : globalThis);

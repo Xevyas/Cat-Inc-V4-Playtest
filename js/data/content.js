@@ -706,7 +706,14 @@ const CAT_FACES = {
   alt3:     "img/Cat faces/Alternative Kitty face 3_Final.png?v=0.0026",
   alt4:     "img/Cat faces/Alternative Kitty face 4_Final.png?v=0.0026"
 };
-const CAT_FACES_ALEATOIRES = [CAT_FACES.mochi, CAT_FACES.luna, CAT_FACES.alt1, CAT_FACES.alt2, CAT_FACES.alt3, CAT_FACES.alt4];
+const LIVE_ALTERNATIVE_CAT_FACES = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.alternatives)
+  ? CatInc.data.liveCatFaces.alternatives.map(function(item) {
+      return item.runtimePath + "?v=live-r" + item.revision;
+    })
+  : [];
+const CAT_FACES_ALEATOIRES = Object.freeze(LIVE_ALTERNATIVE_CAT_FACES.length
+  ? LIVE_ALTERNATIVE_CAT_FACES
+  : [CAT_FACES.alt1, CAT_FACES.alt2, CAT_FACES.alt3, CAT_FACES.alt4]);
 
   CatInc.data.content = Object.freeze({
     LIVRE_ICONE: LIVRE_ICONE,

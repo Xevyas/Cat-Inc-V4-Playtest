@@ -4,17 +4,20 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
 
-  const CHARACTERS = Object.freeze({
+  const LEGACY_CHARACTERS = Object.freeze({
     bernard: Object.freeze({ id: "bernardo", name: "Bernardo", side: "left", portrait: "img/Cat faces/Bernardo.png" }),
     mochi: Object.freeze({ id: "mochi", name: "Mochi", side: "right", portrait: "img/Cat faces/Mochi_Final.png" }),
     luna: Object.freeze({ id: "luna", name: "Luna", side: "right", portrait: "img/Cat faces/Luna_Final.png" }),
+    incrementor: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor.png" }),
+    incrementorAmused: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor-amused.png" }),
+    incrementorLaugh: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor-laugh.png" }),
     explorator: Object.freeze({ id: "explorator", name: "Explorator", side: "right", initials: "E" }),
     enfant: Object.freeze({ id: "kid", name: "Kid", side: "right", initials: "K" }),
     maman: Object.freeze({ id: "mother", name: "Mom", side: "right", initials: "M" }),
     mere: Object.freeze({ id: "mother", name: "Mother", side: "right", initials: "M" })
   });
 
-  const SCENES = Object.freeze([
+  const LEGACY_SCENES = Object.freeze([
     Object.freeze({ id: "ecran-intro", name: "Introduction", flag: "introVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Intro.png", alt: "A child reaches toward Bernardo while their mother holds their hand." }) }),
     Object.freeze({ id: "ecran-story-1", name: "Bernardo's plan begins", flag: "story1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." }) }),
     Object.freeze({ id: "ecran-story-2", name: "Mochi joins the gang", flag: "story2Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Mochi_Final.png", alt: "Portrait of Mochi." }) }),
@@ -23,6 +26,7 @@
     Object.freeze({ id: "ecran-story-camp-full", name: "Room for one more", flag: "storyCampFullVue", asset: Object.freeze({ type: "icon", src: "img/Buildings/Cardboard Box_Final.png", alt: "A Cardboard Box shelter." }) }),
     Object.freeze({ id: "ecran-story-manual-focus", name: "A Little Encouragement", flag: "storyManualFocusVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo preparing to encourage the workers." }) }),
     Object.freeze({ id: "ecran-story-4", name: "Our first creation", flag: "story4Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 4.png", alt: "Three kittens admire their first cardboard shelter." }) }),
+    Object.freeze({ id: "ecran-story-greatest-incrementor-part-1", name: "The Greatest Incrementor — Part 1", flag: "storyGreatestIncrementorPart1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/the-greatest-incrementor.png", alt: "Portrait of The Greatest Incrementor." }) }),
     Object.freeze({ id: "ecran-story-basic-wood", name: "Beyond Cardboard", flag: "storyBasicWoodVue", asset: Object.freeze({ type: "icon", src: "img/resources/Basic Wood_Final.png?v=0.0029", alt: "A stack of sturdy Basic Wood logs." }) }),
     Object.freeze({ id: "ecran-story-5", name: "Gang on the rise", flag: "story5Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." }) }),
     Object.freeze({ id: "ecran-story-house-evacuation", name: "They Built a Camp", flag: "storyHouseEvacuationVue" }),
@@ -35,7 +39,7 @@
     Object.freeze({ id: "ecran-story-bird", name: "The bird", flag: "storyBirdVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Bernardo caught bird.png?v=0.0029", alt: "Bernardo leaps toward a bird perched on a tree branch." }) })
   ]);
 
-const SCENE_BEATS = Object.freeze({
+const LEGACY_SCENE_BEATS = Object.freeze({
   "ecran-intro": [
     {
       "classes": [],
@@ -378,6 +382,104 @@ const SCENE_BEATS = Object.freeze({
       "speakerClass": "bernard",
       "speakerName": "Bernardo",
       "html": "That is sensible. Inspect the roof."
+    }
+  ],
+  "ecran-story-greatest-incrementor-part-1": [
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "Hold on. The first Cardboard Box cost one plank. Why did this one cost two?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "Maybe it grew a second stomach?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "Boxes do not have stomachs, Mochi. And this one does not use twice as much cardboard."
+    },
+    {
+      "classes": [],
+      "speakerClass": "incrementorAmused",
+      "speakerName": "The Greatest Incrementor",
+      "html": "Oh, excellent. You noticed."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "Who are you?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "incrementor",
+      "speakerName": "The Greatest Incrementor",
+      "html": "I am the Greatest Incrementor. Every time you repeat a construction, its cost rises. That is the Law."
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "Why?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "incrementorAmused",
+      "speakerName": "The Greatest Incrementor",
+      "html": "Because I decided it does."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "That is not a reason."
+    },
+    {
+      "classes": [],
+      "speakerClass": "incrementorAmused",
+      "speakerName": "The Greatest Incrementor",
+      "html": "It is when you are me."
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "Can you decide that snacks get cheaper?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "incrementorLaugh",
+      "speakerName": "The Greatest Incrementor",
+      "html": "Ha! No."
+    },
+    {
+      "classes": ["intro-miaou"],
+      "speakerClass": null,
+      "speakerName": null,
+      "html": "The white Cat vanishes, still laughing."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "We need to learn more about this Incrementor—and what his Law allows him to change."
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "Agreed. Preferably before our next box costs the entire garden."
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "And before snacks get ideas."
     }
   ],
   "ecran-story-basic-wood": [
@@ -1128,10 +1230,26 @@ const SCENE_BEATS = Object.freeze({
   ]
 });
 
+  const DIALOGUE_CATALOG = CatInc.data.dialogueCatalog || Object.freeze({
+    characters: LEGACY_CHARACTERS,
+    scenes: LEGACY_SCENES.map(function(scene) {
+      return Object.freeze({...scene, beats: LEGACY_SCENE_BEATS[scene.id] || []});
+    })
+  });
+  const CHARACTERS = DIALOGUE_CATALOG.characters;
+  const SCENES = DIALOGUE_CATALOG.scenes;
+  const SCENE_BEATS = Object.freeze(SCENES.reduce(function(index, scene) {
+    index[scene.id] = scene.beats || [];
+    return index;
+  }, {}));
+
 
 function characterFromLine(line) {
     const label = line && line.querySelector(".intro-perso");
     if (!label) return null;
+    if (label.dataset.dialoguePortrait && CHARACTERS[label.dataset.dialoguePortrait]) {
+      return CHARACTERS[label.dataset.dialoguePortrait];
+    }
     return Object.keys(CHARACTERS).reduce(function(found, className) {
       return found || (label.classList.contains(className) ? CHARACTERS[className] : null);
     }, null);
@@ -1157,6 +1275,9 @@ function characterFromLine(line) {
     if (!line || line.dataset.dialogueBeat === "true") return;
     const character = characterFromLine(line);
     const speakerLabel = line.querySelector(".intro-perso");
+    const speakerCharacter = speakerLabel && CHARACTERS[speakerLabel.dataset.dialogueSpeaker]
+      ? CHARACTERS[speakerLabel.dataset.dialogueSpeaker]
+      : character;
     const content = document.createElement("span");
     content.className = "story-beat-copy";
     Array.from(line.childNodes).forEach(function(node) {
@@ -1177,7 +1298,7 @@ function characterFromLine(line) {
     speaker.className = ["story-beat-speaker"].concat(
       speakerLabel ? Array.from(speakerLabel.classList).filter(function(className) { return className !== "intro-perso"; }) : []
     ).join(" ");
-    speaker.textContent = character.name;
+    speaker.textContent = speakerCharacter.name;
     bubble.appendChild(speaker);
     bubble.appendChild(content);
     const portrait = createPortrait(character);
@@ -1202,6 +1323,8 @@ function characterFromLine(line) {
         const speaker = document.createElement("span");
         speaker.className = ["intro-perso", beat.speakerClass].concat(beat.speakerClasses || []).join(" ");
         speaker.textContent = beat.speakerName || beat.speakerClass;
+        speaker.dataset.dialogueSpeaker = beat.speakerClass;
+        speaker.dataset.dialoguePortrait = beat.portraitClass || beat.speakerClass;
         line.appendChild(speaker);
         line.appendChild(document.createTextNode(" "));
       }
@@ -1217,6 +1340,11 @@ function characterFromLine(line) {
     if (!modal || modal.dataset.dialogueHydrated === "true") return;
     const dialogue = modal.querySelector(".intro-dialogue");
     if (!dialogue) return;
+    const scene = SCENES.find(function(item) { return item.id === modal.id; });
+    const closeButton = modal.querySelector(".bouton-intro");
+    if (scene && closeButton && scene.closeButton && scene.closeButton.label) {
+      closeButton.textContent = scene.closeButton.label;
+    }
     renderSceneSource(modal, dialogue);
     dialogue.classList.add("story-conversation");
     dialogue.setAttribute("aria-live", "polite");

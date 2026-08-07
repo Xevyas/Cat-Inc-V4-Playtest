@@ -367,6 +367,148 @@
         }
       }
     },
+    "junkFlowerBush": {
+      "assetId": "junk-flower-bush",
+      "runtimeId": "junkFlowerBush",
+      "name": "Flowering Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-flower-bush",
+              "runtimeId": "junkFlowerBush",
+              "name": "Flowering Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1800,
+                "minCatLevel": 2,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkGreenBush": {
+      "assetId": "junk-green-bush",
+      "runtimeId": "junkGreenBush",
+      "name": "Green Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
     "pawsonry": {
       "assetId": "pawsonry",
       "runtimeId": "pawsonry",
@@ -500,6 +642,148 @@
                     "minimumReachableCells": 1
                   }
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkPebblePile": {
+      "assetId": "junk-pebble-pile",
+      "runtimeId": "junkPebblePile",
+      "name": "Pile of Pebbles",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-pebble-pile",
+              "runtimeId": "junkPebblePile",
+              "name": "Pile of Pebbles",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 600,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkStoneBlockPile": {
+      "assetId": "junk-stone-block-pile",
+      "runtimeId": "junkStoneBlockPile",
+      "name": "Pile of Stone Blocks",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-stone-block-pile",
+              "runtimeId": "junkStoneBlockPile",
+              "name": "Pile of Stone Blocks",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 4800,
+                "minCatLevel": 5,
+                "requiredCats": 2
               }
             }
           }
@@ -789,6 +1073,262 @@
         }
       }
     },
+    "junkTallGrass": {
+      "assetId": "junk-tall-grass",
+      "runtimeId": "junkTallGrass",
+      "name": "Tall Green Grass",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            },
+            "2": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            },
+            "3": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkThornBush": {
+      "assetId": "junk-thorn-bush",
+      "runtimeId": "junkThornBush",
+      "name": "Thorny Bramble Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-thorn-bush",
+              "runtimeId": "junkThornBush",
+              "name": "Thorny Bramble Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 2400,
+                "minCatLevel": 4,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
     "woodCathouse": {
       "assetId": "wood-cathouse",
       "runtimeId": "woodCathouse",
@@ -872,420 +1412,83 @@
         }
       }
     },
-    "junkGreenBush": {
-      "assetId": "junk-green-bush",
-      "runtimeId": "junkGreenBush",
-      "name": "Green Bush",
-      "category": "junk",
+    "laboratory": {
+      "assetId": "laboratory",
+      "runtimeId": "laboratory",
+      "name": "Laboratory",
+      "category": "building",
       "placeable": true,
       "tiers": {
         "1": {
           "liveRevision": 1,
           "revisions": {
             "1": {
-              "assetId": "junk-green-bush",
-              "runtimeId": "junkGreenBush",
-              "name": "Green Bush",
-              "category": "junk",
+              "assetId": "laboratory",
+              "runtimeId": "laboratory",
+              "name": "Laboratory",
+              "category": "building",
               "placeable": true,
               "tier": 1,
               "revision": 1,
               "status": "live",
-              "width": 2,
+              "width": 3,
               "height": 1,
               "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+                "down": "img/Buildings/Laboratory_Final.png",
+                "right": "img/Buildings/Laboratory_Final.png",
+                "up": "img/Buildings/Laboratory_Final.png",
+                "left": "img/Buildings/Laboratory_Final.png"
               },
               "spriteBounds": {
                 "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 },
                 "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 },
                 "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 },
                 "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 }
               },
-              "gameplay": {
-                "clearDurationSeconds": 1200,
-                "minCatLevel": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkThornBush": {
-      "assetId": "junk-thorn-bush",
-      "runtimeId": "junkThornBush",
-      "name": "Thorny Bramble Bush",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-thorn-bush",
-              "runtimeId": "junkThornBush",
-              "name": "Thorny Bramble Bush",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 2,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                },
-                "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                },
-                "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                },
-                "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 1200,
-                "minCatLevel": 2
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkFlowerBush": {
-      "assetId": "junk-flower-bush",
-      "runtimeId": "junkFlowerBush",
-      "name": "Flowering Bush",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-flower-bush",
-              "runtimeId": "junkFlowerBush",
-              "name": "Flowering Bush",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 2,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                },
-                "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                },
-                "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                },
-                "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 1200,
-                "minCatLevel": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkPebblePile": {
-      "assetId": "junk-pebble-pile",
-      "runtimeId": "junkPebblePile",
-      "name": "Pile of Pebbles",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-pebble-pile",
-              "runtimeId": "junkPebblePile",
-              "name": "Pile of Pebbles",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                },
-                "right": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                },
-                "up": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                },
-                "left": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 600,
-                "minCatLevel": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkStoneBlockPile": {
-      "assetId": "junk-stone-block-pile",
-      "runtimeId": "junkStoneBlockPile",
-      "name": "Pile of Stone Blocks",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-stone-block-pile",
-              "runtimeId": "junkStoneBlockPile",
-              "name": "Pile of Stone Blocks",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 2,
-              "height": 2,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                },
-                "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                },
-                "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                },
-                "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 4800,
-                "minCatLevel": 4
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkTallGrass": {
-      "assetId": "junk-tall-grass",
-      "runtimeId": "junkTallGrass",
-      "name": "Tall Green Grass",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-tall-grass",
-              "runtimeId": "junkTallGrass",
-              "name": "Tall Green Grass",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                },
-                "right": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                },
-                "up": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                },
-                "left": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 600,
-                "minCatLevel": 0
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "main-access",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }
@@ -2272,6 +2475,77 @@
         }
       }
     },
+    "junkFlowerBush": {
+      "assetId": "junk-flower-bush",
+      "runtimeId": "junkFlowerBush",
+      "name": "Flowering Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-flower-bush",
+              "runtimeId": "junkFlowerBush",
+              "name": "Flowering Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 224
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1800,
+                "minCatLevel": 2,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
     "tree": {
       "assetId": "garden-tree",
       "runtimeId": "tree",
@@ -2332,6 +2606,77 @@
                   "right": 331,
                   "bottom": 331
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkGreenBush": {
+      "assetId": "junk-green-bush",
+      "runtimeId": "junkGreenBush",
+      "name": "Green Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 21,
+                  "right": 491,
+                  "bottom": 235
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 1
               }
             }
           }
@@ -2558,6 +2903,148 @@
                     "minimumReachableCells": 1
                   }
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkPebblePile": {
+      "assetId": "junk-pebble-pile",
+      "runtimeId": "junkPebblePile",
+      "name": "Pile of Pebbles",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-pebble-pile",
+              "runtimeId": "junkPebblePile",
+              "name": "Pile of Pebbles",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 11,
+                  "right": 246,
+                  "bottom": 245
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 600,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkStoneBlockPile": {
+      "assetId": "junk-stone-block-pile",
+      "runtimeId": "junkStoneBlockPile",
+      "name": "Pile of Stone Blocks",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-stone-block-pile",
+              "runtimeId": "junkStoneBlockPile",
+              "name": "Pile of Stone Blocks",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 24,
+                  "top": 20,
+                  "right": 488,
+                  "bottom": 491
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 4800,
+                "minCatLevel": 5,
+                "requiredCats": 2
               }
             }
           }
@@ -2847,6 +3334,262 @@
         }
       }
     },
+    "junkTallGrass": {
+      "assetId": "junk-tall-grass",
+      "runtimeId": "junkTallGrass",
+      "name": "Tall Green Grass",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            },
+            "2": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            },
+            "3": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 11,
+                  "top": 10,
+                  "right": 245,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "junkThornBush": {
+      "assetId": "junk-thorn-bush",
+      "runtimeId": "junkThornBush",
+      "name": "Thorny Bramble Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "junk-thorn-bush",
+              "runtimeId": "junkThornBush",
+              "name": "Thorny Bramble Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "right": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "up": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
+                "left": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 225
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 2400,
+                "minCatLevel": 4,
+                "requiredCats": 1
+              }
+            }
+          }
+        }
+      }
+    },
     "trainingCenter": {
       "assetId": "training-center",
       "runtimeId": "trainingCenter",
@@ -2996,420 +3739,83 @@
         }
       }
     },
-    "junkGreenBush": {
-      "assetId": "junk-green-bush",
-      "runtimeId": "junkGreenBush",
-      "name": "Green Bush",
-      "category": "junk",
+    "laboratory": {
+      "assetId": "laboratory",
+      "runtimeId": "laboratory",
+      "name": "Laboratory",
+      "category": "building",
       "placeable": true,
       "tiers": {
         "1": {
           "liveRevision": 1,
           "revisions": {
             "1": {
-              "assetId": "junk-green-bush",
-              "runtimeId": "junkGreenBush",
-              "name": "Green Bush",
-              "category": "junk",
+              "assetId": "laboratory",
+              "runtimeId": "laboratory",
+              "name": "Laboratory",
+              "category": "building",
               "placeable": true,
               "tier": 1,
               "revision": 1,
               "status": "live",
-              "width": 2,
+              "width": 3,
               "height": 1,
               "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Green Bush_Camp_Obstacle_Watercolor_Game_v1.png"
+                "down": "img/Buildings/Laboratory_Final.png",
+                "right": "img/Buildings/Laboratory_Final.png",
+                "up": "img/Buildings/Laboratory_Final.png",
+                "left": "img/Buildings/Laboratory_Final.png"
               },
               "spriteBounds": {
                 "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 },
                 "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 },
                 "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 },
                 "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 21,
-                  "right": 491,
-                  "bottom": 235
+                  "canvasWidth": 205,
+                  "canvasHeight": 144,
+                  "left": 0,
+                  "top": 0,
+                  "right": 205,
+                  "bottom": 144
                 }
               },
-              "gameplay": {
-                "clearDurationSeconds": 1200,
-                "minCatLevel": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkThornBush": {
-      "assetId": "junk-thorn-bush",
-      "runtimeId": "junkThornBush",
-      "name": "Thorny Bramble Bush",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-thorn-bush",
-              "runtimeId": "junkThornBush",
-              "name": "Thorny Bramble Bush",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 2,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                },
-                "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                },
-                "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                },
-                "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 30,
-                  "right": 491,
-                  "bottom": 225
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 1200,
-                "minCatLevel": 2
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkFlowerBush": {
-      "assetId": "junk-flower-bush",
-      "runtimeId": "junkFlowerBush",
-      "name": "Flowering Bush",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-flower-bush",
-              "runtimeId": "junkFlowerBush",
-              "name": "Flowering Bush",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 2,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                },
-                "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                },
-                "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                },
-                "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 256,
-                  "left": 20,
-                  "top": 31,
-                  "right": 491,
-                  "bottom": 224
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 1200,
-                "minCatLevel": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkPebblePile": {
-      "assetId": "junk-pebble-pile",
-      "runtimeId": "junkPebblePile",
-      "name": "Pile of Pebbles",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-pebble-pile",
-              "runtimeId": "junkPebblePile",
-              "name": "Pile of Pebbles",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                },
-                "right": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                },
-                "up": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                },
-                "left": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 10,
-                  "top": 11,
-                  "right": 246,
-                  "bottom": 245
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 600,
-                "minCatLevel": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkStoneBlockPile": {
-      "assetId": "junk-stone-block-pile",
-      "runtimeId": "junkStoneBlockPile",
-      "name": "Pile of Stone Blocks",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-stone-block-pile",
-              "runtimeId": "junkStoneBlockPile",
-              "name": "Pile of Stone Blocks",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 2,
-              "height": 2,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                },
-                "right": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                },
-                "up": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                },
-                "left": {
-                  "canvasWidth": 512,
-                  "canvasHeight": 512,
-                  "left": 24,
-                  "top": 20,
-                  "right": 488,
-                  "bottom": 491
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 4800,
-                "minCatLevel": 4
-              }
-            }
-          }
-        }
-      }
-    },
-    "junkTallGrass": {
-      "assetId": "junk-tall-grass",
-      "runtimeId": "junkTallGrass",
-      "name": "Tall Green Grass",
-      "category": "junk",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "junk-tall-grass",
-              "runtimeId": "junkTallGrass",
-              "name": "Tall Green Grass",
-              "category": "junk",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
-                "right": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
-                "up": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png",
-                "left": "img/Maps/Camp Runtime/Obstacles/Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                },
-                "right": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                },
-                "up": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                },
-                "left": {
-                  "canvasWidth": 256,
-                  "canvasHeight": 256,
-                  "left": 11,
-                  "top": 10,
-                  "right": 245,
-                  "bottom": 246
-                }
-              },
-              "gameplay": {
-                "clearDurationSeconds": 600,
-                "minCatLevel": 0
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "main-access",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }

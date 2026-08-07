@@ -30,10 +30,10 @@
 .camp-quick-dialogue {
   position: fixed;
   left: 50%;
-  bottom: 18px;
-  z-index: 120;
+  top: 50%;
+  z-index: 2200;
   display: grid;
-  width: min(520px, calc(100vw - 24px));
+  width: min(560px, calc(100vw - 24px));
   grid-template-columns: 48px minmax(0, 1fr) 36px;
   align-items: center;
   gap: 9px;
@@ -42,7 +42,7 @@
   border-radius: 15px;
   background: rgba(255, 250, 242, .98);
   box-shadow: 0 10px 30px rgba(58, 38, 23, .25);
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
 }
 .camp-quick-dialogue > img {
   width: 48px;
@@ -100,11 +100,7 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
     bottom: calc(var(--hauteur-navigation-mobile) + 75px);
     z-index: 104;
   }
-  body[data-onglet-actif="camp"] .camp-quick-dialogue {
-    bottom: calc(var(--hauteur-navigation-mobile) + 76px);
-  }
   body .camp-quick-dialogue {
-    bottom: calc(var(--hauteur-navigation-mobile) + 8px);
     grid-template-columns: 42px minmax(0, 1fr) 34px;
   }
   body .camp-quick-dialogue > img { width: 42px; height: 42px; }
@@ -665,7 +661,7 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   position: absolute;
   left: 50%;
   top: 50%;
-  z-index: 9;
+  z-index: 1000;
   display: grid;
   justify-items: center;
   width: calc(var(--camp-cat-marker-size, 36px) + 12px);
@@ -733,7 +729,7 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   pointer-events: none;
 }
 .camp-task-manual-focus-active:not(.camp-task-worker-ready) .camp-task-progress-ring {
-  animation: camp-manual-focus-pulse .8s ease-in-out infinite alternate;
+  background: conic-gradient(#dca632 var(--camp-task-progress), rgba(123, 86, 38, .22) 0);
   box-shadow: 0 0 0 3px rgba(255, 215, 92, .92), 0 0 18px rgba(236, 148, 32, .78);
 }
 @keyframes camp-task-ready-pulse {
@@ -743,9 +739,6 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
 @keyframes camp-task-ready-glow {
   from { opacity: .42; transform: scale(.94); }
   to { opacity: .9; transform: scale(1.12); }
-}
-@keyframes camp-manual-focus-pulse {
-  to { transform: scale(1.08); }
 }
 @media (prefers-reduced-motion: reduce) {
   .camp-task-worker-ready .camp-task-progress-ring::before,
@@ -785,6 +778,26 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   transform: translateX(-50%);
   white-space: nowrap;
 }
+.camp-task-focus-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  z-index: 4;
+  min-width: max-content;
+  padding: 3px 6px;
+  border: 1px solid rgba(164, 111, 34, .42);
+  border-radius: 999px;
+  color: #704712;
+  background: rgba(255, 244, 194, .98);
+  box-shadow: 0 2px 6px rgba(66, 42, 22, .28);
+  font-size: clamp(.46rem, .8vw, .62rem);
+  font-weight: 950;
+  line-height: 1.1;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.camp-task-focus-bubble[hidden] { display: none; }
 body.camp-prototype-editing .camp-task-worker { display: none; }
 
 /* Once recruitment lives in the Camp world, every tab shares the same compact
@@ -1792,6 +1805,38 @@ body {
   cursor: wait;
 }
 
+.manual-focus-explainer-overlay { z-index: 250; }
+.manual-focus-explainer-box {
+  max-width: 560px;
+  border: 2px solid #d89a63;
+  gap: 22px;
+}
+.manual-focus-explainer-title {
+  margin: 0;
+  color: var(--couleur-accent);
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.manual-focus-explainer-copy {
+  margin: 0;
+  color: var(--couleur-texte);
+  font-size: .94rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.manual-focus-explainer-countdown {
+  margin: 0;
+  color: var(--couleur-discrete);
+  font-size: .78rem;
+  font-weight: 800;
+  text-align: center;
+}
+.manual-focus-explainer-box .bouton-intro:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
 .intro-dialogue {
   display: flex;
   flex-direction: column;
@@ -1834,8 +1879,8 @@ body {
 }
 #bird-btn.camp-bird-perch {
   position: absolute;
-  left: 52%;
-  top: 59.5%;
+  left: var(--camp-bird-left, 0%);
+  top: var(--camp-bird-top, 0%);
   z-index: 11;
   align-items: center;
   justify-content: center;
@@ -3546,6 +3591,30 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-tab-icon i:nth-child(1) { left: 7px; }
 .camp-tab-icon i:nth-child(2) { left: 20px; }
 .camp-tab-icon i:nth-child(3) { right: 7px; }
+.onglet.camp-tab-bird-attention {
+  color: #a56a16;
+  background: rgba(232, 184, 63, .2);
+  box-shadow: inset 0 0 0 2px rgba(231, 174, 44, .55), 0 0 12px rgba(231, 174, 44, .48);
+  animation: camp-bird-tab-pulse 2.8s ease-in-out infinite;
+}
+@keyframes camp-bird-tab-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
+}
+.camp-prototype-item.camp-bird-tree-attention {
+  filter: drop-shadow(0 0 7px rgba(242, 185, 45, .95));
+  animation: camp-bird-tree-pulse 2.8s ease-in-out infinite;
+}
+@keyframes camp-bird-tree-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(242, 185, 45, .58)); }
+  50% { filter: drop-shadow(0 0 10px rgba(242, 185, 45, .98)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #bird-btn.camp-bird-perch,
+  #bird-btn.camp-bird-perch .bird-btn-icone,
+  .onglet.camp-tab-bird-attention,
+  .camp-prototype-item.camp-bird-tree-attention { animation: none; }
+}
 
 .panneau.camp-prototype-panel {
   position: relative;
@@ -3573,7 +3642,7 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-prototype-heading-main {
   display: flex;
   min-width: 0;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
   gap: 6px;
 }
@@ -3694,8 +3763,8 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-appeal-detail-empty { opacity: .72; }
 .camp-active-objectives {
   display: flex;
-  width: max-content;
-  max-width: min(560px, calc(100vw - 32px));
+  width: fit-content;
+  max-width: min(440px, calc(100vw - 92px));
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
@@ -3747,7 +3816,8 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 }
 .camp-active-objectives-list {
   display: grid;
-  width: 100%;
+  width: max-content;
+  max-width: 100%;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
   gap: 4px;
@@ -3755,6 +3825,7 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-active-objectives-list[hidden] { display: none; }
 .camp-active-objectives-list button {
   display: inline-flex;
+  width: 100%;
   min-height: 28px;
   align-items: center;
   gap: 4px;
@@ -3772,6 +3843,10 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-active-objectives-list button:focus-visible {
   outline: 2px solid #956b00;
   outline-offset: 1px;
+}
+.camp-active-objectives-collapsed {
+  width: max-content;
+  max-width: none;
 }
 .camp-active-daily {
   display: inline-flex;
@@ -4234,6 +4309,13 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   z-index: 15;
   overflow: visible;
 }
+.camp-recruitment-house-plot {
+  /* The arrival timer sits just below the house/camp boundary. Keep that
+     label visible when the board is zoomed out instead of clipping it at the
+     house plot edge. */
+  z-index: 2;
+  overflow: visible;
+}
 .camp-prototype-house {
   position: absolute;
   inset: 0;
@@ -4392,10 +4474,10 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-recruit-capacity-message {
   position: absolute;
-  left: -16px;
-  top: calc(100% + 8px);
-  z-index: 3;
-  width: min(190px, 46vw);
+  left: 50%;
+  top: calc(33.333333% + 8px);
+  z-index: 30;
+  width: min(300px, calc(100% - 20px));
   box-sizing: border-box;
   padding: 7px 9px;
   border: 2px solid #8e522c;
@@ -4407,20 +4489,13 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   font-weight: 850;
   line-height: 1.25;
   text-align: center;
-  transform: none;
+  transform: translateX(-50%);
   pointer-events: none;
 }
 .camp-recruit-capacity-message[hidden] { display: none; }
 @keyframes camp-recruit-question-pop {
   from { opacity: 0; transform: translateY(4px) scale(.65); }
   to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.camp-recruit-visitor:not(.camp-recruit-visitor-arrived) img {
-  animation: camp-recruit-approach 1.4s ease-in-out infinite alternate;
-}
-@keyframes camp-recruit-approach {
-  from { transform: translateY(3px); }
-  to { transform: translateY(-2px); }
 }
 .camp-prototype-map-preparing {
   visibility: hidden;
@@ -4445,6 +4520,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   min-height: 24px;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  overflow: visible;
 }
 .camp-resident-cat {
   position: relative;
@@ -4457,7 +4533,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   border-radius: 50%;
   background: #fff9ed;
   box-shadow: 0 2px 6px rgba(49, 32, 19, .24);
-  overflow: hidden;
+  overflow: visible;
 }
 .camp-resident-cat:first-child { margin-left: 0; }
 .camp-resident-cat img {
@@ -4466,6 +4542,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   padding: 2px;
   object-fit: contain;
   object-position: center;
+  border-radius: 50%;
 }
 .camp-resident-more {
   display: grid;
@@ -4749,6 +4826,26 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   background: #fff3c7;
   font-size: .68rem;
 }
+.camp-prototype-interaction-menu .camp-house-allocate-action {
+  grid-auto-flow: column;
+  gap: 5px;
+  width: auto;
+  min-width: 92px;
+  padding: 0 9px;
+  border-color: #5d9c72;
+  border-radius: 999px;
+  color: #28653b;
+  background: #effaf0;
+  font-size: .68rem;
+}
+.camp-prototype-interaction-menu .camp-house-allocate-action strong {
+  font-size: .68rem;
+}
+.camp-prototype-interaction-menu .camp-house-allocate-action small {
+  font-size: .52rem;
+  font-weight: 700;
+  opacity: .76;
+}
 .camp-junk-reward {
   display: inline-flex;
   align-items: center;
@@ -4882,6 +4979,48 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   user-select: none;
   -webkit-user-drag: none;
 }
+.camp-ground-reward {
+  position: absolute;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  height: 44px;
+  padding: 2px 4px;
+  border: 1px solid #9a6a31;
+  border-radius: 999px;
+  background: rgba(255, 248, 219, .96);
+  box-shadow: 0 3px 8px rgba(61, 40, 19, .28);
+  color: #69441f;
+  font-size: clamp(.45rem, 1.2vw, .62rem);
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+.camp-ground-reward:hover,
+.camp-ground-reward:focus-visible {
+  background: #fff0b8;
+  transform: translate(-50%, -50%) scale(1.06);
+}
+.camp-ground-reward:focus-visible {
+  outline: 2px solid #8d5a24;
+  outline-offset: 2px;
+}
+.camp-ground-reward img {
+  display: block;
+  width: clamp(16px, 2.8vw, 25px);
+  height: clamp(16px, 2.8vw, 25px);
+  object-fit: contain;
+  pointer-events: none;
+}
+.camp-ground-reward span { margin: 0; pointer-events: none; }
+.camp-ground-reward-layout { z-index: 18; }
 .camp-prototype-obstacle-timer {
   position: absolute;
   left: 50%;
@@ -5041,6 +5180,43 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   background: transparent;
   box-shadow: none;
 }
+.camp-cat-idle-zzz {
+  position: absolute;
+  top: -9px;
+  right: -8px;
+  z-index: 2;
+  display: block;
+  min-width: max-content;
+  margin: 0 !important;
+  padding: 1px 2px;
+  border: 1px solid rgba(118, 93, 66, .22);
+  border-radius: 6px;
+  background: rgba(255, 249, 237, .9);
+  color: #765d42;
+  font-family: Georgia, serif;
+  font-size: .66rem !important;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1;
+  opacity: .8 !important;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(255, 249, 237, .9);
+  transform-origin: 70% 100%;
+  animation: camp-cat-idle-zzz-float 4.2s ease-in-out infinite;
+}
+.camp-resident-cat .camp-cat-idle-zzz,
+.camp-location-cat .camp-cat-idle-zzz {
+  white-space: nowrap;
+}
+@keyframes camp-cat-idle-zzz-float {
+  0%, 100% { opacity: .68; transform: translate(0, 0) rotate(-3deg) scale(.96); }
+  50% { opacity: .84; transform: translate(1px, -1.5px) rotate(2deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camp-cat-idle-zzz { animation: none; }
+}
+body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
 .camp-prototype-building-sprite {
   position: absolute;
   z-index: 1;
@@ -5076,15 +5252,17 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   --camp-cat-marker-size: 36px;
   position: absolute;
   z-index: 7;
-  right: 4%;
+  left: 50%;
+  right: auto;
   top: 50%;
   display: flex;
   flex-direction: row-reverse;
   align-items: center;
   margin: 0;
   opacity: 1;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   pointer-events: none;
+  overflow: visible;
 }
 .camp-prototype-item .camp-location-cat,
 .camp-prototype-obstacle .camp-location-cat {
@@ -5094,7 +5272,7 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   height: var(--camp-cat-marker-size);
   flex: 0 0 var(--camp-cat-marker-size);
   margin: 0 -6px 0 0;
-  overflow: hidden;
+  overflow: visible;
   border: 2px solid #fff9ed;
   border-radius: 50%;
   background: #fff9ed;
@@ -5112,6 +5290,7 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   padding: 2px;
   object-fit: contain;
   object-position: center;
+  border-radius: 50%;
   pointer-events: none;
 }
 .camp-resident-cat img.camp-cat-face-normalized,
@@ -5122,6 +5301,15 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   padding: 0;
   object-fit: fill;
   pointer-events: none;
+}
+.camp-task-worker[role="button"] {
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.camp-task-worker[role="button"]:focus-visible {
+  outline: 3px solid rgba(214, 138, 37, .72);
+  outline-offset: 2px;
 }
 .camp-prototype-item .camp-location-cat-more,
 .camp-prototype-obstacle .camp-location-cat-more {
@@ -5495,10 +5683,18 @@ body.camp-prototype-editing .camp-location-cats {
 }
 .camp-prototype-category-icon-image {
   display: block;
-  width: 31px;
-  height: 27px;
+  width: 36px;
+  height: 32px;
   object-fit: contain;
   pointer-events: none;
+}
+.camp-prototype-category-icon-image[hidden],
+.camp-prototype-category-icon[hidden] {
+  display: none;
+}
+.camp-prototype-category-icon-operation-table {
+  width: 38px;
+  height: 30px;
 }
 .camp-prototype-category-icon-building::before {
   content: "";
@@ -5623,6 +5819,11 @@ body.camp-prototype-editing .camp-location-cats {
   gap: 4px;
   color: #78502e;
 }
+.camp-prototype-palette-item .camp-prototype-palette-cost {
+  display: inline-flex !important;
+  align-items: center;
+  white-space: nowrap;
+}
 .camp-prototype-palette-cost img {
   width: 22px;
   height: 22px;
@@ -5630,6 +5831,27 @@ body.camp-prototype-editing .camp-location-cats {
 }
 .camp-prototype-palette-item:disabled .camp-prototype-palette-cost {
   color: #95645a;
+}
+.camp-incrementor-cost-surprise {
+  display: inline-block;
+  color: #b5211f;
+  font-weight: 1000;
+  font-style: italic;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+  transform: rotate(-4deg) translateY(-1px);
+  transform-origin: 50% 65%;
+}
+.camp-prototype-palette-item .camp-incrementor-cost-surprise {
+  display: inline-block !important;
+  margin-top: 0;
+  color: #c51f1b;
+  font-size: .92rem;
+  line-height: 1;
+}
+.camp-prototype-palette-item:disabled .camp-incrementor-cost-surprise {
+  color: #c51f1b;
+  opacity: 1;
 }
 .camp-prototype-palette-requirements {
   display: flex !important;
@@ -5639,6 +5861,19 @@ body.camp-prototype-editing .camp-location-cats {
   margin-top: 0 !important;
   color: #705b49;
   white-space: normal;
+}
+.camp-prototype-junk-requirements {
+  align-items: baseline;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  column-gap: 5px;
+  row-gap: 2px;
+  max-width: 100%;
+  line-height: 1.2;
+}
+.camp-prototype-junk-requirements > span {
+  min-width: 0;
+  white-space: nowrap;
 }
 .camp-prototype-palette-requirements > span {
   margin-top: 0;
@@ -7669,6 +7904,8 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   border-color: #b96528;
   background: #fff8eb;
 }
+.camp-demolition-kitty-selected { border-color: #c8753e; background: #fff1e6; box-shadow: 0 0 0 2px rgba(200,117,62,.22); }
+.camp-demolition-start { width: 100%; margin-top: 0.75rem; }
 .camp-demolition-kitty:focus-visible {
   outline: 3px solid rgba(185, 101, 40, .25);
   outline-offset: 1px;
@@ -8653,6 +8890,15 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   background: rgba(184, 134, 11, 0.06);
 }
 .log-objective .log-texte { color: #75611e; font-weight: 700; }
+
+.stories-section-title {
+  margin: 14px 24px 0;
+  color: #563a27;
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 
 #stories-liste {
   overflow-y: auto;
@@ -11082,12 +11328,17 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   .camp-prototype-heading {
     inset: 8px 8px auto;
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
     gap: 6px;
     margin: 0;
   }
-  .camp-prototype-heading-main { width: 100%; }
+  .camp-prototype-heading-main {
+    width: auto;
+    max-width: calc(100% - 42px);
+    flex: 1 1 auto;
+    align-items: flex-start;
+  }
   .camp-prototype-heading h2 { font-size: .9rem; }
   .camp-prototype-title-row {
     min-height: 36px;
@@ -11102,8 +11353,8 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
     margin: 0;
   }
   .camp-active-objectives {
-    width: 100%;
-    max-width: none;
+    width: fit-content;
+    max-width: calc(100vw - 76px);
     flex-direction: column;
     gap: 3px;
     padding: 6px;
@@ -11114,7 +11365,8 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   }
   .camp-active-objectives-list {
     display: grid;
-    width: 100%;
+    width: max-content;
+    max-width: 100%;
     grid-template-columns: minmax(0, 1fr);
   }
   .camp-active-objectives-list button,
@@ -11139,9 +11391,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
     width: 35px;
     height: 35px;
   }
-  .camp-prototype-zoom { padding: 2px; }
-  .camp-prototype-zoom button { min-width: 29px; height: 29px; padding-inline: 5px; }
-  #camp-prototype-zoom-value { min-width: 43px; }
+  .camp-prototype-zoom { display: none; }
   .camp-prototype-palette { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .camp-prototype-palette-item {
     min-height: 44px;
@@ -12405,6 +12655,77 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 .camp-recruit-visitor:focus-visible { outline: none; }
 .camp-recruit-visitor img { width: clamp(28px, 3.3vw, 43px); }
 
+/* Sawmill onboarding: one calm instruction, one clear target, and no
+   interaction-blocking layer. The target stays above the soft board veil so
+   the next action remains legible on desktop and mobile. */
+.camp-sawmill-tutorial-status {
+  position: fixed;
+  z-index: 2600;
+  top: clamp(60px, 10vh, 108px);
+  left: 50%;
+  width: min(560px, calc(100% - 24px));
+  transform: translateX(-50%);
+  padding: 9px 14px;
+  border: 2px solid #6e8f50;
+  border-radius: 14px;
+  background: rgba(255, 251, 229, .97);
+  color: #3f4f2e;
+  box-shadow: 0 5px 16px rgba(51, 39, 25, .2);
+  text-align: center;
+  pointer-events: none;
+}
+.camp-sawmill-tutorial-status[hidden] { display: none; }
+.camp-sawmill-tutorial-active .camp-prototype-viewport::after {
+  content: "";
+  position: absolute;
+  z-index: 80;
+  inset: 0;
+  background: rgba(35, 31, 24, .12);
+  pointer-events: none;
+}
+.camp-sawmill-tutorial-active[data-onglet-actif="work"] #contenu-work {
+  position: relative;
+}
+.camp-sawmill-tutorial-active[data-onglet-actif="work"] #contenu-work::after {
+  content: "";
+  position: absolute;
+  z-index: 80;
+  inset: 0;
+  background: rgba(35, 31, 24, .12);
+  pointer-events: none;
+}
+.camp-sawmill-tutorial-target {
+  position: relative !important;
+  z-index: 261 !important;
+  outline: 3px solid #ffe07a !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(255, 224, 122, .58), 0 0 22px rgba(255, 206, 87, .86) !important;
+}
+.camp-sawmill-tutorial-target:focus-visible {
+  outline-color: #fff !important;
+}
+#onglet-camp.camp-sawmill-tutorial-target {
+  z-index: 261 !important;
+  background: #fff1a8;
+}
+.camp-recruit-route-tutorial-attention {
+  filter: drop-shadow(0 0 5px rgba(255, 218, 92, .95));
+}
+.camp-recruit-route-tutorial-attention .camp-recruit-paw-reached {
+  fill: #fff0a6;
+  stroke: #8a6b35;
+  stroke-width: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camp-sawmill-tutorial-target,
+  .camp-recruit-route-tutorial-attention,
+  .camp-recruit-route-tutorial-attention * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   width: min(280px, calc(100vw - 32px));
   opacity: .9;
@@ -12486,6 +12807,11 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   .camp-prototype-neighbor-mask::after { font-size: .42rem; }
   .camp-prototype-fence { width: 3.2%; }
   .camp-recruit-visitor img { width: clamp(28px, 9vw, 38px); }
+  .camp-sawmill-tutorial-status {
+    top: 58px;
+    padding: 8px 10px;
+    font-size: .82rem;
+  }
 }
 
 /* Keep the ready state readable even between the two animated aura peaks. */

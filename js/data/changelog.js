@@ -191,6 +191,41 @@
     })
   ]);
 
+  const release0040Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Repairing the Sawmill now starts a guided Camp-to-Work tutorial that assigns Mochi and Luna before introducing the next visitor.",
+        "Validated character expressions can now appear as speaker-specific portraits in story dialogue."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Manual Focus can now be activated directly on a Cat assigned to Camp construction.",
+        "Camp Build categories now use recognizable game artwork instead of placeholder symbols.",
+        "Idle Cats display a small local sleep marker, while working Cats and Bernardo remain visually active.",
+        "The first Bird appears at its Tree and now explains that later catches will be less forgiving.",
+        "Early story conversations have been rewritten with a more natural, playful voice for Bernardo, Mochi and Luna."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Resources found beneath cleared Junk now remain visible on the ground and are collected exactly once when clicked.",
+        "In-progress Camp construction now keeps its paid cost and timer correctly after reloading the game.",
+        "The Sawmill tutorial now resumes from its saved step without duplicating assignments or visitor arrival.",
+        "Character portraits and expressions preserve cleaner transparent edges and locked facial details."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "Camp construction and upgrade costs now use one validated gameplay catalogue, keeping displayed quotes and runtime payments aligned."
+      ])
+    })
+  ]);
+
   const release0035Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -218,7 +253,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0039",
+    baseVersion: "0.0040",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -231,6 +266,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0040",
+      date: "2026-08-07",
+      categories: release0040Categories
+    }),
     Object.freeze({
       version: "0.0039",
       date: "2026-08-05",

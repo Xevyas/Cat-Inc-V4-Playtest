@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0156" />
+  <link rel="stylesheet" href="style.css?v=0.0158" />
   <style>
     /* Must remain after the legacy responsive layers in style.css. */
     .camp-prototype-neighbor-masks .camp-prototype-neighbor-mask {
@@ -123,6 +123,19 @@
     </div>
   </div>
 
+  <!-- MANUAL FOCUS EXPLANATION : shown after the player presses Try -->
+  <div id="manual-focus-explainer-modal" class="ecran-intro manual-focus-explainer-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="manual-focus-explainer-title" aria-describedby="manual-focus-explainer-copy" style="display:none">
+    <div class="intro-boite manual-focus-explainer-box" role="document" tabindex="-1">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">One worker at a time</p>
+        <h2 id="manual-focus-explainer-title" class="manual-focus-explainer-title">How Manual Focus works</h2>
+        <p id="manual-focus-explainer-copy" class="manual-focus-explainer-copy">Manual Focus can encourage only one worker at a time. Bernardo cannot encourage two Cats simultaneously. Focusing another worker transfers the focus and discards the bonus accumulated on the previous one.</p>
+        <p id="manual-focus-explainer-countdown" class="manual-focus-explainer-countdown" role="status" aria-live="polite">Please read this tip. Continue in 5s.</p>
+      </div>
+      <button id="manual-focus-explainer-close" class="bouton-intro" type="button" onclick="continuerDepuisExplicationManualFocus()" disabled>Continue in 5s</button>
+    </div>
+  </div>
+
   <!-- CAMP FULL : first attempt to welcome a waiting visitor without capacity -->
   <div id="ecran-story-camp-full" class="ecran-intro" role="dialog" aria-modal="true" aria-label="No room for another Cat" aria-hidden="true" style="display:none">
     <div class="intro-boite">
@@ -161,6 +174,14 @@
       <div class="intro-dialogue">
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-4')">Onwards!</button>
+    </div>
+  </div>
+
+  <!-- MAIN STORY : the second Cardboard Box reveals the Law -->
+  <div id="ecran-story-greatest-incrementor-part-1" class="ecran-intro" role="dialog" aria-modal="true" aria-label="The Greatest Incrementor — Part 1" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="fermerModal('ecran-story-greatest-incrementor-part-1')">Find out more</button>
     </div>
   </div>
 
@@ -273,7 +294,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0039 · August 5, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0040 · August 7, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -541,7 +562,7 @@
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
               </div>
-              <div class="camp-prototype-house-plot">
+              <div class="camp-prototype-house-plot camp-recruitment-house-plot">
                 <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Blue_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
@@ -574,9 +595,8 @@
                 <button id="camp-recruit-visitor" class="camp-recruit-visitor" type="button" hidden onclick="activerRecrutementDepuisCamp(event)">
                   <img id="camp-recruit-visitor-face" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
                   <span class="camp-recruit-visitor-question" aria-hidden="true">?</span>
-                  <span id="camp-recruit-capacity-message" class="camp-recruit-capacity-message" role="status" aria-live="polite" hidden></span>
                 </button>
-              </div>
+               </div>
               <div class="camp-prototype-house-plot">
                 <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Green_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
@@ -585,6 +605,7 @@
              </div>
              <span class="camp-prototype-gardens"></span>
            </div>
+          <span id="camp-recruit-capacity-message" class="camp-recruit-capacity-message" role="status" aria-live="polite" hidden></span>
           <div id="camp-resident-cats" class="camp-resident-cats" aria-label="Cats at Base Camp"></div>
           <div id="camp-supervisor-bernardo" class="camp-supervisor-bernardo" aria-label="Bernardo supervising Base Camp" hidden></div>
           <div id="camp-prototype-territory-zones" class="camp-prototype-territory-zones" aria-hidden="true"></div>
@@ -637,23 +658,24 @@
           <span>Houses</span>
         </button>
         <button type="button" data-camp-category="building" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('building')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-building" aria-hidden="true"></span>
+          <span class="camp-prototype-category-icon camp-prototype-category-icon-building" data-camp-building-icon="fallback" aria-hidden="true"></span>
+          <img class="camp-prototype-category-icon-image camp-prototype-category-icon-operation-table" data-camp-building-icon="operation-table" src="img/interface/Exploration_Final.png" alt="" hidden>
           <span>Buildings</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-decoration" aria-hidden="true"></span>
+          <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png" alt="">
           <span>Decorations</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-road" aria-hidden="true"></span>
+          <img class="camp-prototype-category-icon-image" src="img/Maps/Camp%20Runtime/Paths/Basic%20Trail_Camp_TopDown_Watercolor_Game_v1.png" alt="">
           <span>Paths</span>
         </button>
-        <button type="button" data-camp-category="fence" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('fence')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-fence" aria-hidden="true"></span>
+        <button type="button" class="camp-dev-only" data-camp-category="fence" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('fence')">
+          <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/camp-boundary-fence/tier-1/revision-3/down.png" alt="">
           <span>Fences</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="junk" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('junk')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-junk" aria-hidden="true"></span>
+          <img class="camp-prototype-category-icon-image" src="img/Maps/Camp%20Runtime/Obstacles/Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png" alt="">
           <span>Junk</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="dev-library" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('dev-library')">
@@ -873,6 +895,7 @@
       <div id="logs-liste"></div>
     </div>
     <div id="logs-vue-stories" class="logs-vue" role="tabpanel" aria-labelledby="logs-subtab-stories" aria-hidden="true" style="display:none">
+      <h3 class="stories-section-title">Main Story</h3>
       <div id="stories-liste"></div>
     </div>
   </div> <!-- /contenu-logs -->
@@ -949,7 +972,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0039</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0040</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1055,6 +1078,19 @@
       </div>
       <p id="camp-house-construction-modal-summary" class="camp-demolition-modal-summary"></p>
       <div id="camp-house-construction-modal-kitties" class="camp-demolition-modal-kitties"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CAMP HOUSE ALLOCATION -->
+  <div id="camp-house-allocation-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-house-allocation-modal-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalAllocationMaisonCamp()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="camp-house-allocation-modal-title">Allocate a Cat</span>
+        <button class="explo-modal-close" aria-label="Close house allocation" onclick="fermerModalAllocationMaisonCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <p id="camp-house-allocation-modal-summary" class="camp-demolition-modal-summary"></p>
+      <div id="camp-house-allocation-modal-kitties" class="camp-demolition-modal-kitties"></div>
     </div>
   </div>
 
@@ -1208,19 +1244,24 @@
 
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
-  <script src="js/data/content.js?v=0.0054"></script>
-  <script src="js/data/changelog.js?v=0.0039&build=1"></script>
-  <script src="js/data/dialogues.js?v=0.0002"></script>
-  <script src="js/core/state.js?v=0.0042"></script>
-  <script src="js/core/save.js?v=0.0045"></script>
+  <script src="js/data/cat-faces.generated.js?v=0.0002"></script>
+  <script src="js/data/content.js?v=0.0055"></script>
+  <script src="js/data/changelog.js?v=0.0040&build=1"></script>
+  <script src="js/data/dialogues.generated.js?v=0.0002"></script>
+  <script src="js/data/dialogues.js?v=0.0004"></script>
+  <script src="js/core/state.js?v=0.0043"></script>
+  <script src="js/core/save.js?v=0.0047"></script>
   <script src="js/core/production.js?v=0.0036"></script>
-  <script src="js/data/camp-assets.generated.js?v=0.0004"></script>
+  <script src="js/data/camp-gameplay.generated.js?v=0.0002"></script>
+  <script src="js/core/incrementor-law.js?v=0.0002"></script>
+  <script src="js/data/camp-assets.generated.js?v=0.0006"></script>
+  <script src="js/data/camp-templates.generated.js?v=0.0001"></script>
   <script src="js/core/camp-connectivity.js?v=0.0001"></script>
   <script src="js/core/camp-capabilities.js?v=0.0001"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0018"></script>
-  <script src="jeu.js?v=0.0164"></script>
+  <script src="js/ui/camp.js?v=0.0020"></script>
+  <script src="jeu.js?v=0.0166"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

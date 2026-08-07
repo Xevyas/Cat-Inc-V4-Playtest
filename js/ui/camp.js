@@ -6,13 +6,23 @@
   if (!campConnectivity) {
     throw new Error("CatInc.campConnectivity must be loaded before CatInc.camp.");
   }
-  const GRID_WIDTH = 18;
-  const GRID_HEIGHT = 12;
-  const HOUSE_DECOR_HEIGHT = 4;
+  const CAMP_TEMPLATE_MANIFEST = CatInc.data && CatInc.data.campTemplates;
+  const ACTIVE_CAMP_TEMPLATE = CAMP_TEMPLATE_MANIFEST
+    && CAMP_TEMPLATE_MANIFEST.templates
+    && CAMP_TEMPLATE_MANIFEST.templates[CAMP_TEMPLATE_MANIFEST.activeTemplateId];
+  if (!ACTIVE_CAMP_TEMPLATE) {
+    throw new Error("CatInc.data.campTemplates must contain an active template before CatInc.camp.");
+  }
+  const GRID_WIDTH = ACTIVE_CAMP_TEMPLATE.grid.width;
+  const GRID_HEIGHT = ACTIVE_CAMP_TEMPLATE.grid.height;
+  const HOUSE_DECOR_HEIGHT = ACTIVE_CAMP_TEMPLATE.grid.houseDecorHeight;
   const OBSTACLE_ASSET_ROOT = "img/Maps/Camp%20Runtime/Obstacles/";
   const RUNTIME_MANIFEST = CatInc.data && CatInc.data.campAssets
     ? CatInc.data.campAssets
     : { assets: {} };
+  const GAMEPLAY_MANIFEST = CatInc.data && CatInc.data.campGameplay
+    ? CatInc.data.campGameplay
+    : { definitions: {} };
   const runtimeSearch = root.location && typeof root.location.search === "string"
     ? root.location.search
     : "";
@@ -114,9 +124,22 @@
       durationSeconds: revision.gameplay && Number.isInteger(revision.gameplay.clearDurationSeconds)
         ? revision.gameplay.clearDurationSeconds
         : fallback.durationSeconds,
+      requiredCats: revision.gameplay && Number.isInteger(revision.gameplay.requiredCats)
+        ? revision.gameplay.requiredCats
+        : (fallback.requiredCats || 1),
+      gameplay: revision.gameplay || fallback.gameplay,
       runtimeTier: revision.tier,
       runtimeRevision: revision.revision,
       runtimeStatus: revision.status
+    });
+  }
+
+  function gameplayItem(typeId, fallback) {
+    const definition = GAMEPLAY_MANIFEST.definitions && GAMEPLAY_MANIFEST.definitions[typeId];
+    if (!definition) return fallback;
+    return Object.freeze({
+      ...fallback,
+      label: fallback.label || definition.name
     });
   }
 
@@ -267,11 +290,11 @@
   const PAWSONRY_ACCESS = singleEntranceAccess(2, 2);
   const TRAINING_CENTER_ACCESS = singleEntranceAccess(3, 4);
   const OPERATIONS_TABLE_ACCESS = singleEntranceAccess(2, 1);
-  const LABORATORY_ACCESS = singleEntranceAccess(3, 3);
-  const STORAGE_ACCESS = singleEntranceAccess(2, 2);
+  const LABORATORY_ACCESS = singleEntranceAccess(3, 1);
+  const STORAGE_ACCESS = singleEntranceAccess(1, 1);
 
   const BASE_ITEM_TYPES = {
-    cardboardBox: runtimeItem("cardboardBox", {
+    cardboardBox: gameplayItem("cardboardBox", runtimeItem("cardboardBox", {
       id: "cardboardBox",
       label: "Cardboard Box",
       width: 1,
@@ -282,7 +305,7 @@
       blocksMovement: true,
       access: CARDBOARD_BOX_ACCESS,
       asset: "img/Buildings/Camp%20Runtime/cardboard-box/tier-1/revision-5/down.png?v=0.0001"
-    }),
+    })),
     jobCenter: runtimeItem("jobCenter", {
       id: "jobCenter",
       label: "Job Center",
@@ -364,10 +387,10 @@
       blocksMovement: true,
       access: OPERATIONS_TABLE_ACCESS
     }),
-    laboratory: Object.freeze({
+    laboratory: runtimeItem("laboratory", Object.freeze({
       id: "laboratory",
       label: "Laboratory",
-      width: 2,
+      width: 3,
       height: 1,
       color: "laboratory",
       category: "building",
@@ -375,18 +398,18 @@
       blocksMovement: true,
       access: LABORATORY_ACCESS,
       asset: "img/Buildings/Laboratory_Final.png?v=0.0034"
-    }),
-    storage: Object.freeze({
+    })),
+    storage: gameplayItem("storage", Object.freeze({
       id: "storage",
-      label: "Storage Shed",
-      width: 2,
-      height: 2,
+      label: "Small Storage Shed",
+      width: 1,
+      height: 1,
       color: "storage",
       category: "building",
       rotatable: true,
       blocksMovement: true,
       access: STORAGE_ACCESS
-    }),
+    })),
     tree: runtimeItem("tree", {
       id: "tree",
       label: "Tree",
@@ -486,39 +509,12 @@
   const LEGACY_TYPE_ALIASES = Object.freeze({
     kitchen: "catchen"
   });
-  const INITIAL_BUILDABLE_RECT = Object.freeze({
-    x: 6,
-    y: HOUSE_DECOR_HEIGHT,
-    width: 6,
-    height: 3
-  });
-  const TERRITORY_ZONES = Object.freeze({
-    redGarden: Object.freeze({
-      id: "redGarden",
-      label: "Red house garden",
-      x: 0,
-      y: HOUSE_DECOR_HEIGHT,
-      width: 6,
-      height: GRID_HEIGHT - HOUSE_DECOR_HEIGHT
-    }),
-    home: Object.freeze({
-      id: "home",
-      label: "Blue house garden",
-      x: 6,
-      y: HOUSE_DECOR_HEIGHT,
-      width: 6,
-      height: GRID_HEIGHT - HOUSE_DECOR_HEIGHT,
-      initial: true
-    }),
-    greenGarden: Object.freeze({
-      id: "greenGarden",
-      label: "Green house garden",
-      x: 12,
-      y: HOUSE_DECOR_HEIGHT,
-      width: 6,
-      height: GRID_HEIGHT - HOUSE_DECOR_HEIGHT
-    })
-  });
+  const INITIAL_BUILDABLE_RECT = Object.freeze({...ACTIVE_CAMP_TEMPLATE.initialBuildableRect});
+  const TERRITORY_ZONES = Object.freeze(ACTIVE_CAMP_TEMPLATE.zones.reduce(function(zones, zone) {
+    zones[zone.id] = Object.freeze({...zone});
+    return zones;
+  }, {}));
+  const INITIAL_ZONE_ID = ACTIVE_CAMP_TEMPLATE.zones.find(function(zone) { return zone.initial; }).id;
 
   function devVisualItemTypes(baseTypes) {
     if (!runtimeDebug || !RUNTIME_MANIFEST.assets) return {};
@@ -570,15 +566,9 @@
     }, {}),
     ...devVisualItemTypes(BASE_ITEM_TYPES)
   });
-  const CONNECTION_ORIGIN_CELLS = Object.freeze(Array.from(
-    { length: TERRITORY_ZONES.home.width },
-    function(_, index) {
-      return Object.freeze({
-        x: TERRITORY_ZONES.home.x + index,
-        y: TERRITORY_ZONES.home.y
-      });
-    }
-  ));
+  const CONNECTION_ORIGIN_CELLS = Object.freeze(ACTIVE_CAMP_TEMPLATE.connectionOriginCells.map(function(cell) {
+    return Object.freeze({ x: cell.x, y: cell.y });
+  }));
   const TERRAIN_CELL_COUNT = Object.keys(TERRITORY_ZONES).reduce(function(total, zoneId) {
     const zone = TERRITORY_ZONES[zoneId];
     return total + zone.width * zone.height;
@@ -597,6 +587,9 @@
       durationSeconds: revision.gameplay && Number.isInteger(revision.gameplay.clearDurationSeconds)
         ? revision.gameplay.clearDurationSeconds
         : fallback.durationSeconds,
+      requiredCats: revision.gameplay && Number.isInteger(revision.gameplay.requiredCats)
+        ? revision.gameplay.requiredCats
+        : (fallback.requiredCats || 1),
       asset: runtimeSpritePath(revision.sprites && revision.sprites.down, revision) || fallback.asset
     });
   }
@@ -656,39 +649,14 @@
       asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     })
   ]);
-  const HOME_OBSTACLE_BLUEPRINT = Object.freeze([
-    Object.freeze({ id: "tallGrass", x: 6, y: 4 }),
-    Object.freeze({ id: "tallGrass", x: 7, y: 4 }),
-    Object.freeze({ id: "tallGrass", x: 6, y: 5 }),
-    Object.freeze({ id: "tallGrass", x: 7, y: 5 }),
-    Object.freeze({ id: "tallGrass", x: 6, y: 6 }),
-    // This one-time early reward softens the opening without making every
-    // junk deterministic loot. It is revealed only when the cleanup is ready.
-    Object.freeze({
-      id: "pebblePile",
-      x: 7,
-      y: 6,
-      reward: Object.freeze({ resourceId: "pebbleBricks", quantity: 1 })
-    }),
-    Object.freeze({ id: "flowerBush", x: 8, y: 6 }),
-    Object.freeze({ id: "flowerBush", x: 10, y: 6 }),
-    Object.freeze({ id: "pebblePile", x: 7, y: 7 }),
-    Object.freeze({ id: "pebblePile", x: 10, y: 7 }),
-    Object.freeze({ id: "greenBush", x: 6, y: 8 }),
-    Object.freeze({ id: "tallGrass", x: 10, y: 8 }),
-    Object.freeze({ id: "thornBush", x: 6, y: 9 }),
-    Object.freeze({ id: "thornBush", x: 8, y: 9 }),
-    Object.freeze({ id: "thornBush", x: 10, y: 9 }),
-    Object.freeze({ id: "stoneBlockPile", x: 8, y: 10 }),
-    Object.freeze({ id: "stoneBlockPile", x: 10, y: 10 })
-  ]);
-  const INITIAL_CLEARED_CELLS = Object.freeze([
-    "8:4", "9:4", "10:4", "11:4",
-    "8:5", "9:5", "10:5", "11:5",
-    "6:7", "8:7", "9:7", "11:7",
-    "8:8", "9:8", "11:8",
-    "6:10", "7:10", "6:11", "7:11"
-  ]);
+  const HOME_OBSTACLE_BLUEPRINT = Object.freeze(ACTIVE_CAMP_TEMPLATE.terrainPlacements
+    .filter(function(placement) { return placement.zoneId === INITIAL_ZONE_ID; })
+    .map(function(placement) {
+      const result = { id: placement.typeId, x: placement.x, y: placement.y };
+      if (placement.reward) result.reward = Object.freeze({...placement.reward});
+      return Object.freeze(result);
+    }));
+  const INITIAL_CLEARED_CELLS = Object.freeze(ACTIVE_CAMP_TEMPLATE.initialClearedCells.slice());
   const DEMOLITION_BASE_DURATION_SECONDS = 10 * 60;
 
   function entier(value) {
@@ -755,97 +723,36 @@
   }
 
   function creerLayoutObstacles() {
-    const obstacles = [];
-    const cellulesOccupees = new Set(INITIAL_CLEARED_CELLS);
-    HOME_OBSTACLE_BLUEPRINT.forEach(function(definition) {
-      const type = OBSTACLE_TYPES.find(function(candidat) { return candidat.id === definition.id; });
-      const zone = TERRITORY_ZONES.home;
-      if (!type) return;
-      const cellules = cellulesRectangle({
+    return Object.freeze(ACTIVE_CAMP_TEMPLATE.terrainPlacements.map(function(definition) {
+      const type = OBSTACLE_TYPES.find(function(candidate) {
+        return candidate.id === definition.typeId;
+      });
+      if (!type) return null;
+      const cells = cellulesRectangle({
         x: definition.x,
         y: definition.y,
         width: type.width,
         height: type.height
       });
-      if (
-        cellules.length !== type.width * type.height
-        || cellules.some(function(cellule) {
-          return !celluleDansZone(zone, cellule.x, cellule.y)
-            || cellulesOccupees.has(cleCellule(cellule.x, cellule.y));
-        })
-      ) return;
-      cellules.forEach(function(cellule) { cellulesOccupees.add(cleCellule(cellule.x, cellule.y)); });
-      obstacles.push(Object.freeze({
-        uid: zone.id + ":" + definition.x + ":" + definition.y,
+      return Object.freeze({
+        uid: definition.uid,
         id: type.id,
         label: type.label,
         width: type.width,
         height: type.height,
         minCatLevel: type.minCatLevel,
         durationSeconds: type.durationSeconds,
-        reward: definition.reward || null,
+        requiredCats: type.requiredCats || 1,
+        reward: definition.reward ? Object.freeze({...definition.reward}) : null,
         asset: type.asset,
-        zoneId: zone.id,
+        zoneId: definition.zoneId,
         x: definition.x,
         y: definition.y,
-        cells: Object.freeze(cellules.map(function(cellule) {
-          return Object.freeze({ x: cellule.x, y: cellule.y });
+        cells: Object.freeze(cells.map(function(cell) {
+          return Object.freeze({ x: cell.x, y: cell.y });
         }))
-      }));
-    });
-    const zoneIds = Object.keys(TERRITORY_ZONES).filter(function(zoneId) {
-      return zoneId !== "home";
-    });
-    zoneIds.forEach(function(zoneId, zoneIndex) {
-      const zone = TERRITORY_ZONES[zoneId];
-      for (let y = zone.y; y < zone.y + zone.height; y += 1) {
-        for (let x = zone.x; x < zone.x + zone.width; x += 1) {
-          if (cellulesOccupees.has(cleCellule(x, y))) continue;
-          const indexInitial = Math.abs(x * 17 + y * 31 + zoneIndex * 43)
-            % OBSTACLE_TYPES.length;
-          let selection = null;
-          for (let decalage = 0; decalage < OBSTACLE_TYPES.length; decalage += 1) {
-            const type = OBSTACLE_TYPES[(indexInitial + decalage) % OBSTACLE_TYPES.length];
-            const cellules = cellulesRectangle({
-              x: x,
-              y: y,
-              width: type.width,
-              height: type.height
-            });
-            const tientDansZone = cellules.length === type.width * type.height
-              && cellules.every(function(cellule) {
-                return celluleDansZone(zone, cellule.x, cellule.y)
-                  && !cellulesOccupees.has(cleCellule(cellule.x, cellule.y));
-              });
-            if (!tientDansZone) continue;
-            selection = { type: type, cellules: cellules };
-            break;
-          }
-          if (!selection) continue;
-          selection.cellules.forEach(function(cellule) {
-            cellulesOccupees.add(cleCellule(cellule.x, cellule.y));
-          });
-          obstacles.push(Object.freeze({
-            uid: zone.id + ":" + x + ":" + y,
-            id: selection.type.id,
-            label: selection.type.label,
-            width: selection.type.width,
-            height: selection.type.height,
-            minCatLevel: selection.type.minCatLevel,
-            durationSeconds: selection.type.durationSeconds,
-            reward: null,
-            asset: selection.type.asset,
-            zoneId: zone.id,
-            x: x,
-            y: y,
-            cells: Object.freeze(selection.cellules.map(function(cellule) {
-              return Object.freeze({ x: cellule.x, y: cellule.y });
-            }))
-          }));
-        }
-      }
-    });
-    return Object.freeze(obstacles);
+      });
+    }).filter(Boolean));
   }
 
   const OBSTACLE_LAYOUT = creerLayoutObstacles();
@@ -858,15 +765,15 @@
 
   function creerTerrainInitial() {
     return {
-      version: 4,
-      claimedZoneIds: ["home"],
+      version: ACTIVE_CAMP_TEMPLATE.terrainVersion,
+      claimedZoneIds: ACTIVE_CAMP_TEMPLATE.zones.filter(function(zone) { return zone.initial; }).map(function(zone) { return zone.id; }),
       clearedCells: INITIAL_CLEARED_CELLS.slice()
     };
   }
 
   function normaliserTerrain(value) {
     const source = value && typeof value === "object" ? value : {};
-    const zonesConquises = new Set(["home"]);
+    const zonesConquises = new Set([INITIAL_ZONE_ID]);
     if (Array.isArray(source.claimedZoneIds)) {
       source.claimedZoneIds.forEach(function(zoneId) {
         if (TERRITORY_ZONES[zoneId]) zonesConquises.add(zoneId);
@@ -888,7 +795,7 @@
       });
     });
     return {
-      version: 4,
+      version: ACTIVE_CAMP_TEMPLATE.terrainVersion,
       claimedZoneIds: Object.keys(TERRITORY_ZONES).filter(function(zoneId) {
         return zonesConquises.has(zoneId);
       }),
@@ -1156,7 +1063,22 @@
         tier: Number.isInteger(item.tier) && item.tier > 0 ? item.tier : 1
       };
       if (type.rotatable) normalise.rotation = rotation;
-      if (type.category === "house") normalise.construit = item.construit === true;
+      if (type.category === "house" || type.category === "building") {
+        // Building saves predate the explicit `construit` flag. Preserve an
+        // in-progress false value, while treating older completed layouts as
+        // built so reload reconciliation does not regress them.
+        normalise.construit = type.category === "building"
+          ? item.construit !== false
+          : item.construit === true;
+        if (Number.isInteger(item.lawRank) && item.lawRank > 0) normalise.lawRank = item.lawRank;
+        if (item.paidCosts && typeof item.paidCosts === "object" && !Array.isArray(item.paidCosts)) {
+          normalise.paidCosts = Object.keys(item.paidCosts).reduce(function(costs, resourceId) {
+            const valeur = Number(item.paidCosts[resourceId]);
+            if (Number.isFinite(valeur) && valeur >= 0) costs[resourceId] = valeur;
+            return costs;
+          }, {});
+        }
+      }
       layout.push(normalise);
     });
     return layout;
@@ -1544,6 +1466,7 @@
   }
 
   CatInc.camp = Object.freeze({
+    ACTIVE_TEMPLATE_ID: CAMP_TEMPLATE_MANIFEST.activeTemplateId,
     GRID_WIDTH: GRID_WIDTH,
     GRID_HEIGHT: GRID_HEIGHT,
     HOUSE_DECOR_HEIGHT: HOUSE_DECOR_HEIGHT,
