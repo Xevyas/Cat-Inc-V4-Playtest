@@ -36,6 +36,31 @@ function estObjetSauvegarde(valeur) {
   return valeur !== null && typeof valeur === "object" && !Array.isArray(valeur);
 }
 
+function normaliserStickerSelectionSauvegarde(value) {
+  if (!estObjetSauvegarde(value)) return null;
+  const normalized = {};
+  ["stickerId", "colorId", "slotId", "anchorChoice"].forEach(function(key) {
+    if (typeof value[key] === "string" && value[key].length <= 160 && !/[<>]/.test(value[key])) {
+      normalized[key] = value[key];
+    }
+  });
+  if (typeof value.scale === "number" && Number.isFinite(value.scale)) {
+    normalized.scale = Math.round(Math.max(0.8, Math.min(2, value.scale)) * 1000) / 1000;
+  }
+  return normalized;
+}
+
+function normaliserLayoutStickersSauvegarde(layout) {
+  return (Array.isArray(layout) ? layout : []).map(function(item) {
+    if (!estObjetSauvegarde(item)) return item;
+    const copy = {...item};
+    const sticker = normaliserStickerSelectionSauvegarde(copy.sticker);
+    if (sticker) copy.sticker = sticker;
+    else delete copy.sticker;
+    return copy;
+  });
+}
+
 function donneesSauvegardeReconnaissables(d) {
   if (!estObjetSauvegarde(d)) return false;
   const champsConnus = ["chatons", "wood", "cardboard", "cardboardPieces", "kittiesData", "workRecipeSlots"];
@@ -117,6 +142,7 @@ function validerStructureSauvegarde(d) {
     "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "ongletsVisites", "resourceBarHidden",
     "batimentsCampRepares"
   ];
+
   for (const cle of champsTableaux) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
@@ -291,6 +317,18 @@ function validerStructureSauvegarde(d) {
               && Number.isFinite(item.paidCosts[resourceId])
               && item.paidCosts[resourceId] >= 0;
           })
+        ))
+        && (item.sticker === undefined || item.sticker === null || (
+          estObjetSauvegarde(item.sticker)
+          && Object.keys(item.sticker).length <= 6
+          && ["stickerId", "colorId", "slotId", "anchorChoice"].every(function(key) {
+            return item.sticker[key] === undefined
+              || (typeof item.sticker[key] === "string"
+                && item.sticker[key].length <= 160
+                && !/[<>]/.test(item.sticker[key]));
+          })
+          && (item.sticker.scale === undefined
+            || (typeof item.sticker.scale === "number" && Number.isFinite(item.sticker.scale)))
         ));
     });
     if (!layoutValide) return "Invalid Camp layout item.";
@@ -676,6 +714,15 @@ function analyserSauvegardeBrute(raw) {
       erreur: "This save uses the previous Camp progression and requires a new game."
     };
   }
+  if (estObjetSauvegarde(data) && estObjetSauvegarde(data.camp)) {
+    data = {
+      ...data,
+      camp: {
+        ...data.camp,
+        layout: normaliserLayoutStickersSauvegarde(data.camp.layout)
+      }
+    };
+  }
   const erreur = validerStructureSauvegarde(data);
   return erreur ? { ok: false, erreur: erreur } : { ok: true, data: data };
 }
@@ -732,7 +779,10 @@ function analyserSauvegardeBrute(raw) {
     premiereSaladeFaite:        etat.premiereSaladeFaite,
     reductionCumulee: etat.reductionCumulee,
     workRecipeSlots: etat.workRecipeSlots,
-    camp: etat.camp,
+    camp: {
+      ...etat.camp,
+      layout: normaliserLayoutStickersSauvegarde(etat.camp && etat.camp.layout)
+    },
     cathouses:          etat.cathouses,
     cathouseCount:      etat.cathouseCount,
     stoneCathouseCount: etat.stoneCathouseCount,
@@ -878,7 +928,7 @@ function analyserSauvegardeBrute(raw) {
   etat.camp.recruitmentFormulaVersion = Number.isInteger(campSource.recruitmentFormulaVersion)
     ? Math.max(0, campSource.recruitmentFormulaVersion)
     : 0;
-  etat.camp.layout = Array.isArray(campSource.layout) ? campSource.layout : [];
+  etat.camp.layout = normaliserLayoutStickersSauvegarde(campSource.layout);
   etat.camp.fences = Array.isArray(campSource.fences) ? campSource.fences : [];
   etat.camp.terrain = estObjetSauvegarde(campSource.terrain) ? campSource.terrain : null;
   etat.camp.demolitions = Array.isArray(campSource.demolitions) ? campSource.demolitions : [];
@@ -1093,6 +1143,8 @@ function analyserSauvegardeBrute(raw) {
     analyserSauvegardeBrute: analyserSauvegardeBrute,
     creerDonneesSauvegarde: creerDonneesSauvegarde,
     serialiserEtat: serialiserEtat,
+    normaliserStickerSelectionSauvegarde: normaliserStickerSelectionSauvegarde,
+    normaliserLayoutStickersSauvegarde: normaliserLayoutStickersSauvegarde,
     migrerDonneesSauvegarde: migrerDonneesSauvegarde,
     deriverEtapeTutorielSawmill: deriverEtapeTutorielSawmill
   });

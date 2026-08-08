@@ -20,6 +20,15 @@
   const RUNTIME_MANIFEST = CatInc.data && CatInc.data.campAssets
     ? CatInc.data.campAssets
     : { assets: {} };
+  const STICKER_CATALOG = RUNTIME_MANIFEST.stickers || { schemaVersion: 1, colors: [], items: [] };
+  const STICKER_ITEMS = Object.freeze((STICKER_CATALOG.items || []).reduce(function(index, item) {
+    if (item && typeof item.id === "string") index[item.id] = Object.freeze({...item});
+    return index;
+  }, {}));
+  const STICKER_COLORS = Object.freeze((STICKER_CATALOG.colors || []).reduce(function(index, color) {
+    if (color && typeof color.id === "string") index[color.id] = Object.freeze({...color});
+    return index;
+  }, {}));
   const GAMEPLAY_MANIFEST = CatInc.data && CatInc.data.campGameplay
     ? CatInc.data.campGameplay
     : { definitions: {} };
@@ -85,6 +94,142 @@
     return String(path) + separator + "camp-runtime=" + revision.tier + "." + revision.revision;
   }
 
+  function normaliserStickerSlot(value) {
+    if (!value || typeof value !== "object") return null;
+    if (value.enabled === false) return null;
+    const mode = value.mode === "surface" || value.mode === "pitched-roof"
+      ? value.mode
+      : "none";
+    if (mode === "none" || typeof value.id !== "string") return null;
+    const allowed = mode === "surface" ? ["surface"] : ["left", "right"];
+    if (value.category !== "storage" && value.category !== "general") return null;
+    if (!value.anchors || typeof value.anchors !== "object") return null;
+    const anchors = {};
+    for (const direction of ["down", "right", "up", "left"]) {
+      const mapping = value.anchors[direction];
+      if (!mapping || !allowed.includes(mapping.auto)) return null;
+      const normalized = {auto: mapping.auto};
+      for (const anchorId of allowed) {
+        const point = mapping[anchorId];
+        if (!point || !Number.isFinite(Number(point.x)) || !Number.isFinite(Number(point.y))) return null;
+        normalized[anchorId] = Object.freeze({
+          x: Math.max(0, Math.min(1, Number(point.x))),
+          y: Math.max(0, Math.min(1, Number(point.y))),
+          visible: point.visible !== false,
+          quad: Array.isArray(point.quad) && point.quad.length === 4
+            && point.quad.every(function(corner) {
+              return corner && Number.isFinite(Number(corner.x)) && Number.isFinite(Number(corner.y));
+            })
+            ? Object.freeze(point.quad.map(function(corner) {
+                return Object.freeze({x: Number(corner.x), y: Number(corner.y)});
+              }))
+            : null
+        });
+      }
+      anchors[direction] = Object.freeze(normalized);
+    }
+    return Object.freeze({
+      id: value.id,
+      mode: mode,
+      category: value.category,
+      anchors: Object.freeze(anchors),
+      anchorReview: value.anchorReview === true,
+      required: value.required === true || value.category === "storage",
+      baseSticker: value.baseSticker === true || value.category === "storage",
+      defaultStickerId: typeof value.defaultStickerId === "string" ? value.defaultStickerId : null,
+      defaultColorId: typeof value.defaultColorId === "string" ? value.defaultColorId : null,
+      defaultScale: Number.isFinite(Number(value.defaultScale))
+        ? Math.max(0.8, Math.min(2, Number(value.defaultScale)))
+        : 1,
+      defaultAnchorChoice: value.defaultAnchorChoice === "left" || value.defaultAnchorChoice === "right"
+        ? value.defaultAnchorChoice
+        : "auto"
+    });
+  }
+
+  function stickerSlotForType(typeOrId) {
+    const type = typeof typeOrId === "string" ? ITEM_TYPES[typeOrId] : typeOrId;
+    return type && type.stickerSlot ? normaliserStickerSlot(type.stickerSlot) : null;
+  }
+
+  function normaliserStickerSelection(value, typeOrId) {
+    const slot = stickerSlotForType(typeOrId);
+    if (!slot) return null;
+    const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    let sticker = STICKER_ITEMS[source.stickerId];
+    const explicitSelection = Boolean(
+      sticker && sticker.category === slot.category && source.slotId === slot.id
+    );
+    if (!explicitSelection) {
+      if (!slot.baseSticker) return null;
+      sticker = slot.defaultStickerId && STICKER_ITEMS[slot.defaultStickerId];
+    }
+    if (!sticker || sticker.category !== slot.category) return null;
+    const colorId = sticker.colorIds.includes(source.colorId)
+      ? source.colorId
+      : (slot.defaultColorId && sticker.colorIds.includes(slot.defaultColorId)
+        ? slot.defaultColorId
+        : sticker.defaultColorId);
+    const rawScale = Number(source.scale);
+    const scale = Number.isFinite(rawScale)
+      ? Math.max(0.8, Math.min(2, rawScale))
+      : slot.defaultScale;
+    const anchorChoice = slot.mode === "pitched-roof"
+      && (source.anchorChoice === "left" || source.anchorChoice === "right")
+      ? source.anchorChoice
+      : slot.defaultAnchorChoice;
+    return Object.freeze({
+      stickerId: sticker.id,
+      colorId: colorId,
+      scale: Math.round(scale * 1000) / 1000,
+      slotId: slot.id,
+      anchorChoice: anchorChoice
+    });
+  }
+
+  function resoudreAncrageSticker(typeOrId, rotation, anchorChoice) {
+    const slot = stickerSlotForType(typeOrId);
+    if (!slot) return null;
+    const direction = ({0: "down", 90: "right", 180: "up", 270: "left"})[normaliserRotation(rotation)] || "down";
+    const mapping = slot.anchors[direction];
+    const requested = anchorChoice === "auto" ? mapping.auto : anchorChoice;
+    const anchorId = mapping[requested] ? requested : mapping.auto;
+    const point = mapping[anchorId];
+    return Object.freeze({anchorId: anchorId, x: point.x, y: point.y, quad: point.quad, visible: point.visible});
+  }
+
+  function stickerVisualForSelection(typeOrId, value, rotation) {
+    const selection = normaliserStickerSelection(value, typeOrId);
+    if (!selection) return null;
+    const sticker = STICKER_ITEMS[selection.stickerId];
+    const color = STICKER_COLORS[selection.colorId];
+    const anchor = resoudreAncrageSticker(typeOrId, rotation, selection.anchorChoice);
+    if (!sticker || !color || !anchor || anchor.visible === false) return null;
+    return Object.freeze({
+      ...selection,
+      image: sticker.maskDataUri || (
+        sticker.runtimePath + (sticker.runtimePath.includes("?") ? "&" : "?") + "sticker-art=3"
+      ),
+      color: color.hex,
+      x: anchor.x,
+      y: anchor.y,
+      quad: anchor.quad || null,
+      rotation: normaliserRotation(rotation)
+    });
+  }
+
+  function stickerChoicesForType(typeOrId) {
+    const slot = stickerSlotForType(typeOrId);
+    if (!slot) return Object.freeze([]);
+    return Object.freeze(Object.values(STICKER_ITEMS).filter(function(item) {
+      return item.category === slot.category;
+    }));
+  }
+
+  function stickerFocusControlKey(value) {
+    return ["id", "color", "scale", "anchor"].includes(value) ? value : "scale";
+  }
+
   function runtimeAccess(runtimeAccessValue, fallbackAccess) {
     if (!runtimeAccessValue) return fallbackAccess;
     if (!fallbackAccess || !Array.isArray(runtimeAccessValue.ports)) return runtimeAccessValue;
@@ -128,6 +273,7 @@
         ? revision.gameplay.requiredCats
         : (fallback.requiredCats || 1),
       gameplay: revision.gameplay || fallback.gameplay,
+      stickerSlot: normaliserStickerSlot(revision.stickerSlot || fallback.stickerSlot),
       runtimeTier: revision.tier,
       runtimeRevision: revision.revision,
       runtimeStatus: revision.status
@@ -292,6 +438,22 @@
   const OPERATIONS_TABLE_ACCESS = singleEntranceAccess(2, 1);
   const LABORATORY_ACCESS = singleEntranceAccess(3, 1);
   const STORAGE_ACCESS = singleEntranceAccess(1, 1);
+  const STORAGE_STICKER_SLOT = Object.freeze({
+    id: "front-surface",
+    mode: "surface",
+    category: "storage",
+    required: true,
+    defaultStickerId: "storage-stacked-boxes",
+    defaultColorId: "kraft",
+    defaultScale: 1,
+    defaultAnchorChoice: "auto",
+    anchors: Object.freeze({
+      down: Object.freeze({auto: "surface", surface: Object.freeze({x: 0.5, y: 0.46})}),
+      right: Object.freeze({auto: "surface", surface: Object.freeze({x: 0.55, y: 0.46})}),
+      up: Object.freeze({auto: "surface", surface: Object.freeze({x: 0.5, y: 0.46})}),
+      left: Object.freeze({auto: "surface", surface: Object.freeze({x: 0.45, y: 0.46})})
+    })
+  });
 
   const BASE_ITEM_TYPES = {
     cardboardBox: gameplayItem("cardboardBox", runtimeItem("cardboardBox", {
@@ -399,7 +561,7 @@
       access: LABORATORY_ACCESS,
       asset: "img/Buildings/Laboratory_Final.png?v=0.0034"
     })),
-    storage: gameplayItem("storage", Object.freeze({
+    storage: gameplayItem("storage", runtimeItem("storage", Object.freeze({
       id: "storage",
       label: "Small Storage Shed",
       width: 1,
@@ -408,8 +570,9 @@
       category: "building",
       rotatable: true,
       blocksMovement: true,
-      access: STORAGE_ACCESS
-    })),
+      access: STORAGE_ACCESS,
+      stickerSlot: STORAGE_STICKER_SLOT
+    }))),
     tree: runtimeItem("tree", {
       id: "tree",
       label: "Tree",
@@ -1079,6 +1242,8 @@
           }, {});
         }
       }
+      const sticker = item.sticker ? normaliserStickerSelection(item.sticker, type) : null;
+      if (sticker) normalise.sticker = sticker;
       layout.push(normalise);
     });
     return layout;
@@ -1473,6 +1638,13 @@
     TERRAIN_CELL_COUNT: TERRAIN_CELL_COUNT,
     ITEM_TYPES: ITEM_TYPES,
     FENCE_TYPES: FENCE_TYPES,
+    STICKER_CATALOG: STICKER_CATALOG,
+    normaliserStickerSlot: normaliserStickerSlot,
+    normaliserStickerSelection: normaliserStickerSelection,
+    resoudreAncrageSticker: resoudreAncrageSticker,
+    stickerVisualForSelection: stickerVisualForSelection,
+    stickerChoicesForType: stickerChoicesForType,
+    stickerFocusControlKey: stickerFocusControlKey,
     runtimeVisualForTier: runtimeVisualForTier,
     CONNECTION_ORIGIN_CELLS: CONNECTION_ORIGIN_CELLS,
     INITIAL_BUILDABLE_RECT: INITIAL_BUILDABLE_RECT,

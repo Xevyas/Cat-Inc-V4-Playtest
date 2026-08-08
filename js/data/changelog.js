@@ -249,11 +249,35 @@
     })
   ]);
 
+  const release0041Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Eligible Camp buildings can now carry reusable colored stickers that remain aligned with their authored surface as the building rotates.",
+        "The Small Storage Shed now ships with its functional storage symbol, while decorative building stickers remain reserved for a future reward."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Camp asset colors can now be tuned locally before rendering without spending AI tokens or creating extra variations.",
+        "Manual Focus now updates the remaining time shown beneath Cats working on Camp construction, repair, upgrades and Junk clearing."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Manual Focus now accelerates the authoritative Camp job instead of a temporary display copy.",
+        "Building stickers now follow every building rotation consistently in both the Camp preview and the game."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0040",
+    baseVersion: "0.0041",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -266,6 +290,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0041",
+      date: "2026-08-09",
+      categories: release0041Categories
+    }),
     Object.freeze({
       version: "0.0040",
       date: "2026-08-07",

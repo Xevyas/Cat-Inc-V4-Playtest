@@ -13894,7 +13894,102 @@ function prechargerRotationSuivanteCampPrototype(type, rotation, functionalTier)
   campPrototypeAssetsRotationPrecharges.set(src, image);
 }
 
-function remplirItemCampPrototype(element, type, rotation, functionalTier) {
+function matriceProjectionStickerCampPrototype(quad, largeur, hauteur, scale) {
+  if (!Array.isArray(quad) || quad.length !== 4 || !largeur || !hauteur) return "";
+  const centre = quad.reduce(function(resultat, point) {
+    resultat.x += Number(point.x) / 4;
+    resultat.y += Number(point.y) / 4;
+    return resultat;
+  }, {x: 0, y: 0});
+  const points = quad.map(function(point) {
+    return {
+      x: centre.x + (Number(point.x) - centre.x) * scale,
+      y: centre.y + (Number(point.y) - centre.y) * scale
+    };
+  });
+  const x0 = points[0].x, y0 = points[0].y;
+  const x1 = points[1].x, y1 = points[1].y;
+  const x2 = points[2].x, y2 = points[2].y;
+  const x3 = points[3].x, y3 = points[3].y;
+  const dx1 = x1 - x2, dx2 = x3 - x2, sx = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2, dy2 = y3 - y2, sy = y0 - y1 + y2 - y3;
+  let g = 0, h = 0;
+  const denominator = dx1 * dy2 - dx2 * dy1;
+  if ((Math.abs(sx) > 1e-9 || Math.abs(sy) > 1e-9) && Math.abs(denominator) > 1e-9) {
+    g = (sx * dy2 - dx2 * sy) / denominator;
+    h = (dx1 * sy - sx * dy1) / denominator;
+  }
+  const a = x1 - x0 + g * x1;
+  const b = x3 - x0 + h * x3;
+  const c = x0;
+  const d = y1 - y0 + g * y1;
+  const e = y3 - y0 + h * y3;
+  const f = y0;
+  return "matrix3d(" + [
+    a, d * hauteur / largeur, 0, g / largeur,
+    b * largeur / hauteur, e, 0, h / hauteur,
+    0, 0, 1, 0,
+    c * largeur, f * hauteur, 0, 1
+  ].join(",") + ")";
+}
+
+const PLAYER_STICKER_CUSTOMIZATION_REWARD_ID = "buildingStickerCustomization";
+
+function stickersJoueurDebloques() {
+  return Boolean(
+    DEV_MODE
+    || (Array.isArray(etat.itemsAcquis)
+      && etat.itemsAcquis.includes(PLAYER_STICKER_CUSTOMIZATION_REWARD_ID))
+  );
+}
+
+function ajouterStickerCampPrototype(element, type, item, rotation) {
+  if (!element || !type || !item || !campPrototypeApi.stickerVisualForSelection) return;
+  const playerSelection = stickersJoueurDebloques() ? item.sticker : null;
+  const visual = campPrototypeApi.stickerVisualForSelection(type, playerSelection, rotation);
+  if (!visual) return;
+  const sticker = document.createElement("span");
+  sticker.className = "camp-prototype-sticker";
+  sticker.setAttribute("aria-hidden", "true");
+  sticker.style.position = "absolute";
+  sticker.style.zIndex = "3";
+  sticker.style.left = (visual.x * 100) + "%";
+  sticker.style.top = (visual.y * 100) + "%";
+  sticker.style.display = "block";
+  sticker.style.width = "14.4%";
+  sticker.style.height = "14.4%";
+  sticker.style.margin = "0";
+  sticker.style.backgroundColor = visual.color;
+  sticker.style.pointerEvents = "none";
+  sticker.style.opacity = "1";
+  if (visual.quad) {
+    sticker.classList.add("camp-prototype-sticker-projected");
+    sticker.style.left = "0";
+    sticker.style.top = "0";
+    sticker.style.width = "100%";
+    sticker.style.height = "100%";
+    sticker.style.transformOrigin = "0 0";
+  } else {
+    sticker.style.transform = "translate(-50%, -50%) scale(" + visual.scale
+      + ") rotate(" + (-Number(visual.rotation || 0)) + "deg)";
+  }
+  sticker.style.webkitMask = 'url("' + visual.image + '") center / contain no-repeat';
+  sticker.style.mask = 'url("' + visual.image + '") center / contain no-repeat';
+  element.appendChild(sticker);
+  if (visual.quad) {
+    const appliquerProjection = function() {
+      const largeur = element.clientWidth || element.getBoundingClientRect().width;
+      const hauteur = element.clientHeight || element.getBoundingClientRect().height;
+      sticker.style.transform = matriceProjectionStickerCampPrototype(
+        visual.quad, largeur, hauteur, visual.scale
+      );
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(appliquerProjection);
+    else appliquerProjection();
+  }
+}
+
+function remplirItemCampPrototype(element, type, rotation, functionalTier, item) {
   if (!element || !type) return;
   const dimensions = dimensionsCampPrototype(type.id, rotation);
   element.innerHTML = "";
@@ -13913,11 +14008,13 @@ function remplirItemCampPrototype(element, type, rotation, functionalTier) {
     label.className = "camp-prototype-accessible-label";
     label.textContent = type.label;
     element.appendChild(label);
+    ajouterStickerCampPrototype(element, type, item, rotation);
     return;
   }
   element.classList.remove("camp-prototype-item-has-sprite");
   element.innerHTML = "<strong>" + type.label + "</strong><span>"
     + dimensions.width + " × " + dimensions.height + "</span>";
+  ajouterStickerCampPrototype(element, type, item, rotation);
 }
 
 function ajouterRaccordsRouteBatimentCampPrototype(element, layout, item, type) {
@@ -14014,6 +14111,124 @@ function actionMenuCampPrototypeDepuisEvenement(menu, event) {
   return null;
 }
 
+function stickerCampPrototypeEligible(item, type) {
+  if (!item || !type || !type.stickerSlot || item.construit === false) return false;
+  if (!stickersJoueurDebloques()) return false;
+  if (!(["house", "building", "production-building"].includes(type.category))) return false;
+  if (tacheCampPourItem(item)) return false;
+  return campPrototypeApi.stickerChoicesForType(type).length > 0;
+}
+
+function stickerCustomizerMarkupCampPrototype(item, type) {
+  const choices = campPrototypeApi.stickerChoicesForType(type);
+  const selection = campPrototypeApi.normaliserStickerSelection(item.sticker, type);
+  const selectedId = selection ? selection.stickerId : "none";
+  const selected = choices.find(function(choice) { return choice.id === selectedId; }) || choices[0];
+  const colors = selected
+    ? (campPrototypeApi.STICKER_CATALOG.colors || []).filter(function(color) {
+      return selected.colorIds.includes(color.id);
+    })
+    : [];
+  const slot = campPrototypeApi.normaliserStickerSlot(type.stickerSlot);
+  const scale = selection ? Math.round(selection.scale * 100) : 100;
+  const colorId = selection ? selection.colorId : (selected ? selected.defaultColorId : "");
+  const anchor = selection ? selection.anchorChoice : "auto";
+  const options = (slot && (slot.required || slot.baseSticker) ? [] : ['<option value="none"' + (!selection ? " selected" : "") + '>None</option>'])
+    .concat(choices.map(function(choice) {
+      return '<option value="' + echapperAttributHtml(choice.id) + '"'
+        + (choice.id === selectedId ? " selected" : "") + '>'
+        + echapperAttributHtml(choice.name) + '</option>';
+    })).join("");
+  const colorOptions = colors.map(function(color) {
+    return '<option value="' + echapperAttributHtml(color.id) + '"'
+      + (color.id === colorId ? " selected" : "") + '>'
+      + echapperAttributHtml(color.name) + '</option>';
+  }).join("");
+  const anchorOptions = slot && slot.mode === "pitched-roof"
+    ? '<option value="auto"' + (anchor === "auto" ? " selected" : "") + '>Auto</option>'
+      + '<option value="left"' + (anchor === "left" ? " selected" : "") + '>Left</option>'
+      + '<option value="right"' + (anchor === "right" ? " selected" : "") + '>Right</option>'
+    : '<option value="auto" selected>Auto</option>';
+  return '<form class="camp-sticker-customizer" data-camp-sticker-form>'
+    + '<strong>Sticker</strong>'
+    + '<label>Design<select data-sticker-control="id" data-sticker-id>' + options + '</select></label>'
+    + '<label>Color<select data-sticker-control="color" data-sticker-color>' + colorOptions + '</select></label>'
+    + '<label>Scale <output data-sticker-scale-output>' + scale + '%</output>'
+    + '<input type="range" min="80" max="200" step="1" value="' + scale + '" data-sticker-control="scale" data-sticker-scale></label>'
+    + '<label>Anchor<select data-sticker-control="anchor" data-sticker-anchor>' + anchorOptions + '</select></label>'
+    + '<small>Auto follows the authored directional anchor. Position and rotation are fixed by the building slot.</small>'
+    + '</form>';
+}
+
+function appliquerStickerCustomizerCampPrototype(uid, form) {
+  const item = itemCampPrototype(uid);
+  const type = item && typeCampPrototype(item.type);
+  if (!item || !type || !form || !stickerCampPrototypeEligible(item, type)) return false;
+  const focusControl = campPrototypeApi.stickerFocusControlKey(
+    document.activeElement && document.activeElement.dataset
+      ? document.activeElement.dataset.stickerControl
+      : "scale"
+  );
+  const stickerId = form.querySelector("[data-sticker-id]").value;
+  const raw = stickerId === "none" ? null : {
+    stickerId: stickerId,
+    colorId: form.querySelector("[data-sticker-color]").value,
+    scale: Number(form.querySelector("[data-sticker-scale]").value) / 100,
+    slotId: type.stickerSlot.id,
+    anchorChoice: form.querySelector("[data-sticker-anchor]").value
+  };
+  const selection = campPrototypeApi.normaliserStickerSelection(raw, type);
+  if (selection) item.sticker = selection;
+  else delete item.sticker;
+  sauvegarderCampPrototype();
+  rendreItemsCampPrototype();
+  ouvrirStickerCustomizerCampPrototype(uid, {conserverOuvert: true, focusControl: focusControl});
+  return true;
+}
+
+function ouvrirStickerCustomizerCampPrototype(uid, options) {
+  const item = itemCampPrototype(uid);
+  const type = item && typeCampPrototype(item.type);
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (!menu || !stickerCampPrototypeEligible(item, type)) return false;
+  const conserverOuvert = Boolean(options && options.conserverOuvert);
+  if (campPrototypeInteractionUid === uid && !menu.hidden
+      && menu.dataset.interactionKind === "sticker-customizer" && !conserverOuvert) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  fermerMenuInteractionCampPrototype();
+  const dimensions = dimensionsCampPrototype(item.type, item.rotation);
+  menu.style.left = ((item.x + dimensions.width / 2) / campPrototypeApi.GRID_WIDTH * 100) + "%";
+  menu.style.top = (item.y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+  menu.dataset.campUid = uid;
+  menu.dataset.campBuildingId = type.id;
+  menu.dataset.interactionKind = "sticker-customizer";
+  menu.setAttribute("aria-label", "Customize sticker on " + type.label);
+  menu.innerHTML = stickerCustomizerMarkupCampPrototype(item, type);
+  const form = menu.querySelector("[data-camp-sticker-form]");
+  if (form) {
+    form.addEventListener("change", function() {
+      appliquerStickerCustomizerCampPrototype(uid, form);
+    });
+    const range = form.querySelector("[data-sticker-scale]");
+    const output = form.querySelector("[data-sticker-scale-output]");
+    if (range && output) range.addEventListener("input", function() {
+      output.textContent = range.value + "%";
+    });
+  }
+  const declencheur = document.querySelector('[data-camp-uid="' + uid + '"]');
+  if (declencheur) declencheur.setAttribute("aria-expanded", "true");
+  campPrototypeInteractionUid = uid;
+  menu.hidden = false;
+  const focusControl = campPrototypeApi.stickerFocusControlKey(options && options.focusControl);
+  const focusTarget = menu.querySelector('[data-sticker-control="' + focusControl + '"]');
+  if (focusTarget && typeof focusTarget.focus === "function") {
+    try { focusTarget.focus({preventScroll: true}); } catch (error) { focusTarget.focus(); }
+  }
+  return true;
+}
+
 function executerActionMenuCampPrototype(action, event) {
   if (!action) return false;
   if (event) {
@@ -14028,6 +14243,10 @@ function executerActionMenuCampPrototype(action, event) {
   if (action === "allocate") return ouvrirModalAllocationMaisonCamp();
   if (action === "claim") return validerTacheCampDepuisMenu();
   if (action === "manual-focus") return activerManualFocusCampDepuisMenu();
+  if (action === "customize-sticker") {
+    const menu = document.getElementById("camp-prototype-interaction-menu");
+    return ouvrirStickerCustomizerCampPrototype(menu && menu.dataset.campUid);
+  }
   return false;
 }
 
@@ -14054,14 +14273,26 @@ function retrouverTacheManualFocusCamp(focus) {
     const repair = reparationCampPourBatiment(focus.campBuildingId);
     return repair ? { kind: "repair", job: repair } : null;
   }
-  return tacheCampPourItem(itemCampPrototype(focus.campUid));
+  if (focus.campTaskKind === "house") {
+    const house = etat.camp.houseConstructions && etat.camp.houseConstructions[focus.campUid];
+    return house ? { kind: "house", job: house } : null;
+  }
+  if (focus.campTaskKind === "building") {
+    const building = etat.camp.constructions && etat.camp.constructions[focus.campUid];
+    return building ? { kind: "building", job: building } : null;
+  }
+  if (focus.campTaskKind === "upgrade") {
+    const upgrade = etat.camp.upgrades && etat.camp.upgrades[focus.campUid];
+    return upgrade ? { kind: "upgrade", job: upgrade } : null;
+  }
+  return null;
 }
 
 function manualFocusTacheCampActif(tache) {
   if (!(synchroniserReserveManualFocus() > 0) || !workManualFocus
       || workManualFocus.kind !== "camp") return false;
-  const cible = retrouverTacheManualFocusCamp(workManualFocus);
-  return Boolean(cible && tache && cible.job === tache.job);
+  const cible = cibleManualFocusCampPourTache(tache);
+  return Boolean(cible && memeCibleManualFocusCamp(workManualFocus, cible));
 }
 
 function libelleFocusCamp(reserveSeconds) {
@@ -14291,7 +14522,8 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   const tache = item && tacheCampPourItem(item);
   const menu = document.getElementById("camp-prototype-interaction-menu");
   const maison = Boolean(type && type.category === "house");
-  if (!item || !type || (!famille && !fonction && !tache && !maison) || !menu) {
+  const stickerEligible = stickerCampPrototypeEligible(item, type);
+  if (!item || !type || (!famille && !fonction && !tache && !maison && !stickerEligible) || !menu) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
@@ -14366,6 +14598,11 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
       + ' aria-label="Repair ' + echapperAttributHtml(type.label)
         + '"><img src="img/interface/Repair_Final.png?v=0.0004" alt=""></button>';
   }
+  if (!tache && stickerCampPrototypeEligible(item, type)) {
+    menu.innerHTML += '<button type="button" class="camp-sticker-customize-action" role="menuitem"'
+      + ' data-camp-menu-action="customize-sticker" aria-label="Customize sticker on '
+      + echapperAttributHtml(type.label) + '">✦</button>';
+  }
   const itemElement = document.querySelector('[data-camp-uid="' + uid + '"]');
   if (itemElement) itemElement.setAttribute("aria-expanded", "true");
   campPrototypeInteractionUid = uid;
@@ -14420,6 +14657,8 @@ function activerItemCampPrototype(uid) {
   } else if (type && CAMP_PROTOTYPE_FUNCTION_BY_TYPE[type.id]) {
     ouvrirMenuInteractionCampPrototype(item.uid);
   } else if (type && type.category === "house") {
+    ouvrirMenuInteractionCampPrototype(item.uid);
+  } else if (stickerCampPrototypeEligible(item, type)) {
     ouvrirMenuInteractionCampPrototype(item.uid);
   } else if (type && type.category === "junk") {
     ouvrirMenuDemolitionCampPrototype(item.uid, "layout");
@@ -14517,13 +14756,15 @@ function rafraichirMenuInteractionCampPrototype() {
       : null;
   const restaure = interactionKind === "building"
     ? ouvrirMenuInteractionCampPrototype(campUid, { conserverOuvert: true })
+    : (interactionKind === "sticker-customizer"
+        ? ouvrirStickerCustomizerCampPrototype(campUid, { conserverOuvert: true })
     : (interactionKind === "demolition"
         ? ouvrirMenuDemolitionCampPrototype(
             obstacleUid,
             demolitionTargetKind,
             { conserverOuvert: true }
           )
-        : false);
+        : false));
   if (!restaure) {
     fermerMenuInteractionCampPrototype();
     return false;
@@ -16932,7 +17173,7 @@ function rendreItemsCampPrototype(presencesCamp) {
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-south" aria-hidden="true"></i>'
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-west" aria-hidden="true"></i>';
     } else {
-      remplirItemCampPrototype(bouton, type, rotationAffiche, item.tier || 1);
+      remplirItemCampPrototype(bouton, type, rotationAffiche, item.tier || 1, item);
       if (type.visualOnly) {
         const visualBadge = document.createElement("span");
         visualBadge.className = "camp-prototype-visual-only-badge camp-prototype-visual-only-badge-placed";
@@ -17210,11 +17451,9 @@ function etatTacheTemporeeCamp(tache, maintenant) {
 
 function tempsRestantTacheCampAffiche(tache, state) {
   const restant = state ? Math.max(0, Number(state.remaining) || 0) : 0;
-  // Camp Focus accelerates the authoritative start timestamp in the 100 ms
-  // simulation path. The remaining value is therefore already adjusted; a
-  // second multiplier here would make the displayed timer run ahead of the
-  // actual construction state.
-  return restant;
+  return manualFocusTacheCampActif(tache)
+    ? restant / manualFocusMultiplier()
+    : restant;
 }
 
 function indexerPresencesChatsCamp() {
