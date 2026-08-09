@@ -709,7 +709,7 @@
               "gameplay": {
                 "clearDurationSeconds": 1800,
                 "minCatLevel": 2,
-                "requiredCats": 1
+                "requiredCats": 2
               }
             }
           }
@@ -780,7 +780,7 @@
               "gameplay": {
                 "clearDurationSeconds": 1200,
                 "minCatLevel": 0,
-                "requiredCats": 1
+                "requiredCats": 2
               }
             }
           }
@@ -3252,7 +3252,7 @@
               "gameplay": {
                 "clearDurationSeconds": 1800,
                 "minCatLevel": 2,
-                "requiredCats": 1
+                "requiredCats": 2
               }
             }
           }
@@ -3389,7 +3389,7 @@
               "gameplay": {
                 "clearDurationSeconds": 1200,
                 "minCatLevel": 0,
-                "requiredCats": 1
+                "requiredCats": 2
               }
             }
           }

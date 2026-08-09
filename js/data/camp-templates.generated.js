@@ -135,7 +135,12 @@
           "typeId": "pebblePile",
           "x": 10,
           "y": 7,
-          "zoneId": "home"
+          "zoneId": "home",
+          "reward": {
+            "resourceId": "cardboardPlanks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "home:7:7",
@@ -653,7 +658,7 @@
           "typeId": "pawsonry",
           "x": 6,
           "y": 10,
-          "rotation": 0,
+          "rotation": 90,
           "tier": 1
         },
         {

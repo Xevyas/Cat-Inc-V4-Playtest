@@ -249,6 +249,35 @@
     })
   ]);
 
+  const release0042Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Camp actions now use compact assignment panels with clear duration, level, material tier and Cat-slot information.",
+        "Explored neighboring gardens now expand the Camp view and can be opened through dedicated two-Cat access projects.",
+        "Junk may reveal resources on the ground, which must be collected before that cell can be used again."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "The opening Camp progression now guides the first Cardboard Box, the path to the Catchen and early production without lengthy explanations.",
+        "Camp production buildings can assign recipes and Cats directly from their map panels.",
+        "Resource storage limits are visible in the top bar and full resources are highlighted.",
+        "The Camp now scales more naturally across desktop and mobile screens and uses refreshed houses and riverbank artwork."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Tutorial steps now survive reloads, block unrelated actions and update their highlighted target immediately without requiring a refresh.",
+        "Buildings and Camp action popups now stay above neighboring-property layers and inaccessible buildings cannot be repaired early.",
+        "Multi-Cat Junk, construction, repair and access projects now enforce their exact Cat requirements.",
+        "Camp rewards, shore artwork, house framing and Bernardo's supervisor portrait now render in their intended positions."
+      ])
+    })
+  ]);
+
   const release0041Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -277,7 +306,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0041",
+    baseVersion: "0.0042",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -290,6 +319,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0042",
+      date: "2026-08-09",
+      categories: release0042Categories
+    }),
     Object.freeze({
       version: "0.0041",
       date: "2026-08-09",

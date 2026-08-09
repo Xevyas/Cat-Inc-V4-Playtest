@@ -52,6 +52,8 @@
 .camp-quick-dialogue strong { color: #874617; font-size: .72rem; }
 .camp-quick-dialogue p { margin: 2px 0 0; color: #574435; font-size: .75rem; line-height: 1.3; }
 .camp-quick-dialogue > button {
+  position: relative;
+  isolation: isolate;
   width: 34px;
   height: 34px;
   padding: 0;
@@ -60,16 +62,47 @@
   background: #729757;
   color: white;
   font-weight: 900;
+  cursor: pointer;
+}
+.camp-quick-dialogue.camp-quick-dialogue-reward-help {
+  top: clamp(300px, 43vh, 430px);
+  transform: translate(-50%, -50%);
+}
+.camp-quick-dialogue-tutorial-gate > button {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, .96),
+    0 0 0 7px rgba(255, 226, 112, .72),
+    0 0 26px rgba(255, 218, 85, .96);
+}
+.camp-quick-dialogue-tutorial-gate > button::before,
+.camp-quick-dialogue-tutorial-gate > button::after {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+.camp-quick-dialogue-tutorial-gate > button::before {
+  inset: -22%;
+  border: 4px solid rgba(255, 237, 156, .96);
+  box-shadow: 0 0 0 8px rgba(255, 245, 199, .25), 0 0 34px rgba(255, 224, 111, .94);
+  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+}
+.camp-quick-dialogue-tutorial-gate > button::after {
+  inset: -42%;
+  background: radial-gradient(circle, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
+  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
 }
 .camp-supervisor-bernardo {
   position: absolute;
-  left: 50%;
+  left: 45%;
   top: 8.5%;
   z-index: 7;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
 .camp-supervisor-bernardo > span {
+  position: relative;
   display: block;
   width: 52px;
   height: 52px;
@@ -250,34 +283,6 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
   }
 }
 
-/* Softer neighboring gardens: present but not visually louder than the Camp. */
-.camp-prototype-neighbor-mask {
-  opacity: .76;
-  background:
-    radial-gradient(ellipse at 18% 18%, rgba(182, 205, 117, .34) 0 8%, transparent 9%),
-    radial-gradient(ellipse at 72% 42%, rgba(151, 180, 91, .3) 0 10%, transparent 11%),
-    radial-gradient(ellipse at 38% 78%, rgba(199, 214, 137, .25) 0 9%, transparent 10%),
-    linear-gradient(rgba(65, 78, 48, .6), rgba(76, 91, 53, .66));
-  box-shadow: inset 0 0 36px rgba(31, 43, 25, .24);
-  backdrop-filter: saturate(.7) blur(1px);
-}
-.camp-prototype-neighbor-mask::after {
-  content: "Neighbor garden";
-  position: absolute;
-  left: 50%;
-  top: 56%;
-  padding: 4px 7px;
-  border: 1px solid rgba(241, 242, 217, .22);
-  border-radius: 999px;
-  background: rgba(41, 52, 32, .5);
-  color: rgba(255, 254, 235, .88);
-  font-size: clamp(.42rem, .65vw, .62rem);
-  font-weight: 800;
-  letter-spacing: .02em;
-  white-space: nowrap;
-  transform: translate(-50%, -50%);
-}
-
 /* A living hedge replaces the rigid prototype fence without adding runtime art. */
 .camp-prototype-fence {
   top: 28%;
@@ -326,11 +331,25 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
   box-shadow: 0 0 0 3px rgba(255, 244, 207, .72), 0 5px 12px rgba(49, 32, 19, .32);
 }
 .camp-recruit-visitor:focus-visible { outline: none; }
-.camp-recruit-visitor img { width: clamp(28px, 3.3vw, 43px); }
 .camp-recruit-visitor-ready {
   isolation: isolate;
 }
-.camp-recruit-visitor-ready::before {
+.camp-recruit-visitor-portrait {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  width: clamp(28px, 3.3vw, 43px);
+  aspect-ratio: 1;
+  place-items: stretch;
+  isolation: isolate;
+}
+.camp-recruit-visitor .camp-recruit-visitor-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+.camp-recruit-visitor-ready .camp-recruit-visitor-portrait::before {
   content: "";
   position: absolute;
   inset: -18%;
@@ -341,7 +360,7 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
   animation: camp-task-ready-pulse 1.15s ease-out infinite;
   pointer-events: none;
 }
-.camp-recruit-visitor-ready::after {
+.camp-recruit-visitor-ready .camp-recruit-visitor-portrait::after {
   content: "";
   position: absolute;
   inset: -34%;
@@ -434,9 +453,8 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   .onglet-icone { width: 31px; height: 31px; flex-basis: 31px; }
 
   .camp-prototype-viewport { max-height: none; padding-bottom: 82px; }
-  .camp-prototype-neighbor-mask::after { font-size: .42rem; }
   .camp-prototype-fence { width: 3.2%; }
-  .camp-recruit-visitor img { width: clamp(28px, 9vw, 38px); }
+  .camp-recruit-visitor-portrait { width: clamp(28px, 9vw, 38px); }
 }
 
 /* Final mobile Camp overrides: keep construction controls within thumb reach
@@ -619,44 +637,10 @@ body.camp-prologue-reveal .camp-prototype-map {
   }
 }
 
-/* Neighboring gardens stay unknowable until their matching exploration zone is completed. */
-.camp-prototype-neighbor-masks { pointer-events: none; }
-.camp-prototype-neighbor-mask {
-  isolation: isolate;
-  opacity: 1;
-  pointer-events: auto;
-  background:
-    radial-gradient(ellipse at 12% 8%, #a9c370 0 7%, transparent 8%),
-    radial-gradient(ellipse at 74% 17%, #86a957 0 10%, transparent 11%),
-    radial-gradient(ellipse at 32% 39%, #b4ca78 0 9%, transparent 10%),
-    radial-gradient(ellipse at 82% 58%, #75974d 0 12%, transparent 13%),
-    radial-gradient(ellipse at 23% 79%, #94b45f 0 11%, transparent 12%),
-    linear-gradient(145deg, #5d7547, #3f5837 58%, #31462f);
-  background-size: 78px 78px, 94px 88px, 105px 96px, 112px 106px, 86px 92px, auto;
-  box-shadow: inset 0 0 42px rgba(20, 35, 20, .58);
-  backdrop-filter: blur(8px) saturate(.35) brightness(.48);
-  transition: opacity .75s ease, filter .75s ease;
-}
-.camp-prototype-neighbor-mask::before {
-  content: "";
-  position: absolute;
-  inset: -8%;
-  z-index: 1;
-  background:
-    repeating-radial-gradient(ellipse at 30% 40%, rgba(198, 218, 131, .24) 0 4%, transparent 5% 13%),
-    repeating-radial-gradient(ellipse at 76% 62%, rgba(59, 86, 46, .34) 0 5%, transparent 6% 15%);
-  filter: blur(2px);
-  transform: rotate(-4deg) scale(1.08);
-}
-.camp-prototype-neighbor-mask::after { content: none; }
-.camp-prototype-neighbor-mask[data-camp-neighbor-state="exploration-available"] {
-  box-shadow: inset 0 0 42px rgba(20, 35, 20, .5), inset 0 0 0 2px rgba(220, 229, 166, .16);
-}
-body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none; }
-
 /* Timed Camp work is shown on the worker, centered on the affected asset. */
 .camp-prototype-item .camp-task-worker,
-.camp-prototype-obstacle .camp-task-worker {
+.camp-prototype-obstacle .camp-task-worker,
+.camp-garden-access-site .camp-task-worker {
   --camp-task-progress: 0%;
   position: absolute;
   left: 50%;
@@ -671,7 +655,8 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   opacity: 1;
 }
 .camp-prototype-item button.camp-task-worker-ready,
-.camp-prototype-obstacle button.camp-task-worker-ready {
+.camp-prototype-obstacle button.camp-task-worker-ready,
+.camp-garden-access-site button.camp-task-worker-ready {
   appearance: none;
   padding: 0;
   border: 0;
@@ -683,7 +668,8 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
   touch-action: manipulation;
 }
 .camp-prototype-item .camp-task-worker span,
-.camp-prototype-obstacle .camp-task-worker span {
+.camp-prototype-obstacle .camp-task-worker span,
+.camp-garden-access-site .camp-task-worker span {
   margin: 0;
   opacity: 1;
 }
@@ -743,14 +729,17 @@ body.camp-prototype-editing .camp-prototype-neighbor-mask { pointer-events: none
 @media (prefers-reduced-motion: reduce) {
   .camp-task-worker-ready .camp-task-progress-ring::before,
   .camp-task-worker-ready .camp-task-progress-ring::after,
-  .camp-recruit-visitor-ready::before,
-  .camp-recruit-visitor-ready::after,
+  .camp-recruit-visitor-ready .camp-recruit-visitor-portrait::before,
+  .camp-recruit-visitor-ready .camp-recruit-visitor-portrait::after,
+  .camp-quick-dialogue-tutorial-gate > button::before,
+  .camp-quick-dialogue-tutorial-gate > button::after,
   .camp-task-manual-focus-active .camp-task-progress-ring {
     animation: none;
   }
 }
 .camp-prototype-item .camp-task-progress-ring .camp-task-worker-portrait,
-.camp-prototype-obstacle .camp-task-progress-ring .camp-task-worker-portrait {
+.camp-prototype-obstacle .camp-task-progress-ring .camp-task-worker-portrait,
+.camp-garden-access-site .camp-task-progress-ring .camp-task-worker-portrait {
   position: relative;
   z-index: 1;
   width: var(--camp-cat-marker-size, 36px);
@@ -2908,6 +2897,26 @@ body.mini-game-runtime-active #bird-btn {
   margin: 0;
   text-align: center;
 }
+#work-boost-indicator.work-boost-first-cue {
+  color: #7a4300;
+  background: #fff1b8;
+  border-color: #d89b27;
+  box-shadow: 0 0 0 3px rgba(255, 224, 122, .34);
+}
+.work-boost-cue-dismiss {
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(122, 67, 0, .12);
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.work-boost-cue-dismiss:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 
 .intro-ligne {
   font-size: 0.95rem;
@@ -4150,6 +4159,9 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-prototype-status:empty {
   display: none;
 }
+.camp-prototype-stage {
+  position: relative;
+}
 .camp-prototype-viewport {
   position: relative;
   z-index: 1;
@@ -4171,34 +4183,6 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
   margin: 0 auto;
   flex: 0 0 auto;
 }
-.camp-prototype-map::before,
-.camp-prototype-map::after {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  z-index: 19;
-  display: none;
-  width: calc((100% - 4px) / 3);
-  border-radius: 10px 0 0 10px;
-  background:
-    radial-gradient(ellipse at 12% 8%, #a9c370 0 7%, transparent 8%),
-    radial-gradient(ellipse at 74% 17%, #86a957 0 10%, transparent 11%),
-    radial-gradient(ellipse at 32% 39%, #b4ca78 0 9%, transparent 10%),
-    radial-gradient(ellipse at 82% 58%, #75974d 0 12%, transparent 13%),
-    radial-gradient(ellipse at 23% 79%, #94b45f 0 11%, transparent 12%),
-    linear-gradient(145deg, #5d7547, #3f5837 58%, #31462f);
-  background-size: 78px 78px, 94px 88px, 105px 96px, 112px 106px, 86px 92px, auto;
-  box-shadow: inset 0 0 52px rgba(20, 35, 20, .72);
-  content: "";
-  pointer-events: none;
-}
-.camp-prototype-map::before { left: 2px; }
-.camp-prototype-map::after {
-  right: 2px;
-  border-radius: 0 10px 10px 0;
-}
-.camp-prototype-map.camp-neighbor-red-unknown::before,
-.camp-prototype-map.camp-neighbor-green-unknown::after { display: block; }
 .camp-prototype-board {
   position: relative;
   width: 100%;
@@ -4209,10 +4193,7 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
   border-bottom: 0;
   border-radius: 12px 12px 0 0;
   box-sizing: border-box;
-  background-color: #b9d86a;
-  background-image: url("img/Maps/Camp%20Runtime/Environment/Camp_Grass_Texture_Game_v1.webp?v=0.0001");
-  background-repeat: repeat;
-  background-size: 38% auto;
+  background: #d9cbb6;
   box-shadow: inset 0 0 28px rgba(58, 70, 34, .22);
   touch-action: pan-x pan-y;
   user-select: none;
@@ -4330,7 +4311,9 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   object-fit: contain;
   object-position: center;
   filter: saturate(.96);
-  transform: scale(1.04);
+  /* Anchor the porch to the garden while the upper roof continues behind the
+     Camp viewport, like a facade entering from beyond the northern edge. */
+  transform: scale(1.04, 1.16);
   transform-origin: center bottom;
 }
 .camp-recruit-route {
@@ -4574,7 +4557,21 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   transform: scaleX(-1);
 }
 .camp-prototype-gardens {
-  inset: 33.333333% 0 0;
+  top: 33.333333%;
+  bottom: 0;
+  width: 33.333333%;
+  background-color: #b9d86a;
+  background-image: url("img/Maps/Camp%20Runtime/Environment/Camp_Grass_Texture_Game_v1.webp?v=0.0001");
+  background-repeat: repeat;
+  background-size: 114% auto;
+}
+.camp-prototype-garden-red { left: 0; }
+.camp-prototype-garden-home { left: 33.333333%; }
+.camp-prototype-garden-green { left: 66.666667%; }
+.camp-prototype-map.camp-neighbor-red-unknown [data-camp-garden-zone="redGarden"],
+.camp-prototype-map.camp-neighbor-green-unknown [data-camp-garden-zone="greenGarden"] {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 .camp-prototype-river-band {
   position: relative;
@@ -4589,17 +4586,23 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   background-repeat: repeat;
   background-size: 38% auto;
 }
+.camp-prototype-river-segments {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.camp-prototype-river-segments > span { overflow: hidden; }
 .camp-prototype-river {
   display: block;
-  width: 100%;
+  width: 300%;
+  max-width: none;
   height: auto;
-  margin: -1px 0 0;
+  margin: 0;
   border-radius: 0 0 12px 12px;
   filter: saturate(.94);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, .16) 15%, #000 43%);
-  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, .16) 15%, #000 43%);
   pointer-events: none;
 }
+.camp-prototype-river-home { transform: translateX(-33.333333%); }
+.camp-prototype-river-green { transform: translateX(-66.666667%); }
 .camp-prototype-shore-fences {
   --shore-fence-depth: 38%;
   position: absolute;
@@ -4618,33 +4621,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-prototype-shore-fence-post-top { top: 0; }
 .camp-prototype-shore-fence-post-bottom { top: var(--shore-fence-depth); }
-.camp-prototype-neighbor-masks {
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  top: 2px;
-  bottom: 2px;
-  z-index: 20;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border-radius: 10px;
-  pointer-events: none;
-}
-.camp-prototype-neighbor-mask {
-  position: relative;
-  overflow: hidden;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      rgba(51, 58, 41, .18) 0 7px,
-      rgba(38, 46, 31, .25) 7px 14px
-    ),
-    #66754c;
-}
-.camp-prototype-neighbor-mask-red { grid-column: 1; }
-.camp-prototype-neighbor-mask-green { grid-column: 3; }
-.camp-prototype-neighbor-mask[hidden] { display: none; }
 .camp-prototype-fence {
   top: 0;
   bottom: 0;
@@ -4717,6 +4693,16 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   color: #bd4338;
   background: rgba(255, 242, 239, .94);
 }
+.camp-prototype-first-box-access-marker {
+  width: clamp(22px, 3.8%, 32px);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(255, 224, 122, .55), 0 2px 7px rgba(52, 43, 26, .3);
+  animation: camp-first-box-access-pulse 1.25s ease-in-out infinite;
+}
+@keyframes camp-first-box-access-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.12); }
+}
 .camp-prototype-access-arrow {
   position: relative;
   display: block;
@@ -4756,7 +4742,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-prototype-interaction-menu::after {
   position: absolute;
-  left: 50%;
+  left: var(--camp-menu-pointer-x, 50%);
   bottom: -7px;
   width: 12px;
   height: 12px;
@@ -4768,7 +4754,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   transform: translateX(-50%) rotate(45deg);
 }
 .camp-prototype-interaction-menu[hidden] { display: none; }
-.camp-prototype-interaction-menu button {
+.camp-prototype-interaction-menu:not(.camp-production-menu) button {
   position: relative;
   z-index: 1;
   display: grid;
@@ -4791,12 +4777,12 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   pointer-events: auto;
   touch-action: manipulation;
 }
-.camp-prototype-interaction-menu button:hover {
+.camp-prototype-interaction-menu:not(.camp-production-menu) button:hover {
   color: #fff;
   background: #27834f;
   filter: none;
 }
-.camp-prototype-interaction-menu button:focus-visible {
+.camp-prototype-interaction-menu:not(.camp-production-menu) button:focus-visible {
   outline: 3px solid rgba(39, 131, 79, .32);
   outline-offset: 2px;
 }
@@ -4806,6 +4792,254 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   max-width: min(82vw, 260px);
   border-radius: 14px;
   padding: 9px;
+}
+.camp-prototype-interaction-menu.camp-production-menu {
+  position: fixed;
+  display: block;
+  width: min(590px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: min(78vh, 620px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 16px;
+  transform: none;
+}
+.camp-production-panel {
+  display: grid;
+  gap: 9px;
+  color: #3f3025;
+  text-align: left;
+}
+.camp-production-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 2px 2px 0;
+}
+.camp-production-header > div:first-child {
+  display: grid;
+  align-self: center;
+  min-width: 0;
+  gap: 2px;
+  text-align: center;
+}
+.camp-production-title span {
+  color: #9a5b2e;
+  font-weight: 900;
+}
+.camp-production-title {
+  margin: 0;
+  color: #523424;
+  font-size: .9rem;
+  line-height: 1.2;
+}
+.camp-production-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  align-items: stretch;
+  gap: 6px;
+}
+.camp-prototype-interaction-menu .camp-production-actions button {
+  display: grid;
+  width: auto;
+  min-width: 92px;
+  min-height: 48px;
+  height: auto;
+  padding: 6px 9px;
+  border-width: 2px;
+  border-radius: 10px;
+  font-size: .62rem;
+  line-height: 1.05;
+}
+.camp-production-nav {
+  grid-auto-flow: column;
+  gap: 5px;
+  color: #28653b !important;
+  border-color: #5d9c72 !important;
+  background: #effaf0 !important;
+}
+.camp-production-nav img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.camp-production-upgrade {
+  gap: 2px;
+  color: #fff !important;
+  border-color: #ad7121 !important;
+  background: #b67923 !important;
+  box-shadow: 0 2px 0 #885718;
+}
+.camp-production-upgrade strong { font-size: .76rem; }
+.camp-production-upgrade span { color: inherit; font-size: .58rem; letter-spacing: .04em; }
+.camp-production-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.camp-production-slot {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid #dfcfbb;
+  border-radius: 11px;
+  background: #fffaf2;
+}
+.camp-production-slot > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  color: #8a6b53;
+  font-size: .58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.camp-production-slot > header strong { color: #5e8b50; font-size: .56rem; }
+.camp-production-slot-empty > header strong,
+.camp-production-slot-waiting > header strong { color: #9a5b2e; }
+.camp-production-recipe,
+.camp-production-choose,
+.camp-production-assign,
+.camp-production-reallocate {
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 7px;
+  color: #3f3025;
+  border: 1px solid #d7b98f;
+  border-radius: 8px;
+  background: #fff3dd;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-recipe:hover,
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-choose:hover,
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-assign:hover,
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-face:hover,
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-remove:hover {
+  filter: brightness(.97);
+}
+.camp-prototype-interaction-menu.camp-production-menu button:focus-visible {
+  outline: 3px solid rgba(39, 131, 79, .32);
+  outline-offset: 2px;
+}
+.camp-production-recipe {
+  display: grid;
+  grid-template-columns: 22px 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+.camp-production-tier {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: #6f4d2d;
+  font-size: .5rem;
+  font-weight: 900;
+  border: 1px solid #d5b789;
+  border-radius: 6px;
+  background: #fff9ed;
+}
+.camp-production-recipe img { width: 26px; height: 26px; object-fit: contain; }
+.camp-production-recipe > span:not(.work-tier-badge) { display: grid; min-width: 0; gap: 1px; }
+.camp-production-recipe small { color: #936443; font-size: .45rem; font-weight: 900; letter-spacing: .08em; }
+.camp-production-recipe strong { overflow: hidden; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.camp-production-recipe em { color: var(--couleur-accent); font-size: .52rem; font-style: normal; font-weight: 900; }
+.camp-production-choose {
+  display: grid;
+  min-height: 48px;
+  grid-template-columns: auto minmax(0, 1fr);
+  place-items: center;
+  gap: 8px;
+  color: #523424;
+  text-align: center;
+  background: #fff7e9;
+}
+.camp-production-choose > span { display: grid; width: 30px; height: 30px; place-items: center; color: #fff; font-size: 1.2rem; border-radius: 50%; background: #2d2722; }
+.camp-production-choose strong { font-size: .72rem; }
+.camp-production-choose small { color: #806b58; font-size: .54rem; }
+.camp-production-assign,
+.camp-production-reallocate {
+  min-height: 34px;
+  color: #28653b;
+  font-size: .6rem;
+  font-weight: 900;
+  border-color: #9fc4a3;
+  background: #f1faef;
+}
+.camp-production-cat-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 4px 6px;
+  border: 1px solid #c9d9bd;
+  border-radius: 8px;
+  background: #f5faef;
+}
+.camp-production-cat-ring {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 3px;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(#67a45f calc(var(--prog, 0) * 1turn), #dfd6c9 0);
+}
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-face {
+  display: grid;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #fff8ec;
+}
+.camp-production-cat-face img { width: 100%; height: 100%; object-fit: cover; }
+.camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-remove {
+  display: grid;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 4px;
+  border: 1px solid #d8b7ac;
+  border-radius: 50%;
+  background: #fff6f1;
+  opacity: .78;
+}
+.camp-production-cat-remove img { width: 100%; height: 100%; object-fit: contain; }
+.camp-production-cat-name { max-width: 100%; overflow: hidden; font-size: .65rem; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+.camp-production-status {
+  min-height: 1.2em;
+  margin: 0;
+  color: #806b58;
+  font-size: .52rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.camp-prototype-interaction-menu.camp-production-menu::after { display: none; }
+@media (max-width: 600px) {
+  .camp-prototype-interaction-menu.camp-production-menu {
+    width: auto;
+    max-width: none;
+    max-height: min(78vh, 620px);
+    overflow-y: auto;
+    padding: 8px;
+    border-radius: 18px;
+  }
+  .camp-production-header { grid-template-columns: minmax(0, 1fr); }
+  .camp-production-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .camp-production-slots { grid-template-columns: minmax(0, 1fr); }
 }
 .camp-sticker-customizer {
   display: grid;
@@ -4963,6 +5197,34 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   z-index: 7;
   pointer-events: none;
 }
+.camp-garden-access-site {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  padding: 2px;
+  border: 2px solid #755437;
+  border-radius: 9px;
+  background: rgba(255, 247, 218, .94);
+  color: #573721;
+  box-shadow: 0 3px 8px rgba(53, 37, 24, .3);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.camp-garden-access-site > span:first-child {
+  display: grid;
+  gap: 1px;
+  font-size: clamp(.38rem, 1vw, .58rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+}
+.camp-garden-access-site small { font-size: .85em; }
+.camp-garden-access-site:focus-visible {
+  outline: 3px solid #f0b94c;
+  outline-offset: 2px;
+}
 .camp-prototype-territory-zone {
   position: absolute;
   display: grid;
@@ -5025,28 +5287,21 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
   width: 44px;
   min-width: 44px;
   min-height: 44px;
   height: 44px;
-  padding: 2px 4px;
-  border: 1px solid #9a6a31;
-  border-radius: 999px;
-  background: rgba(255, 248, 219, .96);
-  box-shadow: 0 3px 8px rgba(61, 40, 19, .28);
-  color: #69441f;
-  font-size: clamp(.45rem, 1.2vw, .62rem);
-  font-weight: 900;
-  line-height: 1;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
   pointer-events: auto;
-  transform: translate(-50%, -50%);
 }
 .camp-ground-reward:hover,
 .camp-ground-reward:focus-visible {
-  background: #fff0b8;
-  transform: translate(-50%, -50%) scale(1.06);
+  background: transparent;
+  transform: scale(1.06);
 }
 .camp-ground-reward:focus-visible {
   outline: 2px solid #8d5a24;
@@ -5054,12 +5309,11 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-ground-reward img {
   display: block;
-  width: clamp(16px, 2.8vw, 25px);
-  height: clamp(16px, 2.8vw, 25px);
+  width: clamp(28px, 4vw, 38px);
+  height: clamp(28px, 4vw, 38px);
   object-fit: contain;
   pointer-events: none;
 }
-.camp-ground-reward span { margin: 0; pointer-events: none; }
 .camp-ground-reward-layout { z-index: 18; }
 .camp-prototype-obstacle-timer {
   position: absolute;
@@ -5356,7 +5610,8 @@ body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
   pointer-events: none;
 }
 .camp-resident-cat img.camp-cat-face-normalized,
-.camp-location-cat img.camp-cat-face-normalized {
+.camp-location-cat img.camp-cat-face-normalized,
+.camp-supervisor-bernardo img.camp-cat-face-normalized {
   position: absolute;
   max-width: none;
   max-height: none;
@@ -5983,6 +6238,22 @@ body.camp-prototype-editing .camp-prototype-board {
 .camp-prototype-placement-actions.camp-prototype-placement-actions-below-item {
   top: var(--camp-placement-below-top, var(--camp-placement-top));
   transform: translate(-50%, 0);
+}
+body.camp-first-box-placement-guided .camp-prototype-placement-actions {
+  z-index: 260;
+}
+body.camp-first-box-placement-guided .camp-prototype-placement-action,
+body.camp-first-box-placement-guided .camp-prototype-placement-action:disabled {
+  opacity: 1;
+  filter: none;
+}
+body.camp-first-box-placement-guided .camp-first-box-placement-action-blocked {
+  cursor: not-allowed;
+}
+@media (max-width: 768px) {
+  body.camp-first-box-placement-guided .camp-active-objectives {
+    visibility: hidden;
+  }
 }
 .camp-prototype-house-access-warning {
   position: absolute;
@@ -7935,16 +8206,199 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 .camp-demolition-modal .explo-modal-panneau {
   width: min(92vw, 460px);
 }
+.camp-demolition-modal .explo-modal-panneau.camp-task-panel-anchored {
+  position: fixed;
+  box-sizing: border-box;
+  min-width: 0;
+  max-height: min(80vh, 640px);
+}
 .camp-demolition-modal-summary {
   margin: 0 0 10px;
   color: #78634f;
   font-size: .72rem;
   font-weight: 750;
 }
+.camp-task-panel-summary {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.camp-task-panel-action-icon {
+  width: 58px;
+  height: 58px;
+  padding: 8px;
+  border: 1px solid #ead9c6;
+  border-radius: 14px;
+  background: #fffaf2;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.camp-task-panel-summary-copy {
+  display: grid;
+  gap: 6px;
+  color: #78634f;
+  font-size: .72rem;
+  line-height: 1.25;
+}
+.camp-task-panel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.camp-task-panel-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 3px 9px;
+  border: 1px solid #e3cfb8;
+  border-radius: 999px;
+  background: #fff7eb;
+  color: #5d422e;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.camp-task-panel-costs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 30px;
+}
+.camp-task-panel-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #5d422e;
+  font-size: .76rem;
+}
+.camp-task-panel-cost img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.camp-task-cats-label {
+  margin: 0;
+  color: #78634f;
+  font-size: .68rem;
+  font-weight: 850;
+}
+.camp-task-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 2px;
+}
+.camp-task-slot-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 92px;
+  padding: 4px;
+  text-align: center;
+}
+.camp-task-slot {
+  display: grid;
+  width: 82px;
+  height: 82px;
+  min-width: 82px;
+  min-height: 82px;
+  place-items: center;
+  padding: 0;
+  border: 4px solid #d6caba;
+  border-radius: 50%;
+  background: #2d2722;
+  color: #fff;
+  cursor: pointer;
+  font-size: 2rem;
+  font-weight: 900;
+  touch-action: manipulation;
+}
+.camp-task-slot-empty:hover {
+  border-color: #efc19c;
+  background: var(--couleur-accent);
+}
+.camp-task-slot[aria-pressed="true"] {
+  border-color: #efc19c;
+  box-shadow: 0 0 0 2px rgba(200,117,62,.18);
+}
+.camp-task-slot-filled {
+  overflow: hidden;
+  background: #fffaf2;
+}
+.camp-task-slot-filled img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+.camp-task-slot-number {
+  color: #8b7763;
+  font-size: .58rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+.camp-task-slot-copy {
+  overflow: hidden;
+  font-size: .76rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.camp-task-cat-choice {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.camp-task-cat-choice:disabled { cursor: not-allowed; }
+.camp-task-cats-label { margin-top: 2px; }
+.camp-task-cat-picker-layer {
+  position: fixed;
+  z-index: 3400;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(45, 39, 34, .42);
+}
+.camp-task-cat-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 32px));
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #dbc6ae;
+  border-radius: var(--rayon-petit);
+  background: #fffaf2;
+  box-shadow: 0 14px 38px rgba(58, 38, 23, .28);
+}
+.camp-task-cat-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.camp-task-cat-picker-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b4490b;
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
 .camp-demolition-modal-kitties {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -7967,7 +8421,22 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   background: #fff8eb;
 }
 .camp-demolition-kitty-selected { border-color: #c8753e; background: #fff1e6; box-shadow: 0 0 0 2px rgba(200,117,62,.22); }
-.camp-demolition-start { width: 100%; margin-top: 0.75rem; }
+.camp-demolition-start {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 0.75rem;
+  padding: 8px 12px;
+  border: 1px solid #a55420;
+  border-radius: var(--rayon-petit);
+  background: #b96528;
+  color: #fffaf2;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+  touch-action: manipulation;
+}
+.camp-demolition-start:hover:not(:disabled) { background: #9e4d1f; }
+.camp-demolition-start:disabled { cursor: not-allowed; opacity: .5; }
 .camp-demolition-kitty:focus-visible {
   outline: 3px solid rgba(185, 101, 40, .25);
   outline-offset: 1px;
@@ -8008,6 +8477,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   color: #8b7763;
   font-size: .62rem;
 }
+.camp-task-cat-choice .camp-demolition-kitty-status { white-space: normal; }
 .camp-demolition-kitty-status {
   max-width: 120px;
   text-align: right;
@@ -9310,9 +9780,18 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 
 .inventory-storage-summary-over,
+.inventory-storage-summary-full,
 .inv-res-qty-full {
   color: #a6432d;
 }
+.inv-res-full-label,
+.ressource-full-label {
+  color: #a6432d;
+  font-size: .78em;
+  font-weight: 1000;
+  letter-spacing: .03em;
+}
+.ressource-valeur-stockage-full { color: #a6432d !important; }
 
 .inv-res-categorie {
   font-size: 0.68rem;
@@ -12639,33 +13118,6 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   }
 }
 
-/* Softer neighboring gardens: present but not visually louder than the Camp. */
-.camp-prototype-neighbor-mask {
-  opacity: .76;
-  background:
-    radial-gradient(ellipse at 18% 18%, rgba(182, 205, 117, .34) 0 8%, transparent 9%),
-    radial-gradient(ellipse at 72% 42%, rgba(151, 180, 91, .3) 0 10%, transparent 11%),
-    radial-gradient(ellipse at 38% 78%, rgba(199, 214, 137, .25) 0 9%, transparent 10%),
-    linear-gradient(rgba(65, 78, 48, .6), rgba(76, 91, 53, .66));
-  box-shadow: inset 0 0 36px rgba(31, 43, 25, .24);
-  backdrop-filter: saturate(.7) blur(1px);
-}
-.camp-prototype-neighbor-mask::after {
-  content: "Neighbor garden";
-  position: absolute;
-  left: 50%;
-  top: 56%;
-  padding: 4px 7px;
-  border: 1px solid rgba(241, 242, 217, .22);
-  border-radius: 999px;
-  background: rgba(41, 52, 32, .5);
-  color: rgba(255, 254, 235, .88);
-  font-size: clamp(.42rem, .65vw, .62rem);
-  font-weight: 800;
-  letter-spacing: .02em;
-  white-space: nowrap;
-  transform: translate(-50%, -50%);
-}
 
 /* A living hedge replaces the rigid prototype fence without adding runtime art. */
 .camp-prototype-fence {
@@ -12715,15 +13167,15 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   box-shadow: 0 0 0 3px rgba(255, 244, 207, .72), 0 5px 12px rgba(49, 32, 19, .32);
 }
 .camp-recruit-visitor:focus-visible { outline: none; }
-.camp-recruit-visitor img { width: clamp(28px, 3.3vw, 43px); }
+.camp-recruit-visitor-portrait { width: clamp(28px, 3.3vw, 43px); }
 
 /* Sawmill onboarding: one calm instruction, one clear target, and no
    interaction-blocking layer. The target stays above the soft board veil so
    the next action remains legible on desktop and mobile. */
 .camp-sawmill-tutorial-status {
-  position: fixed;
+  position: absolute;
   z-index: 2600;
-  top: clamp(60px, 10vh, 108px);
+  top: 54px;
   left: 50%;
   width: min(560px, calc(100% - 24px));
   transform: translateX(-50%);
@@ -12737,6 +13189,29 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   pointer-events: none;
 }
 .camp-sawmill-tutorial-status[hidden] { display: none; }
+.camp-prototype-map > .camp-sawmill-tutorial-status.camp-first-box-access-copy {
+  top: var(--camp-first-box-copy-top, 0);
+  left: var(--camp-first-box-copy-left, 50%);
+  width: var(--camp-first-box-copy-width, min(460px, calc(100% - 16px)));
+  max-width: calc(100% - 16px);
+  transform: translateX(-50%);
+}
+.camp-sawmill-tutorial-work-status {
+  position: relative;
+  z-index: 81;
+  margin: 8px 12px 0;
+  padding: 8px 12px;
+  border: 2px solid #6e8f50;
+  border-radius: 12px;
+  background: rgba(255, 251, 229, .97);
+  color: #3f4f2e;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(51, 39, 25, .14);
+}
+.camp-sawmill-tutorial-work-status[hidden] { display: none; }
 .camp-sawmill-tutorial-active .camp-prototype-viewport::after {
   content: "";
   position: absolute;
@@ -12766,6 +13241,64 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 .camp-sawmill-tutorial-target:focus-visible {
   outline-color: #fff !important;
 }
+.camp-guided-junk-target {
+  z-index: 12 !important;
+  outline: 3px solid #ffe07a;
+  outline-offset: 2px;
+  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
+}
+.camp-catchen-tutorial-target {
+  z-index: 13 !important;
+  outline: 3px solid #ffe07a;
+  outline-offset: 3px;
+  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
+}
+.camp-first-box-house-cue {
+  position: relative;
+  z-index: 13;
+  outline: 3px solid #ffe07a !important;
+  outline-offset: 3px;
+  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
+}
+.camp-prototype-terrain-cleared.camp-ground-reward-tutorial-cell,
+body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-reward-tutorial-cell {
+  z-index: 11;
+  overflow: visible;
+  border: 3px solid #ffe07a;
+  border-radius: 18%;
+  background: rgba(255, 239, 157, .3);
+  box-shadow: 0 0 0 5px rgba(255, 224, 122, .42), 0 0 22px rgba(255, 206, 87, .9);
+  opacity: 1;
+  animation: camp-ground-reward-cell-glow 1.15s ease-in-out infinite alternate;
+}
+@keyframes camp-catchen-tutorial-glow {
+  from { filter: drop-shadow(0 0 4px rgba(255, 206, 87, .62)); }
+  to { filter: drop-shadow(0 0 18px rgba(255, 206, 87, 1)) brightness(1.08); }
+}
+@keyframes camp-ground-reward-cell-glow {
+  from { box-shadow: 0 0 0 4px rgba(255, 224, 122, .4), 0 0 10px rgba(255, 206, 87, .7); }
+  to { box-shadow: 0 0 0 8px rgba(255, 232, 145, .62), 0 0 28px rgba(255, 206, 87, 1); }
+}
+/* Full-width Work controls sit flush against overflow-clipped cards and modal
+   scrollers. Draw their tutorial ring inward so all four golden edges remain
+   visible instead of collapsing to horizontal lines. */
+.work-recipe-choose-empty.camp-sawmill-tutorial-target,
+.worker-modal-kitty.camp-sawmill-tutorial-target {
+  outline: 0 !important;
+  outline-offset: 0;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 3px #ffe07a,
+    inset 0 0 0 7px rgba(255, 224, 122, .34),
+    0 0 18px rgba(255, 206, 87, .72) !important;
+}
+.work-recipe-choose-empty.camp-sawmill-tutorial-target:focus-visible,
+.worker-modal-kitty.camp-sawmill-tutorial-target:focus-visible {
+  box-shadow:
+    inset 0 0 0 3px #fff,
+    inset 0 0 0 7px rgba(255, 224, 122, .58),
+    0 0 18px rgba(255, 206, 87, .8) !important;
+}
 #onglet-camp.camp-sawmill-tutorial-target {
   z-index: 261 !important;
   background: #fff1a8;
@@ -12781,6 +13314,11 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 
 @media (prefers-reduced-motion: reduce) {
   .camp-sawmill-tutorial-target,
+  .camp-guided-junk-target,
+  .camp-catchen-tutorial-target,
+  .camp-first-box-house-cue,
+  .camp-ground-reward-tutorial-cell,
+  .camp-prototype-first-box-access-marker,
   .camp-recruit-route-tutorial-attention,
   .camp-recruit-route-tutorial-attention * {
     animation: none !important;
@@ -12866,14 +13404,32 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 
   .camp-prototype-viewport { max-height: none; padding-bottom: 82px; }
   .camp-prototype-viewport.camp-mobile-home-only { overflow-x: auto; }
-  .camp-prototype-neighbor-mask::after { font-size: .42rem; }
   .camp-prototype-fence { width: 3.2%; }
-  .camp-recruit-visitor img { width: clamp(28px, 9vw, 38px); }
+  .camp-recruit-visitor-portrait { width: clamp(28px, 9vw, 38px); }
   .camp-sawmill-tutorial-status {
-    top: 58px;
+    top: 50px;
     padding: 8px 10px;
     font-size: .82rem;
   }
+  .camp-task-panel-anchored {
+    left: 0 !important;
+    right: 0;
+    top: auto !important;
+    bottom: 0;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(82vh, 640px);
+    padding: 14px 14px calc(14px + var(--safe-area-inferieure-mobile));
+    border-radius: 18px 18px 0 0;
+    transform: none !important;
+  }
+  .camp-task-panel-summary { grid-template-columns: 52px minmax(0, 1fr); gap: 9px; }
+  .camp-task-panel-action-icon { width: 48px; height: 48px; padding: 6px; }
+  .camp-task-panel-summary-copy { font-size: .66rem; gap: 4px; }
+  .camp-task-panel-pill { min-height: 23px; padding: 2px 7px; }
+  .camp-task-panel-costs { padding: 5px 7px; }
+  .camp-task-panel-cost img { width: 24px; height: 24px; }
+  .camp-task-slot { width: 66px; height: 66px; min-width: 66px; min-height: 66px; }
 }
 
 /* Keep the ready state readable even between the two animated aura peaks. */
@@ -12882,4 +13438,65 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
     0 0 0 3px rgba(255, 255, 255, .96),
     0 0 0 7px rgba(255, 226, 112, .72),
     0 0 30px rgba(255, 218, 85, .96);
+}
+
+/* LOT-007 QA: the Camp window contains only discovered property columns.
+   The board keeps its three-column world coordinates; the outer map crops
+   that world instead of leaving blank placeholders for unknown neighbors. */
+.camp-prototype-map {
+  overflow: hidden;
+  border-radius: 12px;
+}
+.camp-prototype-board {
+  background-color: #b9d86a;
+  background-image: url("img/Maps/Camp%20Runtime/Environment/Camp_Grass_Texture_Game_v1.webp?v=0.0001");
+  background-repeat: repeat;
+  background-size: 38% auto;
+}
+.camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-board,
+.camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-river-band {
+  width: 300%;
+  margin-left: -100%;
+}
+.camp-prototype-map[data-camp-visible-columns="2"] > .camp-prototype-board,
+.camp-prototype-map[data-camp-visible-columns="2"] > .camp-prototype-river-band {
+  width: 150%;
+}
+.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="0"] > .camp-prototype-board,
+.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="0"] > .camp-prototype-river-band {
+  margin-left: 0;
+}
+.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="1"] > .camp-prototype-board,
+.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="1"] > .camp-prototype-river-band {
+  margin-left: -50%;
+}
+.camp-prototype-map[data-camp-visible-columns="3"] > .camp-prototype-board,
+.camp-prototype-map[data-camp-visible-columns="3"] > .camp-prototype-river-band {
+  width: 100%;
+  margin-left: 0;
+}
+
+@media (min-width: 769px) {
+  .camp-prototype-map[data-camp-visible-columns="1"] {
+    width: 393.333px;
+  }
+  .camp-prototype-map[data-camp-visible-columns="2"] {
+    width: 786.667px;
+  }
+  .camp-prototype-map[data-camp-visible-columns="3"] {
+    width: 1180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .camp-prototype-map[data-camp-visible-columns="1"] { width: 206.667px; }
+  .camp-prototype-map[data-camp-visible-columns="2"] { width: 413.333px; }
+  .camp-prototype-map[data-camp-visible-columns="3"] { width: 620px; }
+}
+
+/* The discovered Camp is an open illustrated scene, not a framed card. */
+.camp-prototype-board,
+.camp-prototype-river-band {
+  border: 0;
+  box-shadow: none;
 }

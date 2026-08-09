@@ -4,25 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0160" />
+  <link rel="stylesheet" href="style.css?v=0.0161" />
   <style>
-    /* Must remain after the legacy responsive layers in style.css. */
-    .camp-prototype-neighbor-masks .camp-prototype-neighbor-mask {
-      opacity: 1;
-      pointer-events: auto;
-      background:
-        radial-gradient(ellipse at 12% 8%, #a9c370 0 7%, transparent 8%),
-        radial-gradient(ellipse at 74% 17%, #86a957 0 10%, transparent 11%),
-        radial-gradient(ellipse at 32% 39%, #b4ca78 0 9%, transparent 10%),
-        radial-gradient(ellipse at 82% 58%, #75974d 0 12%, transparent 13%),
-        radial-gradient(ellipse at 23% 79%, #94b45f 0 11%, transparent 12%),
-        linear-gradient(145deg, #5d7547, #3f5837 58%, #31462f);
-      background-size: 78px 78px, 94px 88px, 105px 96px, 112px 106px, 86px 92px, auto;
-      box-shadow: inset 0 0 52px rgba(20, 35, 20, .72);
-      backdrop-filter: blur(10px) saturate(.25) brightness(.38);
+    /* First-paint guard: unknown neighbor DOM stays absent before game state loads. */
+    .camp-prototype-map.camp-neighbor-red-unknown [data-camp-garden-zone="redGarden"],
+    .camp-prototype-map.camp-neighbor-green-unknown [data-camp-garden-zone="greenGarden"] {
+      visibility: hidden !important;
+      pointer-events: none !important;
     }
-    .camp-prototype-neighbor-masks .camp-prototype-neighbor-mask::before,
-    .camp-prototype-neighbor-masks .camp-prototype-neighbor-mask::after { content: none; }
     .ecran-intro[data-dialogue-hydrated="true"] .story-continue-hint { color: rgba(92, 67, 44, .86); }
     .prologue-cat-portrait img.camp-cat-face-normalized {
       position: absolute;
@@ -294,7 +283,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0041 · August 9, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0042 · August 9, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -497,7 +486,10 @@
     <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Logs">Logs</span></button>
   </div>
 
-  <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none"></div>
+  <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none">
+    <span class="work-boost-label">⚡ Work ×10 — <span id="work-boost-countdown"></span></span>
+    <button id="work-boost-cue-dismiss" type="button" class="work-boost-cue-dismiss" aria-label="Dismiss Work boost tip" hidden onclick="dismissWorkBoostCue(event)">×</button>
+  </div>
 
   <aside id="camp-quick-dialogue" class="camp-quick-dialogue" role="status" aria-live="polite" hidden>
     <img src="img/Cat faces/Bernardo.png?v=0.0026" alt="">
@@ -505,7 +497,7 @@
       <strong>Bernardo</strong>
       <p id="camp-quick-dialogue-copy"></p>
     </div>
-    <button type="button" aria-label="Continue" onclick="fermerDialogueRapideCamp()">✓</button>
+    <button id="camp-quick-dialogue-continue" type="button" aria-label="Continue" onclick="fermerDialogueRapideCamp()">✓</button>
   </aside>
 
   <!-- SCROLLABLE CONTENT AREA -->
@@ -553,17 +545,17 @@
         </div>
         <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite"></p>
         <div class="camp-prototype-viewport">
-          <div class="camp-prototype-map camp-prototype-map-preparing camp-neighbor-red-unknown camp-neighbor-green-unknown">
+          <div class="camp-prototype-map camp-prototype-map-preparing camp-neighbor-red-unknown camp-neighbor-green-unknown" data-camp-visible-columns="1" data-camp-visible-start="1">
           <div id="camp-prototype-board" class="camp-prototype-board" tabindex="0" role="application" aria-label="Base Camp map, with three fixed rear-house facades above three equal 6 by 8 gardens">
           <div class="camp-prototype-environment" aria-hidden="true">
             <div class="camp-prototype-houses">
-              <div class="camp-prototype-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Red_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
+              <div class="camp-prototype-house-plot" data-camp-garden-zone="redGarden" aria-hidden="true">
+                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Red_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
               </div>
               <div class="camp-prototype-house-plot camp-recruitment-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Blue_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
+                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Blue_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
                 <span id="camp-recruit-route" class="camp-recruit-route" hidden aria-hidden="true">
@@ -593,22 +585,26 @@
                   </span>
                 </span>
                 <button id="camp-recruit-visitor" class="camp-recruit-visitor" type="button" hidden onclick="activerRecrutementDepuisCamp(event)">
-                  <img id="camp-recruit-visitor-face" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
+                  <span class="camp-recruit-visitor-portrait">
+                    <img id="camp-recruit-visitor-face" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
+                  </span>
                   <span class="camp-recruit-visitor-question" aria-hidden="true">?</span>
                 </button>
                </div>
-              <div class="camp-prototype-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Green_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
+              <div class="camp-prototype-house-plot" data-camp-garden-zone="greenGarden" aria-hidden="true">
+                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Green_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
               </div>
              </div>
-             <span class="camp-prototype-gardens"></span>
+              <span class="camp-prototype-gardens camp-prototype-garden-red" data-camp-garden-zone="redGarden" aria-hidden="true"></span>
+              <span class="camp-prototype-gardens camp-prototype-garden-home"></span>
+              <span class="camp-prototype-gardens camp-prototype-garden-green" data-camp-garden-zone="greenGarden" aria-hidden="true"></span>
            </div>
           <span id="camp-recruit-capacity-message" class="camp-recruit-capacity-message" role="status" aria-live="polite" hidden></span>
           <div id="camp-resident-cats" class="camp-resident-cats" aria-label="Cats at Base Camp"></div>
           <div id="camp-supervisor-bernardo" class="camp-supervisor-bernardo" aria-label="Bernardo supervising Base Camp" hidden></div>
-          <div id="camp-prototype-territory-zones" class="camp-prototype-territory-zones" aria-hidden="true"></div>
+           <div id="camp-prototype-territory-zones" class="camp-prototype-territory-zones" aria-label="Neighbor garden access sites"></div>
           <div id="camp-prototype-terrain" class="camp-prototype-terrain"></div>
           <div class="camp-prototype-grid" aria-hidden="true"></div>
           <div id="camp-prototype-items" class="camp-prototype-items"></div>
@@ -633,14 +629,14 @@
             </button>
            </div>
          </div>
-          <div class="camp-prototype-river-band" aria-hidden="true">
-            <img class="camp-prototype-river" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v2.webp?v=0.0002" alt="">
-            <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
-          </div>
-          <div class="camp-prototype-neighbor-masks" aria-hidden="true">
-            <span class="camp-prototype-neighbor-mask camp-prototype-neighbor-mask-red" data-camp-neighbor-zone="redGarden"></span>
-            <span class="camp-prototype-neighbor-mask camp-prototype-neighbor-mask-green" data-camp-neighbor-zone="greenGarden"></span>
-          </div>
+           <div class="camp-prototype-river-band" aria-hidden="true">
+             <div class="camp-prototype-river-segments">
+               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v3.webp?v=0.0001" alt=""></span>
+               <span><img class="camp-prototype-river camp-prototype-river-home" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v3.webp?v=0.0001" alt=""></span>
+               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v3.webp?v=0.0001" alt=""></span>
+             </div>
+             <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
+           </div>
         </div>
        </div>
        <div id="camp-prototype-first-reveal-cover" class="camp-prototype-first-reveal-cover" aria-hidden="true"></div>
@@ -704,6 +700,7 @@
       </div>
       <button class="btn-unaffect-all" id="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all Cats</button>
     </div>
+    <p id="camp-sawmill-tutorial-work-status" class="camp-sawmill-tutorial-work-status" role="status" aria-live="polite" hidden></p>
     <div id="work-discovery-hint" class="work-discovery-hint" role="note">
       <div class="work-discovery-hint-copy">
         <strong>How Work works</strong>
@@ -972,7 +969,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0041</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0042</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1246,22 +1243,23 @@
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0002"></script>
   <script src="js/data/content.js?v=0.0055"></script>
-  <script src="js/data/changelog.js?v=0.0041&build=1"></script>
-  <script src="js/data/dialogues.generated.js?v=0.0002"></script>
+  <script src="js/data/changelog.js?v=0.0042&build=1"></script>
+  <script src="js/data/dialogues.generated.js?v=0.0003"></script>
   <script src="js/data/dialogues.js?v=0.0004"></script>
-  <script src="js/core/state.js?v=0.0043"></script>
-  <script src="js/core/save.js?v=0.0048"></script>
+  <script src="js/core/state.js?v=0.0044"></script>
+  <script src="js/core/save.js?v=0.0049"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/data/camp-gameplay.generated.js?v=0.0002"></script>
+  <script src="js/data/playable-content-scenario.js?v=0.0001"></script>
   <script src="js/core/incrementor-law.js?v=0.0002"></script>
-  <script src="js/data/camp-assets.generated.js?v=0.0008"></script>
-  <script src="js/data/camp-templates.generated.js?v=0.0001"></script>
+  <script src="js/data/camp-assets.generated.js?v=0.0009"></script>
+  <script src="js/data/camp-templates.generated.js?v=0.0002"></script>
   <script src="js/core/camp-connectivity.js?v=0.0001"></script>
   <script src="js/core/camp-capabilities.js?v=0.0001"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
   <script src="js/ui/camp.js?v=0.0025"></script>
-  <script src="jeu.js?v=0.0171"></script>
+  <script src="jeu.js?v=0.0172"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

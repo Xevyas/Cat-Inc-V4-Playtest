@@ -43,7 +43,13 @@ function makeCampState() {
       junkClearingUnlocked: false,
       operationsTableUnlocked: false,
       storageShedUnlocked: false,
+      workBoostCueDismissed: false,
       sawmillTutorialStage: "inactive",
+      firstBoxTutorialStage: "inactive",
+      firstBoxUnlockDialogueDismissed: false,
+      firstBoxRecruitConfirmationPending: false,
+      firstBoxRecruitConfirmationAcknowledged: false,
+      firstGroundRewardUid: null,
       quickDialogueQueue: [],
       quickDialoguesSeen: []
     }

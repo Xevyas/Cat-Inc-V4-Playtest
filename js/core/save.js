@@ -68,28 +68,31 @@ function donneesSauvegardeReconnaissables(d) {
 }
 
 function deriverEtapeTutorielSawmill(d, campSource, progressionSource) {
-  if (Number(d.chatons) >= 4 || d.sequenceEnCours === true) return "complete";
+  if (Number(d.chatons) >= 4) return "complete";
   const repaired = Array.isArray(campSource.repairedBuildingIds)
     ? campSource.repairedBuildingIds.includes("sawmill")
     : (Array.isArray(d.batimentsCampRepares) && d.batimentsCampRepares.includes("sawmill"));
   if (!repaired || Number(d.chatons) !== 3) return "inactive";
+  const sawmillDialoguePending = progressionSource
+    && Array.isArray(progressionSource.quickDialogueQueue)
+    && progressionSource.quickDialogueQueue.includes("sawmillRepaired")
+    && (!Array.isArray(progressionSource.quickDialoguesSeen)
+      || !progressionSource.quickDialoguesSeen.includes("sawmillRepaired"));
+  if (sawmillDialoguePending) return "inactive";
   const slots = d.workRecipeSlots && Array.isArray(d.workRecipeSlots.wood)
     ? d.workRecipeSlots.wood
     : [];
   const first = slots[0];
   const second = slots[1];
-  const cardboard = function(slot) { return slot && slot.recipeId === "cardboardPlanks"; };
-  const namedIndex = function(name) {
-    return Array.isArray(d.kittiesData)
-      ? d.kittiesData.findIndex(function(kitty) { return kitty && kitty.nom === name; })
-      : -1;
+  const configured = function(slot) { return Boolean(slot && slot.recipeId); };
+  const assigned = function(slot) {
+    return configured(slot) && Number.isInteger(slot.kittyIndex) && slot.kittyIndex >= 0;
   };
-  const mochi = namedIndex("Mochi");
-  const luna = namedIndex("Luna");
-  const firstRecipe = cardboard(first);
-  const firstCat = firstRecipe && first.kittyIndex === mochi;
-  const secondRecipe = cardboard(second);
-  const complete = firstCat && secondRecipe && second.kittyIndex === luna;
+  const firstRecipe = configured(first);
+  const firstCat = assigned(first);
+  const secondRecipe = configured(second);
+  const secondCat = assigned(second);
+  const complete = firstCat && secondCat && first.kittyIndex !== second.kittyIndex;
   let derived = "sawmill";
   let achievedLevel = 0;
   if (firstRecipe) {
@@ -288,9 +291,32 @@ function validerStructureSauvegarde(d) {
         && typeof progressionCamp.storageShedUnlocked !== "boolean") {
       return "Invalid Camp storage progression data.";
     }
+    if (progressionCamp.workBoostCueDismissed !== undefined
+        && typeof progressionCamp.workBoostCueDismissed !== "boolean") {
+      return "Invalid Camp Work boost cue data.";
+    }
     if (progressionCamp.sawmillTutorialStage !== undefined
         && !SAWMILL_TUTORIAL_STAGES.includes(progressionCamp.sawmillTutorialStage)) {
       return "Invalid Sawmill tutorial stage.";
+    }
+    if (progressionCamp.firstBoxTutorialStage !== undefined
+        && !["inactive", "place", "assign", "complete"].includes(progressionCamp.firstBoxTutorialStage)) {
+      return "Invalid first Cardboard Box tutorial stage.";
+    }
+    if (progressionCamp.firstBoxUnlockDialogueDismissed !== undefined
+        && typeof progressionCamp.firstBoxUnlockDialogueDismissed !== "boolean") {
+      return "Invalid first Cardboard Box unlock dialogue state.";
+    }
+    if (["firstBoxRecruitConfirmationPending", "firstBoxRecruitConfirmationAcknowledged"].some(function(cle) {
+      return progressionCamp[cle] !== undefined && typeof progressionCamp[cle] !== "boolean";
+    })) return "Invalid first Cardboard Box recruit confirmation state.";
+    if (progressionCamp.firstGroundRewardUid !== undefined
+        && progressionCamp.firstGroundRewardUid !== null
+        && (typeof progressionCamp.firstGroundRewardUid !== "string"
+          || progressionCamp.firstGroundRewardUid.length < 1
+          || progressionCamp.firstGroundRewardUid.length > 120
+          || /[<>]/.test(progressionCamp.firstGroundRewardUid))) {
+      return "Invalid first ground reward tutorial target.";
     }
     if (!["quickDialogueQueue", "quickDialoguesSeen"].every(function(cle) {
       return Array.isArray(progressionCamp[cle])
@@ -340,13 +366,39 @@ function validerStructureSauvegarde(d) {
     });
     if (!cloturesValides) return "Invalid Camp fence edge.";
     const demolitionsValides = camp.demolitions.every(function(demolition) {
+      const modernAssignment = Array.isArray(demolition && demolition.kittyIndices);
+      const hasRequiredCats = Number.isInteger(demolition && demolition.requiredCats);
+      const legacyAssignment = !modernAssignment && !hasRequiredCats;
+      const kittyIndices = modernAssignment
+        ? demolition.kittyIndices
+        : [demolition && demolition.kittyIndex];
+      // Legacy records only carried kittyIndex. Any record carrying
+      // kittyIndices is modern and must carry the persisted required count;
+      // runtime still reconciles that count against the authoritative target.
+      const kittyCountValide = legacyAssignment
+        ? kittyIndices.length === 1
+        : modernAssignment
+          && hasRequiredCats
+          && demolition.requiredCats >= 1
+          && demolition.requiredCats <= 8
+          && kittyIndices.length === demolition.requiredCats;
+      const accessAssignmentValide = (demolition && demolition.targetKind !== "access")
+        || (modernAssignment
+          && demolition.requiredCats === 2
+          && kittyIndices.length === 2);
       return estObjetSauvegarde(demolition)
         && typeof demolition.obstacleUid === "string"
         && demolition.obstacleUid.length > 0
         && demolition.obstacleUid.length <= 160
         && !/[<>]/.test(demolition.obstacleUid)
-        && ["terrain", "layout"].includes(demolition.targetKind)
+        && ["terrain", "layout", "access"].includes(demolition.targetKind)
         && indexKittyValide(demolition.kittyIndex, false)
+        && kittyIndices.length > 0
+        && kittyIndices.length <= 8
+        && kittyIndices.every(function(kittyIndex) { return indexKittyValide(kittyIndex, false); })
+        && new Set(kittyIndices).size === kittyIndices.length
+        && kittyCountValide
+        && accessAssignmentValide
         && typeof demolition.startTs === "number"
         && Number.isFinite(demolition.startTs)
         && demolition.startTs >= 0
@@ -961,7 +1013,20 @@ function analyserSauvegardeBrute(raw) {
     junkClearingUnlocked: progressionSource.junkClearingUnlocked === true,
     operationsTableUnlocked: progressionSource.operationsTableUnlocked === true,
     storageShedUnlocked: progressionSource.storageShedUnlocked === true,
+    workBoostCueDismissed: progressionSource.workBoostCueDismissed === true,
     sawmillTutorialStage: deriverEtapeTutorielSawmill(d, campSource, progressionSource),
+    firstBoxTutorialStage: ["place", "assign", "complete"].includes(progressionSource.firstBoxTutorialStage)
+      ? progressionSource.firstBoxTutorialStage : "inactive",
+    firstBoxUnlockDialogueDismissed: progressionSource.firstBoxUnlockDialogueDismissed === true,
+    firstBoxRecruitConfirmationPending: progressionSource.firstBoxRecruitConfirmationPending === true
+      && progressionSource.firstBoxRecruitConfirmationAcknowledged !== true
+      && !(Array.isArray(progressionSource.quickDialoguesSeen)
+        && progressionSource.quickDialoguesSeen.includes("firstBox")),
+    firstBoxRecruitConfirmationAcknowledged: progressionSource.firstBoxRecruitConfirmationAcknowledged === true
+      || (Array.isArray(progressionSource.quickDialoguesSeen)
+        && progressionSource.quickDialoguesSeen.includes("firstBox")),
+    firstGroundRewardUid: typeof progressionSource.firstGroundRewardUid === "string"
+      ? progressionSource.firstGroundRewardUid : null,
     quickDialogueQueue: Array.isArray(progressionSource.quickDialogueQueue)
       ? progressionSource.quickDialogueQueue.slice(0, 128)
       : [],

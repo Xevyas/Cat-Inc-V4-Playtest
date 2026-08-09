@@ -421,7 +421,7 @@
         }
       ],
       "asset": {
-        "type": "illustration",
+        "type": "icon",
         "src": "img/Story scenes/Story 3.png",
         "alt": "Bernardo addresses two other kittens in the garden."
       }
@@ -495,7 +495,7 @@
         }
       ],
       "asset": {
-        "type": "illustration",
+        "type": "icon",
         "src": "img/Story scenes/Story 3.png",
         "alt": "Bernardo, Mochi and Luna inspect their cluttered new garden."
       }
@@ -543,7 +543,7 @@
       "asset": {
         "type": "icon",
         "src": "img/Buildings/Cardboard Box_Final.png",
-        "alt": "A Cardboard Box shelter."
+        "alt": "box"
       }
     },
     {
@@ -700,8 +700,8 @@
         }
       ],
       "asset": {
-        "type": "illustration",
-        "src": "img/Story scenes/Story 4.png",
+        "type": "icon",
+        "src": "img/Buildings/Cardboard Box_Final.png",
         "alt": "Three kittens admire their first cardboard shelter."
       }
     },
@@ -721,84 +721,77 @@
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernard",
-          "html": "Hold on. The first Cardboard Box cost one plank. Why did this one cost two?"
-        },
-        {
-          "classes": [],
-          "speakerClass": "mochi",
-          "speakerName": "Mochi",
-          "portraitClass": "mochi",
-          "html": "Maybe it grew a second stomach?"
+          "html": "Wait. What just happened... Why our second box was harder to build ?"
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "Boxes do not have stomachs, Mochi. And this one does not use twice as much cardboard."
+          "html": "Strange indeed, it's like some kind of magic forced our hands."
         },
         {
           "classes": [],
-          "speakerClass": "incrementorAmused",
+          "speakerClass": "incrementor",
           "speakerName": "The Greatest Incrementor",
-          "portraitClass": "incrementorAmused",
-          "html": "Oh, excellent. You noticed."
+          "portraitClass": "incrementorPresetAmusedMockery",
+          "html": "Ah! It's time I introduce myself properly."
         },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
-          "portraitClass": "bernard",
-          "html": "Who are you?"
+          "portraitClass": "bernardPresetAngry",
+          "html": "Who are you, and why are you touching my construction plans?"
         },
         {
           "classes": [],
           "speakerClass": "incrementor",
           "speakerName": "The Greatest Incrementor",
           "portraitClass": "incrementor",
-          "html": "I am the Greatest Incrementor. Every time you repeat a construction, its cost rises. That is the Law."
+          "html": "I am the Greatest Incrementor. You should kneel before me, but let's skip that part for once. My power applies in all kingdoms, and yours in no exception."
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "Why?"
+          "html": "What do you mean your power? That explains nothing!"
         },
         {
           "classes": [],
-          "speakerClass": "incrementorAmused",
+          "speakerClass": "incrementor",
           "speakerName": "The Greatest Incrementor",
-          "portraitClass": "incrementorAmused",
-          "html": "Because I decided it does."
+          "portraitClass": "incrementorPresetAmusedMockery",
+          "html": "Let me be more precise, my Law applies in this world. And that is why each time you build, you must pay a little more in my honor."
         },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
-          "portraitClass": "bernard",
-          "html": "That is not a reason."
+          "portraitClass": "bernardPresetAngry",
+          "html": "Then we will learn how your Law works and find a way around it."
         },
         {
           "classes": [],
-          "speakerClass": "incrementorAmused",
+          "speakerClass": "incrementor",
           "speakerName": "The Greatest Incrementor",
-          "portraitClass": "incrementorAmused",
-          "html": "It is when you are me."
+          "portraitClass": "incrementorPresetAmusedMockery",
+          "html": "Please try. Watching tiny Cats challenge a god should be adorable."
         },
         {
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
           "portraitClass": "mochi",
-          "html": "Can you decide that snacks get cheaper?"
+          "html": "Can your Law make snacks cheaper?"
         },
         {
           "classes": [],
-          "speakerClass": "incrementorLaugh",
+          "speakerClass": "incrementor",
           "speakerName": "The Greatest Incrementor",
-          "portraitClass": "incrementorLaugh",
-          "html": "Ha! No."
+          "portraitClass": "incrementorPresetLaughExit",
+          "html": "Absolutely not!"
         },
         {
           "classes": [
@@ -807,28 +800,28 @@
           "speakerClass": null,
           "speakerName": null,
           "portraitClass": null,
-          "html": "The white Cat vanishes, still laughing."
+          "html": "The white Cat vanishes in a burst of laughter."
         },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernard",
-          "html": "We need to learn more about this Incrementor—and what his Law allows him to change."
+          "html": "He wants us to feel powerless. I intend to disappoint him."
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "luna",
-          "html": "Agreed. Preferably before our next box costs the entire garden."
+          "portraitClass": "lunaPresetAmused",
+          "html": "Good. I already dislike his laugh."
         },
         {
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochi",
-          "html": "And before snacks get ideas."
+          "portraitClass": "mochiPresetAngry",
+          "html": "I dislike his snack policy."
         }
       ],
       "asset": {
@@ -920,7 +913,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/resources/Basic Wood_Final.png?v=0.0029",
+        "src": "img/resources/Basic Wood_Final.png",
         "alt": "A stack of sturdy Basic Wood logs."
       }
     },
@@ -1774,9 +1767,9 @@
         }
       ],
       "asset": {
-        "type": "illustration",
-        "src": "img/Story scenes/Bernardo caught bird.png?v=0.0029",
-        "alt": "Bernardo leaps toward a bird perched on a tree branch."
+        "type": "icon",
+        "src": "img/interface/Bird Minigame Icon_Final.png",
+        "alt": "bird"
       }
     }
   ]
