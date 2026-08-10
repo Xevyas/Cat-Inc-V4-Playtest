@@ -302,11 +302,34 @@
     })
   ]);
 
+  const release0043Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Job Center, Training Center and Laboratory now carry a dedicated Jobs emblem that follows their Camp orientation."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Story conversations now provide a clear touch-friendly continue button.",
+        "Stories replayed from Logs now close safely without repeating their original progression action."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Release notes now wait for guided Camp interactions to finish instead of interrupting the active tutorial.",
+        "Camp asset access cells now stay aligned when an authored building footprint is resized."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0042",
+    baseVersion: "0.0043",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -319,6 +342,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0043",
+      date: "2026-08-10",
+      categories: release0043Categories
+    }),
     Object.freeze({
       version: "0.0042",
       date: "2026-08-09",

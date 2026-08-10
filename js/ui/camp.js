@@ -102,7 +102,7 @@
       : "none";
     if (mode === "none" || typeof value.id !== "string") return null;
     const allowed = mode === "surface" ? ["surface"] : ["left", "right"];
-    if (value.category !== "storage" && value.category !== "general") return null;
+    if (!["storage", "general", "jobs"].includes(value.category)) return null;
     if (!value.anchors || typeof value.anchors !== "object") return null;
     const anchors = {};
     for (const direction of ["down", "right", "up", "left"]) {

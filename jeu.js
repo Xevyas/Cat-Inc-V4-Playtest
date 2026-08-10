@@ -6319,6 +6319,7 @@ function rendu() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorations(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
+  essayerAfficherNotesVersionEnAttente();
 }
 
 // The simulation clock stays at 100 ms, but it must not rebuild every active
@@ -6362,6 +6363,7 @@ function renduDynamique() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
+  essayerAfficherNotesVersionEnAttente();
 }
 
 let renduOngletPlanifie = false;
@@ -10946,6 +10948,7 @@ function rechargerPourMiseAJourAfk() {
 let releaseNotesTimer = null;
 let releaseNotesDeadline = 0;
 let releaseNotesSuite = null;
+let releaseNotesAutomatiquesEnAttente = false;
 
 function releaseNotesNecessaires() {
   return etat.releaseNotesSeenVersion !== GAME_RELEASE_VERSION;
@@ -10964,6 +10967,30 @@ function releaseNotesAffichablesAuDemarrage(partieExistante) {
     && !!partieExistante
     && campDebloque()
     && releaseNotesNecessaires();
+}
+
+function releaseNotesInteractionGuideeActive() {
+  return (typeof campTutorialActif === "function" && campTutorialActif())
+    || (typeof campDialogueSawmillTutorielEnAttente === "function" && campDialogueSawmillTutorielEnAttente())
+    || (typeof firstBoxTutorialActif === "function" && firstBoxTutorialActif())
+    || (typeof firstGroundRewardTutorialActif === "function" && firstGroundRewardTutorialActif())
+    || (typeof firstGroundRewardCollectionActif === "function" && firstGroundRewardCollectionActif());
+}
+
+function releaseNotesPeuventSafficherMaintenant() {
+  return !releaseNotesInteractionGuideeActive() && !dialogueOuvertAuPremierPlan();
+}
+
+function essayerAfficherNotesVersionEnAttente() {
+  if (!releaseNotesAutomatiquesEnAttente) return false;
+  if (!releaseNotesNecessaires()) {
+    releaseNotesAutomatiquesEnAttente = false;
+    return false;
+  }
+  if (!releaseNotesPeuventSafficherMaintenant()) return false;
+  releaseNotesAutomatiquesEnAttente = false;
+  afficherNotesVersion();
+  return true;
 }
 
 function mettreAJourCompteAReboursNotes() {
@@ -11443,6 +11470,14 @@ function campTutorialRestaurerPicker() {
 }
 
 function campTutorialInteractionAutorisee(element) {
+  const releaseNotes = typeof document !== "undefined"
+    ? document.getElementById("ecran-release-notes")
+    : null;
+  if (releaseNotes && dialogueOuvertAuPremierPlan() === releaseNotes
+      && element && typeof element.closest === "function"
+      && element.closest("#ecran-release-notes")) {
+    return true;
+  }
   if (firstBoxTutorialActif()) {
     if (!element || typeof element.closest !== "function") return false;
     if (firstBoxTutorialStage() === "place") {
@@ -11805,6 +11840,10 @@ function marquerStoryVue(flag) {
   return true;
 }
 
+function afficherStoryDepuisLogs(storyId) {
+  afficherModal(storyId, { replayDepuisLogs: true });
+}
+
 function renduStories() {
   const conteneur = document.getElementById("stories-liste");
   if (!conteneur) return;
@@ -11816,7 +11855,7 @@ function renduStories() {
     affichees++;
     const carte = document.createElement("button");
     carte.className = "story-carte";
-    carte.onclick = function() { afficherModal(story.id); };
+    carte.onclick = function() { afficherStoryDepuisLogs(story.id); };
     const asset = STORY_ASSETS[story.id];
     if (asset) {
       const img = document.createElement("img");
@@ -12125,10 +12164,16 @@ function fermerStoryBird() {
   if (el) el.style.display = "none";
   demarrerBirdMiniJeu();
 }
-function afficherModal(id) {
+function afficherModal(id, options) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (STORIES.some(function(s) { return s.id === id; })) {
+  const storyData = STORIES.find(function(s) { return s.id === id; });
+  if (storyData) {
+    if (options && options.replayDepuisLogs === true) {
+      el.dataset.storyReplayDepuisLogs = "true";
+    } else {
+      delete el.dataset.storyReplayDepuisLogs;
+    }
     delete el.dataset.dialogueVoiceBeat;
     DIALOGUE_DATA.resetModal(el);
     jouerVoixBulleDialogue(el);
@@ -12140,7 +12185,6 @@ function afficherModal(id) {
   if (id === "ecran-story-explorator") preparerStoryExplorator();
   const boite = el.querySelector(".intro-boite");
   const asset = STORY_ASSETS[id];
-  const storyData = STORIES.find(function(s) { return s.id === id; });
   if (boite) {
     boite.setAttribute("role", "document");
     boite.tabIndex = -1;
@@ -12178,11 +12222,26 @@ function afficherModal(id) {
 }
 
 document.addEventListener("click", function(event) {
+  const action = event.target && event.target.closest
+    ? event.target.closest('.ecran-intro[data-story-replay-depuis-logs="true"] .bouton-intro')
+    : null;
+  if (!action) return;
+  const modal = action.closest('.ecran-intro[data-story-replay-depuis-logs="true"]');
+  if (!modal) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  fermerDialogueModal(modal);
+  delete modal.dataset.storyReplayDepuisLogs;
+}, true);
+
+document.addEventListener("click", function(event) {
   const modal = event.target && event.target.closest
     ? event.target.closest('.ecran-intro[data-dialogue-hydrated="true"]')
     : null;
   if (!modal || modal.style.display === "none") return;
-  if (event.target.closest("button, a, input, select, textarea, [role=button]")) return;
+  const continueButton = event.target.closest(".story-continue-hint");
+  if (!continueButton
+      && event.target.closest("button, a, input, select, textarea, [role=button]")) return;
   if (DIALOGUE_DATA.advanceModal(modal)) {
     jouerVoixBulleDialogue(modal);
     event.preventDefault();
@@ -21844,7 +21903,12 @@ function lancerOuvertureInitiale() {
 if (redemarrageMajeurRequis) {
   ouvrirDialogueModal("save-upgrade-modal", { focusSelector: "#save-upgrade-restart" });
 } else if (releaseNotesAffichablesAuDemarrage(partieExistante)) {
-  afficherNotesVersion(lancerOuvertureInitiale);
+  if (releaseNotesPeuventSafficherMaintenant()) {
+    afficherNotesVersion(lancerOuvertureInitiale);
+  } else {
+    releaseNotesAutomatiquesEnAttente = true;
+    lancerOuvertureInitiale();
+  }
 } else {
   lancerOuvertureInitiale();
 }

@@ -1349,10 +1349,10 @@ function characterFromLine(line) {
     dialogue.classList.add("story-conversation");
     dialogue.setAttribute("aria-live", "polite");
     dialogue.querySelectorAll(".intro-ligne").forEach(hydrateLine);
-    const hint = document.createElement("span");
+    const hint = document.createElement("button");
     hint.className = "story-continue-hint";
-    hint.setAttribute("aria-hidden", "true");
-    hint.textContent = "Click to continue";
+    hint.type = "button";
+    hint.textContent = "Tap to continue";
     dialogue.insertAdjacentElement("afterend", hint);
     modal.dataset.dialogueHydrated = "true";
   }
