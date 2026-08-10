@@ -2336,6 +2336,15 @@ const dialoguesController = globalThis.CatInc.dialogs.createController({
   getComputedStyle: function(element) { return getComputedStyle(element); }
 });
 
+const guidanceController = globalThis.CatInc.guidance
+  ? globalThis.CatInc.guidance.createController({
+      document: document,
+      getComputedStyle: function(element) { return getComputedStyle(element); },
+      getTopmostDialog: function() { return dialogueOuvertAuPremierPlan(); },
+      resolveDescriptor: function() { return campGuidanceDescripteurActif(); }
+  })
+  : null;
+
 function elementsFocusablesDialogue(dialogue) {
   return dialoguesController.getFocusableElements(dialogue);
 }
@@ -2353,14 +2362,8 @@ function dialogueOuvertAuPremierPlan() {
 }
 
 function gererClavierDialogue(event) {
-  const interactionGuideeActive = (typeof campTutorialActif === "function" && campTutorialActif())
-    || (typeof campDialogueSawmillTutorielEnAttente === "function" && campDialogueSawmillTutorielEnAttente())
-    || (typeof firstBoxTutorialActif === "function" && firstBoxTutorialActif())
-    || (typeof firstGroundRewardTutorialActif === "function" && firstGroundRewardTutorialActif())
-    || (typeof firstGroundRewardCollectionActif === "function" && firstGroundRewardCollectionActif());
-  if (interactionGuideeActive
-      && event.key !== "Tab"
-      && !campTutorialInteractionAutorisee(event.target)) {
+  if (typeof campTutorialDoitBloquerInteraction === "function"
+      && campTutorialDoitBloquerInteraction(event)) {
     event.preventDefault();
     event.stopImmediatePropagation();
     return;
@@ -2644,6 +2647,10 @@ function basculerIconesChatsCamp(checked) {
 }
 function fermerModalSettings() {
   fermerDialogueModal("settings-modal");
+  if (typeof campGuidanceAssurerActionnable === "function") {
+    const guidance = campGuidanceAssurerActionnable();
+    if (guidance) campTutorialActualiserInterface();
+  }
 }
 
 const changelogController = globalThis.CatInc.changelog.createController({
@@ -11324,88 +11331,270 @@ function campTutorialRestaurerPicker() {
   return dejaOuvert;
 }
 
-function campTutorialInteractionAutorisee(element) {
-  const releaseNotes = typeof document !== "undefined"
-    ? document.getElementById("ecran-release-notes")
-    : null;
-  if (releaseNotes && dialogueOuvertAuPremierPlan() === releaseNotes
-      && element && typeof element.closest === "function"
-      && element.closest("#ecran-release-notes")) {
-    return true;
-  }
-  if (firstBoxTutorialActif()) {
-    if (!element || typeof element.closest !== "function") return false;
-    if (firstBoxTutorialStage() === "place") {
-      return Boolean(element.closest("#camp-prototype-placement-confirm"));
-    }
-    return Boolean(element.closest(
-      "#camp-house-construction-modal .camp-task-slot, #camp-house-construction-modal .camp-task-cat-choice:not([disabled]), #camp-house-construction-modal #camp-task-start:not([disabled])"
-    ));
-  }
-  if (firstGroundRewardTutorialActif()) {
-    if (!element || typeof element.closest !== "function") return false;
-    return Boolean(element.closest("#camp-quick-dialogue-continue"));
-  }
-  if (firstGroundRewardCollectionActif()) {
-    if (!element || typeof element.closest !== "function") return false;
-    const reward = element.closest("[data-camp-ground-reward-uid]");
-    return Boolean(reward
-      && reward.dataset.campGroundRewardUid === progressionCamp().firstGroundRewardUid);
-  }
-  const dialogueSawmillEnAttente = campDialogueSawmillTutorielEnAttente();
-  if ((!campTutorialActif() && !dialogueSawmillEnAttente)
-      || !element || typeof element.closest !== "function") {
-    return !campTutorialActif() && !dialogueSawmillEnAttente;
-  }
-  if (dialogueSawmillEnAttente) {
-    return Boolean(element.closest("#camp-quick-dialogue-continue"));
-  }
-  const stage = campTutorialStage();
+function campGuidanceElements(selector) {
+  return typeof document !== "undefined"
+    ? Array.from(document.querySelectorAll(selector)) : [];
+}
+
+function campGuidanceElementCorrespond(element, selector) {
+  return Boolean(element && typeof element.closest === "function" && element.closest(selector));
+}
+
+function campGuidanceElementSawmill() {
+  return campGuidanceElements('[data-camp-type="sawmill"]');
+}
+
+function campGuidanceCiblesSawmill(stage) {
   const recipeModal = document.getElementById("recipe-modal");
   const workerModal = document.getElementById("worker-modal");
   const recipeOuverte = recipeModal && recipeModal.getAttribute("aria-hidden") !== "true"
     && recipeModal.style.display !== "none";
   const workerOuverte = workerModal && workerModal.getAttribute("aria-hidden") !== "true"
     && workerModal.style.display !== "none";
-  if (campTutorialRecipeEtape()) {
+  if (stage === "wood-slot-1-recipe" || stage === "wood-slot-2-recipe") {
     const cible = campTutorialRecipeCible();
     if (recipeOuverte) {
-      return Boolean(element.closest('.recipe-modal-choice:not([disabled]):not([aria-disabled="true"])'));
+      return campGuidanceElements('.recipe-modal-choice:not([disabled]):not([aria-disabled="true"])');
     }
-    return Boolean(element.closest('#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
+    return campGuidanceElements('#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
       + ' .work-recipe-choose-empty, [data-camp-production-slot="' + cible.familyId + '-'
-      + cible.slotIdx + '"] [data-camp-production-origin="recipe"]'));
+      + cible.slotIdx + '"] [data-camp-production-origin="recipe"]');
   }
-  if (campTutorialPickerEtape()) {
+  if (stage === "wood-slot-1-cat" || stage === "wood-slot-2-cat") {
     const cible = campTutorialPickerCible();
+    if (!campTutorialWorkerResolvableIndices(cible.slotIdx).length) return [];
     if (workerOuverte) {
-      const choice = element.closest('.worker-modal-kitty[data-worker-kitty-index][data-clavier-clic], .btn-forcer[data-worker-kitty-index]');
-      if (!choice || choice.getAttribute("aria-disabled") === "true") return false;
       const other = campTutorialSlot("wood", cible.slotIdx === 0 ? 1 : 0);
-      const kittyIndex = Number(choice.dataset.workerKittyIndex);
-      return (!other || kittyIndex !== other.kittyIndex)
-        && campTutorialWorkerResolvable(kittyIndex, cible.slotIdx);
+      return campGuidanceElements('.worker-modal-kitty[data-worker-kitty-index][data-clavier-clic], .btn-forcer[data-worker-kitty-index]')
+        .filter(function(choice) {
+          const kittyIndex = Number(choice.dataset.workerKittyIndex);
+          return choice.getAttribute("aria-disabled") !== "true"
+            && (!other || kittyIndex !== other.kittyIndex)
+            && campTutorialWorkerResolvable(kittyIndex, cible.slotIdx);
+        });
     }
-    return Boolean(element.closest('#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
+    return campGuidanceElements('#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
       + ' .work-recipe-cat-empty, [data-camp-production-slot="' + cible.familyId + '-'
-      + cible.slotIdx + '"] [data-camp-production-origin="worker"]'));
+      + cible.slotIdx + '"] [data-camp-production-origin="worker"]');
   }
   if (stage === "sawmill" || stage === "confirm-camp") {
-    return Boolean(element.closest('[data-camp-type="sawmill"]'));
+    return campGuidanceElementSawmill();
   }
   if (stage === "work-action") {
-    return Boolean(element.closest('#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]'));
+    return campGuidanceElements('#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]');
   }
-  if (stage === "return-camp") return Boolean(element.closest("#onglet-camp"));
-  return false;
+  if (stage === "return-camp") return campGuidanceElements("#onglet-camp");
+  return [];
+}
+
+function campGuidanceRestaurerSawmill() {
+  campTutorialReconciliation();
+  const stage = campTutorialStage();
+  const tab = document.body.dataset.ongletActif || "gang";
+  if (stage === "return-camp" && tab === "camp" && campTutorialAssignmentsCompletes()) {
+    campTutorialStageDefinir("confirm-camp");
+    renduCampPrototype();
+    return;
+  }
+  if (campTutorialEtapeWork(stage)) {
+    if (tab !== "work") {
+      changerOnglet("work");
+      return;
+    }
+    workFiltre = "wood";
+    if (campTutorialPickerEtape() && workerModalOuvert
+        && !campTutorialWorkerResolvableIndices(campTutorialPickerCible().slotIdx).length) {
+      fermerModalWorker(true);
+    }
+    renduWorkPairs(unlocks());
+    return;
+  }
+  if (tab !== "camp") {
+    changerOnglet("camp");
+    return;
+  }
+  renduCampPrototype();
+  if (stage === "work-action") {
+    const sawmill = itemCampPrototypeParType("sawmill");
+    if (sawmill) ouvrirMenuInteractionCampPrototype(sawmill.uid, { conserverOuvert: true });
+  }
+}
+
+function campGuidanceDescripteurActif() {
+  const releaseNotes = typeof document !== "undefined"
+    ? document.getElementById("ecran-release-notes") : null;
+  const interactionGuidee = firstBoxTutorialActif()
+    || firstGroundRewardTutorialActif()
+    || firstGroundRewardCollectionActif()
+    || campDialogueSawmillTutorielEnAttente()
+    || campTutorialActif();
+  if (interactionGuidee && releaseNotes && dialogueOuvertAuPremierPlan() === releaseNotes) {
+    return {
+      id: "release-notes",
+      stage: "open",
+      allowedTargets: function() { return [releaseNotes]; },
+      isElementAllowed: function(element) {
+        return campGuidanceElementCorrespond(element, "#ecran-release-notes");
+      }
+    };
+  }
+  if (firstBoxTutorialActif()) {
+    const stage = firstBoxTutorialStage();
+    return {
+      id: "first-box",
+      stage: stage,
+      allowedTargets: function() {
+        return stage === "place"
+          ? campGuidanceElements("#camp-prototype-placement-confirm")
+          : campGuidanceElements("#camp-house-construction-modal .camp-task-slot, #camp-house-construction-modal .camp-task-cat-choice:not([disabled]), #camp-house-construction-modal #camp-task-start:not([disabled])");
+      },
+      isElementAllowed: function(element) {
+        return stage === "place"
+          ? campGuidanceElementCorrespond(element, "#camp-prototype-placement-confirm")
+          : campGuidanceElementCorrespond(element, "#camp-house-construction-modal .camp-task-slot, #camp-house-construction-modal .camp-task-cat-choice:not([disabled]), #camp-house-construction-modal #camp-task-start:not([disabled])");
+      },
+      ensureActionableTarget: function() {
+        firstBoxTutorialReconciliation();
+        if (firstBoxTutorialStage() === "place") {
+          firstBoxTutorialAssurerPlacement();
+          renduCampPrototype();
+        } else if (firstBoxTutorialStage() === "assign" && campPrototypePlacementEnCours) {
+          ouvrirModalConstructionMaisonCamp();
+        }
+      }
+    };
+  }
+  if (firstGroundRewardTutorialActif()) {
+    return {
+      id: "first-ground-reward",
+      stage: "dialogue",
+      allowedTargets: function() { return campGuidanceElements("#camp-quick-dialogue-continue"); },
+      isElementAllowed: function(element) {
+        return campGuidanceElementCorrespond(element, "#camp-quick-dialogue-continue");
+      },
+      ensureActionableTarget: function() {
+        firstGroundRewardTutorialReconciliation();
+        renduDialogueRapideCamp();
+      }
+    };
+  }
+  if (firstGroundRewardCollectionActif()) {
+    const uid = progressionCamp().firstGroundRewardUid;
+    return {
+      id: "first-ground-reward",
+      stage: "collect",
+      allowedTargets: function() {
+        return campGuidanceElements('[data-camp-ground-reward-uid="' + uid + '"]');
+      },
+      isElementAllowed: function(element) {
+        const reward = element && typeof element.closest === "function"
+          ? element.closest("[data-camp-ground-reward-uid]") : null;
+        return Boolean(reward && reward.dataset.campGroundRewardUid === uid);
+      },
+      ensureActionableTarget: function() {
+        firstGroundRewardTutorialReconciliation();
+        renduCampPrototype();
+      }
+    };
+  }
+  if (campDialogueSawmillTutorielEnAttente()) {
+    return {
+      id: "sawmill-repaired-dialogue",
+      stage: "continue",
+      allowedTargets: function() { return campGuidanceElements("#camp-quick-dialogue-continue"); },
+      isElementAllowed: function(element) {
+        return campGuidanceElementCorrespond(element, "#camp-quick-dialogue-continue");
+      },
+      ensureActionableTarget: function() { renduDialogueRapideCamp(); }
+    };
+  }
+  if (!campTutorialActif()) return null;
+  const stage = campTutorialStage();
+  return {
+    id: "sawmill",
+    stage: stage,
+    allowedTargets: function() { return campGuidanceCiblesSawmill(stage); },
+    recoveryTargets: function() {
+      return stage === "work-action" ? campGuidanceElementSawmill() : [];
+    },
+    isElementAllowed: function(element) {
+      if (stage === "sawmill" || stage === "confirm-camp") {
+        return campGuidanceElementCorrespond(element, '[data-camp-type="sawmill"]');
+      }
+      if (stage === "work-action") {
+        return campGuidanceElementCorrespond(element,
+          '#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]')
+          || campGuidanceElementCorrespond(element, '[data-camp-type="sawmill"]');
+      }
+      if (stage === "return-camp") return campGuidanceElementCorrespond(element, "#onglet-camp");
+      if (stage === "wood-slot-1-recipe" || stage === "wood-slot-2-recipe") {
+        const cible = campTutorialRecipeCible();
+        const modal = document.getElementById("recipe-modal");
+        const ouverte = modal && modal.getAttribute("aria-hidden") !== "true"
+          && modal.style.display !== "none";
+        return ouverte
+          ? campGuidanceElementCorrespond(element, '.recipe-modal-choice:not([disabled]):not([aria-disabled="true"])')
+          : campGuidanceElementCorrespond(element, '#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
+            + ' .work-recipe-choose-empty, [data-camp-production-slot="' + cible.familyId + '-'
+            + cible.slotIdx + '"] [data-camp-production-origin="recipe"]');
+      }
+      if (stage === "wood-slot-1-cat" || stage === "wood-slot-2-cat") {
+        const cible = campTutorialPickerCible();
+        if (!campTutorialWorkerResolvableIndices(cible.slotIdx).length) return false;
+        const modal = document.getElementById("worker-modal");
+        const ouverte = modal && modal.getAttribute("aria-hidden") !== "true"
+          && modal.style.display !== "none";
+        if (!ouverte) {
+          return campGuidanceElementCorrespond(element, '#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
+            + ' .work-recipe-cat-empty, [data-camp-production-slot="' + cible.familyId + '-'
+            + cible.slotIdx + '"] [data-camp-production-origin="worker"]');
+        }
+        const choice = element && typeof element.closest === "function"
+          ? element.closest('.worker-modal-kitty[data-worker-kitty-index][data-clavier-clic], .btn-forcer[data-worker-kitty-index]')
+          : null;
+        if (!choice || choice.getAttribute("aria-disabled") === "true") return false;
+        const other = campTutorialSlot("wood", cible.slotIdx === 0 ? 1 : 0);
+        const kittyIndex = Number(choice.dataset.workerKittyIndex);
+        return (!other || kittyIndex !== other.kittyIndex)
+          && campTutorialWorkerResolvable(kittyIndex, cible.slotIdx);
+      }
+      const targets = campGuidanceCiblesSawmill(stage);
+      return targets.some(function(target) {
+        return target === element || (typeof target.contains === "function" && target.contains(element));
+      });
+    },
+    ensureActionableTarget: campGuidanceRestaurerSawmill
+  };
+}
+
+function campGuidanceAssurerActionnable() {
+  return typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.ensureActionableGuidance() : campGuidanceDescripteurActif();
+}
+
+function campTutorialInteractionAutorisee(element) {
+  const descriptor = campGuidanceDescripteurActif();
+  if (!descriptor) return true;
+  if (typeof guidanceController !== "undefined" && guidanceController
+      && guidanceController.isSettingsElement(element)) return true;
+  if (typeof guidanceController !== "undefined" && guidanceController) {
+    return guidanceController.isElementAllowed(descriptor, element);
+  }
+  return typeof descriptor.isElementAllowed === "function"
+    ? descriptor.isElementAllowed(element) : false;
+}
+
+function campTutorialDoitBloquerInteraction(event) {
+  if (typeof guidanceController !== "undefined" && guidanceController) {
+    return guidanceController.shouldBlockEvent(event);
+  }
+  if (event && event.type === "keydown" && event.key === "Tab") return false;
+  return Boolean(campGuidanceDescripteurActif()
+    && !campTutorialInteractionAutorisee(event && event.target));
 }
 
 function campTutorialBloquerInteraction(event) {
-  if (!campTutorialActif() && !campDialogueSawmillTutorielEnAttente()
-      && !firstBoxTutorialActif() && !firstGroundRewardTutorialActif()
-      && !firstGroundRewardCollectionActif()) return;
-  if (event.type === "keydown" && event.key === "Tab") return;
-  if (campTutorialInteractionAutorisee(event.target)) return;
+  if (!campTutorialDoitBloquerInteraction(event)) return;
   event.preventDefault();
   event.stopImmediatePropagation();
 }
@@ -11514,7 +11703,10 @@ function campTutorialActualiserInterface() {
   if (stage === "wood-slot-1-cat" || stage === "wood-slot-2-cat") {
     const modal = document.getElementById("worker-modal");
     const cible = campTutorialPickerCible();
-    if (modal && modal.style.display !== "none") {
+    const workerResolvable = campTutorialWorkerResolvableIndices(cible.slotIdx).length > 0;
+    if (!workerResolvable) {
+      target = null;
+    } else if (modal && modal.style.display !== "none") {
       target = Array.from(modal.querySelectorAll('.worker-modal-kitty[data-worker-kitty-index][data-clavier-clic]'))
         .find(function(choice) { return campTutorialInteractionAutorisee(choice); }) || null;
     } else {
@@ -15760,7 +15952,9 @@ function activerItemCampPrototype(uid) {
     return;
   }
   if (type && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id]) {
-    ouvrirMenuInteractionCampPrototype(item.uid);
+    ouvrirMenuInteractionCampPrototype(item.uid,
+      campTutorialStage() === "work-action" && type.id === "sawmill"
+        ? { conserverOuvert: true } : null);
   } else if (type && CAMP_PROTOTYPE_FUNCTION_BY_TYPE[type.id]) {
     ouvrirMenuInteractionCampPrototype(item.uid);
   } else if (type && type.category === "house") {

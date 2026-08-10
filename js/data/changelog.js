@@ -347,11 +347,27 @@
     })
   ]);
 
+  const release0045Categories = Object.freeze([
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Settings now remains available during guided Camp interactions and returns you to the same tutorial step when closed."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Guided Camp interactions now recover missing or hidden targets instead of leaving the interface locked.",
+        "The Sawmill tutorial now restores its Work action and avoids trapping Cat assignment when no eligible Cat is available."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0044",
+    baseVersion: "0.0045",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -364,6 +380,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0045",
+      date: "2026-08-10",
+      categories: release0045Categories
+    }),
     Object.freeze({
       version: "0.0044",
       date: "2026-08-10",
