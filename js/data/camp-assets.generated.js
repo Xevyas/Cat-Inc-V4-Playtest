@@ -657,6 +657,88 @@
               }
             }
           }
+        },
+        "2": {
+          "liveRevision": null,
+          "revisions": {
+            "1": {
+              "assetId": "catchen",
+              "runtimeId": "catchen",
+              "name": "Catchen",
+              "category": "production-building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 1,
+              "status": "approved",
+              "width": 3,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 14,
+                  "top": 0,
+                  "right": 774,
+                  "bottom": 270
+                },
+                "right": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 19,
+                  "top": 127,
+                  "right": 251,
+                  "bottom": 765
+                },
+                "up": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 40,
+                  "top": 22,
+                  "right": 797,
+                  "bottom": 270
+                },
+                "left": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 27,
+                  "top": 88,
+                  "right": 242,
+                  "bottom": 789
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 2,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 3
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
@@ -810,7 +892,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 6,
+          "liveRevision": 7,
           "revisions": {
             "6": {
               "assetId": "job-center",
@@ -820,14 +902,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 6,
-              "status": "live",
+              "status": "retired",
               "width": 2,
-              "height": 3,
+              "height": 2,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/down.png",
-                "right": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/right.png",
-                "up": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/up.png",
-                "left": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/left.png"
+                "down": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/down.png",
+                "right": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/right.png",
+                "up": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/up.png",
+                "left": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -917,11 +999,11 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 3
+                        "y": 2
                       },
                       {
                         "x": 1,
-                        "y": 3
+                        "y": 2
                       }
                     ],
                     "minimumReachableCells": 2
@@ -937,14 +1019,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 7,
-              "status": "approved",
+              "status": "live",
               "width": 2,
-              "height": 3,
+              "height": 2,
               "sprites": {
-                "down": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/down.png",
-                "right": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/right.png",
-                "up": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/up.png",
-                "left": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/left.png"
+                "down": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -1210,11 +1292,11 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 3
+                        "y": 2
                       },
                       {
                         "x": 1,
-                        "y": 3
+                        "y": 2
                       }
                     ],
                     "minimumReachableCells": 2
@@ -3778,6 +3860,88 @@
               }
             }
           }
+        },
+        "2": {
+          "liveRevision": null,
+          "revisions": {
+            "1": {
+              "assetId": "catchen",
+              "runtimeId": "catchen",
+              "name": "Catchen",
+              "category": "production-building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 1,
+              "status": "approved",
+              "width": 3,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 14,
+                  "top": 0,
+                  "right": 774,
+                  "bottom": 270
+                },
+                "right": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 19,
+                  "top": 127,
+                  "right": 251,
+                  "bottom": 765
+                },
+                "up": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 40,
+                  "top": 22,
+                  "right": 797,
+                  "bottom": 270
+                },
+                "left": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 27,
+                  "top": 88,
+                  "right": 242,
+                  "bottom": 789
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 2,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 3
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
@@ -3997,7 +4161,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 6,
+          "liveRevision": 7,
           "revisions": {
             "6": {
               "assetId": "job-center",
@@ -4007,14 +4171,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 6,
-              "status": "live",
+              "status": "retired",
               "width": 2,
-              "height": 3,
+              "height": 2,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/down.png",
-                "right": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/right.png",
-                "up": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/up.png",
-                "left": "img/Buildings/Camp Runtime/job-center/tier-1/revision-6/left.png"
+                "down": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/down.png",
+                "right": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/right.png",
+                "up": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/up.png",
+                "left": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -4104,11 +4268,11 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 3
+                        "y": 2
                       },
                       {
                         "x": 1,
-                        "y": 3
+                        "y": 2
                       }
                     ],
                     "minimumReachableCells": 2
@@ -4124,14 +4288,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 7,
-              "status": "approved",
+              "status": "live",
               "width": 2,
-              "height": 3,
+              "height": 2,
               "sprites": {
-                "down": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/down.png",
-                "right": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/right.png",
-                "up": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/up.png",
-                "left": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-7/left.png"
+                "down": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/job-center/tier-1/revision-7/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -4397,11 +4561,11 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 3
+                        "y": 2
                       },
                       {
                         "x": 1,
-                        "y": 3
+                        "y": 2
                       }
                     ],
                     "minimumReachableCells": 2

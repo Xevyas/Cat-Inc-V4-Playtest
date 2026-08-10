@@ -16,6 +16,11 @@
   const ONGLETS_VALIDES = ["gang", "camp", "work", "buildings", "facilities", "explorations", "inventaire", "logs"];
   const WORK_FAMILIES = ["wood", "food", "rock"];
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
+  const JOB_IDS = [
+    "lumberjack", "carpenter", "farmer", "chef", "explorator", "builder",
+    "miner", "stonemason", "gang-leader", "camp-engineer"
+  ];
+  const SCOUTING_REWARD_IDS = ["humanLeftovers", "humanWorkersFood", "cannedCatFood"];
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
   const CAMP_SCHEMA_VERSION = 2;
   const SAWMILL_TUTORIAL_STAGES = [
@@ -207,7 +212,7 @@ function validerStructureSauvegarde(d) {
   }
 
   if (d.prochainVisageChaton !== undefined && d.prochainVisageChaton !== null
-      && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300 || /[<>]/.test(d.prochainVisageChaton))) {
+      && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300)) {
     return "Invalid next cat portrait.";
   }
   if (d.releaseNotesSeenVersion !== undefined
@@ -892,6 +897,13 @@ function analyserSauvegardeBrute(raw) {
     const normaliserVisageChaton = typeof options.normaliserVisageChaton === "function"
       ? options.normaliserVisageChaton
       : null;
+    const jobIds = new Set(Array.isArray(options.jobIds) ? options.jobIds : JOB_IDS);
+    const jobIdMigration = { bucheron: "lumberjack", charpentier: "carpenter", fermier: "farmer", cuisinier: "chef" };
+    function normaliserJobId(value) {
+      if (value === null || value === undefined || value === "") return null;
+      const migrated = jobIdMigration[value] || value;
+      return typeof migrated === "string" && jobIds.has(migrated) ? migrated : null;
+    }
     const d = JSON.parse(JSON.stringify(data));
     const etat = stateCore.creerEtatInitial(maintenant);
 
@@ -943,7 +955,18 @@ function analyserSauvegardeBrute(raw) {
   etat.sequenceProgressBrute   = d.sequenceProgressBrute   !== undefined ? d.sequenceProgressBrute   : 0;
   etat.sequenceDerniereMajTs   = d.sequenceDerniereMajTs   !== undefined ? d.sequenceDerniereMajTs   : 0;
   etat.sequenceVitesseDerniere = d.sequenceVitesseDerniere !== undefined ? d.sequenceVitesseDerniere : 1;
-  etat.prochainVisageChaton    = d.prochainVisageChaton    || null;
+  if (d.prochainVisageChaton && normaliserVisageChaton) {
+    const prochainNom = NOMS_KITTIES[etat.chatons] || ("Cat #" + (etat.chatons + 1));
+    etat.prochainVisageChaton = normaliserVisageChaton({
+      nom: prochainNom,
+      visage: d.prochainVisageChaton
+    });
+  } else {
+    // The save core does not know the runtime portrait catalog. Without the
+    // authoritative normalizer, discarding the path is safer than preserving
+    // an imported URL that could later reach an image src.
+    etat.prochainVisageChaton = null;
+  }
   etat.clicCount               = d.clicCount               || 0;
   etat.reductionAuMomentDuClic = d.reductionAuMomentDuClic || 0;
   etat.afficherTempsAjusteRecrutement = d.afficherTempsAjusteRecrutement || false;
@@ -1098,6 +1121,10 @@ function analyserSauvegardeBrute(raw) {
   etat.butinsScouting      = d.butinsScouting      || {};
   Object.values(etat.butinsScouting).forEach(function(butin) {
     if (!Number.isInteger(butin.tripled) || butin.tripled < 0) butin.tripled = 0;
+    butin.rewards = Object.keys(butin.rewards || {}).reduce(function(rewards, rewardId) {
+      if (SCOUTING_REWARD_IDS.includes(rewardId)) rewards[rewardId] = butin.rewards[rewardId];
+      return rewards;
+    }, {});
   });
   etat.managers            = d.managers            || { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null };
   etat.managersDebloques   = d.managersDebloques   || false;
@@ -1163,11 +1190,24 @@ function analyserSauvegardeBrute(raw) {
   });
   etat.kittiesData     = d.kittiesData     || [];
 
-  // Migration: rename legacy French job IDs to English
-  const jobIdMigration = { bucheron: "lumberjack", charpentier: "carpenter", fermier: "farmer", cuisinier: "chef" };
-  etat.kittiesData.forEach(function(k) { if (k.metier && jobIdMigration[k.metier]) k.metier = jobIdMigration[k.metier]; });
-  if (etat.formationEnCours && jobIdMigration[etat.formationEnCours.metier]) {
-    etat.formationEnCours.metier = jobIdMigration[etat.formationEnCours.metier];
+  // Imported job identifiers are data, not display copy. Keep known current
+  // and legacy IDs, and turn every unknown value into the existing Stray Cat
+  // fallback instead of rejecting the complete save.
+  etat.kittiesData.forEach(function(k) { k.metier = normaliserJobId(k.metier); });
+  if (etat.formationEnCours) {
+    etat.formationEnCours.metier = normaliserJobId(etat.formationEnCours.metier);
+    if (!etat.formationEnCours.metier) etat.formationEnCours = null;
+  }
+  if (etat.formationTermineeEnAttente) {
+    etat.formationTermineeEnAttente.metier = normaliserJobId(etat.formationTermineeEnAttente.metier);
+    if (!etat.formationTermineeEnAttente.metier) etat.formationTermineeEnAttente = null;
+  }
+  if (etat.formationIngenieurEnCours && etat.formationIngenieurEnCours.metier !== "camp-engineer") {
+    etat.formationIngenieurEnCours = null;
+  }
+  if (etat.formationIngenieurTermineeEnAttente
+      && etat.formationIngenieurTermineeEnAttente.metier !== "camp-engineer") {
+    etat.formationIngenieurTermineeEnAttente = null;
   }
 
   // Migration: backfill kittiesData if save predates the feature
@@ -1190,7 +1230,7 @@ function analyserSauvegardeBrute(raw) {
     // current-era saves are converted once so managers use ×1.5 too.
     if (k.managerMult === undefined || k.managerMult === 2) k.managerMult = 1.5;
     if (normaliserVisageChaton) k.visage = normaliserVisageChaton(k);
-    else if (!k.visage) k.visage = assignerVisageChaton(k.nom);
+    else k.visage = assignerVisageChaton(k.nom);
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
     if (k.metier === "camp-engineer" && k.engineerRank === undefined) k.engineerRank = 1;
   });

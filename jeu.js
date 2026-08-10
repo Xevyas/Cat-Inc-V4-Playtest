@@ -110,7 +110,7 @@ function normaliserVisageChaton(kitty) {
 
 function kittyIconHtml(kitty) {
   if (!kitty || !kitty.visage) return KITTY_ICON;
-  return '<img src="' + kitty.visage + '" class="kitty-icon" alt="' + kitty.nom + '">';
+  return '<img src="' + echapperAttributHtml(kitty.visage) + '" class="kitty-icon" alt="' + echapperAttributHtml(kitty.nom) + '">';
 }
 
 function recetteChoisieCount(recipeId) {
@@ -2330,57 +2330,26 @@ function gererActivationClavier(event) {
 
 if (typeof document !== "undefined") document.addEventListener("keydown", gererActivationClavier);
 
-// Accessible modal lifecycle: initial focus, Tab containment, optional Escape,
-// and focus return to the control that opened the dialog.
-const configurationsDialogues = new WeakMap();
+const dialoguesController = globalThis.CatInc.dialogs.createController({
+  document: document,
+  requestAnimationFrame: requestAnimationFrame,
+  getComputedStyle: function(element) { return getComputedStyle(element); }
+});
 
 function elementsFocusablesDialogue(dialogue) {
-  return Array.from(dialogue.querySelectorAll(
-    'button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-  )).filter(function(element) {
-    if (element.getAttribute("aria-disabled") === "true") return false;
-    const style = getComputedStyle(element);
-    return style.display !== "none" && style.visibility !== "hidden";
-  });
+  return dialoguesController.getFocusableElements(dialogue);
 }
 
 function ouvrirDialogueModal(id, options) {
-  const dialogue = typeof id === "string" ? document.getElementById(id) : id;
-  if (!dialogue) return;
-  const config = Object.assign({ dismissible: false }, options || {});
-  config.elementRetour = document.activeElement && document.activeElement !== document.body
-    ? document.activeElement
-    : null;
-  configurationsDialogues.set(dialogue, config);
-  dialogue.style.display = "flex";
-  dialogue.setAttribute("aria-hidden", "false");
-  requestAnimationFrame(function() {
-    const cible = (config.focusSelector && dialogue.querySelector(config.focusSelector))
-      || elementsFocusablesDialogue(dialogue)[0]
-      || dialogue.querySelector('[role="document"]')
-      || dialogue;
-    if (!cible.hasAttribute("tabindex") && cible === dialogue) cible.tabIndex = -1;
-    cible.focus();
-  });
+  return dialoguesController.open(id, options);
 }
 
 function fermerDialogueModal(id) {
-  const dialogue = typeof id === "string" ? document.getElementById(id) : id;
-  if (!dialogue) return;
-  const config = configurationsDialogues.get(dialogue) || {};
-  dialogue.style.display = "none";
-  dialogue.setAttribute("aria-hidden", "true");
-  configurationsDialogues.delete(dialogue);
-  requestAnimationFrame(function() {
-    const cible = (config.returnFocusSelector && document.querySelector(config.returnFocusSelector))
-      || (config.elementRetour && config.elementRetour.isConnected ? config.elementRetour : null);
-    if (cible && typeof cible.focus === "function") cible.focus();
-  });
+  return dialoguesController.close(id);
 }
 
 function dialogueOuvertAuPremierPlan() {
-  const ouverts = Array.from(document.querySelectorAll('[role="dialog"][aria-hidden="false"]'));
-  return ouverts.length ? ouverts[ouverts.length - 1] : null;
+  return dialoguesController.getTopmost();
 }
 
 function gererClavierDialogue(event) {
@@ -2398,8 +2367,6 @@ function gererClavierDialogue(event) {
   }
   const dialogue = dialogueOuvertAuPremierPlan();
   if (!dialogue) return;
-  const config = configurationsDialogues.get(dialogue) || {};
-
   if (event.key === "Escape" && dialogue.id === "worker-modal"
       && typeof campTutorialPickerEtape === "function"
       && campTutorialPickerEtape()) {
@@ -2418,28 +2385,7 @@ function gererClavierDialogue(event) {
     return;
   }
 
-  if (event.key === "Escape" && config.dismissible && typeof config.fermer === "function") {
-    event.preventDefault();
-    config.fermer();
-    return;
-  }
-  if (event.key !== "Tab") return;
-
-  const focusables = elementsFocusablesDialogue(dialogue);
-  if (focusables.length === 0) {
-    event.preventDefault();
-    dialogue.focus();
-    return;
-  }
-  const premier = focusables[0];
-  const dernier = focusables[focusables.length - 1];
-  if (event.shiftKey && (document.activeElement === premier || !dialogue.contains(document.activeElement))) {
-    event.preventDefault();
-    dernier.focus();
-  } else if (!event.shiftKey && (document.activeElement === dernier || !dialogue.contains(document.activeElement))) {
-    event.preventDefault();
-    premier.focus();
-  }
+  return dialoguesController.handleKeydown(event);
 }
 
 if (typeof document !== "undefined") document.addEventListener("keydown", gererClavierDialogue, true);
@@ -2592,6 +2538,7 @@ function charger() {
   const nouvelEtat = saveCore.migrerDonneesSauvegarde(analyse.data, {
     maintenant: Date.now(),
     nomsKitties: NOMS_KITTIES,
+    jobIds: Object.keys(METIERS),
     assignerVisageChaton: assignerVisageChaton,
     normaliserVisageChaton: normaliserVisageChaton
   });
@@ -2699,61 +2646,29 @@ function fermerModalSettings() {
   fermerDialogueModal("settings-modal");
 }
 
+const changelogController = globalThis.CatInc.changelog.createController({
+  document: document,
+  releases: GAME_CHANGELOG,
+  openModal: function() {
+    ouvrirDialogueModal("changelog-modal", {
+      dismissible: true,
+      fermer: fermerChangelog,
+      focusSelector: ".explo-modal-close",
+      returnFocusSelector: ".settings-changelog-btn"
+    });
+  }
+});
+
 function categoriesChangelogNonVides(categories) {
-  return (categories || []).filter(function(category) {
-    return Array.isArray(category.changes) && category.changes.length > 0;
-  });
+  return globalThis.CatInc.changelog.filterNonEmptyCategories(categories);
 }
 
 function rendreChangelog() {
-  const conteneur = document.getElementById("changelog-releases");
-  if (!conteneur) return;
-  conteneur.innerHTML = "";
-  const formaterDateRelease = function(date) {
-    if (!date) return "";
-    const parsed = new Date(date + "T00:00:00");
-    if (Number.isNaN(parsed.getTime())) return date;
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric", month: "long", day: "numeric"
-    }).format(parsed);
-  };
-  GAME_CHANGELOG.forEach(function(release, index) {
-    const section = document.createElement("section");
-    section.className = "changelog-release";
-    const titre = document.createElement("h3");
-    const date = formaterDateRelease(release.date);
-    titre.textContent = "v" + release.version
-      + (date ? " · " + date : "")
-      + (index === 0 ? " · Current" : "");
-    section.appendChild(titre);
-    categoriesChangelogNonVides(release.categories).forEach(function(category) {
-      const changes = category.changes;
-      const bloc = document.createElement("div");
-      bloc.className = "changelog-category";
-      const categorieTitre = document.createElement("h4");
-      categorieTitre.textContent = category.label;
-      bloc.appendChild(categorieTitre);
-      const liste = document.createElement("ul");
-      changes.forEach(function(change) {
-        const item = document.createElement("li");
-        item.textContent = change;
-        liste.appendChild(item);
-      });
-      bloc.appendChild(liste);
-      section.appendChild(bloc);
-    });
-    conteneur.appendChild(section);
-  });
+  changelogController.render();
 }
 
 function ouvrirChangelog() {
-  rendreChangelog();
-  ouvrirDialogueModal("changelog-modal", {
-    dismissible: true,
-    fermer: fermerChangelog,
-    focusSelector: ".explo-modal-close",
-    returnFocusSelector: ".settings-changelog-btn"
-  });
+  changelogController.open();
 }
 
 function fermerChangelog() {
@@ -2814,97 +2729,37 @@ function importerSauvegarde(event) {
 // 7. NOTIFICATIONS & LOGS
 // ════════════════════════════════════════════════════════════
 
-const notificationsEnAttente = [];
-let notificationActive = null;
-const DUREE_NOTIFICATION_MS = 2600;
-const DUREE_FONDU_NOTIFICATION_MS = 400;
+const notificationsController = globalThis.CatInc.notifications.createController({
+  document: document,
+  setTimeout: setTimeout
+});
 
 function afficherNotification(message) {
-  const texte = String(message || "").trim();
-  if (!texte) return;
-  if (notificationActive && notificationActive.message === texte) return;
-  if (notificationsEnAttente.includes(texte)) return;
-  notificationsEnAttente.push(texte);
-  afficherNotificationSuivante();
+  notificationsController.show(message);
 }
 
 function afficherNotificationSuivante() {
-  if (notificationActive || notificationsEnAttente.length === 0) return;
-  const message = notificationsEnAttente.shift();
-  const el = document.createElement("div");
-  el.textContent = message;
-  el.className   = "notification";
-  el.setAttribute("role", "status");
-  el.setAttribute("aria-live", "polite");
-  document.body.appendChild(el);
-  notificationActive = { message: message, element: el };
-  setTimeout(function() { el.classList.add("visible"); }, 10);
-  setTimeout(function() {
-    el.classList.remove("visible");
-    setTimeout(function() {
-      el.remove();
-      notificationActive = null;
-      afficherNotificationSuivante();
-    }, DUREE_FONDU_NOTIFICATION_MS);
-  }, DUREE_NOTIFICATION_MS);
+  notificationsController.showNext();
 }
 
-const LOG_MAX = 60;
+const logsController = globalThis.CatInc.logs.createController({
+  getEntries: function() { return etat.logs; },
+  document: document,
+  clock: function() { return new Date(); },
+  normalizeText: retirerEmojisInterface,
+  emptyStateHtml: etatVideHtml
+});
 
 function ajouterLog(type, lignes) {
-  const now = new Date();
-  const h   = String(now.getHours()).padStart(2, "0");
-  const m   = String(now.getMinutes()).padStart(2, "0");
-  etat.logs.unshift({ type: type, lignes: Array.isArray(lignes) ? lignes : [lignes], heure: h + ":" + m });
-  if (etat.logs.length > LOG_MAX) etat.logs.pop();
-  renduLogs();
+  logsController.add(type, lignes);
 }
 
-const logFiltres = { event: true, unlock: true, objective: false };
-
 function renduLogs() {
-  const conteneur = document.getElementById("logs-liste");
-  if (!conteneur) return;
-  conteneur.innerHTML = "";
-  let affiches = 0;
-  etat.logs.forEach(function(entry) {
-    const lignes = entry.lignes || (entry.texte ? [entry.texte] : []);
-    const typeEffectif = entry.type === "unlock" && lignes.some(function(ligne) {
-      return ligne.indexOf("Objective complete:") === 0;
-    }) ? "objective" : entry.type;
-    if (!logFiltres[typeEffectif]) return;
-    affiches++;
-    const el    = document.createElement("div");
-    el.className = "log-entry log-" + typeEffectif;
-    const heure = document.createElement("span");
-    heure.className   = "log-heure";
-    heure.textContent = entry.heure;
-    const bloc  = document.createElement("span");
-    bloc.className = "log-texte";
-    lignes.forEach(function(ligne, i) {
-      if (i > 0) bloc.appendChild(document.createElement("br"));
-      bloc.appendChild(document.createTextNode(retirerEmojisInterface(ligne)));
-    });
-    el.appendChild(heure);
-    el.appendChild(bloc);
-    conteneur.appendChild(el);
-  });
-  if (affiches === 0) {
-    conteneur.innerHTML = etatVideHtml(
-      etat.logs.length === 0 ? "No activity yet" : "No matching entries",
-      etat.logs.length === 0 ? "Your gang's important events will appear here." : "Enable another filter to reveal more of the gang's history."
-    );
-  }
+  logsController.render();
 }
 
 function toggleFiltreLogs(type) {
-  logFiltres[type] = !logFiltres[type];
-  const btn = document.getElementById("filtre-" + type);
-  if (btn) {
-    btn.classList.toggle("filtre-inactif", !logFiltres[type]);
-    btn.setAttribute("aria-pressed", logFiltres[type] ? "true" : "false");
-  }
-  renduLogs();
+  logsController.toggleFilter(type);
 }
 
 
@@ -5137,7 +4992,7 @@ function renduLaboratoire() {
       html += '<div class="jc-slot-info"><span class="jc-slot-nom">' + (kitty ? echapperAttributHtml(kitty.nom) : "Cat") + '</span><span class="jc-slot-metier">Becoming Camp Engineer · Rank ' + (training.engineerRank || 1) + '...</span></div>';
       html += '</div><div class="inv-learning-barre jc-learning-barre">'
         + '<div id="barre-lab-formation" class="inv-learning-progres"></div>'
-        + '<img id="lab-training-marker" class="inv-learning-marker" src="' + (kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '">'
+        + '<img id="lab-training-marker" class="inv-learning-marker" src="' + echapperAttributHtml(kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '">'
         + '</div><div class="jc-timer lab-jc-timer"></div></div>';
     } else {
       const duree = laboratoireIngenieurDuree();
@@ -5323,7 +5178,7 @@ function renduTrainingCenter() {
     const pickerLevel = jobLevelInfo(k.metier);
     html += '<button type="button" class="tc-mobile-picker" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')" aria-label="Change the cat selected for specialization">';
     html += '<span class="tc-cat-icon">' + kittyIconHtml(k) + '</span>';
-    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + (pickerMetier ? pickerMetier.emoji + ' ' + pickerMetier.nom : k.metier) + ' · Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
+    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + echapperAttributHtml(pickerMetier ? pickerMetier.emoji + ' ' + pickerMetier.nom : k.metier) + ' · Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
     html += '<span class="tc-mobile-picker-action">Change</span></button>';
   } else {
     html += '<button type="button" class="tc-mobile-picker tc-mobile-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Select a cat with a job</span></button>';
@@ -5342,7 +5197,7 @@ function renduTrainingCenter() {
       const active = entry.i === tcSpecKittySelectionne;
       html += '<button type="button" class="tc-cat-card' + (active ? ' tc-cat-card-active' : '') + '" aria-pressed="' + (active ? 'true' : 'false') + '" onclick="selectionnerTrainingCat(' + entry.i + ')">';
       html += '<span class="tc-cat-icon">' + kittyIconHtml(kitty) + '</span>';
-      html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(kitty.nom) + '</span><span class="tc-cat-job">' + (metier ? metier.emoji + ' ' + metier.nom : kitty.metier) + '</span></span>';
+      html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(kitty.nom) + '</span><span class="tc-cat-job">' + echapperAttributHtml(metier ? metier.emoji + ' ' + metier.nom : kitty.metier) + '</span></span>';
       html += '<span class="tc-cat-level">Lv. ' + level.cur + '/' + level.max + '</span>';
       html += '</button>';
     });
@@ -5354,7 +5209,7 @@ function renduTrainingCenter() {
     const level = jobLevelInfo(k.metier);
     html += '<div class="tc-selected-cat">';
     html += '<div class="tc-selected-icon">' + kittyIconHtml(k) + '</div>';
-    html += '<div><div class="tc-selected-name">' + echapperAttributHtml(k.nom) + '</div><div class="tc-selected-job">' + (metier ? metier.emoji + ' ' + metier.nom : k.metier) + ' · Specialization Lv. ' + level.cur + ' / ' + level.max + '</div></div>';
+    html += '<div><div class="tc-selected-name">' + echapperAttributHtml(k.nom) + '</div><div class="tc-selected-job">' + echapperAttributHtml(metier ? metier.emoji + ' ' + metier.nom : k.metier) + ' · Specialization Lv. ' + level.cur + ' / ' + level.max + '</div></div>';
     html += '</div>';
     if (selectedGrid) html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
     else html += '<p class="tc-empty">This job does not have a specialization sphere yet.</p>';
@@ -6074,7 +5929,7 @@ function renduManagement() {
   gauche.className = "detail-gauche";
   gauche.innerHTML =
     "<div class=\"kitty-photo detail-photo kitty-photo-tier-" + tierIdx + "\">" + kittyIconHtml(k) + "</div>" +
-    "<div class=\"detail-nom\">" + k.nom + "</div>";
+    "<div class=\"detail-nom\">" + echapperAttributHtml(k.nom) + "</div>";
 
   // Right: conditional sections
   const droite = document.createElement("div");
@@ -6189,7 +6044,7 @@ function renduManagement() {
         "<div class='detail-section detail-job-left' id='detail-job'>" +
         "<div class='detail-job-header'>" +
         "<span class='detail-section-titre'>Job</span>" +
-        "<span class='detail-job-nom'>" + jobName + "</span>" +
+        "<span class='detail-job-nom'>" + echapperAttributHtml(jobName) + "</span>" +
         "</div>" +
         tcJobLvl +
         (jobBonus ? "<div>" + jobBonus + "</div>" : "") +
@@ -6755,7 +6610,7 @@ function renderCampaignCards() {
       const remaining = Math.max(0, ez.duree - elapsed);
       const prog      = Math.min(1, elapsed / ez.duree);
       const names     = ez.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
-      html += '<p class="carte-detail-desc">&#x1F431; ' + names + ' are exploring...</p>';
+      html += '<p class="carte-detail-desc">&#x1F431; ' + echapperAttributHtml(names) + ' are exploring...</p>';
       html += '<div class="conteneur-barre"><div class="barre barre-explo" id="barre-explo-zone" style="width:' + Math.round(prog * 100) + '%"></div></div>';
       html += '<div class="explo-timer" id="timer-explo-zone">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining</div>';
     } else {
@@ -6783,7 +6638,7 @@ function renderCampaignCards() {
           html += '<div class="explo-slot explo-slot-filled' + slotRequiredClass + '" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
           html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
           html += '<div class="explo-slot-kitty-info">';
-          html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
+          html += '<span class="explo-slot-kitty-nom">' + echapperAttributHtml(k ? k.nom : "?") + '</span>';
           html += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + kittyEP(ki) + '</span>';
           html += '</div>';
           html += '</div>' + slotRequiredLabel;
@@ -6861,7 +6716,7 @@ function renderCampaignCards() {
         const names     = inProgress.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
         const power     = Number.isFinite(inProgress.power) ? inProgress.power : inProgress.kittyIndices.reduce(function(s, i) { return s + kittyEP(i); }, 0);
         const chance    = Math.min(100, Math.round(power / camp.difficulte * 100));
-        html += '<div class="explo-meta">&#x2694;&#xFE0F; Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; &#x1F431; ' + names + ' &nbsp;&middot;&nbsp; ' + chance + '% success</div>';
+        html += '<div class="explo-meta">&#x2694;&#xFE0F; Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; &#x1F431; ' + echapperAttributHtml(names) + ' &nbsp;&middot;&nbsp; ' + chance + '% success</div>';
         html += '<div class="conteneur-barre"><div class="barre barre-explo" id="explo-barre-' + camp.id + '" style="width:' + Math.round(progress * 100) + '%"></div></div>';
         html += '<div class="explo-timer" id="explo-timer-' + camp.id + '">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining</div>';
       } else {
@@ -6881,7 +6736,7 @@ function renderCampaignCards() {
             html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="campaign:' + camp.id + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + camp.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
             html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
             html += '<div class="explo-slot-kitty-info">';
-            html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
+            html += '<span class="explo-slot-kitty-nom">' + echapperAttributHtml(k ? k.nom : "?") + '</span>';
             html += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + kittyEP(ki) + '</span>';
             html += '</div>';
             html += '</div>';
@@ -6935,7 +6790,7 @@ function renderCampaignCards() {
           if (scoutingTripleChance(scKiDisp) > 0) perkParts.push(Math.round(scoutingTripleChance(scKiDisp) * 100) + '% Triple after Double');
           if (kDisp && perkParts.length > 0) {
             var rewardPerkOwner = kDisp.metier === 'explorator' ? 'Explorator' : kDisp.nom;
-            scoutHtml += '<div class="scouting-reward-perk">' + rewardPerkOwner + ' perks: ' + perkParts.join(' · ') + '</div>';
+            scoutHtml += '<div class="scouting-reward-perk">' + echapperAttributHtml(rewardPerkOwner) + ' perks: ' + perkParts.join(' · ') + '</div>';
           }
         }
         if (running) {
@@ -6951,7 +6806,7 @@ function renderCampaignCards() {
           scoutHtml += '<div class="explo-slot explo-slot-filled">';
           scoutHtml += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
           scoutHtml += '<div class="explo-slot-kitty-info">';
-          scoutHtml += '<span class="explo-slot-kitty-nom">' + kNom + '</span>';
+          scoutHtml += '<span class="explo-slot-kitty-nom">' + echapperAttributHtml(kNom) + '</span>';
           scoutHtml += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + kPower + '</span>';
           scoutHtml += '</div>';
           scoutHtml += '</div>';
@@ -6999,7 +6854,7 @@ function renderCampaignCards() {
         var butin = etat.butinsScouting[sc.id];
         if (butin && butin.successful + butin.failed > 0) {
           var rewardsText = Object.keys(butin.rewards).map(function(recompenseId) {
-            return (RESOURCE_DISPLAY_NAMES[recompenseId] || recompenseId) + ' ×' + formaterNombre(butin.rewards[recompenseId]);
+            return echapperAttributHtml(RESOURCE_DISPLAY_NAMES[recompenseId] || recompenseId) + ' ×' + formaterNombre(butin.rewards[recompenseId]);
           }).join(' · ');
           var doubledVisible = false;
           var tripledVisible = false;
@@ -7269,7 +7124,7 @@ function renduCarteDetail() {
     const remaining = Math.max(0, ez.duree - elapsed);
     const prog      = Math.min(1, elapsed / ez.duree);
     const names     = ez.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
-    html += '<p class="carte-detail-desc">' + KITTY_ICON + ' ' + names + ' are exploring...</p>';
+    html += '<p class="carte-detail-desc">' + KITTY_ICON + ' ' + echapperAttributHtml(names) + ' are exploring...</p>';
     html += '<div class="conteneur-barre"><div class="barre barre-explo" id="barre-explo-zone" style="width:' + Math.round(prog * 100) + '%"></div></div>';
     html += '<div class="explo-timer" id="timer-explo-zone">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining</div>';
   } else {
@@ -7297,7 +7152,7 @@ function renduCarteDetail() {
         html += '<div class="explo-slot explo-slot-filled' + slotRequiredClass + '" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
         html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
         html += '<div class="explo-slot-kitty-info">';
-        html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
+        html += '<span class="explo-slot-kitty-nom">' + echapperAttributHtml(k ? k.nom : "?") + '</span>';
         html += '<span class="explo-slot-kitty-power">⚡ EP ' + kittyEP(ki) + '</span>';
         html += '</div>';
         html += '</div>';
@@ -7617,7 +7472,7 @@ function renduModalExplo() {
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for this exploration") + ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
     html += '<span class="explo-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
     html += '<div class="explo-modal-kitty-info">';
-    html += '<span class="explo-modal-kitty-nom">' + k.nom + '</span>';
+    html += '<span class="explo-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
     html += '<span class="explo-modal-kitty-power">&#x26A1; Exploration Power ' + kittyEP(i) + '</span>';
     var halvesTime = scoutingHalveTime(i);
     if (halvesTime) html += '<span class="explo-modal-kitty-effect">&#x23F1; Halves mission time</span>';
@@ -9239,7 +9094,7 @@ function renduModalJC() {
         html += '<div class="jc-modal-kitty' + (busy ? ' jc-modal-kitty-disabled' : '') + '"' +
                 (busy ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for job training") + ' onclick="selectionnerKittyFormation(' + idx + ')"') + '>';
         html += '<div class="jc-modal-kitty-info">';
-        html += '<span class="jc-modal-kitty-nom">' + k.nom + '</span>';
+        html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
         html += '<span class="jc-modal-kitty-tier">' + tier + (busyLbl ? ' — ' + busyLbl : '') + '</span>';
         html += '</div>';
         if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + '" onclick="forcerKittyFormation(' + idx + ');event.stopPropagation()">Force</button>';
@@ -9280,8 +9135,8 @@ function renduModalJC() {
           html += '<div class="jc-modal-kitty' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
                   (occupe ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " as manager") + ' onclick="assignerManager(\'' + famille + '\',' + idx + ')"') + '>';
           html += '<div class="jc-modal-kitty-info">';
-          html += '<span class="jc-modal-kitty-nom">' + k.nom + '</span>';
-          html += '<span class="jc-modal-kitty-tier">' + (m ? m.emoji + " " + m.nom : k.metier) + statutTxt + '</span>';
+          html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
+          html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(m ? m.emoji + " " + m.nom : k.metier) + statutTxt + '</span>';
           html += '</div>';
           html += '<div class="jc-modal-kitty-bonus">';
           html += '<div class="jc-modal-kitty-bonus-ligne">×' + bonus + ' <span class="jc-modal-kitty-bonus-label">production speed</span></div>';
@@ -9307,8 +9162,8 @@ function renduModalJC() {
         html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
         html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
         html += '<div class="jc-modal-kitty-info">';
-        html += '<span class="jc-modal-kitty-nom">' + k.nom + '</span>';
-        html += '<span class="jc-modal-kitty-tier">' + (m ? m.emoji + ' ' + m.nom : k.metier) + '</span>';
+        html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
+        html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(m ? m.emoji + ' ' + m.nom : k.metier) + '</span>';
         html += '</div>';
         html += '<div class="jc-modal-kitty-bonus">';
         html += '<div class="jc-modal-kitty-bonus-ligne">Lv. <span class="jc-modal-kitty-bonus-label">' + _mlvl.cur + ' / ' + _mlvl.max + '</span></div>';
@@ -9566,7 +9421,7 @@ function renderManagerSlot(famille) {
     el.innerHTML = '<div class="manager-slot-filled">'
       + '<div class="manager-cercle kitty-photo-tier-' + tierIdx + '">' + kittyIconHtml(kitty) + '</div>'
       + '<div class="manager-info">'
-      +   '<span class="manager-kitty-nom">' + kitty.nom + '</span>'
+      +   '<span class="manager-kitty-nom">' + echapperAttributHtml(kitty.nom) + '</span>'
       +   '<span class="manager-bonus-txt">' + bonusTxt + '</span>'
       + '</div>'
       + '<button class="manager-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' as ' + echapperAttributHtml(famille) + ' manager" onclick="retirerManager(\'' + famille + '\');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>'
@@ -9871,7 +9726,7 @@ function renduModalWorker() {
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " to this work slot") + ' onclick="assignerWorkerSlot(' + i + ')"') + '>';
     html += '<span class="worker-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
     html += '<div class="worker-modal-kitty-info">';
-    html += '<span class="worker-modal-kitty-nom">' + k.nom + '</span>';
+    html += '<span class="worker-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
     if (status) html += '<span class="worker-modal-kitty-status">' + status + '</span>';
     html += '</div>';
     html += '<div class="worker-modal-kitty-bonus">';
@@ -9950,7 +9805,7 @@ function renduJobCenter(u) {
       html += '<div class="jc-slot-filled">';
       html += '<span class="jc-slot-emoji">' + kittyIconHtml(kitty) + '</span>';
       html += '<div class="jc-slot-info">';
-      html += '<span class="jc-slot-nom">' + (kitty ? kitty.nom : "?") + '</span>';
+      html += '<span class="jc-slot-nom">' + echapperAttributHtml(kitty ? kitty.nom : "?") + '</span>';
       html += '<span class="jc-slot-metier">' + (m ? m.nom : f.metier) + ' learned!</span>';
       html += '</div></div>';
       html += '<button type="button" class="btn-jc-validate" onclick="validerFormation()">✓ Validate formation</button>';
@@ -9966,12 +9821,12 @@ function renduJobCenter(u) {
       html += '<div class="jc-slot-filled">';
       html += '<span class="jc-slot-emoji">' + kittyIconHtml(kitty) + '</span>';
       html += '<div class="jc-slot-info">';
-      html += '<span class="jc-slot-nom">' + (kitty ? kitty.nom : "?") + '</span>';
+      html += '<span class="jc-slot-nom">' + echapperAttributHtml(kitty ? kitty.nom : "?") + '</span>';
       html += '<span class="jc-slot-metier">Becoming ' + (m ? m.nom : f.metier) + '...</span>';
       html += '</div></div>';
       html += '<div class="inv-learning-barre jc-learning-barre">'
         + '<div id="barre-jc-formation" class="inv-learning-progres" style="width:' + Math.round(prog * 100) + '%"></div>'
-        + '<img id="jc-training-marker" class="inv-learning-marker" src="' + (kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '">'
+        + '<img id="jc-training-marker" class="inv-learning-marker" src="' + echapperAttributHtml(kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '">'
         + '</div>';
       html += '<div class="jc-timer">' + formaterTemps(restant) + '</div>';
       html += '</div>';
@@ -9987,7 +9842,7 @@ function renduJobCenter(u) {
         html += '<div class="jc-slot-filled" data-jc-modal-trigger="formation"' + attributsActivationClavier("Change the Stray Cat selected for job training") + ' onclick="ouvrirModalJC(\'formation\')">';
         html += '<span class="jc-slot-emoji">' + kittyIconHtml(kitty) + '</span>';
         html += '<div class="jc-slot-info">';
-        html += '<span class="jc-slot-nom">' + (kitty ? kitty.nom : "?") + '</span>';
+        html += '<span class="jc-slot-nom">' + echapperAttributHtml(kitty ? kitty.nom : "?") + '</span>';
         html += '<span class="jc-slot-metier">Stray Cat</span>';
         html += '</div>';
         html += '</div>';

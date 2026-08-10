@@ -151,7 +151,7 @@
       "repeatable": false,
       "footprint": {
         "width": 2,
-        "height": 3
+        "height": 2
       },
       "unlock": {
         "kind": "runtime-rule",

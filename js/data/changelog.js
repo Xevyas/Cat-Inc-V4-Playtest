@@ -325,11 +325,33 @@
     })
   ]);
 
+  const release0044Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "The Job Center now uses its compact 2 by 2 Revision 7 artwork in all four Camp orientations."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Existing Camp layouts now normalize the Job Center to its live 2 by 2 footprint while preserving its position and orientation."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "Dialogs, Logs, notifications and the changelog now use dedicated interface modules with the same player behavior.",
+        "Catchen Tier 2, Basic Fabric and Flames authoring assets are now approved in the Camp Studio for future use."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0043",
+    baseVersion: "0.0044",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -342,6 +364,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0044",
+      date: "2026-08-10",
+      categories: release0044Categories
+    }),
     Object.freeze({
       version: "0.0043",
       date: "2026-08-10",

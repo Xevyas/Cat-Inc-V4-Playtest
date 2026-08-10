@@ -384,8 +384,8 @@
         id: "main-door",
         side: "south",
         approachCells: Object.freeze([
-          Object.freeze({ x: 0, y: 3 }),
-          Object.freeze({ x: 1, y: 3 })
+          Object.freeze({ x: 0, y: 2 }),
+          Object.freeze({ x: 1, y: 2 })
         ]),
         minimumReachableCells: 2,
         visualConnector: Object.freeze({
@@ -472,18 +472,18 @@
       id: "jobCenter",
       label: "Job Center",
       width: 2,
-      height: 3,
+      height: 2,
       color: "job-center",
       category: "building",
       rotatable: true,
       blocksMovement: true,
       access: JOB_CENTER_ACCESS,
-      asset: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-6/down.png?v=0.0001",
+      asset: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001",
       assets: Object.freeze({
-        down: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-6/down.png?v=0.0001",
-        right: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-6/right.png?v=0.0001",
-        up: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-6/up.png?v=0.0001",
-        left: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-6/left.png?v=0.0001"
+        down: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001",
+        right: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/right.png?v=0.0001",
+        up: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/up.png?v=0.0001",
+        left: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/left.png?v=0.0001"
       })
     }),
     sawmill: runtimeItem("sawmill", {
