@@ -14971,6 +14971,9 @@ function synchroniserDeclencheurMenuCampPrototype() {
 }
 
 function actionMenuCampPrototypeDepuisEvenement(menu, event) {
+  campPanelDiagnostic.recordCall("actionMenuCampPrototypeDepuisEvenement", {
+    inputEvent: campPanelDiagnostic.inputEventDetails(event)
+  });
   if (!menu || !event || !(event.target instanceof Element)) return null;
   const bouton = event.target.closest("[data-camp-menu-action]");
   if (bouton && menu.contains(bouton)) return bouton.dataset.campMenuAction || null;
@@ -15635,6 +15638,9 @@ function gererPointeurActionMenuCampPrototype(event) {
 }
 
 function gererClicActionMenuCampPrototype(event) {
+  campPanelDiagnostic.recordCall("gererClicActionMenuCampPrototype", {
+    inputEvent: campPanelDiagnostic.inputEventDetails(event)
+  });
   const menu = event.currentTarget;
   const action = actionMenuCampPrototypeDepuisEvenement(menu, event);
   if (!action) {
@@ -15825,6 +15831,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
 }
 
 function activerItemCampPrototype(uid) {
+  campPanelDiagnostic.recordCall("activerItemCampPrototype", { uid: uid || null });
   const item = itemCampPrototype(uid);
   const type = item && typeCampPrototype(item.type);
   const tache = item && tacheCampPourItem(item);
@@ -16006,6 +16013,9 @@ function rafraichirMenuInteractionCampPrototype() {
 }
 
 function ouvrirWorkDepuisCamp(event) {
+  campPanelDiagnostic.recordCall("ouvrirWorkDepuisCamp", {
+    inputEvent: campPanelDiagnostic.inputEventDetails(event)
+  });
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
   if (event) {
@@ -21828,6 +21838,7 @@ campPanelDiagnostic.configure({
       activeTab: document.body.dataset.ongletActif || null,
       guidanceId: descriptor && descriptor.id || null,
       stage: descriptor && descriptor.stage || (typeof campTutorialStage === "function" ? campTutorialStage() : null),
+      tutorialStage: typeof campTutorialStage === "function" ? campTutorialStage() : null,
       campPrototypeModeEdition: Boolean(campPrototypeModeEdition),
       campPrototypeInteractionUid: campPrototypeInteractionUid || null
     };

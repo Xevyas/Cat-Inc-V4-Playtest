@@ -9,13 +9,15 @@
   const MAX_STACK_LINES = 6;
   const state = enabled ? {
     startedAt: new Date().toISOString(),
+    startedAtPerformance: typeof performance !== "undefined" ? performance.now() : 0,
     gameVersion: null,
     events: [],
     snapshots: [],
     counts: { open: 0, close: 0 },
     lastOpen: null,
     lastClose: null,
-    getUiState: null
+    getUiState: null,
+    inputListenersInstalled: false
   } : null;
 
   function finite(value) {
@@ -29,6 +31,12 @@
     const classes = typeof element.className === "string" && element.className.trim()
       ? "." + element.className.trim().split(/\s+/).slice(0, 5).join(".") : "";
     return String(element.tagName || "element").toLowerCase() + id + classes;
+  }
+
+  function eventNodeLabel(node) {
+    if (node === global) return "window";
+    if (typeof document !== "undefined" && node === document) return "document";
+    return elementLabel(node) || (node && node.nodeName ? String(node.nodeName).toLowerCase() : null);
   }
 
   function rect(element) {
@@ -275,6 +283,63 @@
     return event;
   }
 
+  function inputEventDetails(event) {
+    if (!enabled || !event) return null;
+    const menu = document.getElementById("camp-prototype-interaction-menu");
+    let uiState = {};
+    try { uiState = state.getUiState ? state.getUiState() || {} : {}; } catch (error) {
+      uiState = { providerError: String(error && error.message || error) };
+    }
+    let path = [];
+    try {
+      path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    } catch (error) {
+      path = [];
+    }
+    return {
+      relativeMs: Math.max(0, Math.round(performance.now() - state.startedAtPerformance)),
+      type: event.type || null,
+      pointerType: event.pointerType || null,
+      isPrimary: typeof event.isPrimary === "boolean" ? event.isPrimary : null,
+      button: finite(event.button),
+      detail: finite(event.detail),
+      clientX: finite(event.clientX),
+      clientY: finite(event.clientY),
+      target: eventNodeLabel(event.target),
+      currentTarget: eventNodeLabel(event.currentTarget),
+      composedPath: path.slice(0, 12).map(eventNodeLabel).filter(Boolean),
+      isTrusted: typeof event.isTrusted === "boolean" ? event.isTrusted : null,
+      sourceCapabilities: {
+        firesTouchEvents: event.sourceCapabilities
+          && typeof event.sourceCapabilities.firesTouchEvents === "boolean"
+          ? event.sourceCapabilities.firesTouchEvents : null
+      },
+      menu: menu ? { hidden: Boolean(menu.hidden), rect: rect(menu) } : null,
+      stage: uiState.stage || null,
+      activeTab: uiState.activeTab || null,
+      tutorialStage: uiState.tutorialStage || uiState.stage || null
+    };
+  }
+
+  function recordInputEvent(event) {
+    if (!enabled) return null;
+    const entry = { name: "input-event", details: inputEventDetails(event), stack: [] };
+    entry.atMs = entry.details.relativeMs;
+    state.events.push(entry);
+    if (state.events.length > MAX_EVENTS) state.events.shift();
+    return entry;
+  }
+
+  function installInputListeners() {
+    if (!enabled || state.inputListenersInstalled
+        || typeof document === "undefined" || typeof document.addEventListener !== "function") return false;
+    state.inputListenersInstalled = true;
+    ["pointerdown", "pointerup", "click"].forEach(function(type) {
+      document.addEventListener(type, recordInputEvent, true);
+    });
+    return true;
+  }
+
   function scheduleOpenSnapshots(details) {
     if (!enabled) return;
     global.requestAnimationFrame(function() {
@@ -346,11 +411,14 @@
       if (!enabled) return false;
       state.gameVersion = options && options.gameVersion || null;
       state.getUiState = options && typeof options.getUiState === "function" ? options.getUiState : null;
+      installInputListeners();
       createControl();
       capture("DIAGNOSTIC_READY", null);
       return true;
     },
     recordCall: recordCall,
+    recordInputEvent: recordInputEvent,
+    inputEventDetails: inputEventDetails,
     capture: capture,
     scheduleOpenSnapshots: scheduleOpenSnapshots,
     report: report,
