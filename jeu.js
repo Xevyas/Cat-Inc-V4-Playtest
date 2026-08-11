@@ -4378,9 +4378,15 @@ function renduSlotRecette(familyId, slotIdx) {
   const outputRate = kitty && durations && durations.cycle > 0 ? outputPerCycle / durations.cycle : 0;
   const processingDuration = durations ? durations.processing : Infinity;
   const fullCycleDuration = durations ? durations.cycle : Infinity;
+  const removalBlocked = campTutorialSlotProtege(slot);
   const catHtml = kitty
     ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face"' + attributsActivationClavier("Change " + kitty.nom + " assigned to this recipe") + ' onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')">' + kittyIconHtml(kitty) + '</div>'
-      + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>'
+      + '<button class="work-recipe-cat-remove" aria-label="'
+      + (removalBlocked ? 'Finish the highlighted Sawmill step before removing ' : 'Remove ')
+      + echapperAttributHtml(kitty.nom) + ' from this recipe"'
+      + (removalBlocked ? ' disabled aria-disabled="true" title="Finish the highlighted Sawmill step first."'
+        : ' onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"')
+      + '><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>'
       + '<strong class="work-recipe-cat-name">' + echapperAttributHtml(kitty.nom) + '</strong>'
       + '<span class="work-recipe-cat-rate">' + libelleNombreDecimal(outputRate * 60, 2) + '/min</span>'
       + '<span class="work-recipe-cat-cycle">Cycle: ' + formaterTemps(fullCycleDuration) + '</span>'
@@ -9778,16 +9784,17 @@ function assignerWorkerSlot(kittyIndex) {
 }
 
 function retirerWorkerRecette(familyId, slotIdx) {
-  if (campTutorialActif()) {
-    afficherNotification("Finish the highlighted Sawmill step first.");
-    return;
-  }
   const slot = slotRecette(familyId, slotIdx);
-  if (!slot) return;
+  if (!slot || slot.kittyIndex === null || slot.kittyIndex === undefined) return false;
+  if (campTutorialSlotProtege(slot)) {
+    afficherNotification("Finish the highlighted Sawmill step first.");
+    return false;
+  }
   annulerFocusManuelWork(familyId, slotIdx);
   // Keep the recipe cycle intact while the slot waits for another Cat.
   slot.kittyIndex = null;
   sauvegarder(); rendu();
+  return true;
 }
 
 function renduJobCenter(u) {
@@ -11705,6 +11712,20 @@ function renduDialogueRapideCamp() {
   if (texte) copy.textContent = texte;
 }
 
+function continuerDialogueRapideCamp(event) {
+  // Card descendants are valid continuation targets. Only the Continue
+  // button's bubble is ignored after the button already owns the action.
+  const button = event && event.target && event.target.closest
+    ? event.target.closest("#camp-quick-dialogue-continue") : null;
+  if (button && event.currentTarget !== button) return false;
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  fermerDialogueRapideCamp();
+  return true;
+}
+
 function fermerDialogueRapideCamp() {
   if (typeof campGroundRewardDialogue !== "undefined" && campGroundRewardDialogue) {
     campGroundRewardDialogue = "";
@@ -12479,6 +12500,8 @@ let campTaskPanelState = null;
 let campPrototypeActionMenuPointeur = null;
 let campPrototypeGesteActivationItem = null;
 const campPrototypePointerIdsClicObsoletes = new Set();
+let campPrototypeActivationApresPropagation = null;
+let campPrototypeDismissSurfaceGeste = null;
 let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
@@ -15054,6 +15077,7 @@ function ajouterRaccordsRouteBatimentCampPrototype(element, layout, item, type) 
 function fermerMenuInteractionCampPrototype() {
   campPanelDiagnostic.recordCall("fermerMenuInteractionCampPrototype", { reason: "caller" });
   const menu = document.getElementById("camp-prototype-interaction-menu");
+  const dismissSurface = document.getElementById("camp-production-dismiss-surface");
   if (menu) {
     menu.hidden = true;
     menu.classList.remove("camp-production-menu");
@@ -15070,10 +15094,71 @@ function fermerMenuInteractionCampPrototype() {
     menu.style.removeProperty("max-height");
     menu.style.removeProperty("transform");
   }
+  if (dismissSurface) dismissSurface.hidden = true;
   document.querySelectorAll('[aria-controls="camp-prototype-interaction-menu"]').forEach(function(item) {
     item.setAttribute("aria-expanded", "false");
   });
   campPrototypeInteractionUid = null;
+}
+
+function fermerPanneauProductionDepuisSurfaceCampPrototype(event) {
+  if (!event) return;
+  // Let a pan/pinch/cancel retain normal board ownership. A short primary tap
+  // is structurally intercepted here, never by a listener above gameplay.
+  if (event.type === "pointerdown") {
+    if (campPrototypeDismissSurfaceGeste
+        && campPrototypeDismissSurfaceGeste.pointerId !== event.pointerId) {
+      // Every second contact invalidates the owner before primary/button
+      // guards: either release order is then inert.
+      campPrototypeDismissSurfaceGeste = null;
+      return;
+    }
+    if (event.button > 0 || event.isPrimary === false) return;
+    campPrototypeDismissSurfaceGeste = {
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      startX: event.clientX,
+      startY: event.clientY,
+      startTime: Number(event.timeStamp) || 0,
+      moved: false
+    };
+    return;
+  }
+  const gesture = campPrototypeDismissSurfaceGeste;
+  if (!gesture || gesture.pointerId !== event.pointerId) return;
+  gesture.moved = gesture.moved || Math.hypot(
+    event.clientX - gesture.startX, event.clientY - gesture.startY
+  ) > 8;
+  if (event.type === "pointermove") {
+    return;
+  }
+  if (event.type === "pointercancel") {
+    campPrototypeDismissSurfaceGeste = null;
+    return;
+  }
+  const duration = (Number(event.timeStamp) || 0) - gesture.startTime;
+  if (gesture.moved || event.pointerType !== gesture.pointerType || duration < 0 || duration > 450) {
+    campPrototypeDismissSurfaceGeste = null;
+    return;
+  }
+  // A mouse/pen compatibility click must still hit this physical surface.
+  // Keeping it installed until click avoids a retarget to gameplay without a
+  // second tombstone authority or timer.
+  if (event.pointerType !== "touch") {
+    gesture.released = true;
+    return;
+  }
+  campPrototypeDismissSurfaceGeste = null;
+  effacerGesteActivationLocaleCampPrototype();
+  fermerMenuInteractionCampPrototype();
+}
+
+function terminerDismissPanneauProductionAuClicSurfaceCampPrototype(event) {
+  const gesture = campPrototypeDismissSurfaceGeste;
+  if (!gesture || !gesture.released || gesture.pointerId !== event.pointerId) return;
+  campPrototypeDismissSurfaceGeste = null;
+  effacerGesteActivationLocaleCampPrototype();
+  fermerMenuInteractionCampPrototype();
 }
 
 function synchroniserDeclencheurMenuCampPrototype() {
@@ -15286,6 +15371,7 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
     ? "Cycle " + formaterTemps(durations.cycle) + " · " + phaseLabel + " " + formaterTemps(phaseRemaining)
     : "Cycle time unavailable";
   const catName = echapperAttributHtml(kitty.nom);
+  const removalBlocked = campTutorialSlotProtege(slot);
   const catFace = '<button type="button" class="camp-production-cat-face"'
     + ' data-camp-production-origin="worker"'
     + attributsActivationClavier("Change " + kitty.nom + " assigned to " + pair.procLabel)
@@ -15298,7 +15384,12 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
     + '<div class="camp-production-cat-row">'
     + '<div class="camp-production-cat-ring" data-camp-production-ring role="progressbar" aria-label="Full recipe cycle progress for ' + catName + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '" style="--prog:' + progress.overall + '">' + catFace + '</div>'
     + '<span class="camp-production-cat-name">' + catName + '</span>'
-    + '<button type="button" class="camp-production-cat-remove" aria-label="Remove ' + catName + ' from ' + echapperAttributHtml(pair.procLabel) + '" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + '\');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>'
+    + '<button type="button" class="camp-production-cat-remove" aria-label="'
+    + (removalBlocked ? 'Finish the highlighted Sawmill step before removing ' : 'Remove ')
+    + catName + ' from ' + echapperAttributHtml(pair.procLabel) + '"'
+    + (removalBlocked ? ' disabled aria-disabled="true" title="Finish the highlighted Sawmill step first."'
+      : ' onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + '\');event.stopPropagation()"')
+    + '><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>'
     + '</div>'
     + '<p class="camp-production-status" data-camp-production-time>' + echapperAttributHtml(timeLabel) + '</p>'
     + '</article>';
@@ -15754,7 +15845,6 @@ function gererPointeurActionMenuCampPrototype(event) {
   // here would put its dismissible backdrop under that later click and close it
   // immediately. Keep the menu stable and let the click handler run the action.
   if (event.pointerType === "touch") {
-    event.stopPropagation();
     return;
   }
   campPrototypeActionMenuPointeur = {
@@ -15941,6 +16031,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
       + echapperAttributHtml(type.label) + '">✦</button>';
   }
   const productionPanel = Boolean(famille && menu.querySelector("[data-camp-production-panel]"));
+  const dismissSurface = document.getElementById("camp-production-dismiss-surface");
   menu.classList.toggle("camp-production-menu", productionPanel);
   menu.setAttribute("role", productionPanel ? "region" : "menu");
   menu.setAttribute("aria-label", productionPanel ? type.label + " production" : type.label + " actions");
@@ -15948,6 +16039,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   if (itemElement) itemElement.setAttribute("aria-expanded", "true");
   campPrototypeInteractionUid = uid;
   menu.hidden = false;
+  if (dismissSurface) dismissSurface.hidden = !productionPanel;
   if (productionPanel) positionnerPanneauProductionCamp(menu);
   else positionnerMenuCompactCampPrototype(menu, item, dimensions);
   if (productionPanel) {
@@ -19130,6 +19222,13 @@ function rendreItemsCampPrototype(presencesCamp) {
     const demolitionJunk = type.category === "junk"
       ? demolitionCampPrototypePourCible(item.uid, "layout")
       : null;
+    const cibleJunk = type.category === "junk"
+      ? cibleDemolitionCampPrototype(item.uid, "layout") : null;
+    const junkDemolissable = Boolean(cibleJunk
+      && peutDemolirCibleCampPrototype(cibleJunk).valide);
+    // A locked or unreachable obstacle is scenery, not a disabled control:
+    // keeping it out of the Camp hit-target set lets a pan begin naturally.
+    const junkInerte = type.category === "junk" && !demolitionJunk && !junkDemolissable;
     const reparationBatiment = reparationCampPourBatiment(type.id);
     const constructionMaison = constructionMaisonCampPourItem(item.uid);
     const constructionBatiment = constructionBatimentCampPourItem(item.uid);
@@ -19147,9 +19246,10 @@ function rendreItemsCampPrototype(presencesCamp) {
     const dimensions = dimensionsCampPrototype(item.type, rotationAffiche);
     const connexion = connexionsParItem[item.uid] || null;
     const connexionInactive = Boolean(connexion && !connexion.active);
-    const bouton = document.createElement("button");
-    bouton.type = "button";
+    const bouton = document.createElement(junkInerte ? "div" : "button");
+    if (!junkInerte) bouton.type = "button";
     bouton.className = "camp-prototype-item camp-prototype-color-" + type.color;
+    if (junkInerte) bouton.classList.add("camp-prototype-item-inert-obstacle");
     if (type.id === "catchen" && catchenRepairGuidanceActif()) {
       bouton.classList.add("camp-catchen-tutorial-target");
     }
@@ -19161,7 +19261,7 @@ function rendreItemsCampPrototype(presencesCamp) {
     if (ameliorationBatiment) bouton.classList.add("camp-prototype-item-upgrade-active");
     if (preteAValider) bouton.classList.add("camp-task-ready-to-claim");
     if (connexionInactive) bouton.classList.add("camp-prototype-item-inactive");
-    bouton.dataset.campUid = item.uid;
+    if (!junkInerte) bouton.dataset.campUid = item.uid;
     bouton.dataset.campType = item.type;
     if (type.category === "junk") bouton.dataset.campDemolitionLabel = type.label;
     if (type.category === "road") {
@@ -19208,7 +19308,8 @@ function rendreItemsCampPrototype(presencesCamp) {
           : "camp-prototype-item-placement-invalid"
       );
     }
-    bouton.setAttribute("aria-pressed", selectionne ? "true" : "false");
+    if (!junkInerte) bouton.setAttribute("aria-pressed", selectionne ? "true" : "false");
+    else bouton.setAttribute("role", "img");
     bouton.setAttribute("aria-label", type.label + ", column " + (xAffiche + 1)
       + ", row " + (yAffiche + 1) + ", " + dimensions.width + " by "
       + dimensions.height + " cells, Tier " + (item.tier || 1)
@@ -20762,8 +20863,22 @@ function activerItemCampPrototypeAuPointerUp(interaction, event) {
     && CatInc.touchActivationController
     && CatInc.touchActivationController.consumePointer(event)
   ) campPrototypeGesteActivationItem = null;
-  activerItemCampPrototype(interaction.uid);
+  // The board owns the physical gesture, but not the activation timing. The
+  // document boundary releases it only after pointerup propagation finishes.
+  campPrototypeActivationApresPropagation = {
+    pointerId: event.pointerId,
+    uid: interaction.uid
+  };
   event.preventDefault();
+}
+
+function libererActivationCampPrototypeApresPropagation(event) {
+  const pending = campPrototypeActivationApresPropagation;
+  if (!pending || pending.pointerId !== event.pointerId) return;
+  campPrototypeActivationApresPropagation = null;
+  queueMicrotask(function() {
+    activerItemCampPrototype(pending.uid);
+  });
 }
 
 function terminerInteractionCampPrototype(event, annulee) {
@@ -20840,6 +20955,7 @@ function terminerInteractionCampPrototype(event, annulee) {
 }
 
 function invaliderGesteActivationItemCampPrototype(coordonnerNormaliseur) {
+  campPrototypeActivationApresPropagation = null;
   if (
     campPrototypeGesteActivationItem
     && Number.isFinite(campPrototypeGesteActivationItem.pointerId)
@@ -20852,6 +20968,15 @@ function invaliderGesteActivationItemCampPrototype(coordonnerNormaliseur) {
     if (!protegeParNormaliseur) campPrototypePointerIdsClicObsoletes.add(pointerId);
   }
   campPrototypeGesteActivationItem = null;
+}
+
+// The manual production-dismiss surface already transfers its touch cycle to
+// the shared normalizer. Closing it may discard Camp-local pending work, but
+// must never mint a second shield tombstone or retain a Camp stale-click ID.
+function effacerGesteActivationLocaleCampPrototype() {
+  campPrototypeActivationApresPropagation = null;
+  campPrototypeGesteActivationItem = null;
+  campPrototypeActionMenuPointeur = null;
 }
 
 function commencerGestePointeurCampPrototype(event) {
@@ -21035,8 +21160,9 @@ function initialiserCampPrototype() {
   const board = document.getElementById("camp-prototype-board");
   const viewport = document.querySelector(".camp-prototype-viewport");
   const menuInteraction = document.getElementById("camp-prototype-interaction-menu");
+  const dismissSurface = document.getElementById("camp-production-dismiss-surface");
   const actionsPlacement = document.getElementById("camp-prototype-placement-actions");
-  if (!board || !viewport || !menuInteraction || !actionsPlacement) return;
+  if (!board || !viewport || !menuInteraction || !actionsPlacement || !dismissSurface) return;
   campPrototypeInitialise = true;
   campPrototypeDernierModeMobile = typeof window !== "undefined" && window.innerWidth <= 768;
   chargerCampPrototype();
@@ -21083,11 +21209,19 @@ function initialiserCampPrototype() {
   });
   menuInteraction.addEventListener("pointerdown", function(event) {
     campPrototypeActionMenuPointeur = null;
-    commencerGestePointeurCampPrototype(event);
+    // A panel action belongs to the panel alone: it must never retain or
+    // revive the Sawmill/item gesture that opened this UI.
+    invaliderGesteActivationItemCampPrototype();
     event.stopPropagation();
   });
   menuInteraction.addEventListener("pointerup", gererPointeurActionMenuCampPrototype);
   menuInteraction.addEventListener("click", gererClicActionMenuCampPrototype);
+  dismissSurface.addEventListener("pointerdown", fermerPanneauProductionDepuisSurfaceCampPrototype);
+  dismissSurface.addEventListener("pointermove", fermerPanneauProductionDepuisSurfaceCampPrototype);
+  dismissSurface.addEventListener("pointerup", fermerPanneauProductionDepuisSurfaceCampPrototype);
+  dismissSurface.addEventListener("pointercancel", fermerPanneauProductionDepuisSurfaceCampPrototype);
+  dismissSurface.addEventListener("click", terminerDismissPanneauProductionAuClicSurfaceCampPrototype);
+  document.addEventListener("pointerup", libererActivationCampPrototypeApresPropagation, false);
   document.addEventListener("click", function(event) {
     const alerteBloques = document.getElementById("camp-prototype-blocked-alert");
     if (

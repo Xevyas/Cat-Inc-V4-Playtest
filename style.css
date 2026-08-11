@@ -64,6 +64,25 @@
   --map-cell:        50px;
 }
 
+/* Native WebKit flash is visual noise on every deliberately interactive
+   surface; keyboard focus remains owned by the existing :focus-visible rules. */
+button,
+a[href],
+[role="button"],
+[role="menuitem"],
+[role="tab"],
+[data-clavier-clic] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#camp-quick-dialogue {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.camp-prototype-item-inert-obstacle {
+  pointer-events: none;
+}
+
 /* Camp progression HUD and lightweight Bernardo guidance. */
 .camp-appeal-wrap-topbar {
   align-self: center;
@@ -4807,6 +4826,14 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   touch-action: manipulation;
   transform: translate(-50%, calc(-100% - 7px));
 }
+.camp-production-dismiss-surface {
+  position: absolute;
+  z-index: 7;
+  inset: 0;
+  background: transparent;
+  touch-action: pan-x pan-y;
+}
+.camp-production-dismiss-surface[hidden] { display: none; }
 .camp-prototype-interaction-menu::after {
   position: absolute;
   left: var(--camp-menu-pointer-x, 50%);

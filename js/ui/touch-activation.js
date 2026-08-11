@@ -38,6 +38,7 @@
     const touchTombstones = [];
     const nativeCycles = new Map();
     const nativeOwners = [];
+    const pendingTouchActivations = new Map();
     let generation = 0;
 
     function finitePointerId(eventOrId) {
@@ -153,12 +154,15 @@
       const rootAction = actionRoot(event.target);
       const externalTouch = event.target && typeof event.target.closest === "function"
         ? event.target.closest(EXTERNAL_TOUCH_SELECTOR) : null;
-      if (!rootAction && !externalTouch) return;
+      const manualTarget = event.target && typeof event.target.closest === "function"
+        ? event.target.closest("[data-touch-activation='manual']") : null;
+      if (!rootAction && !externalTouch && !manualTarget) return;
       touchCycles.set(pointerId, {
         pointerId: pointerId,
         generation: ++generation,
         root: rootAction,
         external: Boolean(externalTouch),
+        manual: Boolean(manualTarget),
         startX: Number(event.clientX) || 0,
         startY: Number(event.clientY) || 0,
         startTime: eventTimestamp(event)
@@ -206,15 +210,40 @@
         addTombstone(gesture);
         return;
       }
-      if (!gesture.root) return;
+      // Manual owners (such as the Camp production dismiss surface) have no
+      // synthetic activation, but still own and shield their compatibility
+      // click through the same bounded tombstone authority.
+      if (!gesture.root) {
+        // Camp item gestures have their own pointerup consumer below. The
+        // structural dismiss surface is manual but not an external Camp item,
+        // so it is the only rootless path armed here.
+        if (!gesture.external) addTombstone(gesture);
+        return;
+      }
       if (actionRoot(event.target) !== gesture.root) {
         endedTouchCycles.delete(pointerId);
         addTombstone(gesture);
         return;
       }
-      endedTouchCycles.delete(pointerId);
       addTombstone(gesture);
+      // Do not synthesize the activation from the capture listener.  A
+      // microtask queued there can run before a platform has finished the
+      // physical pointerup dispatch, allowing newly-rendered UI to receive
+      // the compatibility click.  The bubble boundary below observes the
+      // completed event first; the tombstone is already armed here.
+      pendingTouchActivations.set(pointerId, { gesture: gesture, target: event.target });
+    }
+
+    function onPointerUpAfterPropagation(event) {
+      const pointerId = finitePointerId(event);
+      if (pointerId === null || event.pointerType !== "touch") return;
+      const pending = pendingTouchActivations.get(pointerId);
+      if (!pending) return;
+      pendingTouchActivations.delete(pointerId);
+      endedTouchCycles.delete(pointerId);
+      if (actionRoot(event.target) !== pending.gesture.root) return;
       scheduleMicrotask(function() {
+        const gesture = pending.gesture;
         if (gesture.root.isConnected === false
           || gesture.root.disabled
           || gesture.root.getAttribute("aria-disabled") === "true") return;
@@ -226,6 +255,7 @@
       const pointerId = finitePointerId(event);
       if (pointerId === null) return;
       activeTouchPointers.delete(pointerId);
+      pendingTouchActivations.delete(pointerId);
       invalidate(pointerId);
       nativeCycles.delete(pointerId);
     }
@@ -242,6 +272,7 @@
     function onTouchCancel() {
       touchCycles.clear();
       endedTouchCycles.clear();
+      pendingTouchActivations.clear();
       activeTouchPointers.clear();
     }
 
@@ -257,6 +288,7 @@
     documentRef.addEventListener("pointerdown", onPointerDown, true);
     documentRef.addEventListener("pointermove", onPointerMove, true);
     documentRef.addEventListener("pointerup", onPointerUp, true);
+    documentRef.addEventListener("pointerup", onPointerUpAfterPropagation, false);
     documentRef.addEventListener("pointercancel", onPointerCancel, true);
     documentRef.addEventListener("contextmenu", onContextMenu, true);
     documentRef.addEventListener("touchcancel", onTouchCancel, true);
