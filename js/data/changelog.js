@@ -427,11 +427,32 @@
     })
   ]);
 
+  const release0053Categories = Object.freeze([
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "The Sawmill tutorial now enforces its intended job order and safely resumes existing games whose production setup is already ahead."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Production buildings are now permanent: they can still be moved or rotated, but can no longer be deleted."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "An opt-in mobile input diagnostic is available for investigating unreliable taps on iPhone Safari."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0052",
+    baseVersion: "0.0053",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -444,6 +465,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0053",
+      date: "2026-08-11",
+      categories: release0053Categories
+    }),
     Object.freeze({
       version: "0.0052",
       date: "2026-08-11",

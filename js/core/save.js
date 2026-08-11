@@ -99,38 +99,29 @@ function deriverEtapeTutorielSawmill(d, campSource, progressionSource) {
   const secondCat = assigned(second);
   const complete = firstCat && secondCat && first.kittyIndex !== second.kittyIndex;
   let derived = "sawmill";
-  let achievedLevel = 0;
   if (firstRecipe) {
     derived = "wood-slot-1-cat";
-    achievedLevel = 1;
   }
   if (firstCat) {
     derived = "wood-slot-2-recipe";
-    achievedLevel = 2;
   }
   if (firstCat && secondRecipe) {
     derived = "wood-slot-2-cat";
-    achievedLevel = 3;
   }
   if (complete) {
     derived = "return-camp";
-    achievedLevel = 4;
   }
 
   const persisted = progressionSource && progressionSource.sawmillTutorialStage;
   if (!SAWMILL_TUTORIAL_STAGES.includes(persisted)) return derived;
   if (persisted === "complete") return "complete";
   if (persisted === "confirm-camp" && complete) return "confirm-camp";
-  const prerequisiteLevel = {
-    inactive: 0, sawmill: 0, "work-action": 0, "wood-slot-1-recipe": 0,
-    "wood-slot-1-cat": 1, "wood-slot-2-recipe": 2,
-    "wood-slot-2-cat": 3, "return-camp": 4, "confirm-camp": 4
-  }[persisted];
-  if (prerequisiteLevel > achievedLevel) return derived;
   const achievedIndex = SAWMILL_TUTORIAL_STAGE_INDEX[derived];
   const persistedIndex = SAWMILL_TUTORIAL_STAGE_INDEX[persisted];
-  // A persisted step may stay at or below the authoritative slot state, but
-  // never remain beyond a prerequisite that is missing after a reload.
+  // Reconciliation is monotone: authoritative slot facts may move a bypassed
+  // save forward, but recovery never rewinds a persisted stage or edits the
+  // slots that proved it. Navigation-only stages remain persisted because a
+  // selected tab is transient rather than gameplay authority.
   return persistedIndex >= achievedIndex ? persisted : derived;
 }
 

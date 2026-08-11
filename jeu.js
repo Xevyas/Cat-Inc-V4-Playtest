@@ -38,6 +38,10 @@ const campGameplayData = globalThis.CatInc.data.campGameplay;
 const campTemplateData = globalThis.CatInc.data.campTemplates;
 const incrementorLawApi = globalThis.CatInc.incrementorLaw;
 const campPanelDiagnostic = globalThis.CatInc.campPanelDiagnostic;
+const mobileInputDiagnostic = globalThis.CatInc.mobileInputDiagnostic || Object.freeze({
+  configure: function() { return false; },
+  recordOutcome: function() { return null; }
+});
 
 function templateCampActif() {
   return campTemplateData.templates[campTemplateData.activeTemplateId];
@@ -426,6 +430,8 @@ function kittyIsInWorkerSlot(kittyIdx) {
 
 function reinitialiserProgressionRecette(slot, retirerRecette) {
   if (!slot) return;
+  if (typeof campTutorialAutoriserMutationSlot !== "undefined"
+      && !campTutorialAutoriserMutationSlot(slot)) return false;
   viderProgressionRecette(slot);
   slot.kittyIndex = null;
   if (retirerRecette) slot.recipeId = null;
@@ -433,6 +439,8 @@ function reinitialiserProgressionRecette(slot, retirerRecette) {
 
 function viderProgressionRecette(slot) {
   if (!slot) return;
+  if (typeof campTutorialAutoriserMutationSlot !== "undefined"
+      && !campTutorialAutoriserMutationSlot(slot)) return false;
   slot.phase = "idle";
   slot.phaseProgress = 0;
   slot.outputCarry = 0;
@@ -2356,11 +2364,19 @@ function elementsFocusablesDialogue(dialogue) {
 }
 
 function ouvrirDialogueModal(id, options) {
-  return dialoguesController.open(id, options);
+  const opened = dialoguesController.open(id, options);
+  if (typeof mobileInputDiagnostic !== "undefined") {
+    mobileInputDiagnostic.recordOutcome("modal.open", { id: id, opened: opened !== false });
+  }
+  return opened;
 }
 
 function fermerDialogueModal(id) {
-  return dialoguesController.close(id);
+  const closed = dialoguesController.close(id);
+  if (typeof mobileInputDiagnostic !== "undefined") {
+    mobileInputDiagnostic.recordOutcome("modal.close", { id: id, closed: closed !== false });
+  }
+  return closed;
 }
 
 function dialogueOuvertAuPremierPlan() {
@@ -2594,6 +2610,9 @@ function ouvrirModalSettings() {
     focusSelector: ".explo-modal-close",
     returnFocusSelector: ".bouton-settings"
   });
+  if (typeof mobileInputDiagnostic !== "undefined") {
+    mobileInputDiagnostic.recordOutcome("settings.open", null);
+  }
 }
 function actualiserVolumeAudioUI(canal, rawValue) {
   const value = Math.max(0, Math.min(100, Number(rawValue) || 0));
@@ -7541,7 +7560,7 @@ function selectionnerKittySlot(kittyIndex) {
 function forcerKittySlot(kittyIndex) {
   if (estIngenieur(etat.kittiesData[kittyIndex]) || estBernardoSuperviseur(kittyIndex)
       || kittyHasNonReplaceableAction(kittyIndex)) return;
-  retirerKittyDeSesRoles(kittyIndex);
+  if (retirerKittyDeSesRoles(kittyIndex) === false) return false;
   selectionnerKittySlot(kittyIndex);
 }
 
@@ -9191,7 +9210,7 @@ function selectionnerKittySpec(kittyIndex) {
 function forcerKittyFormation(kittyIndex) {
   if (estIngenieur(etat.kittiesData[kittyIndex]) || estBernardoSuperviseur(kittyIndex)
       || kittyHasNonReplaceableAction(kittyIndex) || kittyIsInExplorationStaging(kittyIndex)) return;
-  retirerKittyDeSesRoles(kittyIndex);
+  if (retirerKittyDeSesRoles(kittyIndex) === false) return false;
   selectionnerKittyFormation(kittyIndex);
 }
 
@@ -9292,6 +9311,10 @@ function assignerManager(famille, kittyIndex) {
 // Pulls a kitty out of whatever worker slot or manager role it currently holds, then assigns it
 // to the new target — used by the "Force" button on busy kitties in the selection modals.
 function retirerKittyDeSesRoles(kittyIdx) {
+  if (typeof campTutorialKittyProtege !== "undefined" && campTutorialKittyProtege(kittyIdx)) {
+    afficherNotification("Finish the highlighted Sawmill step before reassigning this Cat.");
+    return false;
+  }
   annulerFocusManuelWork();
   Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
     slots.forEach(function(slot) {
@@ -9308,9 +9331,11 @@ function retirerKittyDeSesRoles(kittyIdx) {
 }
 
 function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
+  if (typeof campTutorialAutoriserIntent !== "undefined"
+      && !campTutorialAutoriserIntent({ type: "worker", familyId: familyId, slotIndex: slotIdx })) return false;
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
-  const stage = campTutorialStage();
+  const stage = campTutorialEtapeEffective();
   const targetSlot = stage === "wood-slot-1-cat" ? 0
     : (stage === "wood-slot-2-cat" ? 1 : null);
   if (targetSlot !== null && familyId === "wood" && slotIdx === targetSlot
@@ -9320,7 +9345,7 @@ function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
   }
   if (estIngenieur(etat.kittiesData[kittyIdx]) || estBernardoSuperviseur(kittyIdx)
       || kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
-  retirerKittyDeSesRoles(kittyIdx);
+  if (retirerKittyDeSesRoles(kittyIdx) === false) return false;
   const slot = slotRecette(familyId, slotIdx);
   if (!slot || !slot.recipeId) return;
   slot.kittyIndex = kittyIdx;
@@ -9339,7 +9364,7 @@ function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
 function forcerManager(famille, kittyIdx) {
   if (estIngenieur(etat.kittiesData[kittyIdx]) || estBernardoSuperviseur(kittyIdx)
       || kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
-  retirerKittyDeSesRoles(kittyIdx);
+  if (retirerKittyDeSesRoles(kittyIdx) === false) return false;
   etat.managers[famille] = kittyIdx;
   jouerSonAffectation();
   fermerModalJC();
@@ -9449,6 +9474,8 @@ function afficherDialogueRecette() {
 }
 
 function ouvrirModalRecette(familyId, slotIdx) {
+  if (typeof campTutorialAutoriserIntent !== "undefined"
+      && !campTutorialAutoriserIntent({ type: "recipe", familyId: familyId, slotIndex: slotIdx })) return false;
   recipeModalOuvert = {
     familyId: familyId,
     slotIdx: slotIdx,
@@ -9548,6 +9575,8 @@ function selectionnerRecette(recipeId) {
 }
 
 function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
+  if (typeof campTutorialAutoriserIntent !== "undefined"
+      && !campTutorialAutoriserIntent({ type: "recipe", familyId: familyId, slotIndex: slotIdx })) return false;
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
   const slot = slotRecette(familyId, slotIdx);
@@ -9558,7 +9587,9 @@ function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
   annulerFocusManuelWork(familyId, slotIdx);
   const proposeWorker = slot.kittyIndex === null;
   const returnFocusSelector = recipeModalOuvert && recipeModalOuvert.returnFocusSelector;
-  viderProgressionRecette(slot);
+  const assignmentTutorielAConserver = campTutorialActif()
+    && !slot.recipeId && Number.isInteger(slot.kittyIndex) && slot.kittyIndex >= 0;
+  if (!assignmentTutorielAConserver) viderProgressionRecette(slot);
   slot.recipeId = recipeId;
   campGuidanceActionCommit({
     type: "work.recipe-selected",
@@ -9615,6 +9646,8 @@ function retirerRecetteSelectionneeConfirme() {
 let workerModalOuvert = null; // { familyId, slotIdx }
 
 function ouvrirModalWorkerRecette(familyId, slotIdx, options) {
+  if (typeof campTutorialAutoriserIntent !== "undefined"
+      && !campTutorialAutoriserIntent({ type: "worker", familyId: familyId, slotIndex: slotIdx })) return false;
   const slot = slotRecette(familyId, slotIdx);
   if (!slot || !slot.recipeId) { ouvrirModalRecette(familyId, slotIdx); return; }
   const pair = paireRecette(slot.recipeId);
@@ -9700,12 +9733,17 @@ function assignerWorkerSlot(kittyIndex) {
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
   if (!workerModalOuvert) return;
+  if (typeof campTutorialAutoriserIntent !== "undefined" && !campTutorialAutoriserIntent({
+    type: "worker",
+    familyId: workerModalOuvert.familyId,
+    slotIndex: workerModalOuvert.slotIdx
+  })) return false;
   if (estIngenieur(etat.kittiesData[kittyIndex]) || estBernardoSuperviseur(kittyIndex)) return;
   if (kittyIsBusy(kittyIndex)) return;
   if (kittyIsInExplorationStaging(kittyIndex)) return;
   const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
   if (!slot || !slot.recipeId) return;
-  const stage = campTutorialStage();
+  const stage = campTutorialEtapeEffective();
   const tutorialSlotIdx = stage === "wood-slot-1-cat" ? 0
     : (stage === "wood-slot-2-cat" ? 1 : null);
   const otherTutorialSlot = tutorialSlotIdx === null
@@ -11172,9 +11210,83 @@ function campTutorialStageDefinir(stage, options) {
 }
 
 function campTutorialReconciliation() {
-  // Rendering/recovery never derives a new tutorial stage from gameplay state.
-  // A valid persisted stage advances only through a committed semantic action.
-  campTutorialStage();
+  const progression = progressionCamp();
+  const current = campTutorialStage();
+  const derived = saveCore.deriverEtapeTutorielSawmill(etat, etat.camp || {}, progression);
+  if (!SAWMILL_TUTORIAL_STAGES.includes(derived)
+      || SAWMILL_TUTORIAL_STAGE_INDEX[derived] <= SAWMILL_TUTORIAL_STAGE_INDEX[current]) {
+    return false;
+  }
+  progression.sawmillTutorialStage = derived;
+  return true;
+}
+
+function campTutorialEtapeEffective() {
+  const persisted = campTutorialStage();
+  if (persisted === "inactive" || persisted === "complete") return persisted;
+  const persistedIndex = SAWMILL_TUTORIAL_STAGE_INDEX[persisted];
+  const first = campTutorialSlot("wood", 0);
+  const second = campTutorialSlot("wood", 1);
+  if (persistedIndex >= SAWMILL_TUTORIAL_STAGE_INDEX["wood-slot-1-recipe"]
+      && !(first && first.recipeId)) return "wood-slot-1-recipe";
+  if (persistedIndex >= SAWMILL_TUTORIAL_STAGE_INDEX["wood-slot-1-cat"]
+      && !(first && Number.isInteger(first.kittyIndex) && first.kittyIndex >= 0)) {
+    return "wood-slot-1-cat";
+  }
+  if (persistedIndex >= SAWMILL_TUTORIAL_STAGE_INDEX["wood-slot-2-recipe"]
+      && !(second && second.recipeId)) return "wood-slot-2-recipe";
+  if (persistedIndex >= SAWMILL_TUTORIAL_STAGE_INDEX["wood-slot-2-cat"]
+      && !(second && Number.isInteger(second.kittyIndex) && second.kittyIndex >= 0
+        && first && second.kittyIndex !== first.kittyIndex)) {
+    return "wood-slot-2-cat";
+  }
+  return persisted;
+}
+
+function campTutorialSlotProtege(slot) {
+  if (!campTutorialActif() || !slot) return false;
+  const first = campTutorialSlot("wood", 0);
+  const second = campTutorialSlot("wood", 1);
+  return (slot === first || slot === second) && Boolean(slot.recipeId || slot.kittyIndex !== null);
+}
+
+function campTutorialAutoriserMutationSlot(slot) {
+  if (!campTutorialSlotProtege(slot)) return true;
+  afficherNotification("Finish the highlighted Sawmill step before changing this recipe slot.");
+  return false;
+}
+
+function campTutorialKittyProtege(kittyIndex) {
+  if (!campTutorialActif()) return false;
+  return [campTutorialSlot("wood", 0), campTutorialSlot("wood", 1)].some(function(slot) {
+    return slot && slot.kittyIndex === kittyIndex;
+  });
+}
+
+function campTutorialIntentAttendu(intent) {
+  if (!campTutorialActif()) return true;
+  const stage = campTutorialEtapeEffective();
+  if (intent.type === "navigation-work") {
+    if (stage === "sawmill") return false;
+    if (stage === "work-action") {
+      return intent.buildingId === "sawmill" && intent.familyId === "wood";
+    }
+    return true;
+  }
+  if (intent.type === "recipe") {
+    return (stage === "wood-slot-1-recipe" && intent.familyId === "wood" && intent.slotIndex === 0)
+      || (stage === "wood-slot-2-recipe" && intent.familyId === "wood" && intent.slotIndex === 1);
+  }
+  if (intent.type === "worker") {
+    return (stage === "wood-slot-1-cat" && intent.familyId === "wood" && intent.slotIndex === 0)
+      || (stage === "wood-slot-2-cat" && intent.familyId === "wood" && intent.slotIndex === 1);
+  }
+  return true;
+}
+
+function campTutorialAutoriserIntent(intent) {
+  if (campTutorialIntentAttendu(intent || {})) return true;
+  afficherNotification("Finish the highlighted Sawmill step first.");
   return false;
 }
 
@@ -11201,26 +11313,26 @@ function campTutorialInstruction(stage) {
 }
 
 function campTutorialPickerEtape() {
-  return campTutorialStage() === "wood-slot-1-cat"
-    || campTutorialStage() === "wood-slot-2-cat";
+  return campTutorialEtapeEffective() === "wood-slot-1-cat"
+    || campTutorialEtapeEffective() === "wood-slot-2-cat";
 }
 
 function campTutorialPickerCible() {
   return {
     familyId: "wood",
-    slotIdx: campTutorialStage() === "wood-slot-1-cat" ? 0 : 1
+    slotIdx: campTutorialEtapeEffective() === "wood-slot-1-cat" ? 0 : 1
   };
 }
 
 function campTutorialRecipeEtape() {
-  return campTutorialStage() === "wood-slot-1-recipe"
-    || campTutorialStage() === "wood-slot-2-recipe";
+  return campTutorialEtapeEffective() === "wood-slot-1-recipe"
+    || campTutorialEtapeEffective() === "wood-slot-2-recipe";
 }
 
 function campTutorialRecipeCible() {
   return {
     familyId: "wood",
-    slotIdx: campTutorialStage() === "wood-slot-1-recipe" ? 0 : 1
+    slotIdx: campTutorialEtapeEffective() === "wood-slot-1-recipe" ? 0 : 1
   };
 }
 
@@ -11291,7 +11403,7 @@ function campGuidanceCiblesSawmill(stage) {
 }
 
 function campGuidanceReconcilierSawmill() {
-  const stage = campTutorialStage();
+  const stage = campTutorialEtapeEffective();
   const tab = document.body.dataset.ongletActif || "gang";
   if (tab === "camp") renduCampPrototype();
   if (tab === "work" && campTutorialEtapeWork(stage)) renduWorkPairs(unlocks());
@@ -11399,7 +11511,7 @@ function campGuidanceDescripteurActif() {
     };
   }
   if (!campTutorialActif()) return null;
-  const stage = campTutorialStage();
+  const stage = campTutorialEtapeEffective();
   return {
     id: "sawmill",
     stage: stage,
@@ -11418,6 +11530,7 @@ function campGuidanceDescripteurActif() {
           && campGuidanceActionCorrespond(action, "work.recipe-selected", {
             familyId: "wood", slotIndex: stage === "wood-slot-1-recipe" ? 0 : 1
           })) {
+        if (stage !== campTutorialStage()) return true;
         return campTutorialStageDefinir(stage === "wood-slot-1-recipe"
           ? "wood-slot-1-cat" : "wood-slot-2-cat");
       }
@@ -11425,6 +11538,7 @@ function campGuidanceDescripteurActif() {
           && campGuidanceActionCorrespond(action, "work.worker-assigned", {
             familyId: "wood", slotIndex: stage === "wood-slot-1-cat" ? 0 : 1
           })) {
+        if (stage !== campTutorialStage()) return true;
         return campTutorialStageDefinir(stage === "wood-slot-1-cat"
           ? "wood-slot-2-recipe" : "return-camp");
       }
@@ -11445,14 +11559,14 @@ function campTutorialMarquerCible(element, descriptor) {
   if (!element) return;
   element.classList.add("camp-sawmill-tutorial-target");
   if (descriptor && descriptor.id === "sawmill") {
-    element.setAttribute("aria-describedby", campTutorialEtapeWork(campTutorialStage())
+    element.setAttribute("aria-describedby", campTutorialEtapeWork(campTutorialEtapeEffective())
       ? "camp-sawmill-tutorial-work-status"
       : "camp-sawmill-tutorial-copy");
   }
 }
 
 function campTutorialActualiserInterface() {
-  const stage = campTutorialStage();
+  const stage = campTutorialEtapeEffective();
   document.querySelectorAll(".camp-sawmill-tutorial-target").forEach(function(element) {
     element.classList.remove("camp-sawmill-tutorial-target");
     if (element.getAttribute("aria-describedby") === "camp-sawmill-tutorial-copy"
@@ -11610,6 +11724,9 @@ function fermerDialogueRapideCamp() {
     type: "camp.quick-dialogue-continued",
     dialogueId: id
   }, guidanceDescriptor);
+  if (typeof mobileInputDiagnostic !== "undefined") {
+    mobileInputDiagnostic.recordOutcome("quick-dialogue.continue", { dialogueId: id || null });
+  }
   sauvegarder();
   if (id === "firstBox" && typeof renduCampPrototype === "function") {
     fermerMenuInteractionCampPrototype();
@@ -12213,6 +12330,11 @@ const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object.freeze({
   catchen: "food",
   pawsonry: "rock"
 });
+function estBatimentProductionCamp(typeOrId) {
+  const typeId = typeof typeOrId === "string"
+    ? typeOrId : (typeOrId && typeOrId.id);
+  return Boolean(typeId && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[typeId]);
+}
 const CAMP_PROTOTYPE_FUNCTION_BY_TYPE = Object.freeze({
   operationsTable: "explorations",
   jobCenter: "jobs",
@@ -15845,6 +15967,9 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
 
 function activerItemCampPrototype(uid) {
   campPanelDiagnostic.recordCall("activerItemCampPrototype", { uid: uid || null });
+  if (typeof mobileInputDiagnostic !== "undefined") {
+    mobileInputDiagnostic.recordOutcome("camp.item-activation", { uid: uid || null });
+  }
   const item = itemCampPrototype(uid);
   const type = item && typeCampPrototype(item.type);
   const tache = item && tacheCampPourItem(item);
@@ -16039,6 +16164,9 @@ function ouvrirWorkDepuisCamp(event) {
   const famille = menu && menu.dataset.workFamily;
   const buildingId = menu && menu.dataset.campBuildingId;
   if (!["wood", "food", "rock"].includes(famille) || !buildingId) return false;
+  if (!campTutorialAutoriserIntent({
+    type: "navigation-work", buildingId: buildingId, familyId: famille
+  })) return false;
   const capacite = capaciteBatimentCamp(buildingId, 1);
   if (!capacite.available) {
     fermerMenuInteractionCampPrototype();
@@ -16046,7 +16174,10 @@ function ouvrirWorkDepuisCamp(event) {
     return false;
   }
   fermerMenuInteractionCampPrototype();
-  changerOnglet("work");
+  changerOnglet("work", {
+    tutorialWorkIntent: { buildingId: buildingId, familyId: famille },
+    semanticCommit: false
+  });
   appliquerFiltreWork(famille);
   campGuidanceActionCommit({
     type: "camp.work-opened",
@@ -18294,8 +18425,11 @@ function actualiserCommandesCampPrototype() {
   const supprimer = document.getElementById("camp-prototype-delete");
   const selection = itemCampPrototype(campPrototypeSelectionUid);
   if (supprimer) {
+    const productionPermanente = Boolean(selection && estBatimentProductionCamp(selection.type));
+    supprimer.hidden = productionPermanente;
     supprimer.disabled = !selection
       || !typeCampPrototypeModifiable(selection.type)
+      || productionPermanente
       || Boolean(constructionMaisonCampPourItem(selection.uid))
       || Boolean(constructionBatimentCampPourItem(selection.uid));
   }
@@ -20209,6 +20343,10 @@ function supprimerSelectionCampPrototype() {
   const item = itemCampPrototype(campPrototypeSelectionUid);
   if (!campPrototypeModeEdition || !item || !typeCampPrototypeModifiable(item.type)) return;
   const type = typeCampPrototype(item.type);
+  if (estBatimentProductionCamp(type)) {
+    definirMessageCampPrototype(type.label + " is a permanent production building and cannot be removed.");
+    return false;
+  }
   if (tacheCampPourItem(item)) {
     definirMessageCampPrototype(type.label + " cannot be removed while its Camp action is active or awaiting validation.");
     return;
@@ -20940,6 +21078,14 @@ function changerOnglet(id, options) {
   if (id === "camp" && !campDebloque()) return;
   if (id === "explorations" && !explorationCampFonctionnelle()) return;
   if (id === "logs" && etat.chatons < 3) return;
+  if (id === "work") {
+    const tutorialWorkIntent = options && options.tutorialWorkIntent || {};
+    if (!campTutorialAutoriserIntent({
+      type: "navigation-work",
+      buildingId: tutorialWorkIntent.buildingId,
+      familyId: tutorialWorkIntent.familyId
+    })) return false;
+  }
   if (id === "work" && etat.birdPremiereReussie) dismissWorkBoostCue();
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
@@ -20976,6 +21122,9 @@ function changerOnglet(id, options) {
     bouton.tabIndex = actif ? 0 : -1;
   });
   document.body.dataset.ongletActif = id;
+  if (typeof mobileInputDiagnostic !== "undefined") {
+    mobileInputDiagnostic.recordOutcome("navigation.tab-change", { tabId: id });
+  }
   if (!options || options.semanticCommit !== false) {
     campGuidanceActionCommit({
       type: "navigation.tab-changed",
@@ -21937,6 +22086,32 @@ campPanelDiagnostic.configure({
       tutorialStage: typeof campTutorialStage === "function" ? campTutorialStage() : null,
       campPrototypeModeEdition: Boolean(campPrototypeModeEdition),
       campPrototypeInteractionUid: campPrototypeInteractionUid || null
+    };
+  }
+});
+mobileInputDiagnostic.configure({
+  gameVersion: GAME_RELEASE_VERSION,
+  getUiState: function() {
+    return {
+      activeTab: document.body.dataset.ongletActif || null,
+      tutorialStage: typeof campTutorialStage === "function" ? campTutorialStage() : null,
+      campPendingGesture: {
+        boardPointer: campPrototypePointeur ? {
+          pointerId: campPrototypePointeur.pointerId || null,
+          mode: campPrototypePointeur.mode || null,
+          uid: campPrototypePointeur.uid || null
+        } : null,
+        itemActivation: campPrototypeGesteActivationItem ? {
+          pointerId: campPrototypeGesteActivationItem.pointerId || null,
+          pointerType: campPrototypeGesteActivationItem.pointerType || null,
+          uid: campPrototypeGesteActivationItem.uid || null
+        } : null,
+        menuPointer: campPrototypeActionMenuPointeur ? {
+          pointerId: campPrototypeActionMenuPointeur.pointerId || null,
+          action: campPrototypeActionMenuPointeur.action || null
+        } : null,
+        pinchActive: Boolean(campPrototypePincement)
+      }
     };
   }
 });
