@@ -12,6 +12,7 @@
     const settingsModalSelector = options.settingsModalSelector || "#settings-modal";
     let recoveryInProgress = false;
     let lastDiagnosticId = null;
+    const admittedPointerIds = new Set();
 
     function closest(element, selector) {
       return element && typeof element.closest === "function" ? element.closest(selector) : null;
@@ -101,7 +102,7 @@
       });
     }
 
-    function shouldBlockEvent(event) {
+    function shouldBlockFreshEvent(event) {
       const descriptor = resolveDescriptor();
       if (!descriptor) return false;
       if (event && event.type === "keydown" && event.key === "Tab") return false;
@@ -111,6 +112,24 @@
       if (event && event.type === "keydown"
           && event.key !== "Enter" && event.key !== " ") return true;
       return !isElementAllowed(actionableDescriptor, event && event.target);
+    }
+
+    function shouldBlockEvent(event) {
+      const pointerId = event && event.pointerId;
+      if (event && event.type === "pointerdown" && pointerId !== undefined) {
+        admittedPointerIds.delete(pointerId);
+      }
+      const pointerSequenceEnd = event
+        && (event.type === "pointerup" || event.type === "pointercancel");
+      if (pointerSequenceEnd && admittedPointerIds.has(pointerId)) {
+        admittedPointerIds.delete(pointerId);
+        return false;
+      }
+      const blocked = shouldBlockFreshEvent(event);
+      if (!blocked && event && event.type === "pointerdown" && pointerId !== undefined) {
+        admittedPointerIds.add(pointerId);
+      }
+      return blocked;
     }
 
     return Object.freeze({

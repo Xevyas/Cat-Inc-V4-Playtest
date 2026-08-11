@@ -11600,7 +11600,7 @@ function campTutorialBloquerInteraction(event) {
 }
 
 if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-  ["pointerdown", "pointerup", "click", "contextmenu"].forEach(function(type) {
+  ["pointerdown", "pointerup", "pointercancel", "click", "contextmenu"].forEach(function(type) {
     document.addEventListener(type, campTutorialBloquerInteraction, true);
   });
   document.addEventListener("keydown", campTutorialBloquerInteraction, true);
@@ -20369,12 +20369,11 @@ function demarrerInteractionCampPrototype(event) {
     if (!cible) return;
     const itemNormal = itemCampPrototype(cible.dataset.campUid);
     const typeNormal = itemNormal && typeCampPrototype(itemNormal.type);
-    const etapeTutorielTapSawmill = typeNormal && typeNormal.id === "sawmill"
-      && (campTutorialStage() === "sawmill" || campTutorialStage() === "confirm-camp");
-    if (etapeTutorielTapSawmill) {
-      // Tutorial targets are single-tap actions. Do not arm the normal Camp
-      // long-press editor: its pointer capture retargets pointerup to the board
-      // and can leave the hold timer running behind the tutorial input lock.
+    const cibleGuideeTapSimple = campGuidanceDescripteurActif()
+      && campTutorialInteractionAutorisee(cible);
+    if (cibleGuideeTapSimple) {
+      // A guided Camp target is a semantic single-tap action. Do not arm the
+      // editor gesture or take capture for the same pointer sequence.
       annulerAppuiProlongeCampPrototype();
       return;
     }
