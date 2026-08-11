@@ -11344,6 +11344,23 @@ function campGuidanceElementSawmill() {
   return campGuidanceElements('[data-camp-type="sawmill"]');
 }
 
+function campGuidanceCibleWorkActionSawmill() {
+  return typeof document !== "undefined"
+    ? document.querySelector(
+      '#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]'
+    ) : null;
+}
+
+function campGuidanceCibleWorkActionSawmillActionnable() {
+  const cible = campGuidanceCibleWorkActionSawmill();
+  if (!cible) return false;
+  if (typeof guidanceController !== "undefined" && guidanceController) {
+    return guidanceController.isElementActionable(cible);
+  }
+  return cible.isConnected !== false && cible.hidden !== true
+    && cible.disabled !== true && cible.getAttribute("aria-disabled") !== "true";
+}
+
 function campGuidanceCiblesSawmill(stage) {
   const recipeModal = document.getElementById("recipe-modal");
   const workerModal = document.getElementById("worker-modal");
@@ -11381,7 +11398,8 @@ function campGuidanceCiblesSawmill(stage) {
     return campGuidanceElementSawmill();
   }
   if (stage === "work-action") {
-    return campGuidanceElements('#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]');
+    const cible = campGuidanceCibleWorkActionSawmill();
+    return cible ? [cible] : [];
   }
   if (stage === "return-camp") return campGuidanceElements("#onglet-camp");
   return [];
@@ -11414,7 +11432,7 @@ function campGuidanceRestaurerSawmill() {
     return;
   }
   renduCampPrototype();
-  if (stage === "work-action") {
+  if (stage === "work-action" && !campGuidanceCibleWorkActionSawmillActionnable()) {
     const sawmill = itemCampPrototypeParType("sawmill");
     if (sawmill) ouvrirMenuInteractionCampPrototype(sawmill.uid, { conserverOuvert: true });
   }
@@ -11687,15 +11705,14 @@ function campTutorialActualiserInterface() {
     return;
   }
   if (!actif) return;
-  if (campVisible && stage === "work-action") {
+  if (campVisible && stage === "work-action"
+      && !campGuidanceCibleWorkActionSawmillActionnable()) {
     const sawmill = itemCampPrototypeParType("sawmill");
     if (sawmill) ouvrirMenuInteractionCampPrototype(sawmill.uid, { conserverOuvert: true });
   }
   let target = null;
   if (stage === "sawmill") target = document.querySelector('[data-camp-type="sawmill"]');
-  if (stage === "work-action") target = document.querySelector(
-    '#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]'
-  );
+  if (stage === "work-action") target = campGuidanceCibleWorkActionSawmill();
   if (stage === "return-camp") target = document.getElementById("onglet-camp");
   if (stage === "confirm-camp") target = document.querySelector('[data-camp-type="sawmill"]');
   if (stage === "wood-slot-1-recipe") target = document.querySelector("#recipe-slot-wood-0 .work-recipe-choose-empty");
