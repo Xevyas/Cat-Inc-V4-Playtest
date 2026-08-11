@@ -37,6 +37,7 @@ const campCapabilitiesApi = globalThis.CatInc.campCapabilities;
 const campGameplayData = globalThis.CatInc.data.campGameplay;
 const campTemplateData = globalThis.CatInc.data.campTemplates;
 const incrementorLawApi = globalThis.CatInc.incrementorLaw;
+const campPanelDiagnostic = globalThis.CatInc.campPanelDiagnostic;
 
 function templateCampActif() {
   return campTemplateData.templates[campTemplateData.activeTemplateId];
@@ -11297,6 +11298,10 @@ function campGuidanceReconcilierSawmill() {
 }
 
 function campGuidanceActionCommit(action, observedDescriptor) {
+  campPanelDiagnostic.recordCall("campGuidanceActionCommit", {
+    actionType: action && action.type || null,
+    buildingId: action && action.buildingId || null
+  });
   if (typeof guidanceController === "undefined" || !guidanceController) return false;
   const matched = guidanceController.actionCommitted(action, observedDescriptor);
   campTutorialActualiserInterface();
@@ -14923,6 +14928,7 @@ function ajouterRaccordsRouteBatimentCampPrototype(element, layout, item, type) 
 }
 
 function fermerMenuInteractionCampPrototype() {
+  campPanelDiagnostic.recordCall("fermerMenuInteractionCampPrototype", { reason: "caller" });
   const menu = document.getElementById("camp-prototype-interaction-menu");
   if (menu) {
     menu.hidden = true;
@@ -15253,6 +15259,10 @@ function calculerPlacementPanneauProductionCamp(viewportRect, boardRect, targetR
 }
 
 function positionnerPanneauProductionCamp(menu) {
+  campPanelDiagnostic.recordCall("positionnerPanneauProductionCamp", {
+    menuPresent: Boolean(menu),
+    productionClass: Boolean(menu && menu.classList.contains("camp-production-menu"))
+  });
   if (!menu || !menu.classList.contains("camp-production-menu")) return false;
   const viewport = document.querySelector(".camp-prototype-viewport");
   const board = document.getElementById("camp-prototype-board");
@@ -15275,6 +15285,7 @@ function positionnerPanneauProductionCamp(menu) {
   menu.style.width = geometry.width + "px";
   menu.style.maxHeight = geometry.maxHeight + "px";
   menu.style.transform = "none";
+  campPanelDiagnostic.capture("POSITIONED", { geometry: geometry, mobile: mobile });
   return true;
 }
 
@@ -15638,6 +15649,16 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   const menu = document.getElementById("camp-prototype-interaction-menu");
   const maison = Boolean(type && type.category === "house");
   const stickerEligible = stickerCampPrototypeEligible(item, type);
+  campPanelDiagnostic.recordCall("ouvrirMenuInteractionCampPrototype", {
+    uid: uid || null,
+    buildingId: type && type.id || null,
+    production: Boolean(famille),
+    reason: options && options.reason || "activation",
+    semanticCommit: semanticCommit
+  });
+  if (famille) campPanelDiagnostic.capture("BEFORE_OPEN", {
+    uid: uid, buildingId: type.id, familyId: famille
+  });
   if (!item || !type || (!famille && !fonction && !tache && !maison && !stickerEligible) || !menu) {
     fermerMenuInteractionCampPrototype();
     return false;
@@ -15726,6 +15747,11 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   menu.hidden = false;
   if (productionPanel) positionnerPanneauProductionCamp(menu);
   else positionnerMenuCompactCampPrototype(menu, item, dimensions);
+  if (productionPanel) {
+    const diagnosticDetails = { uid: uid, buildingId: type.id, familyId: famille };
+    campPanelDiagnostic.capture("AFTER_BUILD_SYNC", diagnosticDetails);
+    campPanelDiagnostic.scheduleOpenSnapshots(diagnosticDetails);
+  }
   if (semanticCommit) {
     campGuidanceActionCommit({
       type: "camp.building-menu-opened",
@@ -15880,6 +15906,7 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
 }
 
 function rafraichirMenuInteractionCampPrototype() {
+  campPanelDiagnostic.recordCall("rafraichirMenuInteractionCampPrototype", null);
   const menu = document.getElementById("camp-prototype-interaction-menu");
   if (!menu || menu.hidden) return false;
   const interactionKind = menu.dataset.interactionKind;
@@ -21723,6 +21750,20 @@ document.addEventListener("keydown", function(e) {
 
 initialiserRessourcesAccessibles();
 const partieExistante = charger();
+campPanelDiagnostic.configure({
+  gameVersion: GAME_RELEASE_VERSION,
+  getUiState: function() {
+    const descriptor = typeof guidanceController !== "undefined" && guidanceController
+      ? guidanceController.currentDescriptor() : null;
+    return {
+      activeTab: document.body.dataset.ongletActif || null,
+      guidanceId: descriptor && descriptor.id || null,
+      stage: descriptor && descriptor.stage || (typeof campTutorialStage === "function" ? campTutorialStage() : null),
+      campPrototypeModeEdition: Boolean(campPrototypeModeEdition),
+      campPrototypeInteractionUid: campPrototypeInteractionUid || null
+    };
+  }
+});
 initialiserCampPrototype();
 normaliserFormuleRecrutementCamp();
 synchroniserDeblocagesSpherePerks();

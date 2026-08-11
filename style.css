@@ -1,5 +1,52 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
 
+#camp-panel-diag-control {
+  position: fixed;
+  top: max(4px, env(safe-area-inset-top));
+  right: 4px;
+  z-index: 2700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 5px;
+  border: 1px solid rgba(62, 48, 37, .45);
+  border-radius: 8px;
+  background: rgba(255, 250, 242, .94);
+  box-shadow: 0 2px 8px rgba(45, 32, 23, .18);
+  color: #49372a;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+#camp-panel-diag-control button {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid #72543d;
+  border-radius: 6px;
+  background: #fffaf2;
+  color: #49372a;
+  font: 800 11px/1 'Nunito', sans-serif;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+#camp-panel-diag-control output { min-width: 0; color: #28653b; }
+#camp-panel-diag-fallback {
+  position: fixed;
+  inset: max(8px, env(safe-area-inset-top)) 8px calc(var(--hauteur-navigation-mobile, 0px) + 8px);
+  z-index: 2800;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 10px;
+  background: #fffaf2;
+  border: 2px solid #72543d;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+#camp-panel-diag-fallback label { display: grid; min-height: 0; gap: 6px; font-size: 12px; font-weight: 900; }
+#camp-panel-diag-fallback textarea { width: 100%; min-height: 0; resize: none; user-select: text; -webkit-user-select: text; }
+#camp-panel-diag-fallback button { min-height: 44px; }
+
 :root {
   --hauteur-top-bar: 0px;
   --couleur-fond:    #f5f0e8;
