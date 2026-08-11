@@ -20824,7 +20824,13 @@ function consommerGesteActivationItemCampPrototype(event, uidCible) {
   }
   if (!campPrototypeGesteActivationItem) return null;
   const geste = campPrototypeGesteActivationItem;
-  if (pointerId !== geste.pointerId || event.pointerType !== geste.pointerType) {
+  const pointerTypeCompatible = event.pointerType === geste.pointerType
+    || (
+      (geste.phase === "tracking" || geste.phase === "armed")
+      && geste.pointerType === "touch"
+      && event.pointerType === "mouse"
+    );
+  if (pointerId !== geste.pointerId || !pointerTypeCompatible) {
     return "reject";
   }
   campPrototypeGesteActivationItem = null;
