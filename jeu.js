@@ -15200,19 +15200,66 @@ function campProductionPanelMarkup(item, familyId) {
     + '</section>';
 }
 
-function calculerPlacementPanneauProductionCamp(viewportRect, boardRect, targetRect, panelSize, mobile) {
+function rectViewportVisiblePanneauProductionCamp(fenetre, navigationRect) {
+  const source = fenetre || {};
+  const layoutWidth = Math.max(0, Number(source.innerWidth) || 0);
+  const layoutHeight = Math.max(0, Number(source.innerHeight) || 0);
+  const visualViewport = source.visualViewport;
+  const visualWidth = visualViewport && Number(visualViewport.width) > 0
+    ? Number(visualViewport.width) : layoutWidth;
+  const visualHeight = visualViewport && Number(visualViewport.height) > 0
+    ? Number(visualViewport.height) : layoutHeight;
+  const left = visualViewport && Number.isFinite(Number(visualViewport.offsetLeft))
+    ? Number(visualViewport.offsetLeft) : 0;
+  const top = visualViewport && Number.isFinite(Number(visualViewport.offsetTop))
+    ? Number(visualViewport.offsetTop) : 0;
+  const right = left + visualWidth;
+  let bottom = top + visualHeight;
+  const navigation = navigationRect || {};
+  const navigationLeft = Number(navigation.left);
+  const navigationRight = Number(navigation.right);
+  const navigationTop = Number(navigation.top);
+  const navigationOverlaps = Number.isFinite(navigationTop)
+    && navigationTop > top && navigationTop < bottom
+    && (!Number.isFinite(navigationLeft) || !Number.isFinite(navigationRight)
+      || (navigationRight > left && navigationLeft < right));
+  if (navigationOverlaps) bottom = navigationTop;
+  return {
+    left: left,
+    top: top,
+    right: right,
+    bottom: bottom,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top)
+  };
+}
+
+function calculerPlacementPanneauProductionCamp(viewportRect, boardRect, targetRect, panelSize, mobile, visibleViewportRect) {
   const viewport = viewportRect || {};
+  const visibleViewport = visibleViewportRect || viewport;
   const board = boardRect || {};
   const target = targetRect || {};
   const panel = panelSize || {};
-  const viewportLeft = Number(viewport.left) || 0;
-  const viewportTop = Number(viewport.top) || 0;
-  const viewportRight = Number.isFinite(Number(viewport.right))
+  const campLeft = Number(viewport.left) || 0;
+  const campTop = Number(viewport.top) || 0;
+  const campRight = Number.isFinite(Number(viewport.right))
     ? Number(viewport.right)
-    : viewportLeft + (Number(viewport.width) || 0);
-  const viewportBottom = Number.isFinite(Number(viewport.bottom))
+    : campLeft + (Number(viewport.width) || 0);
+  const campBottom = Number.isFinite(Number(viewport.bottom))
     ? Number(viewport.bottom)
-    : viewportTop + (Number(viewport.height) || 0);
+    : campTop + (Number(viewport.height) || 0);
+  const visibleLeft = Number(visibleViewport.left) || 0;
+  const visibleTop = Number(visibleViewport.top) || 0;
+  const visibleRight = Number.isFinite(Number(visibleViewport.right))
+    ? Number(visibleViewport.right)
+    : visibleLeft + (Number(visibleViewport.width) || 0);
+  const visibleBottom = Number.isFinite(Number(visibleViewport.bottom))
+    ? Number(visibleViewport.bottom)
+    : visibleTop + (Number(visibleViewport.height) || 0);
+  const viewportLeft = mobile ? Math.max(campLeft, visibleLeft) : campLeft;
+  const viewportTop = mobile ? Math.max(campTop, visibleTop) : campTop;
+  const viewportRight = mobile ? Math.min(campRight, visibleRight) : campRight;
+  const viewportBottom = mobile ? Math.min(campBottom, visibleBottom) : campBottom;
   const boardLeft = Math.max(viewportLeft, Number(board.left) || viewportLeft);
   const boardTop = Math.max(viewportTop, Number(board.top) || viewportTop);
   const boardRight = Math.min(viewportRight, Number.isFinite(Number(board.right))
@@ -15225,7 +15272,13 @@ function calculerPlacementPanneauProductionCamp(viewportRect, boardRect, targetR
   const requestedWidth = Math.max(0, Number(panel.width) || 0);
   const requestedHeight = Math.max(0, Number(panel.height) || 0);
   if (mobile) {
-    const maxHeight = Math.max(220, Math.min(requestedHeight || viewportBottom - viewportTop, (viewportBottom - viewportTop) * .78));
+    const viewportHeight = Math.max(0, viewportBottom - viewportTop);
+    const availableHeight = Math.max(0, viewportHeight - gutter * 2);
+    const maxHeight = Math.min(
+      requestedHeight || availableHeight,
+      availableHeight,
+      viewportHeight * .78
+    );
     return {
       mode: "bottom-sheet",
       left: Math.round(viewportLeft + gutter),
@@ -15271,12 +15324,21 @@ function positionnerPanneauProductionCamp(menu) {
     : null;
   if (!viewport || !board || !target) return false;
   const mobile = typeof window !== "undefined" && window.innerWidth <= 768;
+  const navigation = mobile ? document.querySelector(".barre-onglets") : null;
+  const visibleViewportRect = mobile
+    ? rectViewportVisiblePanneauProductionCamp(
+        window,
+        navigation && typeof navigation.getBoundingClientRect === "function"
+          ? navigation.getBoundingClientRect() : null
+      )
+    : null;
   const geometry = calculerPlacementPanneauProductionCamp(
     viewport.getBoundingClientRect(),
     board.getBoundingClientRect(),
     target.getBoundingClientRect(),
     { width: menu.offsetWidth || 590, height: menu.offsetHeight || 560 },
-    mobile
+    mobile,
+    visibleViewportRect
   );
   menu.style.left = geometry.left + "px";
   menu.style.top = geometry.top + "px";
@@ -20675,6 +20737,13 @@ function initialiserCampPrototype() {
       positionnerPanneauProductionCamp(menuInteraction);
     });
   });
+  if (window.visualViewport) {
+    const repositionnerPanneauVisualViewportCamp = function() {
+      positionnerPanneauProductionCamp(menuInteraction);
+    };
+    window.visualViewport.addEventListener("resize", repositionnerPanneauVisualViewportCamp, { passive: true });
+    window.visualViewport.addEventListener("scroll", repositionnerPanneauVisualViewportCamp, { passive: true });
+  }
   board.addEventListener("click", function(event) {
     if (Date.now() - campPrototypeDerniereActivationItemPointeur < 700) {
       event.preventDefault();

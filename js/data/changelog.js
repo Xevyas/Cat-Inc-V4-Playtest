@@ -400,11 +400,20 @@
     })
   ]);
 
+  const release0050Categories = Object.freeze([
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Camp production panels now stay inside the visible mobile viewport when browser bars, scrolling or orientation reduce the usable screen area."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0049",
+    baseVersion: "0.0050",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -417,6 +426,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0050",
+      date: "2026-08-11",
+      categories: release0050Categories
+    }),
     Object.freeze({
       version: "0.0049",
       date: "2026-08-11",
