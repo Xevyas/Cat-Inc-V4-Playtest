@@ -4,23 +4,34 @@
   const CatInc = root.CatInc = root.CatInc || {};
 
   function createController(options) {
-    const documentRef = options.document;
-    const readComputedStyle = options.getComputedStyle;
     const resolveDescriptor = options.resolveDescriptor;
-    const getTopmostDialog = options.getTopmostDialog || function() { return null; };
-    const settingsTriggerSelector = options.settingsTriggerSelector || ".bouton-settings";
-    const settingsModalSelector = options.settingsModalSelector || "#settings-modal";
-    let recoveryInProgress = false;
-    let lastDiagnosticId = null;
-    const admittedPointerIds = new Set();
+    const readComputedStyle = options.getComputedStyle;
+    const documentRef = options.document;
+    let reconciling = false;
+    let lastObservedDescriptor = null;
+    const consumedObservedDescriptors = new WeakSet();
+
+    function resolveCurrentDescriptor() {
+      return typeof resolveDescriptor === "function" ? resolveDescriptor() : null;
+    }
+
+    function currentDescriptor() {
+      const descriptor = resolveCurrentDescriptor();
+      lastObservedDescriptor = descriptor;
+      return descriptor;
+    }
 
     function closest(element, selector) {
       return element && typeof element.closest === "function" ? element.closest(selector) : null;
     }
 
-    function isBranchVisible(element) {
+    function isElementActionable(element) {
       if (!element || element.isConnected === false || element.hidden === true) return false;
       if (closest(element, '[hidden], [aria-hidden="true"]')) return false;
+      if (element.disabled === true || (typeof element.hasAttribute === "function"
+          && element.hasAttribute("disabled"))) return false;
+      if (typeof element.getAttribute === "function"
+          && element.getAttribute("aria-disabled") === "true") return false;
       let current = element;
       while (current && current.nodeType !== 9) {
         const style = typeof readComputedStyle === "function" ? readComputedStyle(current) : null;
@@ -28,117 +39,77 @@
             || style.visibility === "collapse")) return false;
         current = current.parentElement;
       }
+      if (typeof element.getClientRects === "function" && documentRef
+          && documentRef.defaultView && element.getClientRects().length === 0) return false;
       return true;
     }
 
-    function isElementActionable(element) {
-      if (!isBranchVisible(element)) return false;
-      if (element.disabled === true || (typeof element.hasAttribute === "function"
-          && element.hasAttribute("disabled"))) return false;
-      if (typeof element.getAttribute === "function"
-          && element.getAttribute("aria-disabled") === "true") return false;
-      const topmost = getTopmostDialog();
-      if (topmost && typeof topmost.contains === "function" && !topmost.contains(element)) return false;
-      if (typeof element.getClientRects === "function"
-          && documentRef && documentRef.defaultView
-          && element.getClientRects().length === 0) return false;
-      return true;
+    function targets(descriptor) {
+      const active = descriptor || currentDescriptor();
+      if (!active || typeof active.targets !== "function") return [];
+      return [].concat(active.targets() || []).filter(Boolean);
     }
 
-    function descriptorElements(descriptor) {
-      const allowed = typeof descriptor.allowedTargets === "function"
-        ? descriptor.allowedTargets() : [];
-      const recovery = typeof descriptor.recoveryTargets === "function"
-        ? descriptor.recoveryTargets() : [];
-      return [].concat(allowed || [], recovery || []).filter(Boolean);
-    }
-
-    function hasActionableTarget(descriptor) {
-      return Boolean(descriptor && descriptorElements(descriptor).some(isElementActionable));
-    }
-
-    function isSettingsElement(element) {
-      if (!element) return false;
-      if (closest(element, settingsTriggerSelector)) return true;
-      const modal = closest(element, settingsModalSelector);
-      return Boolean(modal && modal.getAttribute("aria-hidden") !== "true"
-        && modal.style && modal.style.display !== "none");
-    }
-
-    function ensureActionableGuidance() {
-      let descriptor = resolveDescriptor();
-      if (!descriptor || hasActionableTarget(descriptor)) {
-        lastDiagnosticId = null;
+    function reconcile() {
+      const descriptor = currentDescriptor();
+      if (!descriptor || reconciling || typeof descriptor.reconcile !== "function") {
         return descriptor;
       }
-      if (!recoveryInProgress && typeof descriptor.ensureActionableTarget === "function") {
-        recoveryInProgress = true;
-        try {
-          descriptor.ensureActionableTarget();
-        } finally {
-          recoveryInProgress = false;
-        }
-        descriptor = resolveDescriptor();
+      reconciling = true;
+      try {
+        descriptor.reconcile();
+      } finally {
+        reconciling = false;
       }
-      if (!descriptor || hasActionableTarget(descriptor)) {
-        lastDiagnosticId = null;
-        return descriptor;
-      }
-      const diagnosticId = String(descriptor.id || "guided-interaction")
-        + ":" + String(descriptor.stage || "active");
-      if (lastDiagnosticId !== diagnosticId && typeof options.onDiagnostic === "function") {
-        lastDiagnosticId = diagnosticId;
-        options.onDiagnostic({ id: descriptor.id, stage: descriptor.stage });
-      }
-      return null;
+      return currentDescriptor();
     }
 
-    function isElementAllowed(descriptor, element) {
-      if (!descriptor || !element) return false;
-      if (typeof descriptor.isElementAllowed === "function"
-          && descriptor.isElementAllowed(element)) return true;
-      return descriptorElements(descriptor).some(function(target) {
-        return target === element || (typeof target.contains === "function" && target.contains(element));
-      });
+    function actionContext(action) {
+      return Object.keys(action).reduce(function(context, key) {
+        if (key !== "type") context[key] = action[key];
+        return context;
+      }, {});
     }
 
-    function shouldBlockFreshEvent(event) {
-      const descriptor = resolveDescriptor();
-      if (!descriptor) return false;
-      if (event && event.type === "keydown" && event.key === "Tab") return false;
-      if (isSettingsElement(event && event.target)) return false;
-      const actionableDescriptor = ensureActionableGuidance();
-      if (!actionableDescriptor) return false;
-      if (event && event.type === "keydown"
-          && event.key !== "Enter" && event.key !== " ") return true;
-      return !isElementAllowed(actionableDescriptor, event && event.target);
-    }
-
-    function shouldBlockEvent(event) {
-      const pointerId = event && event.pointerId;
-      if (event && event.type === "pointerdown" && pointerId !== undefined) {
-        admittedPointerIds.delete(pointerId);
+    function actionCommitted(action, observedDescriptor) {
+      if (!action || typeof action.type !== "string" || !action.type) return false;
+      const current = resolveCurrentDescriptor();
+      const descriptor = observedDescriptor || current;
+      const before = descriptor && descriptor.stage;
+      let matched = false;
+      const sameCurrent = descriptor && current && (descriptor === current
+        || (descriptor.id === current.id && descriptor.stage === current.stage));
+      const observedObject = observedDescriptor
+        && (typeof observedDescriptor === "object" || typeof observedDescriptor === "function");
+      const observedUnused = !observedObject
+        || !consumedObservedDescriptors.has(observedDescriptor);
+      const validObserved = !observedDescriptor || (observedUnused
+        && (sameCurrent || (observedObject && observedDescriptor === lastObservedDescriptor)));
+      if (observedObject && validObserved) consumedObservedDescriptors.add(observedDescriptor);
+      if (validObserved && descriptor && typeof descriptor.onActionCommitted === "function") {
+        matched = descriptor.onActionCommitted(Object.freeze(Object.assign({}, action))) === true;
       }
-      const pointerSequenceEnd = event
-        && (event.type === "pointerup" || event.type === "pointercancel");
-      if (pointerSequenceEnd && admittedPointerIds.has(pointerId)) {
-        admittedPointerIds.delete(pointerId);
-        return false;
+      const afterDescriptor = resolveCurrentDescriptor();
+      if (typeof options.onTrace === "function") {
+        options.onTrace(Object.freeze({
+          guidanceId: descriptor && descriptor.id || null,
+          stageBefore: before === undefined ? null : before,
+          actionType: action.type,
+          actionContext: Object.freeze(actionContext(action)),
+          matched: matched,
+          stageAfter: afterDescriptor && afterDescriptor.stage !== undefined
+            ? afterDescriptor.stage : null
+        }));
       }
-      const blocked = shouldBlockFreshEvent(event);
-      if (!blocked && event && event.type === "pointerdown" && pointerId !== undefined) {
-        admittedPointerIds.add(pointerId);
-      }
-      return blocked;
+      return matched;
     }
 
     return Object.freeze({
-      isElementActionable: isElementActionable,
-      hasActionableTarget: hasActionableTarget,
-      ensureActionableGuidance: ensureActionableGuidance,
-      isSettingsElement: isSettingsElement,
-      isElementAllowed: isElementAllowed,
-      shouldBlockEvent: shouldBlockEvent
+      currentDescriptor: currentDescriptor,
+      targets: targets,
+      reconcile: reconcile,
+      actionCommitted: actionCommitted,
+      isElementActionable: isElementActionable
     });
   }
 

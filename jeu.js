@@ -2340,8 +2340,13 @@ const guidanceController = globalThis.CatInc.guidance
   ? globalThis.CatInc.guidance.createController({
       document: document,
       getComputedStyle: function(element) { return getComputedStyle(element); },
-      getTopmostDialog: function() { return dialogueOuvertAuPremierPlan(); },
-      resolveDescriptor: function() { return campGuidanceDescripteurActif(); }
+      resolveDescriptor: function() { return campGuidanceDescripteurActif(); },
+      onTrace: DEV_MODE ? function(trace) {
+        const traces = globalThis.__catIncGuidanceTrace
+          = globalThis.__catIncGuidanceTrace || [];
+        traces.push(trace);
+        if (traces.length > 100) traces.shift();
+      } : null
   })
   : null;
 
@@ -2362,32 +2367,8 @@ function dialogueOuvertAuPremierPlan() {
 }
 
 function gererClavierDialogue(event) {
-  if (typeof campTutorialDoitBloquerInteraction === "function"
-      && campTutorialDoitBloquerInteraction(event)) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    return;
-  }
   const dialogue = dialogueOuvertAuPremierPlan();
   if (!dialogue) return;
-  if (event.key === "Escape" && dialogue.id === "worker-modal"
-      && typeof campTutorialPickerEtape === "function"
-      && campTutorialPickerEtape()) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    campTutorialRestaurerPicker();
-    return;
-  }
-
-  if (event.key === "Escape" && dialogue.id === "recipe-modal"
-      && typeof campTutorialRecipeEtape === "function"
-      && campTutorialRecipeEtape()) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    campTutorialRestaurerRecipe();
-    return;
-  }
-
   return dialoguesController.handleKeydown(event);
 }
 
@@ -2647,10 +2628,8 @@ function basculerIconesChatsCamp(checked) {
 }
 function fermerModalSettings() {
   fermerDialogueModal("settings-modal");
-  if (typeof campGuidanceAssurerActionnable === "function") {
-    const guidance = campGuidanceAssurerActionnable();
-    if (guidance) campTutorialActualiserInterface();
-  }
+  if (typeof guidanceController !== "undefined" && guidanceController) guidanceController.reconcile();
+  campTutorialActualiserInterface();
 }
 
 const changelogController = globalThis.CatInc.changelog.createController({
@@ -9328,16 +9307,15 @@ function retirerKittyDeSesRoles(kittyIdx) {
 }
 
 function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   const stage = campTutorialStage();
-  if (campTutorialActif()) {
-    const targetSlot = stage === "wood-slot-1-cat" ? 0
-      : (stage === "wood-slot-2-cat" ? 1 : null);
-    if (familyId !== "wood" || slotIdx !== targetSlot
-        || !kittyIsBusy(kittyIdx)
-        || !campTutorialWorkerResolvable(kittyIdx, targetSlot)) {
-      afficherNotification("Choose an available or safely reassignable Cat in the highlighted slot.");
-      return;
-    }
+  const targetSlot = stage === "wood-slot-1-cat" ? 0
+    : (stage === "wood-slot-2-cat" ? 1 : null);
+  if (targetSlot !== null && familyId === "wood" && slotIdx === targetSlot
+      && (!kittyIsBusy(kittyIdx) || !campTutorialWorkerResolvable(kittyIdx, targetSlot))) {
+    afficherNotification("Choose an available or safely reassignable Cat in the highlighted slot.");
+    return;
   }
   if (estIngenieur(etat.kittiesData[kittyIdx]) || estBernardoSuperviseur(kittyIdx)
       || kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
@@ -9347,8 +9325,12 @@ function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
   slot.kittyIndex = kittyIdx;
   jouerSonAffectation();
   fermerModalWorker(true);
-  if (stage === "wood-slot-1-cat") campTutorialStageDefinir("wood-slot-2-recipe");
-  if (stage === "wood-slot-2-cat") campTutorialStageDefinir("return-camp");
+  campGuidanceActionCommit({
+    type: "work.worker-assigned",
+    familyId: familyId,
+    slotIndex: slotIdx,
+    kittyIndex: kittyIdx
+  }, guidanceDescriptor);
   jcDirty = true;
   verifierObjectifs(); sauvegarder(); rendu();
 }
@@ -9457,7 +9439,7 @@ function selecteurRetourProductionCamp(familyId, slotIdx) {
 function afficherDialogueRecette() {
   if (!recipeModalOuvert) return;
   ouvrirDialogueModal("recipe-modal", {
-    dismissible: !campTutorialRecipeEtape(),
+    dismissible: true,
     fermer: fermerModalRecette,
     focusSelector: ".recipe-modal-choice",
     returnFocusSelector: recipeModalOuvert.returnFocusSelector
@@ -9466,14 +9448,6 @@ function afficherDialogueRecette() {
 }
 
 function ouvrirModalRecette(familyId, slotIdx) {
-  const stage = campTutorialStage();
-  if ((stage === "wood-slot-1-recipe" && (familyId !== "wood" || slotIdx !== 0))
-      || (stage === "wood-slot-2-recipe" && (familyId !== "wood" || slotIdx !== 1))
-      || (campTutorialActif() && (stage === "wood-slot-1-cat"
-        || stage === "wood-slot-2-cat" || stage === "return-camp" || stage === "confirm-camp"))) {
-    afficherNotification("Follow the highlighted Wood recipe slot.");
-    return;
-  }
   recipeModalOuvert = {
     familyId: familyId,
     slotIdx: slotIdx,
@@ -9485,10 +9459,6 @@ function ouvrirModalRecette(familyId, slotIdx) {
 }
 
 function fermerModalRecette(force) {
-  if (!force && campTutorialRecipeEtape()) {
-    campTutorialRestaurerRecipe();
-    return;
-  }
   recipeModalOuvert = null;
   fermerDialogueModal("recipe-modal");
 }
@@ -9557,12 +9527,6 @@ function selectionnerRecette(recipeId) {
   const slot = slotRecette(familyId, slotIdx);
   const pair = paireRecette(recipeId);
   if (!slot || !pair || pair.family !== familyId) return;
-  const stage = campTutorialStage();
-  if ((stage === "wood-slot-1-recipe" && (familyId !== "wood" || slotIdx !== 0))
-      || (stage === "wood-slot-2-recipe" && (familyId !== "wood" || slotIdx !== 1))) {
-    afficherNotification("Choose the available recipe in the highlighted slot.");
-    return;
-  }
   const capacite = capaciteRecetteWork(pair, unlocks());
   if (!capacite.available) {
     afficherNotification(capacite.reason);
@@ -9583,6 +9547,8 @@ function selectionnerRecette(recipeId) {
 }
 
 function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   const slot = slotRecette(familyId, slotIdx);
   const pair = paireRecette(recipeId);
   if (!slot || !pair || pair.family !== familyId) return;
@@ -9593,14 +9559,12 @@ function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
   const returnFocusSelector = recipeModalOuvert && recipeModalOuvert.returnFocusSelector;
   viderProgressionRecette(slot);
   slot.recipeId = recipeId;
-  if (campTutorialStage() === "wood-slot-1-recipe"
-      && familyId === "wood" && slotIdx === 0) {
-    campTutorialStageDefinir("wood-slot-1-cat");
-  }
-  if (campTutorialStage() === "wood-slot-2-recipe"
-      && familyId === "wood" && slotIdx === 1) {
-    campTutorialStageDefinir("wood-slot-2-cat");
-  }
+  campGuidanceActionCommit({
+    type: "work.recipe-selected",
+    familyId: familyId,
+    slotIndex: slotIdx,
+    recipeId: recipeId
+  }, guidanceDescriptor);
   fermerModalRecette();
   if (!proposeWorker && familyId === "wood") jouerSonScieBois();
   verifierObjectifs(); sauvegarder(); rendu();
@@ -9650,12 +9614,6 @@ function retirerRecetteSelectionneeConfirme() {
 let workerModalOuvert = null; // { familyId, slotIdx }
 
 function ouvrirModalWorkerRecette(familyId, slotIdx, options) {
-  const stage = campTutorialStage();
-  if ((stage === "wood-slot-1-cat" && (familyId !== "wood" || slotIdx !== 0))
-      || (stage === "wood-slot-2-cat" && (familyId !== "wood" || slotIdx !== 1))) {
-    afficherNotification("Follow the highlighted Wood Cat slot.");
-    return;
-  }
   const slot = slotRecette(familyId, slotIdx);
   if (!slot || !slot.recipeId) { ouvrirModalRecette(familyId, slotIdx); return; }
   const pair = paireRecette(slot.recipeId);
@@ -9664,18 +9622,13 @@ function ouvrirModalWorkerRecette(familyId, slotIdx, options) {
     afficherNotification(capacite.reason);
     return;
   }
-  if (campTutorialPickerEtape() && !campTutorialWorkerResolvableIndices(slotIdx).length) {
-    afficherNotification("No Cat can move yet. Finish or wait for a current task, then select Assign a Cat again.");
-    campTutorialActualiserInterface();
-    return false;
-  }
   workerModalOuvert = { familyId: familyId, slotIdx: slotIdx };
   const returnFocusSelector = options && options.returnFocusSelector
     || selecteurRetourProductionCamp(familyId, slotIdx);
   workerModalOuvert.returnFocusSelector = returnFocusSelector;
   renduModalWorker();
   ouvrirDialogueModal("worker-modal", {
-    dismissible: !campTutorialPickerEtape(),
+    dismissible: true,
     fermer: fermerModalWorker,
     focusSelector: ".worker-modal-kitty[data-clavier-clic]",
     returnFocusSelector: returnFocusSelector || "#recipe-slot-" + familyId + "-" + slotIdx + " button"
@@ -9684,10 +9637,6 @@ function ouvrirModalWorkerRecette(familyId, slotIdx, options) {
 }
 
 function fermerModalWorker(force) {
-  if (!force && campTutorialPickerEtape()) {
-    campTutorialRestaurerPicker();
-    return;
-  }
   workerModalOuvert = null;
   fermerDialogueModal("worker-modal");
 }
@@ -9747,6 +9696,8 @@ function renduModalWorker() {
 }
 
 function assignerWorkerSlot(kittyIndex) {
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   if (!workerModalOuvert) return;
   if (estIngenieur(etat.kittiesData[kittyIndex]) || estBernardoSuperviseur(kittyIndex)) return;
   if (kittyIsBusy(kittyIndex)) return;
@@ -9760,9 +9711,9 @@ function assignerWorkerSlot(kittyIndex) {
     ? null
     : campTutorialSlot("wood", tutorialSlotIdx === 0 ? 1 : 0);
   if (tutorialSlotIdx !== null
-      && (workerModalOuvert.familyId !== "wood"
-        || workerModalOuvert.slotIdx !== tutorialSlotIdx
-        || (otherTutorialSlot && otherTutorialSlot.kittyIndex === kittyIndex))) {
+      && workerModalOuvert.familyId === "wood"
+      && workerModalOuvert.slotIdx === tutorialSlotIdx
+      && otherTutorialSlot && otherTutorialSlot.kittyIndex === kittyIndex) {
     afficherNotification("Choose a different available Cat for this slot.");
     return;
   }
@@ -9774,9 +9725,15 @@ function assignerWorkerSlot(kittyIndex) {
   slot.kittyIndex = kittyIndex;
   if (workerModalOuvert.familyId === "wood") jouerSonScieBois();
   else jouerSonAffectation();
+  const assignedFamilyId = workerModalOuvert.familyId;
+  const assignedSlotIdx = workerModalOuvert.slotIdx;
   fermerModalWorker(true);
-  if (stage === "wood-slot-1-cat") campTutorialStageDefinir("wood-slot-2-recipe");
-  if (stage === "wood-slot-2-cat") campTutorialStageDefinir("return-camp");
+  campGuidanceActionCommit({
+    type: "work.worker-assigned",
+    familyId: assignedFamilyId,
+    slotIndex: assignedSlotIdx,
+    kittyIndex: kittyIndex
+  }, guidanceDescriptor);
   verifierObjectifs(); sauvegarder(); rendu();
   campTutorialActualiserInterface();
 }
@@ -11017,41 +10974,22 @@ function firstBoxHouseCueActif() {
 }
 
 function firstBoxTutorialDemarrerDepuisPalette() {
-  if (firstBoxTutorialStage() !== "inactive" || !firstBoxTutorialPeutCommencer()) return false;
-  progressionCamp().firstBoxTutorialStage = "place";
+  return firstBoxTutorialStage() === "inactive" && firstBoxTutorialPeutCommencer();
+}
+
+function firstBoxTutorialStageDefinir(expectedStage, nextStage) {
+  const progression = progressionCamp();
+  if (progression.firstBoxTutorialStage !== expectedStage
+      || !["inactive", "place", "assign", "complete"].includes(nextStage)) return false;
+  progression.firstBoxTutorialStage = nextStage;
   sauvegarder();
+  campTutorialActualiserInterface();
   return true;
 }
 
 function firstBoxTutorialReconciliation() {
-  const progression = progressionCamp();
-  const construction = constructionsMaisonsCampActives().some(function(job) {
-    return job.type === "cardboardBox";
-  });
-  if (firstBoxTutorialBoiteDejaConstruite() || construction) {
-    if (progression.firstBoxTutorialStage !== "complete") {
-      progression.firstBoxTutorialStage = "complete";
-      return true;
-    }
-    return false;
-  }
-  if (firstBoxTutorialActif() && !progression.firstBoxUnlockDialogueDismissed) {
-    progression.firstBoxTutorialStage = "inactive";
-    if (campPrototypePlacementEnCours
-        && campPrototypePlacementEnCours.mode === "new"
-        && campPrototypePlacementEnCours.type === "cardboardBox") {
-      campPrototypePlacementEnCours = null;
-      campPrototypeTypeAPlacer = null;
-      campPrototypeRotationAPlacer = 0;
-      campPrototypeModeEdition = false;
-      campPrototypeCategorieOuverte = null;
-    }
-    return true;
-  }
-  if (progression.firstBoxTutorialStage === "assign" && !campPrototypePlacementEnCours) {
-    progression.firstBoxTutorialStage = "place";
-    return true;
-  }
+  // Persisted stages are authoritative. Missing transient placement or modal
+  // state is recovered through the normal Houses/Cardboard Box user path.
   return false;
 }
 
@@ -11233,31 +11171,15 @@ function campTutorialStageDefinir(stage, options) {
 }
 
 function campTutorialReconciliation() {
-  const progression = progressionCamp();
-  const current = campTutorialStage();
-  const camp = assurerEtatCampPrincipal();
-  const next = saveCore.deriverEtapeTutorielSawmill(
-    {
-      chatons: etat.chatons,
-      sequenceEnCours: etat.sequenceEnCours,
-      workRecipeSlots: etat.workRecipeSlots,
-      kittiesData: etat.kittiesData
-    },
-    { repairedBuildingIds: camp.repairedBuildingIds },
-    progression
-  );
-  if (next === current) return false;
-  progression.sawmillTutorialStage = next;
-  return true;
+  // Rendering/recovery never derives a new tutorial stage from gameplay state.
+  // A valid persisted stage advances only through a committed semantic action.
+  campTutorialStage();
+  return false;
 }
 
 function campTutorialEtapeWork(stage) {
   return stage === "wood-slot-1-recipe" || stage === "wood-slot-1-cat"
     || stage === "wood-slot-2-recipe" || stage === "wood-slot-2-cat";
-}
-
-function campTutorialOngletAutorise() {
-  return campTutorialEtapeWork(campTutorialStage()) ? "work" : "camp";
 }
 
 function campTutorialInstruction(stage) {
@@ -11301,43 +11223,9 @@ function campTutorialRecipeCible() {
   };
 }
 
-function campTutorialRestaurerRecipe() {
-  if (!campTutorialRecipeEtape()
-      || (document.body.dataset.ongletActif || "gang") !== "work") return false;
-  const cible = campTutorialRecipeCible();
-  const modal = document.getElementById("recipe-modal");
-  const dejaOuvert = recipeModalOuvert
-    && recipeModalOuvert.familyId === cible.familyId
-    && recipeModalOuvert.slotIdx === cible.slotIdx
-    && modal
-    && modal.style.display !== "none"
-    && modal.getAttribute("aria-hidden") !== "true";
-  if (dejaOuvert) campTutorialActualiserInterface();
-  return dejaOuvert;
-}
-
-function campTutorialRestaurerPicker() {
-  if (!campTutorialPickerEtape()
-      || (document.body.dataset.ongletActif || "gang") !== "work") return false;
-  const cible = campTutorialPickerCible();
-  const modal = document.getElementById("worker-modal");
-  const dejaOuvert = workerModalOuvert
-    && workerModalOuvert.familyId === cible.familyId
-    && workerModalOuvert.slotIdx === cible.slotIdx
-    && modal
-    && modal.style.display !== "none"
-    && modal.getAttribute("aria-hidden") !== "true";
-  if (dejaOuvert) campTutorialActualiserInterface();
-  return dejaOuvert;
-}
-
 function campGuidanceElements(selector) {
   return typeof document !== "undefined"
     ? Array.from(document.querySelectorAll(selector)) : [];
-}
-
-function campGuidanceElementCorrespond(element, selector) {
-  return Boolean(element && typeof element.closest === "function" && element.closest(selector));
 }
 
 function campGuidanceElementSawmill() {
@@ -11351,17 +11239,13 @@ function campGuidanceCibleWorkActionSawmill() {
     ) : null;
 }
 
-function campGuidanceCibleWorkActionSawmillActionnable() {
-  const cible = campGuidanceCibleWorkActionSawmill();
-  if (!cible) return false;
-  if (typeof guidanceController !== "undefined" && guidanceController) {
-    return guidanceController.isElementActionable(cible);
-  }
-  return cible.isConnected !== false && cible.hidden !== true
-    && cible.disabled !== true && cible.getAttribute("aria-disabled") !== "true";
-}
-
 function campGuidanceCiblesSawmill(stage) {
+  const tab = document.body.dataset.ongletActif || "gang";
+  if (tab !== "camp" && (stage === "sawmill" || stage === "work-action"
+      || stage === "confirm-camp")) return campGuidanceElements("#onglet-camp");
+  if (tab !== "work" && campTutorialEtapeWork(stage)) {
+    return campGuidanceElements("#onglet-work");
+  }
   const recipeModal = document.getElementById("recipe-modal");
   const workerModal = document.getElementById("worker-modal");
   const recipeOuverte = recipeModal && recipeModal.getAttribute("aria-hidden") !== "true"
@@ -11399,60 +11283,44 @@ function campGuidanceCiblesSawmill(stage) {
   }
   if (stage === "work-action") {
     const cible = campGuidanceCibleWorkActionSawmill();
-    return cible ? [cible] : [];
+    return cible ? [cible] : campGuidanceElementSawmill();
   }
   if (stage === "return-camp") return campGuidanceElements("#onglet-camp");
   return [];
 }
 
-function campGuidanceRestaurerSawmill() {
-  campTutorialReconciliation();
+function campGuidanceReconcilierSawmill() {
   const stage = campTutorialStage();
   const tab = document.body.dataset.ongletActif || "gang";
-  if (stage === "return-camp" && tab === "camp" && campTutorialAssignmentsCompletes()) {
-    campTutorialStageDefinir("confirm-camp");
-    renduCampPrototype();
-    return;
-  }
-  if (campTutorialEtapeWork(stage)) {
-    if (tab !== "work") {
-      changerOnglet("work");
-      return;
-    }
-    workFiltre = "wood";
-    if (campTutorialPickerEtape() && workerModalOuvert
-        && !campTutorialWorkerResolvableIndices(campTutorialPickerCible().slotIdx).length) {
-      fermerModalWorker(true);
-    }
-    renduWorkPairs(unlocks());
-    return;
-  }
-  if (tab !== "camp") {
-    changerOnglet("camp");
-    return;
-  }
-  renduCampPrototype();
-  if (stage === "work-action" && !campGuidanceCibleWorkActionSawmillActionnable()) {
-    const sawmill = itemCampPrototypeParType("sawmill");
-    if (sawmill) ouvrirMenuInteractionCampPrototype(sawmill.uid, { conserverOuvert: true });
-  }
+  if (tab === "camp") renduCampPrototype();
+  if (tab === "work" && campTutorialEtapeWork(stage)) renduWorkPairs(unlocks());
+}
+
+function campGuidanceActionCommit(action, observedDescriptor) {
+  if (typeof guidanceController === "undefined" || !guidanceController) return false;
+  const matched = guidanceController.actionCommitted(action, observedDescriptor);
+  campTutorialActualiserInterface();
+  return matched;
+}
+
+function campGuidanceActionCorrespond(action, type, context) {
+  if (!action || action.type !== type) return false;
+  return Object.keys(context || {}).every(function(key) { return action[key] === context[key]; });
 }
 
 function campGuidanceDescripteurActif() {
-  const releaseNotes = typeof document !== "undefined"
-    ? document.getElementById("ecran-release-notes") : null;
-  const interactionGuidee = firstBoxTutorialActif()
-    || firstGroundRewardTutorialActif()
-    || firstGroundRewardCollectionActif()
-    || campDialogueSawmillTutorielEnAttente()
-    || campTutorialActif();
-  if (interactionGuidee && releaseNotes && dialogueOuvertAuPremierPlan() === releaseNotes) {
+  if (firstBoxHouseCueActif() && firstBoxTutorialPeutCommencer()) {
     return {
-      id: "release-notes",
-      stage: "open",
-      allowedTargets: function() { return [releaseNotes]; },
-      isElementAllowed: function(element) {
-        return campGuidanceElementCorrespond(element, "#ecran-release-notes");
+      id: "first-box", stage: "inactive",
+      targets: function() {
+        const box = document.querySelector('[data-camp-type="cardboardBox"]');
+        return box ? [box] : campGuidanceElements('[data-camp-category="house"]');
+      },
+      reconcile: function() { if ((document.body.dataset.ongletActif || "gang") === "camp") renduCampPrototype(); },
+      onActionCommitted: function(action) {
+        if (!campGuidanceActionCorrespond(action, "camp.house-placement-started",
+            { houseType: "cardboardBox" })) return false;
+        return firstBoxTutorialStageDefinir("inactive", "place");
       }
     };
   }
@@ -11461,24 +11329,27 @@ function campGuidanceDescripteurActif() {
     return {
       id: "first-box",
       stage: stage,
-      allowedTargets: function() {
-        return stage === "place"
+      targets: function() {
+        const primary = stage === "place"
           ? campGuidanceElements("#camp-prototype-placement-confirm")
           : campGuidanceElements("#camp-house-construction-modal .camp-task-slot, #camp-house-construction-modal .camp-task-cat-choice:not([disabled]), #camp-house-construction-modal #camp-task-start:not([disabled])");
+        if (primary.length) return primary;
+        const box = document.querySelector('[data-camp-type="cardboardBox"]');
+        return box ? [box] : campGuidanceElements('[data-camp-category="house"]');
       },
-      isElementAllowed: function(element) {
-        return stage === "place"
-          ? campGuidanceElementCorrespond(element, "#camp-prototype-placement-confirm")
-          : campGuidanceElementCorrespond(element, "#camp-house-construction-modal .camp-task-slot, #camp-house-construction-modal .camp-task-cat-choice:not([disabled]), #camp-house-construction-modal #camp-task-start:not([disabled])");
+      reconcile: function() {
+        if ((document.body.dataset.ongletActif || "gang") === "camp") renduCampPrototype();
       },
-      ensureActionableTarget: function() {
-        firstBoxTutorialReconciliation();
-        if (firstBoxTutorialStage() === "place") {
-          firstBoxTutorialAssurerPlacement();
-          renduCampPrototype();
-        } else if (firstBoxTutorialStage() === "assign" && campPrototypePlacementEnCours) {
-          ouvrirModalConstructionMaisonCamp();
+      onActionCommitted: function(action) {
+        if (stage === "place" && campGuidanceActionCorrespond(action,
+            "camp.house-placement-confirmed", { houseType: "cardboardBox" })) {
+          return firstBoxTutorialStageDefinir("place", "assign");
         }
+        if (stage === "assign" && campGuidanceActionCorrespond(action,
+            "camp.house-construction-started", { houseType: "cardboardBox" })) {
+          return firstBoxTutorialStageDefinir("assign", "complete");
+        }
+        return false;
       }
     };
   }
@@ -11486,13 +11357,11 @@ function campGuidanceDescripteurActif() {
     return {
       id: "first-ground-reward",
       stage: "dialogue",
-      allowedTargets: function() { return campGuidanceElements("#camp-quick-dialogue-continue"); },
-      isElementAllowed: function(element) {
-        return campGuidanceElementCorrespond(element, "#camp-quick-dialogue-continue");
-      },
-      ensureActionableTarget: function() {
-        firstGroundRewardTutorialReconciliation();
-        renduDialogueRapideCamp();
+      targets: function() { return campGuidanceElements("#camp-quick-dialogue-continue"); },
+      reconcile: function() { renduDialogueRapideCamp(); },
+      onActionCommitted: function(action) {
+        return campGuidanceActionCorrespond(action, "camp.quick-dialogue-continued",
+          { dialogueId: "firstGroundReward" });
       }
     };
   }
@@ -11501,17 +11370,13 @@ function campGuidanceDescripteurActif() {
     return {
       id: "first-ground-reward",
       stage: "collect",
-      allowedTargets: function() {
+      targets: function() {
         return campGuidanceElements('[data-camp-ground-reward-uid="' + uid + '"]');
       },
-      isElementAllowed: function(element) {
-        const reward = element && typeof element.closest === "function"
-          ? element.closest("[data-camp-ground-reward-uid]") : null;
-        return Boolean(reward && reward.dataset.campGroundRewardUid === uid);
-      },
-      ensureActionableTarget: function() {
-        firstGroundRewardTutorialReconciliation();
-        renduCampPrototype();
+      reconcile: function() { renduCampPrototype(); },
+      onActionCommitted: function(action) {
+        return campGuidanceActionCorrespond(action, "camp.ground-reward-collected",
+          { rewardUid: uid });
       }
     };
   }
@@ -11519,11 +11384,13 @@ function campGuidanceDescripteurActif() {
     return {
       id: "sawmill-repaired-dialogue",
       stage: "continue",
-      allowedTargets: function() { return campGuidanceElements("#camp-quick-dialogue-continue"); },
-      isElementAllowed: function(element) {
-        return campGuidanceElementCorrespond(element, "#camp-quick-dialogue-continue");
-      },
-      ensureActionableTarget: function() { renduDialogueRapideCamp(); }
+      targets: function() { return campGuidanceElements("#camp-quick-dialogue-continue"); },
+      reconcile: function() { renduDialogueRapideCamp(); },
+      onActionCommitted: function(action) {
+        if (!campGuidanceActionCorrespond(action, "camp.quick-dialogue-continued",
+            { dialogueId: "sawmillRepaired" })) return false;
+        return campTutorialStageDefinir("sawmill", { save: false });
+      }
     };
   }
   if (!campTutorialActif()) return null;
@@ -11531,105 +11398,52 @@ function campGuidanceDescripteurActif() {
   return {
     id: "sawmill",
     stage: stage,
-    allowedTargets: function() { return campGuidanceCiblesSawmill(stage); },
-    recoveryTargets: function() {
-      return stage === "work-action" ? campGuidanceElementSawmill() : [];
-    },
-    isElementAllowed: function(element) {
-      if (stage === "sawmill" || stage === "confirm-camp") {
-        return campGuidanceElementCorrespond(element, '[data-camp-type="sawmill"]');
+    targets: function() { return campGuidanceCiblesSawmill(stage); },
+    reconcile: campGuidanceReconcilierSawmill,
+    onActionCommitted: function(action) {
+      if (stage === "sawmill" && campGuidanceActionCorrespond(action,
+          "camp.building-menu-opened", { buildingId: "sawmill" })) {
+        return campTutorialStageDefinir("work-action");
       }
-      if (stage === "work-action") {
-        return campGuidanceElementCorrespond(element,
-          '#camp-prototype-interaction-menu[data-camp-building-id="sawmill"] [data-camp-menu-action="work"]')
-          || campGuidanceElementCorrespond(element, '[data-camp-type="sawmill"]');
+      if (stage === "work-action" && campGuidanceActionCorrespond(action,
+          "camp.work-opened", { buildingId: "sawmill", familyId: "wood" })) {
+        return campTutorialStageDefinir("wood-slot-1-recipe");
       }
-      if (stage === "return-camp") return campGuidanceElementCorrespond(element, "#onglet-camp");
-      if (stage === "wood-slot-1-recipe" || stage === "wood-slot-2-recipe") {
-        const cible = campTutorialRecipeCible();
-        const modal = document.getElementById("recipe-modal");
-        const ouverte = modal && modal.getAttribute("aria-hidden") !== "true"
-          && modal.style.display !== "none";
-        return ouverte
-          ? campGuidanceElementCorrespond(element, '.recipe-modal-choice:not([disabled]):not([aria-disabled="true"])')
-          : campGuidanceElementCorrespond(element, '#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
-            + ' .work-recipe-choose-empty, [data-camp-production-slot="' + cible.familyId + '-'
-            + cible.slotIdx + '"] [data-camp-production-origin="recipe"]');
+      if ((stage === "wood-slot-1-recipe" || stage === "wood-slot-2-recipe")
+          && campGuidanceActionCorrespond(action, "work.recipe-selected", {
+            familyId: "wood", slotIndex: stage === "wood-slot-1-recipe" ? 0 : 1
+          })) {
+        return campTutorialStageDefinir(stage === "wood-slot-1-recipe"
+          ? "wood-slot-1-cat" : "wood-slot-2-cat");
       }
-      if (stage === "wood-slot-1-cat" || stage === "wood-slot-2-cat") {
-        const cible = campTutorialPickerCible();
-        if (!campTutorialWorkerResolvableIndices(cible.slotIdx).length) return false;
-        const modal = document.getElementById("worker-modal");
-        const ouverte = modal && modal.getAttribute("aria-hidden") !== "true"
-          && modal.style.display !== "none";
-        if (!ouverte) {
-          return campGuidanceElementCorrespond(element, '#recipe-slot-' + cible.familyId + '-' + cible.slotIdx
-            + ' .work-recipe-cat-empty, [data-camp-production-slot="' + cible.familyId + '-'
-            + cible.slotIdx + '"] [data-camp-production-origin="worker"]');
-        }
-        const choice = element && typeof element.closest === "function"
-          ? element.closest('.worker-modal-kitty[data-worker-kitty-index][data-clavier-clic], .btn-forcer[data-worker-kitty-index]')
-          : null;
-        if (!choice || choice.getAttribute("aria-disabled") === "true") return false;
-        const other = campTutorialSlot("wood", cible.slotIdx === 0 ? 1 : 0);
-        const kittyIndex = Number(choice.dataset.workerKittyIndex);
-        return (!other || kittyIndex !== other.kittyIndex)
-          && campTutorialWorkerResolvable(kittyIndex, cible.slotIdx);
+      if ((stage === "wood-slot-1-cat" || stage === "wood-slot-2-cat")
+          && campGuidanceActionCorrespond(action, "work.worker-assigned", {
+            familyId: "wood", slotIndex: stage === "wood-slot-1-cat" ? 0 : 1
+          })) {
+        return campTutorialStageDefinir(stage === "wood-slot-1-cat"
+          ? "wood-slot-2-recipe" : "return-camp");
       }
-      const targets = campGuidanceCiblesSawmill(stage);
-      return targets.some(function(target) {
-        return target === element || (typeof target.contains === "function" && target.contains(element));
-      });
-    },
-    ensureActionableTarget: campGuidanceRestaurerSawmill
+      if (stage === "return-camp" && campGuidanceActionCorrespond(action,
+          "navigation.tab-changed", { tabId: "camp" }) && campTutorialAssignmentsCompletes()) {
+        return campTutorialStageDefinir("confirm-camp");
+      }
+      if (stage === "confirm-camp" && campGuidanceActionCorrespond(action,
+          "camp.building-menu-opened", { buildingId: "sawmill" })) {
+        return campTutorialFinaliserSiSawmillRendu(indexerPresencesChatsCamp(), true);
+      }
+      return false;
+    }
   };
 }
 
-function campGuidanceAssurerActionnable() {
-  return typeof guidanceController !== "undefined" && guidanceController
-    ? guidanceController.ensureActionableGuidance() : campGuidanceDescripteurActif();
-}
-
-function campTutorialInteractionAutorisee(element) {
-  const descriptor = campGuidanceDescripteurActif();
-  if (!descriptor) return true;
-  if (typeof guidanceController !== "undefined" && guidanceController
-      && guidanceController.isSettingsElement(element)) return true;
-  if (typeof guidanceController !== "undefined" && guidanceController) {
-    return guidanceController.isElementAllowed(descriptor, element);
-  }
-  return typeof descriptor.isElementAllowed === "function"
-    ? descriptor.isElementAllowed(element) : false;
-}
-
-function campTutorialDoitBloquerInteraction(event) {
-  if (typeof guidanceController !== "undefined" && guidanceController) {
-    return guidanceController.shouldBlockEvent(event);
-  }
-  if (event && event.type === "keydown" && event.key === "Tab") return false;
-  return Boolean(campGuidanceDescripteurActif()
-    && !campTutorialInteractionAutorisee(event && event.target));
-}
-
-function campTutorialBloquerInteraction(event) {
-  if (!campTutorialDoitBloquerInteraction(event)) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-}
-
-if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-  ["pointerdown", "pointerup", "pointercancel", "click", "contextmenu"].forEach(function(type) {
-    document.addEventListener(type, campTutorialBloquerInteraction, true);
-  });
-  document.addEventListener("keydown", campTutorialBloquerInteraction, true);
-}
-
-function campTutorialMarquerCible(element) {
+function campTutorialMarquerCible(element, descriptor) {
   if (!element) return;
   element.classList.add("camp-sawmill-tutorial-target");
-  element.setAttribute("aria-describedby", campTutorialEtapeWork(campTutorialStage())
-    ? "camp-sawmill-tutorial-work-status"
-    : "camp-sawmill-tutorial-copy");
+  if (descriptor && descriptor.id === "sawmill") {
+    element.setAttribute("aria-describedby", campTutorialEtapeWork(campTutorialStage())
+      ? "camp-sawmill-tutorial-work-status"
+      : "camp-sawmill-tutorial-copy");
+  }
 }
 
 function campTutorialActualiserInterface() {
@@ -11646,6 +11460,8 @@ function campTutorialActualiserInterface() {
   const workStatus = document.getElementById("camp-sawmill-tutorial-work-status");
   const firstBoxActif = firstBoxTutorialActif();
   const firstBoxCopyVisible = firstBoxActif && firstBoxTutorialBanniereVisible();
+  const semanticDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   const actif = campTutorialActif();
   const campVisible = (document.body.dataset.ongletActif || "gang") === "camp";
   const workVisible = actif && campTutorialEtapeWork(stage)
@@ -11698,45 +11514,20 @@ function campTutorialActualiserInterface() {
   document.body.classList.toggle("camp-first-box-placement-guided",
     firstBoxCopyVisible && campVisible);
   if (firstBoxActif) {
-    const firstBoxTarget = firstBoxTutorialStage() === "place"
-      ? document.getElementById("camp-prototype-placement-confirm")
-      : document.querySelector("#camp-house-construction-modal #camp-task-start:not([disabled]), #camp-house-construction-modal .camp-task-cat-choice:not([disabled])");
-    campTutorialMarquerCible(firstBoxTarget);
+    const firstBoxTargets = typeof guidanceController !== "undefined" && guidanceController
+      ? guidanceController.targets() : [];
+    const firstBoxTarget = firstBoxTargets.find(function(element) {
+      return guidanceController.isElementActionable(element);
+    }) || firstBoxTargets[0] || null;
+    campTutorialMarquerCible(firstBoxTarget, semanticDescriptor);
     return;
   }
-  if (!actif) return;
-  if (campVisible && stage === "work-action"
-      && !campGuidanceCibleWorkActionSawmillActionnable()) {
-    const sawmill = itemCampPrototypeParType("sawmill");
-    if (sawmill) ouvrirMenuInteractionCampPrototype(sawmill.uid, { conserverOuvert: true });
-  }
-  let target = null;
-  if (stage === "sawmill") target = document.querySelector('[data-camp-type="sawmill"]');
-  if (stage === "work-action") target = campGuidanceCibleWorkActionSawmill();
-  if (stage === "return-camp") target = document.getElementById("onglet-camp");
-  if (stage === "confirm-camp") target = document.querySelector('[data-camp-type="sawmill"]');
-  if (stage === "wood-slot-1-recipe") target = document.querySelector("#recipe-slot-wood-0 .work-recipe-choose-empty");
-  if (stage === "wood-slot-2-recipe") target = document.querySelector("#recipe-slot-wood-1 .work-recipe-choose-empty");
-  if (stage === "wood-slot-1-cat" || stage === "wood-slot-2-cat") {
-    const modal = document.getElementById("worker-modal");
-    const cible = campTutorialPickerCible();
-    const workerResolvable = campTutorialWorkerResolvableIndices(cible.slotIdx).length > 0;
-    if (!workerResolvable) {
-      target = null;
-    } else if (modal && modal.style.display !== "none") {
-      target = Array.from(modal.querySelectorAll('.worker-modal-kitty[data-worker-kitty-index][data-clavier-clic]'))
-        .find(function(choice) { return campTutorialInteractionAutorisee(choice); }) || null;
-    } else {
-      target = document.querySelector("#recipe-slot-wood-" + cible.slotIdx + " .work-recipe-cat-empty");
-    }
-  }
-  if (stage === "wood-slot-1-recipe" || stage === "wood-slot-2-recipe") {
-    const modal = document.getElementById("recipe-modal");
-    if (modal && modal.style.display !== "none") {
-      target = modal.querySelector('.recipe-modal-choice:not([disabled]):not([aria-disabled="true"])');
-    }
-  }
-  campTutorialMarquerCible(target);
+  const semanticTargets = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.targets() : [];
+  const target = semanticTargets.find(function(element) {
+    return guidanceController.isElementActionable(element);
+  }) || semanticTargets[0] || null;
+  campTutorialMarquerCible(target, semanticDescriptor);
 }
 
 function campTutorialEnsurerNoeudInterface() {
@@ -11801,6 +11592,8 @@ function fermerDialogueRapideCamp() {
     renduDialogueRapideCamp();
     return;
   }
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   const progression = progressionCamp();
   const id = progression.quickDialogueQueue.shift();
   if (id && !progression.quickDialoguesSeen.includes(id)) {
@@ -11808,10 +11601,10 @@ function fermerDialogueRapideCamp() {
   }
   if (id === "firstBox") progression.junkClearingUnlocked = true;
   if (typeof renduDialogueRapideCamp === "function") renduDialogueRapideCamp();
-  if (id === "sawmillRepaired" && etat.chatons === 3 && !etat.sequenceEnCours
-      && campTutorialStage() === "inactive") {
-    campTutorialStageDefinir("sawmill", { save: false });
-  }
+  if (id) campGuidanceActionCommit({
+    type: "camp.quick-dialogue-continued",
+    dialogueId: id
+  }, guidanceDescriptor);
   sauvegarder();
   if (id === "firstBox" && typeof renduCampPrototype === "function") {
     fermerMenuInteractionCampPrototype();
@@ -14011,13 +13804,17 @@ function rendreRecompensesAuSolCampPrototype(parent, targetKind) {
 }
 
 function reclamerRecompenseCampAuSol(uid, targetKind) {
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
+  const progression = progressionCamp();
+  if (progression.firstGroundRewardUid === uid
+      && !progression.quickDialoguesSeen.includes("firstGroundReward")) return false;
   const reward = recompenseAuSolCampPrototype(uid, targetKind);
   if (!reward) return false;
   const quantity = Math.max(0, Math.round(Number(reward.quantity) || 0));
   if (!quantity || typeof etat[reward.resourceId] !== "number") return false;
   etat[reward.resourceId] += quantity;
   delete recompensesAuSolCampPrototype()[uid];
-  const progression = progressionCamp();
   if (progression.firstGroundRewardUid === uid) {
     progression.firstGroundRewardUid = null;
     progression.quickDialogueQueue = progression.quickDialogueQueue.filter(function(id) {
@@ -14033,6 +13830,11 @@ function reclamerRecompenseCampAuSol(uid, targetKind) {
   if (typeof campGroundRewardDialogue !== "undefined") {
     campGroundRewardDialogue = rewardMessage;
   }
+  campGuidanceActionCommit({
+    type: "camp.ground-reward-collected",
+    rewardUid: uid,
+    targetKind: targetKind
+  }, guidanceDescriptor);
   ajouterLog("event", rewardMessage);
   sauvegarderCampPrototype();
   rendu();
@@ -15823,6 +15625,10 @@ function positionnerMenuCompactCampPrototype(menu, item, dimensions) {
 }
 
 function ouvrirMenuInteractionCampPrototype(uid, options) {
+  const semanticCommit = !options || options.semanticCommit !== false;
+  const guidanceDescriptor = semanticCommit
+    && typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   if ((!DEV_MODE && !campDebloque()) || campPrototypeModeEdition) return false;
   const item = itemCampPrototype(uid);
   const type = item && typeCampPrototype(item.type);
@@ -15920,11 +15726,12 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   menu.hidden = false;
   if (productionPanel) positionnerPanneauProductionCamp(menu);
   else positionnerMenuCompactCampPrototype(menu, item, dimensions);
-  if (campTutorialStage() === "confirm-camp" && type.id === "sawmill") {
-    campTutorialFinaliserSiSawmillRendu(indexerPresencesChatsCamp(), true);
-  }
-  if (campTutorialStage() === "sawmill" && type.id === "sawmill") {
-    campTutorialStageDefinir("work-action");
+  if (semanticCommit) {
+    campGuidanceActionCommit({
+      type: "camp.building-menu-opened",
+      buildingId: type.id,
+      buildingUid: uid
+    }, guidanceDescriptor);
   }
   return true;
 }
@@ -16084,7 +15891,10 @@ function rafraichirMenuInteractionCampPrototype() {
       ? document.activeElement.dataset.campMenuAction || null
       : null;
   const restaure = interactionKind === "building"
-    ? ouvrirMenuInteractionCampPrototype(campUid, { conserverOuvert: true })
+    ? ouvrirMenuInteractionCampPrototype(campUid, {
+        conserverOuvert: true,
+        semanticCommit: false
+      })
     : (interactionKind === "sticker-customizer"
         ? ouvrirStickerCustomizerCampPrototype(campUid, { conserverOuvert: true })
     : (interactionKind === "demolition"
@@ -16107,6 +15917,8 @@ function rafraichirMenuInteractionCampPrototype() {
 }
 
 function ouvrirWorkDepuisCamp(event) {
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   if (event) {
     event.preventDefault();
     event.stopPropagation();
@@ -16122,13 +15934,13 @@ function ouvrirWorkDepuisCamp(event) {
     return false;
   }
   fermerMenuInteractionCampPrototype();
-  if (campTutorialStage() === "work-action" && buildingId === "sawmill") {
-    // Advance before changing tabs so the tutorial's tab gate permits the
-    // single semantic Work action that the highlighted menu invokes.
-    campTutorialStageDefinir("wood-slot-1-recipe");
-  }
   changerOnglet("work");
   appliquerFiltreWork(famille);
+  campGuidanceActionCommit({
+    type: "camp.work-opened",
+    buildingId: buildingId,
+    familyId: famille
+  }, guidanceDescriptor);
   requestAnimationFrame(function() {
     const filtre = document.getElementById("filtre-work-" + famille);
     if (filtre) filtre.focus();
@@ -16837,6 +16649,8 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
       && !(options && options.commit)) {
     return campTaskPanelSelectKitty(kittyIndex);
   }
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   const placement = campPrototypePlacementEnCours;
   const typeId = campPrototypeConstructionMaisonTypeId;
   const type = placement && typeCampPrototype(placement.type);
@@ -16884,9 +16698,6 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
     paidCosts: incrementorLawApi.copyCosts(cout),
     readyToClaim: false
   };
-  if (typeId === "cardboardBox" && firstBoxTutorialActif()) {
-    progressionCamp().firstBoxTutorialStage = "complete";
-  }
   campPrototypeLayout.push(item);
   campPrototypePlacementEnCours = null;
   campPrototypeSelectionUid = null;
@@ -16898,6 +16709,11 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
   ajouterLog("event", kitty.nom + " started building " + type.label + " at Base Camp.");
   definirMessageCampPrototype(kitty.nom + " is building " + type.label
     + " · " + formaterTemps(duree) + " remaining.");
+  campGuidanceActionCommit({
+    type: "camp.house-construction-started",
+    houseType: typeId,
+    kittyIndex: kittyIndex
+  }, guidanceDescriptor);
   sauvegarderCampPrototype();
   sauvegarder();
   renduCampPrototype();
@@ -18642,9 +18458,10 @@ function rendrePaletteCampPrototype() {
           : "No Cat is available to build " + type.label + ".");
         return;
       }
-      if (categorie === "house" && typeId === "cardboardBox") {
-        firstBoxTutorialDemarrerDepuisPalette();
-      }
+      const firstBoxGuidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+        ? guidanceController.currentDescriptor() : null;
+      const demarreFirstBox = categorie === "house" && typeId === "cardboardBox"
+        && firstBoxTutorialDemarrerDepuisPalette();
       campPrototypeModeEdition = true;
       campPrototypePlacementEnCours = null;
       campPrototypeTypeAPlacer = typeId;
@@ -18654,8 +18471,13 @@ function rendrePaletteCampPrototype() {
       campPrototypeSelectionUid = null;
       campPrototypeCategorieOuverte = null;
       masquerApercuCampPrototype();
-      if (!type.continuous) {
-        commencerNouveauPlacementCampPrototype(typeId);
+      const nouveauPlacement = !type.continuous
+        ? commencerNouveauPlacementCampPrototype(typeId) : null;
+      if (demarreFirstBox && nouveauPlacement) {
+        campGuidanceActionCommit({
+          type: "camp.house-placement-started",
+          houseType: "cardboardBox"
+        }, firstBoxGuidanceDescriptor);
       }
       if (typeId === "cardboardBox" && firstBoxTutorialStage() === "place") {
         firstBoxTutorialAssurerPlacement();
@@ -19293,7 +19115,6 @@ function renduCampPrototype() {
   if (!DEV_MODE && !campDebloque()) return;
   if (firstBoxTutorialReconciliation()) sauvegarder();
   if (firstBoxPathDialogueReconciliation()) sauvegarder();
-  firstBoxTutorialAssurerPlacement();
   if (normaliserHousingAssignmentsCamp()) sauvegarderCampPrototype();
   document.body.classList.toggle("camp-cat-icons-hidden", etat.hideCampCatIcons === true);
   ecrireTexte(domParId("val-chatons"), etat.chatons + " / " + capaciteLogementCamp());
@@ -20160,7 +19981,6 @@ function selectionnerItemCampPrototype(uid) {
 }
 
 function tournerSelectionCampPrototype() {
-  if (firstBoxTutorialStage() === "place") return false;
   if (!campPrototypeModeEdition) return false;
   let placement = campPrototypePlacementEnCours;
   const item = itemCampPrototype(campPrototypeSelectionUid);
@@ -20186,6 +20006,8 @@ function tournerSelectionCampPrototype() {
 }
 
 function validerPlacementCampPrototype() {
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   const placement = campPrototypePlacementEnCours;
   if (!campPrototypeModeEdition || !placement) return false;
   const type = typeCampPrototype(placement.type);
@@ -20206,11 +20028,14 @@ function validerPlacementCampPrototype() {
     }
   }
   if (placement.mode === "new" && type.category === "house") {
-    if (type.id === "cardboardBox" && firstBoxTutorialStage() === "place") {
-      progressionCamp().firstBoxTutorialStage = "assign";
-      sauvegarder();
+    const modalOuverte = ouvrirModalConstructionMaisonCamp();
+    if (modalOuverte) {
+      campGuidanceActionCommit({
+        type: "camp.house-placement-confirmed",
+        houseType: type.id
+      }, guidanceDescriptor);
     }
-    return ouvrirModalConstructionMaisonCamp();
+    return modalOuverte;
   }
   if (placement.mode === "new" && CAMP_BUILDING_CONSTRUCTION_CONFIG[type.id] && !DEV_MODE) {
     return ouvrirModalConstructionBatimentCamp();
@@ -20247,18 +20072,10 @@ function validerPlacementCampPrototype() {
 }
 
 function annulerPlacementCampPrototype() {
-  if (firstBoxTutorialStage() === "place") return false;
   const placement = campPrototypePlacementEnCours;
   if (!campPrototypeModeEdition || !placement) return false;
   const type = typeCampPrototype(placement.type);
   const etaitExistant = placement.mode === "existing";
-  const annulePremierBoxGuide = placement.mode === "new"
-    && placement.type === "cardboardBox"
-    && firstBoxTutorialStage() === "place";
-  if (annulePremierBoxGuide) {
-    progressionCamp().firstBoxTutorialStage = "inactive";
-    sauvegarder();
-  }
   campPrototypePlacementEnCours = null;
   campPrototypeSelectionUid = null;
   campPrototypeTypeAPlacer = null;
@@ -20386,14 +20203,6 @@ function demarrerInteractionCampPrototype(event) {
     if (!cible) return;
     const itemNormal = itemCampPrototype(cible.dataset.campUid);
     const typeNormal = itemNormal && typeCampPrototype(itemNormal.type);
-    const cibleGuideeTapSimple = campGuidanceDescripteurActif()
-      && campTutorialInteractionAutorisee(cible);
-    if (cibleGuideeTapSimple) {
-      // A guided Camp target is a semantic single-tap action. Do not arm the
-      // editor gesture or take capture for the same pointer sequence.
-      annulerAppuiProlongeCampPrototype();
-      return;
-    }
     if (
       !itemNormal
       || !typeNormal
@@ -20896,11 +20705,6 @@ function initialiserCampPrototype() {
     }
   });
   document.addEventListener("keydown", function(event) {
-    if (campTutorialActif() && event.key === "Escape") {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
     if (event.key === "Escape") {
       const panneauBloques = document.getElementById("camp-prototype-blocked-alert-panel");
       if (panneauBloques && !panneauBloques.hidden) {
@@ -20929,21 +20733,14 @@ function initialiserCampPrototype() {
 // 13. UI CONTROLS  (tabs · speed · panel toggles)
 // ════════════════════════════════════════════════════════════
 
-function changerOnglet(id) {
+function changerOnglet(id, options) {
   if (!IDS_ONGLETS.includes(id)) return;
-  if (campTutorialActif()) {
-    const allowedTab = campTutorialOngletAutorise();
-    if (id !== allowedTab) {
-      afficherNotification("Follow the highlighted Sawmill step.");
-      const allowedButton = document.getElementById("onglet-" + allowedTab);
-      if (allowedButton) allowedButton.focus();
-      return;
-    }
-  }
   if (id === "camp" && !campDebloque()) return;
   if (id === "explorations" && !explorationCampFonctionnelle()) return;
   if (id === "logs" && etat.chatons < 3) return;
   if (id === "work" && etat.birdPremiereReussie) dismissWorkBoostCue();
+  const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
+    ? guidanceController.currentDescriptor() : null;
   if (id !== "camp") fermerMenuInteractionCampPrototype();
   if (id !== "camp" && campPrototypeModeEdition) quitterEditionCampPrototype(false);
   const estMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -20977,9 +20774,11 @@ function changerOnglet(id) {
     bouton.tabIndex = actif ? 0 : -1;
   });
   document.body.dataset.ongletActif = id;
-  if (id === "camp" && campTutorialStage() === "return-camp"
-      && campTutorialAssignmentsCompletes()) {
-    campTutorialStageDefinir("confirm-camp");
+  if (!options || options.semanticCommit !== false) {
+    campGuidanceActionCommit({
+      type: "navigation.tab-changed",
+      tabId: id
+    }, guidanceDescriptor);
   }
   if (id === "camp") definirObjectifsReduits(true);
   if (id === "explorations") { exploTabDirty  = true; }
@@ -21936,7 +21735,7 @@ renduStories();
 renduObjectifs();
 verifierObjectifs();
 renduManagement();
-  if (campDebloque()) changerOnglet(campTutorialActif() ? campTutorialOngletAutorise() : "camp");
+  if (campDebloque()) changerOnglet("camp", { semanticCommit: false });
 
 function lancerOuvertureInitiale() {
   if (!storyEstVue("introVue")) {
