@@ -19984,7 +19984,6 @@ function annulerAppuiProlongeCampPrototype() {
 }
 
 function selectionnerItemParAppuiProlongeCampPrototype(uid) {
-  invaliderGesteActivationItemCampPrototype();
   const item = itemCampPrototype(uid);
   const type = item && typeCampPrototype(item.type);
   const interaction = campPrototypePointeur;
@@ -19999,7 +19998,15 @@ function selectionnerItemParAppuiProlongeCampPrototype(uid) {
     || !interaction
     || interaction.mode !== "hold-select"
     || interaction.uid !== uid
-  ) return;
+  ) {
+    invaliderGesteActivationItemCampPrototype();
+    return;
+  }
+  if (
+    typeof CatInc !== "undefined"
+    && CatInc.touchActivationController
+  ) CatInc.touchActivationController.invalidate(interaction.pointerId);
+  invaliderGesteActivationItemCampPrototype();
   campPrototypeAppuiProlongeTimer = null;
   fermerMenuInteractionCampPrototype();
   campPrototypeModeEdition = true;
@@ -20637,7 +20644,18 @@ function demarrerInteractionCampPrototype(event) {
 }
 
 function deplacerInteractionCampPrototype(event) {
-  if (!campPrototypePointeur) return;
+  if (!campPrototypePointeur) {
+    if (
+      campPrototypeGesteActivationItem
+      && campPrototypeGesteActivationItem.phase === "tracking"
+      && event.pointerId === campPrototypeGesteActivationItem.pointerId
+      && Math.hypot(
+        event.clientX - campPrototypeGesteActivationItem.departX,
+        event.clientY - campPrototypeGesteActivationItem.departY
+      ) > CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE
+    ) invaliderGesteActivationItemCampPrototype();
+    return;
+  }
   if (!campPrototypeModeEdition && campPrototypePointeur.mode !== "hold-select") return;
   if (event.pointerId !== campPrototypePointeur.pointerId) return;
   if (campPrototypePointeur.mode === "hold-select") {
@@ -20726,9 +20744,50 @@ function deplacerInteractionCampPrototype(event) {
   event.preventDefault();
 }
 
+function gesteActivationTouchCampPrototypeValide(event, uid) {
+  const geste = campPrototypeGesteActivationItem;
+  if (!geste || geste.phase !== "tracking" || event.pointerType !== "touch") return false;
+  const duree = (Number(event.timeStamp) || 0) - geste.departTimestamp;
+  return event.pointerId === geste.pointerId
+    && geste.uid === uid
+    && duree >= 0
+    && duree <= CAMP_PROTOTYPE_LONG_PRESS_MS;
+}
+
+function activerItemCampPrototypeAuPointerUp(interaction, event) {
+  armerGesteActivationItemCampPrototype(interaction, event, true);
+  if (
+    event.pointerType === "touch"
+    && typeof CatInc !== "undefined"
+    && CatInc.touchActivationController
+    && CatInc.touchActivationController.consumePointer(event)
+  ) campPrototypeGesteActivationItem = null;
+  activerItemCampPrototype(interaction.uid);
+  event.preventDefault();
+}
+
 function terminerInteractionCampPrototype(event, annulee) {
   if (annulee) invaliderGesteActivationItemCampPrototype();
-  if (!campPrototypePointeur || event.pointerId !== campPrototypePointeur.pointerId) return;
+  if (!campPrototypePointeur || event.pointerId !== campPrototypePointeur.pointerId) {
+    const cible = !annulee && event.target && event.target.closest
+      ? event.target.closest("[data-camp-uid]") : null;
+    const geste = campPrototypeGesteActivationItem;
+    if (
+      event.pointerType === "touch"
+      && geste
+      && geste.phase === "tracking"
+      && event.pointerId === geste.pointerId
+      && geste.uid
+      && cible
+      && cible.dataset.campUid === geste.uid
+      && gesteActivationTouchCampPrototypeValide(event, geste.uid)
+    ) {
+      activerItemCampPrototypeAuPointerUp({ uid: geste.uid }, event);
+    } else if (event.pointerType === "touch" && geste && event.pointerId === geste.pointerId) {
+      invaliderGesteActivationItemCampPrototype();
+    }
+    return;
+  }
   const interaction = campPrototypePointeur;
   campPrototypePointeur = null;
   annulerAppuiProlongeCampPrototype();
@@ -20736,11 +20795,11 @@ function terminerInteractionCampPrototype(event, annulee) {
   if (board && board.hasPointerCapture(event.pointerId)) board.releasePointerCapture(event.pointerId);
   if (interaction.mode === "hold-select") {
     if (!annulee) {
-      const activationSurPointerUp = event.pointerType !== "touch";
-      armerGesteActivationItemCampPrototype(interaction, event, activationSurPointerUp);
-      if (activationSurPointerUp) {
-        activerItemCampPrototype(interaction.uid);
-        event.preventDefault();
+      if (event.pointerType !== "touch"
+        || gesteActivationTouchCampPrototypeValide(event, interaction.uid)) {
+        activerItemCampPrototypeAuPointerUp(interaction, event);
+      } else {
+        invaliderGesteActivationItemCampPrototype();
       }
     } else {
       invaliderGesteActivationItemCampPrototype();
@@ -20780,24 +20839,35 @@ function terminerInteractionCampPrototype(event, annulee) {
   event.preventDefault();
 }
 
-function invaliderGesteActivationItemCampPrototype() {
+function invaliderGesteActivationItemCampPrototype(coordonnerNormaliseur) {
   if (
     campPrototypeGesteActivationItem
     && Number.isFinite(campPrototypeGesteActivationItem.pointerId)
   ) {
-    campPrototypePointerIdsClicObsoletes.add(campPrototypeGesteActivationItem.pointerId);
+    const pointerId = campPrototypeGesteActivationItem.pointerId;
+    const protegeParNormaliseur = coordonnerNormaliseur !== false
+      && typeof CatInc !== "undefined"
+      && CatInc.touchActivationController
+      && CatInc.touchActivationController.invalidate(pointerId);
+    if (!protegeParNormaliseur) campPrototypePointerIdsClicObsoletes.add(pointerId);
   }
   campPrototypeGesteActivationItem = null;
 }
 
 function commencerGestePointeurCampPrototype(event) {
-  invaliderGesteActivationItemCampPrototype();
+  invaliderGesteActivationItemCampPrototype(false);
   campPrototypePointerIdsClicObsoletes.delete(event.pointerId);
+  const cible = event.target && event.target.closest
+    ? event.target.closest("[data-camp-uid]") : null;
   campPrototypeGesteActivationItem = {
     phase: "tracking",
     pointerId: event.pointerId,
     pointerType: event.pointerType || "mouse",
-    target: event.target
+    target: event.target,
+    uid: cible ? cible.dataset.campUid : null,
+    departX: Number(event.clientX) || 0,
+    departY: Number(event.clientY) || 0,
+    departTimestamp: Number(event.timeStamp) || 0
   };
 }
 
@@ -20978,6 +21048,14 @@ function initialiserCampPrototype() {
   });
   board.addEventListener("pointercancel", function(event) {
     terminerInteractionCampPrototype(event, true);
+  });
+  board.addEventListener("contextmenu", function(event) {
+    invaliderGesteActivationItemCampPrototype();
+    annulerAppuiProlongeCampPrototype();
+    if (
+      typeof CatInc !== "undefined"
+      && CatInc.touchActivationController
+    ) CatInc.touchActivationController.invalidate(event.pointerId);
   });
   board.addEventListener("pointerleave", function() {
     if (!campPrototypePointeur && !campPrototypePlacementEnCours) {
