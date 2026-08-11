@@ -45,7 +45,7 @@
         ? eventOrId.pointerId : eventOrId;
       if (raw === null || raw === undefined || raw === "") return null;
       const value = Number(raw);
-      return Number.isFinite(value) && value >= 0 ? value : null;
+      return Number.isFinite(value) ? value : null;
     }
 
     function actionRoot(target) {

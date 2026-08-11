@@ -20887,7 +20887,7 @@ function consommerGesteActivationItemCampPrototype(event, uidCible) {
     return null;
   }
   const pointerId = Number(event.pointerId);
-  if (!Number.isFinite(pointerId) || pointerId < 0) return "reject";
+  if (!Number.isFinite(pointerId)) return "reject";
   if (campPrototypePointerIdsClicObsoletes.has(pointerId)) {
     campPrototypePointerIdsClicObsoletes.delete(pointerId);
     return "reject";
