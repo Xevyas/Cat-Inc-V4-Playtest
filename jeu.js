@@ -11680,6 +11680,10 @@ function campTutorialFinaliserSiSawmillRendu(presencesCamp, confirmationExplicit
   campTutorialRouteAttentionUntil = Date.now() + 5000;
   sauvegarder();
   campTutorialActualiserInterface();
+  // The confirming tap built the production panel before its semantic commit
+  // completed the tutorial. Refresh that open panel immediately so Remove Cat
+  // cannot retain protected-step markup after the authoritative stage change.
+  rafraichirMenuInteractionCampPrototype();
   renduVisiteurCampRecrutement();
   return true;
 }
@@ -15665,6 +15669,61 @@ function actualiserFocusVisuelTacheCamp(worker, reserveSeconds) {
   if (actif) bubble.textContent = libelleFocusCamp(reserve);
 }
 
+function actualiserFeedbackOverlayCamp(source, texte) {
+  const overlay = document.getElementById("camp-feedback-overlay");
+  const viewport = document.querySelector(".camp-prototype-viewport");
+  if (!overlay || !viewport) return false;
+  let feedback = overlay.querySelector("[data-camp-feedback-overlay-item]");
+  if (!texte || !source || typeof source.getBoundingClientRect !== "function") {
+    if (feedback) feedback.hidden = true;
+    return false;
+  }
+  if (!feedback) {
+    feedback = document.createElement("small");
+    feedback.className = "camp-feedback-overlay-item";
+    feedback.dataset.campFeedbackOverlayItem = "true";
+    overlay.appendChild(feedback);
+  }
+  feedback.textContent = texte;
+  feedback.hidden = false;
+  const sourceRect = source.getBoundingClientRect();
+  const overlayRect = overlay.getBoundingClientRect();
+  const viewportRect = viewport.getBoundingClientRect();
+  const visual = typeof window !== "undefined" && window.visualViewport;
+  const visualLeft = visual ? Number(visual.offsetLeft) || 0 : 0;
+  const visualTop = visual ? Number(visual.offsetTop) || 0 : 0;
+  const visualRight = visualLeft + (visual && Number(visual.width) > 0
+    ? Number(visual.width) : window.innerWidth);
+  const visualBottom = visualTop + (visual && Number(visual.height) > 0
+    ? Number(visual.height) : window.innerHeight);
+  const left = Math.max(viewportRect.left, visualLeft);
+  const right = Math.min(viewportRect.right, visualRight);
+  const top = Math.max(viewportRect.top, visualTop);
+  const bottom = Math.min(viewportRect.bottom, visualBottom);
+  const halfWidth = Math.max(28, feedback.offsetWidth / 2);
+  const height = Math.max(18, feedback.offsetHeight);
+  const x = Math.max(left + halfWidth + 6,
+    Math.min(right - halfWidth - 6, sourceRect.left + sourceRect.width / 2));
+  const preferredY = sourceRect.top - height - 6;
+  const y = Math.max(top + 6, Math.min(bottom - height - 6, preferredY));
+  feedback.style.left = (x - overlayRect.left) + "px";
+  feedback.style.top = (y - overlayRect.top) + "px";
+  return true;
+}
+
+function actualiserFeedbackManualFocusOverlayCamp() {
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (menu && !menu.hidden && menu.querySelector("[data-camp-production-panel]")) {
+    return actualiserFeedbackOverlayCamp(null, "");
+  }
+  const worker = document.querySelector(".camp-task-worker.camp-task-manual-focus-active");
+  const bubble = worker && worker.querySelector("[data-camp-task-focus]");
+  return actualiserFeedbackOverlayCamp(
+    worker,
+    bubble && !bubble.hidden ? bubble.textContent : ""
+  );
+}
+
 function cibleManualFocusCampPourTache(tache) {
   if (!tache || !tache.job) return null;
   if (tache.kind === "demolition") {
@@ -15728,7 +15787,8 @@ function activerManualFocusCampPourTache(tache, feedbackElement) {
          tempsRestantTacheCampAffiche(workerTache, workerState)
        );
      }
-  });
+   });
+  actualiserFeedbackManualFocusOverlayCamp();
   return true;
 }
 
@@ -17879,6 +17939,7 @@ function renduCampPrototypeDynamique(maintenant) {
     const timer = worker.querySelector("[data-camp-task-timer]");
     if (timer) timer.textContent = formaterTemps(tempsRestantTacheCampAffiche(tache, state));
   });
+  actualiserFeedbackManualFocusOverlayCamp();
   document.querySelectorAll("[data-camp-repair-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
     const reparation = reparationCampPourBatiment(element.dataset.campRepairTimer);
@@ -19754,6 +19815,7 @@ function ajouterTacheTemporeeChatCamp(element, presence) {
     const focusable = manualFocusDebloque() && Boolean(cibleManualFocusCampPourTache(presence.timedTask));
     if (focusable) {
       worker.setAttribute("role", "button");
+      worker.dataset.touchActivationRoot = "true";
       worker.tabIndex = 0;
       worker.setAttribute("aria-label", "Manual Focus on " + presence.activity + " with " + presence.kitty.nom);
       worker.title = presence.kitty.nom + " · " + presence.activity + " · Tap to Manual Focus";

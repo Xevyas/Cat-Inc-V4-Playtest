@@ -10,17 +10,17 @@
     "[role='menuitem']",
     "[role='tab']",
     "[data-clavier-clic]",
-    "[onclick]"
+    "[onclick]",
+    "[data-touch-activation-root]"
   ].join(",");
   const EXTERNAL_TOUCH_SELECTOR = "#camp-prototype-items [data-camp-uid]";
-  const MANUAL_GESTURE_SELECTOR = [
+  const MANUAL_CONTROL_SELECTOR = [
     "input",
     "select",
     "textarea",
     "[contenteditable='true']",
     "[role='slider']",
     "#camp-prototype-placement-actions",
-    EXTERNAL_TOUCH_SELECTOR,
     ".recruit-pitch-btn",
     "[data-touch-activation='manual']"
   ].join(",");
@@ -51,7 +51,15 @@
 
     function actionRoot(target) {
       if (!target || typeof target.closest !== "function") return null;
-      if (target.closest(MANUAL_GESTURE_SELECTOR)) return null;
+      // Inputs and explicitly manual controls always retain native/manual
+      // ownership. A declared action root may, however, live inside the Camp
+      // item's external-gesture container (the Manual Focus portrait). Let
+      // that narrow declaration win before the generic Camp exclusion.
+      if (target.closest(MANUAL_CONTROL_SELECTOR)) return null;
+      const declared = target.closest("[data-touch-activation-root]");
+      if (declared && !declared.disabled
+          && declared.getAttribute("aria-disabled") !== "true") return declared;
+      if (target.closest(EXTERNAL_TOUCH_SELECTOR)) return null;
       const action = target.closest(ACTION_SELECTOR);
       if (!action || action.disabled || action.getAttribute("aria-disabled") === "true") return null;
       return action;
@@ -180,6 +188,23 @@
       if (distance > TAP_MOVE_TOLERANCE) invalidate(pointerId);
     }
 
+    function releasePendingTouchActivation(event) {
+      const pointerId = finitePointerId(event);
+      if (pointerId === null || event.pointerType !== "touch") return;
+      const pending = pendingTouchActivations.get(pointerId);
+      if (!pending) return;
+      pendingTouchActivations.delete(pointerId);
+      endedTouchCycles.delete(pointerId);
+      if (actionRoot(event.target) !== pending.gesture.root) return;
+      scheduleMicrotask(function() {
+        const gesture = pending.gesture;
+        if (gesture.root.isConnected === false
+          || gesture.root.disabled
+          || gesture.root.getAttribute("aria-disabled") === "true") return;
+        gesture.root.click();
+      });
+    }
+
     function onPointerUp(event) {
       const pointerId = finitePointerId(event);
       if (pointerId === null) return;
@@ -232,23 +257,19 @@
       // the compatibility click.  The bubble boundary below observes the
       // completed event first; the tombstone is already armed here.
       pendingTouchActivations.set(pointerId, { gesture: gesture, target: event.target });
+      // Release at the owned action boundary as well as at the document
+      // fallback. Capture on that root remains reachable even when a nested
+      // component later stops pointerup propagation.
+      if (gesture.root && typeof gesture.root.addEventListener === "function") {
+        gesture.root.addEventListener("pointerup", releasePendingTouchActivation, {
+          once: true,
+          capture: true
+        });
+      }
     }
 
     function onPointerUpAfterPropagation(event) {
-      const pointerId = finitePointerId(event);
-      if (pointerId === null || event.pointerType !== "touch") return;
-      const pending = pendingTouchActivations.get(pointerId);
-      if (!pending) return;
-      pendingTouchActivations.delete(pointerId);
-      endedTouchCycles.delete(pointerId);
-      if (actionRoot(event.target) !== pending.gesture.root) return;
-      scheduleMicrotask(function() {
-        const gesture = pending.gesture;
-        if (gesture.root.isConnected === false
-          || gesture.root.disabled
-          || gesture.root.getAttribute("aria-disabled") === "true") return;
-        gesture.root.click();
-      });
+      releasePendingTouchActivation(event);
     }
 
     function onPointerCancel(event) {

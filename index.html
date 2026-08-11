@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0164" />
+  <link rel="stylesheet" href="style.css?v=0.0165" />
   <style>
     /* First-paint guard: unknown neighbor DOM stays absent before game state loads. */
     .camp-prototype-map.camp-neighbor-red-unknown [data-camp-garden-zone="redGarden"],
@@ -283,7 +283,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0058 · August 11, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0059 · August 11, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -491,7 +491,7 @@
     <button id="work-boost-cue-dismiss" type="button" class="work-boost-cue-dismiss" aria-label="Dismiss Work boost tip" hidden onclick="dismissWorkBoostCue(event)">×</button>
   </div>
 
-  <aside id="camp-quick-dialogue" class="camp-quick-dialogue" role="status" aria-live="polite" onclick="continuerDialogueRapideCamp(event)" hidden>
+  <aside id="camp-quick-dialogue" class="camp-quick-dialogue" role="status" aria-live="polite" data-touch-activation-root="true" onclick="continuerDialogueRapideCamp(event)" hidden>
     <img src="img/Cat faces/Bernardo.png?v=0.0026" alt="">
     <div>
       <strong>Bernardo</strong>
@@ -640,6 +640,7 @@
            </div>
         </div>
        </div>
+       <div id="camp-feedback-overlay" class="camp-feedback-overlay" aria-hidden="true"></div>
        <div id="camp-prototype-first-reveal-cover" class="camp-prototype-first-reveal-cover" aria-hidden="true"></div>
       </div>
       <section id="camp-prototype-category-sheet" class="camp-prototype-category-sheet" aria-label="Camp item menu" hidden>
@@ -970,7 +971,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0058</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0059</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1244,7 +1245,7 @@
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0002"></script>
   <script src="js/data/content.js?v=0.0055"></script>
-  <script src="js/data/changelog.js?v=0.0058"></script>
+  <script src="js/data/changelog.js?v=0.0059"></script>
   <script src="js/data/dialogues.generated.js?v=0.0003"></script>
   <script src="js/data/dialogues.js?v=0.0005"></script>
   <script src="js/core/state.js?v=0.0045"></script>
@@ -1262,13 +1263,13 @@
   <script src="js/ui/camp.js?v=0.0027"></script>
   <script src="js/ui/dialogs.js?v=0.0001"></script>
   <script src="js/ui/guidance.js?v=0.0003"></script>
-  <script src="js/ui/touch-activation.js?v=0.0003"></script>
+  <script src="js/ui/touch-activation.js?v=0.0004"></script>
   <script src="js/ui/logs.js?v=0.0001"></script>
   <script src="js/ui/notifications.js?v=0.0001"></script>
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0002"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0186"></script>
+  <script src="jeu.js?v=0.0187"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

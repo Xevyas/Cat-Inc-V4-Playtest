@@ -873,6 +873,34 @@ body.camp-prologue-reveal .camp-prototype-map {
   pointer-events: none;
 }
 .camp-task-focus-bubble[hidden] { display: none; }
+.camp-feedback-overlay { display: none; }
+@media (max-width: 768px) {
+  .camp-feedback-overlay {
+    position: absolute;
+    z-index: 9;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .camp-feedback-overlay-item {
+    position: absolute;
+    min-width: max-content;
+    padding: 3px 6px;
+    border: 1px solid rgba(164, 111, 34, .42);
+    border-radius: 999px;
+    color: #704712;
+    background: rgba(255, 244, 194, .98);
+    box-shadow: 0 2px 6px rgba(66, 42, 22, .28);
+    font-size: clamp(.46rem, 1.8vw, .62rem);
+    font-weight: 950;
+    line-height: 1.1;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .camp-task-focus-bubble { display: none; }
+}
 body.camp-prototype-editing .camp-task-worker { display: none; }
 
 /* Once recruitment lives in the Camp world, every tab shares the same compact
