@@ -12354,8 +12354,9 @@ let campPrototypeAllocationHouseUid = null;
 let campPrototypeConstructionBatimentTypeId = null;
 let campPrototypeDerniereSecondeDemolition = null;
 let campTaskPanelState = null;
-let campPrototypeDerniereActivationPointeur = 0;
-let campPrototypeDerniereActivationItemPointeur = 0;
+let campPrototypeActionMenuPointeur = null;
+let campPrototypeGesteActivationItem = null;
+const campPrototypePointerIdsClicObsoletes = new Set();
 let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
@@ -14609,6 +14610,7 @@ function demarrerPincementCampPrototype(event) {
   if (distance <= 0) return;
   const interaction = campPrototypePointeur;
   const board = document.getElementById("camp-prototype-board");
+  invaliderGesteActivationItemCampPrototype();
   annulerAppuiProlongeCampPrototype();
   if (
     interaction
@@ -14977,9 +14979,9 @@ function actionMenuCampPrototypeDepuisEvenement(menu, event) {
   if (!menu || !event || !(event.target instanceof Element)) return null;
   const bouton = event.target.closest("[data-camp-menu-action]");
   if (bouton && menu.contains(bouton)) return bouton.dataset.campMenuAction || null;
-  if (event.target === menu) {
-    const actionUnique = menu.querySelector("[data-camp-menu-action]");
-    return actionUnique ? actionUnique.dataset.campMenuAction || null : null;
+  if (event.target === menu && !menu.classList.contains("camp-production-menu")) {
+    const actions = menu.querySelectorAll("[data-camp-menu-action]");
+    return actions.length === 1 ? actions[0].dataset.campMenuAction || null : null;
   }
   return null;
 }
@@ -15633,7 +15635,10 @@ function gererPointeurActionMenuCampPrototype(event) {
     event.stopPropagation();
     return;
   }
-  campPrototypeDerniereActivationPointeur = Date.now();
+  campPrototypeActionMenuPointeur = {
+    pointerId: event.pointerId,
+    action: action
+  };
   executerActionMenuCampPrototype(action, event);
 }
 
@@ -15642,12 +15647,20 @@ function gererClicActionMenuCampPrototype(event) {
     inputEvent: campPanelDiagnostic.inputEventDetails(event)
   });
   const menu = event.currentTarget;
+  const gesteItem = consommerGesteActivationItemCampPrototype(event, null);
+  if (gesteItem) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  if (event.detail === 0) campPrototypeActionMenuPointeur = null;
   const action = actionMenuCampPrototypeDepuisEvenement(menu, event);
   if (!action) {
     event.stopPropagation();
     return;
   }
-  if (Date.now() - campPrototypeDerniereActivationPointeur < 700) {
+  if (campPrototypeActionMenuPointeur) {
+    campPrototypeActionMenuPointeur = null;
     event.preventDefault();
     event.stopPropagation();
     return;
@@ -19837,6 +19850,7 @@ function annulerAppuiProlongeCampPrototype() {
 }
 
 function selectionnerItemParAppuiProlongeCampPrototype(uid) {
+  invaliderGesteActivationItemCampPrototype();
   const item = itemCampPrototype(uid);
   const type = item && typeCampPrototype(item.type);
   const interaction = campPrototypePointeur;
@@ -20296,6 +20310,7 @@ function reinitialiserCampPrototype() {
 
 function demarrerInteractionCampPrototype(event) {
   if (event.button > 0) return;
+  commencerGestePointeurCampPrototype(event);
   const board = document.getElementById("camp-prototype-board");
   const cible = event.target.closest("[data-camp-uid]");
   if (!campPrototypeModeEdition) {
@@ -20493,6 +20508,7 @@ function deplacerInteractionCampPrototype(event) {
       event.clientY - campPrototypePointeur.departY
     );
     if (distance > CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE) {
+      invaliderGesteActivationItemCampPrototype();
       annulerAppuiProlongeCampPrototype();
       const board = document.getElementById("camp-prototype-board");
       if (board && board.hasPointerCapture(event.pointerId)) {
@@ -20573,6 +20589,7 @@ function deplacerInteractionCampPrototype(event) {
 }
 
 function terminerInteractionCampPrototype(event, annulee) {
+  if (annulee) invaliderGesteActivationItemCampPrototype();
   if (!campPrototypePointeur || event.pointerId !== campPrototypePointeur.pointerId) return;
   const interaction = campPrototypePointeur;
   campPrototypePointeur = null;
@@ -20581,9 +20598,14 @@ function terminerInteractionCampPrototype(event, annulee) {
   if (board && board.hasPointerCapture(event.pointerId)) board.releasePointerCapture(event.pointerId);
   if (interaction.mode === "hold-select") {
     if (!annulee) {
-      campPrototypeDerniereActivationItemPointeur = Date.now();
-      activerItemCampPrototype(interaction.uid);
-      event.preventDefault();
+      const activationSurPointerUp = event.pointerType !== "touch";
+      armerGesteActivationItemCampPrototype(interaction, event, activationSurPointerUp);
+      if (activationSurPointerUp) {
+        activerItemCampPrototype(interaction.uid);
+        event.preventDefault();
+      }
+    } else {
+      invaliderGesteActivationItemCampPrototype();
     }
     return;
   }
@@ -20618,6 +20640,133 @@ function terminerInteractionCampPrototype(event, annulee) {
     actualiserCommandesCampPrototype();
   }
   event.preventDefault();
+}
+
+function invaliderGesteActivationItemCampPrototype() {
+  if (
+    campPrototypeGesteActivationItem
+    && Number.isFinite(campPrototypeGesteActivationItem.pointerId)
+  ) {
+    campPrototypePointerIdsClicObsoletes.add(campPrototypeGesteActivationItem.pointerId);
+  }
+  campPrototypeGesteActivationItem = null;
+}
+
+function commencerGestePointeurCampPrototype(event) {
+  invaliderGesteActivationItemCampPrototype();
+  campPrototypePointerIdsClicObsoletes.delete(event.pointerId);
+  campPrototypeGesteActivationItem = {
+    phase: "tracking",
+    pointerId: event.pointerId,
+    pointerType: event.pointerType || "mouse",
+    target: event.target
+  };
+}
+
+function armerGesteActivationItemCampPrototype(interaction, event, activationSurPointerUp) {
+  campPrototypeGesteActivationItem = {
+    phase: "armed",
+    pointerId: event.pointerId,
+    pointerType: event.pointerType || "mouse",
+    uid: interaction.uid,
+    activationSurPointerUp: Boolean(activationSurPointerUp)
+  };
+}
+
+function consommerGesteActivationItemCampPrototype(event, uidCible) {
+  if (!event || event.detail === 0) {
+    invaliderGesteActivationItemCampPrototype();
+    return null;
+  }
+  const pointerId = Number(event.pointerId);
+  if (!Number.isFinite(pointerId) || pointerId < 0) return "reject";
+  if (campPrototypePointerIdsClicObsoletes.has(pointerId)) {
+    campPrototypePointerIdsClicObsoletes.delete(pointerId);
+    return "reject";
+  }
+  if (!campPrototypeGesteActivationItem) return null;
+  const geste = campPrototypeGesteActivationItem;
+  if (pointerId !== geste.pointerId || event.pointerType !== geste.pointerType) {
+    return "reject";
+  }
+  campPrototypeGesteActivationItem = null;
+  campPrototypePointerIdsClicObsoletes.add(pointerId);
+  if (geste.phase === "tracking") {
+    const cibleFinale = event.target;
+    const memeBranche = geste.target && cibleFinale && (
+      geste.target === cibleFinale
+      || (typeof geste.target.contains === "function" && geste.target.contains(cibleFinale))
+      || (typeof cibleFinale.contains === "function" && cibleFinale.contains(geste.target))
+    );
+    return memeBranche ? null : "reject";
+  }
+  if (geste.phase !== "armed") return "reject";
+  if (!uidCible || uidCible !== geste.uid) return "reject";
+  return geste.activationSurPointerUp ? "dedupe" : "activate";
+}
+
+function gererClicBoardCampPrototype(event) {
+  const cible = event.target.closest("[data-camp-uid]");
+  const gesteItem = consommerGesteActivationItemCampPrototype(
+    event,
+    cible ? cible.dataset.campUid : null
+  );
+  if (gesteItem) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (gesteItem === "activate" && !campPrototypeModeEdition) {
+      activerItemCampPrototype(cible.dataset.campUid);
+    }
+    return;
+  }
+  const cibleAcces = event.target.closest("[data-camp-access-uid]");
+  if (cibleAcces) {
+    if (campPrototypeModeEdition) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const accessUid = cibleAcces.dataset.campAccessUid;
+    ouvrirMenuDemolitionCampPrototype(accessUid, "access");
+    return;
+  }
+  const recompenseSol = event.target.closest("[data-camp-ground-reward-uid]");
+  if (recompenseSol) {
+    if (campPrototypeModeEdition) return;
+    event.preventDefault();
+    event.stopPropagation();
+    reclamerRecompenseCampAuSol(
+      recompenseSol.dataset.campGroundRewardUid,
+      recompenseSol.dataset.campGroundRewardKind
+    );
+    return;
+  }
+  const cibleObstacle = event.target.closest("[data-camp-obstacle-uid]");
+  if (!cible && cibleObstacle) {
+    if (campPrototypeModeEdition) {
+      fermerMenuInteractionCampPrototype();
+      definirMessageCampPrototype("Debris cannot be changed in Edit mode.");
+    } else {
+      const obstacleUid = cibleObstacle.dataset.campObstacleUid;
+      const demolition = demolitionCampPrototypePourCible(obstacleUid, "terrain");
+      if (demolition && !demolition.readyToClaim) {
+        fermerMenuInteractionCampPrototype();
+        activerManualFocusCampPourTache({ kind: "demolition", job: demolition }, cibleObstacle);
+      } else {
+        ouvrirMenuDemolitionCampPrototype(obstacleUid, "terrain");
+      }
+    }
+    return;
+  }
+  if (!cible) {
+    if (!campPrototypeModeEdition) fermerMenuInteractionCampPrototype();
+    return;
+  }
+  if (campPrototypeModeEdition && event.detail === 0) {
+    selectionnerItemCampPrototype(cible.dataset.campUid);
+    return;
+  }
+  if (!campPrototypeModeEdition) {
+    activerItemCampPrototype(cible.dataset.campUid);
+  }
 }
 
 function gererClavierCampPrototype(event) {
@@ -20711,6 +20860,8 @@ function initialiserCampPrototype() {
     event.stopPropagation();
   });
   menuInteraction.addEventListener("pointerdown", function(event) {
+    campPrototypeActionMenuPointeur = null;
+    commencerGestePointeurCampPrototype(event);
     event.stopPropagation();
   });
   menuInteraction.addEventListener("pointerup", gererPointeurActionMenuCampPrototype);
@@ -20754,62 +20905,7 @@ function initialiserCampPrototype() {
     window.visualViewport.addEventListener("resize", repositionnerPanneauVisualViewportCamp, { passive: true });
     window.visualViewport.addEventListener("scroll", repositionnerPanneauVisualViewportCamp, { passive: true });
   }
-  board.addEventListener("click", function(event) {
-    if (Date.now() - campPrototypeDerniereActivationItemPointeur < 700) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-    const cibleAcces = event.target.closest("[data-camp-access-uid]");
-    if (cibleAcces) {
-      if (campPrototypeModeEdition) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const accessUid = cibleAcces.dataset.campAccessUid;
-      ouvrirMenuDemolitionCampPrototype(accessUid, "access");
-      return;
-    }
-    const cible = event.target.closest("[data-camp-uid]");
-    const recompenseSol = event.target.closest("[data-camp-ground-reward-uid]");
-    if (recompenseSol) {
-      if (campPrototypeModeEdition) return;
-      event.preventDefault();
-      event.stopPropagation();
-      reclamerRecompenseCampAuSol(
-        recompenseSol.dataset.campGroundRewardUid,
-        recompenseSol.dataset.campGroundRewardKind
-      );
-      return;
-    }
-    const cibleObstacle = event.target.closest("[data-camp-obstacle-uid]");
-    if (!cible && cibleObstacle) {
-      if (campPrototypeModeEdition) {
-        fermerMenuInteractionCampPrototype();
-        definirMessageCampPrototype("Debris cannot be changed in Edit mode.");
-      } else {
-        const obstacleUid = cibleObstacle.dataset.campObstacleUid;
-        const demolition = demolitionCampPrototypePourCible(obstacleUid, "terrain");
-        if (demolition && !demolition.readyToClaim) {
-          fermerMenuInteractionCampPrototype();
-          activerManualFocusCampPourTache({ kind: "demolition", job: demolition }, cibleObstacle);
-        } else {
-          ouvrirMenuDemolitionCampPrototype(obstacleUid, "terrain");
-        }
-      }
-      return;
-    }
-    if (!cible) {
-      if (!campPrototypeModeEdition) fermerMenuInteractionCampPrototype();
-      return;
-    }
-    if (campPrototypeModeEdition && event.detail === 0) {
-      selectionnerItemCampPrototype(cible.dataset.campUid);
-      return;
-    }
-    if (!campPrototypeModeEdition) {
-      activerItemCampPrototype(cible.dataset.campUid);
-    }
-  });
+  board.addEventListener("click", gererClicBoardCampPrototype);
   document.addEventListener("keydown", function(event) {
     if (event.key === "Escape") {
       const panneauBloques = document.getElementById("camp-prototype-blocked-alert-panel");
