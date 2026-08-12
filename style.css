@@ -5492,6 +5492,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   position: absolute;
   z-index: 10;
   display: grid;
+  pointer-events: auto;
   width: clamp(28px, 4.4vw, 42px);
   aspect-ratio: 1;
   place-items: center;
@@ -10944,6 +10945,59 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   justify-content: center;
 }
 .explo-modal-close:hover { color: var(--couleur-texte); }
+
+/* Shared overlay shell. Only explicitly migrated dialogs enter this portal;
+   legacy modal families keep their existing geometry and dismissal policy. */
+#overlay-root {
+  position: fixed;
+  left: var(--overlay-viewport-left, 0px);
+  top: var(--overlay-viewport-top, 0px);
+  width: var(--overlay-viewport-width, 100vw);
+  height: var(--overlay-viewport-height, 100dvh);
+  z-index: 2200;
+  pointer-events: none;
+}
+
+#overlay-root:empty { display: none; }
+
+#overlay-root > .overlay-managed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  pointer-events: auto;
+}
+
+#overlay-root > .overlay-managed:not(.overlay-managed-top) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.overlay-manager-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(61, 43, 31, 0.45);
+}
+
+#overlay-root > .overlay-managed .explo-modal-panneau {
+  width: min(340px, 100%);
+  max-width: 100%;
+  min-width: 0;
+  max-height: calc(var(--overlay-viewport-height, 100dvh) - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
+  overflow: hidden;
+}
+
+#overlay-root > .overlay-managed .overlay-manager-content {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
 
 .work-confirm-modal .explo-modal-panneau {
   width: min(420px, 90vw);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0165" />
+  <link rel="stylesheet" href="style.css?v=0.0166" />
   <style>
     /* First-paint guard: unknown neighbor DOM stays absent before game state loads. */
     .camp-prototype-map.camp-neighbor-red-unknown [data-camp-garden-zone="redGarden"],
@@ -283,7 +283,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0059 · August 11, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0060 · August 12, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -309,7 +309,7 @@
   <header class="header">
     <div class="titre-zone">
       <h1 class="titre"><img class="titre-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc"></h1>
-      <button class="bouton-settings" onclick="ouvrirModalSettings()" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""></button>
+      <button class="bouton-settings" data-input-action="settings.open" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""></button>
     </div>
     <div class="zone-sequence">
       <button id="bouton-vitesse" onclick="cyclerVitesse()">1×</button>
@@ -928,14 +928,13 @@
   </div>
 
   <!-- MODAL SETTINGS -->
-  <div id="settings-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settings-modal-titre" style="display:none">
-    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalSettings()"></div>
+  <div id="settings-modal" class="explo-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settings-modal-titre" style="display:none">
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="settings-modal-titre"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""> Settings</span>
-        <button class="explo-modal-close" aria-label="Close Settings" onclick="fermerModalSettings()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close Settings"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
-      <div class="settings-corps">
+      <div class="settings-corps overlay-manager-content">
         <img class="settings-logo-mobile" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc">
         <button class="settings-btn" onclick="sauvegarderManuel()">Save now</button>
         <button class="settings-btn" onclick="exporterSauvegarde()">Export save (.txt)</button>
@@ -971,7 +970,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0059</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0060</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1029,15 +1028,16 @@
   </div>
 
   <!-- MODAL CAMP BUILDING REPAIR -->
-  <div id="camp-repair-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-repair-modal-title" style="display:none">
-    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalReparationCamp()"></div>
+  <div id="camp-repair-modal" class="explo-modal camp-demolition-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-repair-modal-title" style="display:none">
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="camp-repair-modal-title">Assign a Cat</span>
-        <button class="explo-modal-close" aria-label="Close repair assignment" onclick="fermerModalReparationCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close repair assignment"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
-      <p id="camp-repair-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-repair-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      <div class="overlay-manager-content">
+        <p id="camp-repair-modal-summary" class="camp-demolition-modal-summary"></p>
+        <div id="camp-repair-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      </div>
     </div>
   </div>
 
@@ -1240,12 +1240,13 @@
   </div>
 
   <div id="inv-res-popup" role="tooltip" aria-hidden="true" style="display:none"></div>
+  <div id="overlay-root" aria-live="off"></div>
 
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0002"></script>
   <script src="js/data/content.js?v=0.0055"></script>
-  <script src="js/data/changelog.js?v=0.0059"></script>
+  <script src="js/data/changelog.js?v=0.0060"></script>
   <script src="js/data/dialogues.generated.js?v=0.0003"></script>
   <script src="js/data/dialogues.js?v=0.0005"></script>
   <script src="js/core/state.js?v=0.0045"></script>
@@ -1261,15 +1262,15 @@
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
   <script src="js/ui/camp.js?v=0.0027"></script>
-  <script src="js/ui/dialogs.js?v=0.0001"></script>
+  <script src="js/ui/dialogs.js?v=0.0002"></script>
   <script src="js/ui/guidance.js?v=0.0003"></script>
-  <script src="js/ui/touch-activation.js?v=0.0004"></script>
+  <script src="js/ui/touch-activation.js?v=0.0005"></script>
   <script src="js/ui/logs.js?v=0.0001"></script>
   <script src="js/ui/notifications.js?v=0.0001"></script>
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0002"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0187"></script>
+  <script src="jeu.js?v=0.0188"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

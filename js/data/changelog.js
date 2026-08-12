@@ -448,6 +448,22 @@
     })
   ]);
 
+  const release0060Categories = Object.freeze([
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Settings now stays inside the useful mobile viewport, with every control reachable on smaller screens."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Camp taps now open Repair reliably without the same touch immediately closing the new window.",
+        "Quick Repair now receives its own touch instead of passing it through to the building underneath."
+      ])
+    })
+  ]);
+
   const release0059Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -503,7 +519,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0059",
+    baseVersion: "0.0060",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -516,6 +532,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0060",
+      date: "2026-08-12",
+      categories: release0060Categories
+    }),
     Object.freeze({
       version: "0.0059",
       date: "2026-08-11",

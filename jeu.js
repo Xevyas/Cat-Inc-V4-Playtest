@@ -2345,6 +2345,34 @@ const dialoguesController = globalThis.CatInc.dialogs.createController({
   getComputedStyle: function(element) { return getComputedStyle(element); }
 });
 
+if (globalThis.CatInc.touchActivationController) {
+  globalThis.CatInc.touchActivationController.registerSemanticAction(
+    "settings.open",
+    function(payload, token) { ouvrirModalSettings(token); }
+  );
+  globalThis.CatInc.touchActivationController.registerSemanticAction(
+    "camp.repair.open",
+    function(payload, token) {
+      if (!payload) return false;
+      return ouvrirModalReparationCamp(null, payload.buildingId, payload.uid, token);
+    },
+    function(rootElement) {
+      const menu = rootElement && rootElement.closest
+        ? rootElement.closest("#camp-prototype-interaction-menu") : null;
+      const dataset = rootElement && rootElement.dataset || {};
+      return {
+        buildingId: dataset.campRepairBuildingId || dataset.campType
+          || (menu && menu.dataset.campBuildingId) || null,
+        uid: dataset.campRepairUid || dataset.campUid
+          || (menu && menu.dataset.campUid) || null
+      };
+    }
+  );
+}
+const settingsOpener = typeof document !== "undefined" && document
+  ? document.querySelector(".bouton-settings") : null;
+if (settingsOpener) settingsOpener.addEventListener("click", function() { ouvrirModalSettings(); });
+
 const guidanceController = globalThis.CatInc.guidance
   ? globalThis.CatInc.guidance.createController({
       document: document,
@@ -2589,6 +2617,7 @@ function reset() {
 }
 
 function ouvrirModalSettings() {
+  const openerToken = arguments[0] || null;
   document.getElementById("toggle-adjusted-time").checked = etat.afficherTempsAjusteRecrutement;
   const overfoodToggle = document.getElementById("toggle-overfood-warning");
   if (overfoodToggle) overfoodToggle.checked = etat.avertirSurplusNourriture !== false;
@@ -2608,7 +2637,8 @@ function ouvrirModalSettings() {
     dismissible: true,
     fermer: fermerModalSettings,
     focusSelector: ".explo-modal-close",
-    returnFocusSelector: ".bouton-settings"
+    returnFocusSelector: ".bouton-settings",
+    openerToken: openerToken || null
   });
   if (typeof mobileInputDiagnostic !== "undefined") {
     mobileInputDiagnostic.recordOutcome("settings.open", null);
@@ -16082,6 +16112,9 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   } else {
     menu.innerHTML = '<button type="button" class="camp-prototype-repair-action" role="menuitem"'
       + ' data-camp-menu-action="repair"'
+      + ' data-input-action="camp.repair.open"'
+      + ' data-camp-repair-building-id="' + echapperAttributHtml(type.id) + '"'
+      + ' data-camp-repair-uid="' + echapperAttributHtml(item.uid) + '"'
       + ' aria-label="Repair ' + echapperAttributHtml(type.label)
         + '"><img src="img/interface/Repair_Final.png?v=0.0004" alt=""></button>';
   }
@@ -16118,6 +16151,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
 }
 
 function activerItemCampPrototype(uid) {
+  const openerToken = arguments[1] || null;
   campPanelDiagnostic.recordCall("activerItemCampPrototype", { uid: uid || null });
   if (typeof mobileInputDiagnostic !== "undefined") {
     mobileInputDiagnostic.recordOutcome("camp.item-activation", { uid: uid || null });
@@ -16157,7 +16191,7 @@ function activerItemCampPrototype(uid) {
     && !batimentCampRepare(type.id)
     && !reparationCampPourBatiment(type.id)
   ) {
-    ouvrirModalReparationCamp(null, type.id, item.uid);
+    ouvrirModalReparationCamp(null, type.id, item.uid, openerToken);
     return;
   }
   if (type && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id]) {
@@ -17497,6 +17531,7 @@ function selectionnerKittyAmeliorationCamp(kittyIndex) {
 }
 
 function ouvrirModalReparationCamp(event, buildingIdForce, uidForce) {
+  const openerToken = arguments[3] || null;
   if (event) {
     event.preventDefault();
     event.stopPropagation();
@@ -17533,7 +17568,8 @@ function ouvrirModalReparationCamp(event, buildingIdForce, uidForce) {
     dismissible: true,
     fermer: fermerModalReparationCamp,
     focusSelector: ".camp-task-slot",
-    returnFocusSelector: '[data-camp-uid="' + uid + '"]'
+    returnFocusSelector: '[data-camp-uid="' + uid + '"]',
+    openerToken: openerToken || null
   });
   ancrerCampTaskPanel();
   return true;
@@ -19446,6 +19482,9 @@ function rendreItemsCampPrototype(presencesCamp) {
       repairQuick.type = "button";
       repairQuick.className = "camp-prototype-repair-quick";
       repairQuick.dataset.campRepairQuick = type.id;
+      repairQuick.dataset.inputAction = "camp.repair.open";
+      repairQuick.dataset.campRepairBuildingId = type.id;
+      repairQuick.dataset.campRepairUid = item.uid;
       repairQuick.setAttribute("aria-label", "Repair " + type.label);
       repairQuick.title = "Repair " + type.label;
       repairQuick.style.left = ((xAffiche + dimensions.width / 2)
@@ -20919,6 +20958,32 @@ function gesteActivationTouchCampPrototypeValide(event, uid) {
 
 function activerItemCampPrototypeAuPointerUp(interaction, event) {
   armerGesteActivationItemCampPrototype(interaction, event, true);
+  const item = typeof itemCampPrototype === "function" ? itemCampPrototype(interaction.uid) : null;
+  const type = item && typeof typeCampPrototype === "function" ? typeCampPrototype(item.type) : null;
+  const ouvreReparation = Boolean(
+    item
+    && type
+    && CAMP_BUILDING_REPAIR_DURATIONS[type.id]
+    && reparationCampDebloquee(type.id)
+    && !batimentCampRepare(type.id)
+    && !reparationCampPourBatiment(type.id)
+  );
+  if (
+    ouvreReparation
+    && event.pointerType === "touch"
+    && typeof CatInc !== "undefined"
+    && CatInc.touchActivationController
+    && CatInc.touchActivationController.dispatchPointerSemanticAction(
+      event,
+      "camp.repair.open",
+      { buildingId: type.id, uid: interaction.uid }
+    )
+  ) {
+    campPrototypeGesteActivationItem = null;
+    campPrototypeActivationApresPropagation = null;
+    event.preventDefault();
+    return;
+  }
   if (
     event.pointerType === "touch"
     && typeof CatInc !== "undefined"
@@ -22528,3 +22593,59 @@ if (typeof document.addEventListener === "function") {
 // through Settings.
 document.addEventListener("pointerdown", demarrerMusiqueAmbiante, { passive: true });
 document.addEventListener("keydown", demarrerMusiqueAmbiante, { passive: true });
+
+if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
+  const preparerSurfaceInputOverlayTest = function() {
+    let top = dialoguesController.getTopmost();
+    while (top) {
+      fermerDialogueModal(top);
+      top = dialoguesController.getTopmost();
+    }
+    masquerCiblePrologue();
+    definirModePrologue(false);
+    rendu();
+    return true;
+  };
+  const cibleInputOverlayTestVisible = function(selector) {
+    const element = document.querySelector(selector);
+    if (!element) return false;
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return rect.width > 0 && rect.height > 0
+      && style.display !== "none" && style.visibility !== "hidden";
+  };
+  globalThis.__catIncInputOverlayTest = Object.freeze({
+    resetOverlays: function() {
+      preparerSurfaceInputOverlayTest();
+      return Object.freeze({
+        prologueActive: document.body.classList.contains("prologue-actif"),
+        settingsVisible: cibleInputOverlayTestVisible(".bouton-settings")
+      });
+    },
+    prepareRepair: function(surface) {
+      preparerSurfaceInputOverlayTest();
+      etat.chatons = 3;
+      etat.kittiesData = [
+        { nom: "Bernardo", metier: "gang-leader", niveau: 0, tier: 1, visage: CAT_FACES.bernardo },
+        { nom: "Pepper", metier: null, niveau: 0, tier: 1, visage: CAT_FACES_ALEATOIRES[0] },
+        { nom: "Soot", metier: null, niveau: 0, tier: 1, visage: CAT_FACES_ALEATOIRES[1] }
+      ];
+      etat.storiesVues = ["introVue", "story3Vue", "story3TransitionVue"];
+      progressionCamp().introCompleted = true;
+      etat.camp.repairedBuildingIds = [];
+      etat.camp.repairs = {};
+      changerOnglet("camp", { semanticCommit: false });
+      renduCampPrototype();
+      const sawmill = campPrototypeLayout.find(function(item) { return item.type === "sawmill"; });
+      if (sawmill) centrerCameraCampPrototype(sawmill.x + 1, sawmill.y + 0.5);
+      if (surface === "compact" && sawmill) ouvrirMenuInteractionCampPrototype(sawmill.uid);
+      return Object.freeze({
+        uid: sawmill && sawmill.uid || null,
+        prologueActive: document.body.classList.contains("prologue-actif"),
+        main: cibleInputOverlayTestVisible('#camp-prototype-items [data-camp-type="sawmill"]'),
+        quick: cibleInputOverlayTestVisible('#camp-prototype-items [data-camp-repair-quick="sawmill"]'),
+        compact: cibleInputOverlayTestVisible('#camp-prototype-interaction-menu [data-camp-menu-action="repair"]')
+      });
+    }
+  });
+}
