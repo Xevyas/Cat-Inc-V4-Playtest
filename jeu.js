@@ -6216,7 +6216,6 @@ function rendu() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorations(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
-  essayerAfficherNotesVersionEnAttente();
 }
 
 // The simulation clock stays at 100 ms, but it must not rebuild every active
@@ -6260,7 +6259,6 @@ function renduDynamique() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
-  essayerAfficherNotesVersionEnAttente();
 }
 
 let renduOngletPlanifie = false;
@@ -10843,50 +10841,6 @@ function rechargerPourMiseAJourAfk() {
 let releaseNotesTimer = null;
 let releaseNotesDeadline = 0;
 let releaseNotesSuite = null;
-let releaseNotesAutomatiquesEnAttente = false;
-
-function releaseNotesNecessaires() {
-  return etat.releaseNotesSeenVersion !== GAME_RELEASE_VERSION;
-}
-
-function releaseNotesAutomatiquesPlaytestGitHub() {
-  if (typeof location === "undefined") return false;
-  const hostname = String(location.hostname || "").toLowerCase();
-  const pathname = String(location.pathname || "").toLowerCase();
-  return hostname === "xevyas.github.io"
-    && /^\/cat-inc-v4-playtest(?:\/|$)/.test(pathname);
-}
-
-function releaseNotesAffichablesAuDemarrage(partieExistante) {
-  return releaseNotesAutomatiquesPlaytestGitHub()
-    && !!partieExistante
-    && campDebloque()
-    && releaseNotesNecessaires();
-}
-
-function releaseNotesInteractionGuideeActive() {
-  return (typeof campTutorialActif === "function" && campTutorialActif())
-    || (typeof campDialogueSawmillTutorielEnAttente === "function" && campDialogueSawmillTutorielEnAttente())
-    || (typeof firstBoxTutorialActif === "function" && firstBoxTutorialActif())
-    || (typeof firstGroundRewardTutorialActif === "function" && firstGroundRewardTutorialActif())
-    || (typeof firstGroundRewardCollectionActif === "function" && firstGroundRewardCollectionActif());
-}
-
-function releaseNotesPeuventSafficherMaintenant() {
-  return !releaseNotesInteractionGuideeActive() && !dialogueOuvertAuPremierPlan();
-}
-
-function essayerAfficherNotesVersionEnAttente() {
-  if (!releaseNotesAutomatiquesEnAttente) return false;
-  if (!releaseNotesNecessaires()) {
-    releaseNotesAutomatiquesEnAttente = false;
-    return false;
-  }
-  if (!releaseNotesPeuventSafficherMaintenant()) return false;
-  releaseNotesAutomatiquesEnAttente = false;
-  afficherNotesVersion();
-  return true;
-}
 
 function mettreAJourCompteAReboursNotes() {
   const bouton = document.getElementById("release-notes-close");
@@ -12255,18 +12209,34 @@ function afficherModal(id, options) {
   ouvrirDialogueModal(el, { focusSelector: ".intro-boite" });
 }
 
-document.addEventListener("click", function(event) {
-  const action = event.target && event.target.closest
-    ? event.target.closest('.ecran-intro[data-story-replay-depuis-logs="true"] .bouton-intro')
-    : null;
-  if (!action) return;
-  const modal = action.closest('.ecran-intro[data-story-replay-depuis-logs="true"]');
-  if (!modal) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
+function terminerStoryReplayDepuisLogs(modal) {
+  if (!modal || !modal.dataset || modal.dataset.storyReplayDepuisLogs !== "true") return false;
   fermerDialogueModal(modal);
   delete modal.dataset.storyReplayDepuisLogs;
-}, true);
+  masquerCiblePrologue();
+  definirModePrologue(false);
+  const vueStories = document.getElementById("logs-vue-stories");
+  if (!vueStories || vueStories.getAttribute("aria-hidden") !== "false") {
+    changerSousOngletLogs("stories");
+    const ongletStories = document.getElementById("logs-subtab-stories");
+    if (ongletStories && typeof ongletStories.focus === "function") ongletStories.focus();
+  }
+  return true;
+}
+
+function gererActionStoryReplayDepuisLogs(event) {
+  const action = event.target && event.target.closest
+    ? event.target.closest(".bouton-intro")
+    : null;
+  if (!action) return false;
+  const modal = action.closest('.ecran-intro[data-story-replay-depuis-logs="true"]');
+  if (!modal) return false;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  return terminerStoryReplayDepuisLogs(modal);
+}
+
+document.addEventListener("click", gererActionStoryReplayDepuisLogs, true);
 
 document.addEventListener("click", function(event) {
   const modal = event.target && event.target.closest
@@ -22501,18 +22471,15 @@ function lancerOuvertureInitiale() {
   planifierOiseau();
 }
 
-if (redemarrageMajeurRequis) {
-  ouvrirDialogueModal("save-upgrade-modal", { focusSelector: "#save-upgrade-restart" });
-} else if (releaseNotesAffichablesAuDemarrage(partieExistante)) {
-  if (releaseNotesPeuventSafficherMaintenant()) {
-    afficherNotesVersion(lancerOuvertureInitiale);
-  } else {
-    releaseNotesAutomatiquesEnAttente = true;
-    lancerOuvertureInitiale();
+function lancerDemarrageApplication() {
+  if (redemarrageMajeurRequis) {
+    ouvrirDialogueModal("save-upgrade-modal", { focusSelector: "#save-upgrade-restart" });
+    return;
   }
-} else {
   lancerOuvertureInitiale();
 }
+
+lancerDemarrageApplication();
 
 if (window.matchMedia("(max-width: 768px)").matches) {
   definirObjectifsReduits(true);
