@@ -448,6 +448,21 @@
     })
   ]);
 
+  const release0062Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "The Camp now includes the final Studio-approved Catchen Tier 2, Market Stall and Operation Table artwork and placement data."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "Approved Cat portrait expressions are now carried into releases automatically from their current live portrait rig."
+      ])
+    })
+  ]);
+
   const release0061Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -529,7 +544,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0061",
+    baseVersion: "0.0062",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -542,6 +557,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0062",
+      date: "2026-08-14",
+      categories: release0062Categories
+    }),
     Object.freeze({
       version: "0.0061",
       date: "2026-08-12",

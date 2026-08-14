@@ -3694,6 +3694,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 
 /* ── Base Camp placement prototype (development mode only) ── */
 body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
+body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
 
 .camp-tab-icon {
   position: relative;
@@ -3833,6 +3834,7 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
   z-index: 4;
   display: inline-flex;
 }
+.camp-appeal-wrap[hidden] { display: none; }
 .camp-appeal-details {
   position: fixed;
   left: 50%;
@@ -3856,6 +3858,24 @@ body:not([data-dev-mode="true"]) .camp-dev-only { display: none !important; }
 .camp-appeal-details > strong {
   color: #765716;
   font-size: .82rem;
+}
+.camp-appeal-speed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .72rem;
+}
+.camp-appeal-speed em {
+  color: #80601f;
+  font-style: normal;
+  font-weight: 900;
+}
+.camp-appeal-rule {
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: rgba(128, 96, 31, .08);
+  line-height: 1.35;
 }
 .camp-appeal-detail-section,
 .camp-appeal-detail-section > span {

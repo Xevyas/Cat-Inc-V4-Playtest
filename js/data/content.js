@@ -521,11 +521,11 @@ const SPHERE_GRIDS = {
       // Yellow branch: recruitment
       { id: 'gl-rec',   x: 185, y: 290, r: 30, couleur: '#d4a820',
         nom: 'CAMP APPEAL I',
-        desc: "Bernardo's reputation adds 3 Camp Appeal.",
+        desc: "Legacy save-compatible perk. It does not modify the current Camp Appeal score.",
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'gl-rec-2', x: 75, y: 290, r: 30, couleur: '#d4a820',
         nom: 'CAMP APPEAL II',
-        desc: "Bernardo's reputation adds 3 more Camp Appeal, for a total of 6.",
+        desc: "Legacy save-compatible perk. It does not modify the current Camp Appeal score.",
         etat: 'locked', cout: { cannedCatFood: 2 } },
       // Green branch: Manual Focus
       { id: 'gl-mini',  x: 400, y: 290, r: 30, couleur: '#85d46e',

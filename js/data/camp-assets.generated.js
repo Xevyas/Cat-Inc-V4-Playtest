@@ -659,7 +659,7 @@
           }
         },
         "2": {
-          "liveRevision": null,
+          "liveRevision": 6,
           "revisions": {
             "1": {
               "assetId": "catchen",
@@ -677,6 +677,83 @@
                 "right": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/right.png",
                 "up": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/up.png",
                 "left": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 14,
+                  "top": 0,
+                  "right": 774,
+                  "bottom": 270
+                },
+                "right": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 19,
+                  "top": 127,
+                  "right": 251,
+                  "bottom": 765
+                },
+                "up": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 40,
+                  "top": 22,
+                  "right": 797,
+                  "bottom": 270
+                },
+                "left": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 27,
+                  "top": 88,
+                  "right": 242,
+                  "bottom": 789
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 2,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 3
+                  }
+                ]
+              }
+            },
+            "6": {
+              "assetId": "catchen",
+              "runtimeId": "catchen",
+              "name": "Catchen",
+              "category": "production-building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 6,
+              "status": "live",
+              "width": 3,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/down.png",
+                "right": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/right.png",
+                "up": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/up.png",
+                "left": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -1038,151 +1115,151 @@
                   "down": {
                     "auto": "right",
                     "left": {
-                      "x": 0.6956,
-                      "y": 0.2543,
-                      "rotation": -129.0,
+                      "x": 0.5,
+                      "y": 0.2336,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.626356,
-                          "y": 0.321269
+                          "x": 0.56591,
+                          "y": 0.188019
                         },
                         {
-                          "x": 0.621909,
-                          "y": 0.17152
+                          "x": 0.43409,
+                          "y": 0.188019
                         },
                         {
-                          "x": 0.76324,
-                          "y": 0.188819
+                          "x": 0.435649,
+                          "y": 0.278129
                         },
                         {
-                          "x": 0.769015,
-                          "y": 0.336633
+                          "x": 0.564351,
+                          "y": 0.278129
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     },
                     "right": {
-                      "x": 0.68,
-                      "y": 0.36,
-                      "rotation": -25.0,
+                      "x": 0.73,
+                      "y": 0.74,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.641262,
-                          "y": 0.278386
+                          "x": 0.66012,
+                          "y": 0.696318
                         },
                         {
-                          "x": 0.773641,
-                          "y": 0.316316
+                          "x": 0.806051,
+                          "y": 0.696318
                         },
                         {
-                          "x": 0.717773,
-                          "y": 0.439582
+                          "x": 0.798054,
+                          "y": 0.782541
                         },
                         {
-                          "x": 0.586664,
-                          "y": 0.403542
+                          "x": 0.655936,
+                          "y": 0.782541
                         }
                       ],
                       "visible": true
                     }
                   },
                   "right": {
-                    "auto": "right",
+                    "auto": "left",
                     "left": {
-                      "x": 0.4303,
-                      "y": 0.1652,
-                      "rotation": -129.0,
+                      "x": 0.1748,
+                      "y": 0.4694,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.513877,
-                          "y": 0.21969
+                          "x": 0.174156,
+                          "y": 0.372751
                         },
                         {
-                          "x": 0.371383,
-                          "y": 0.176231
+                          "x": 0.167118,
+                          "y": 0.477259
                         },
                         {
-                          "x": 0.348339,
-                          "y": 0.111828
+                          "x": 0.175472,
+                          "y": 0.56557
                         },
                         {
-                          "x": 0.486718,
-                          "y": 0.154725
+                          "x": 0.182165,
+                          "y": 0.461809
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     },
                     "right": {
-                      "x": 0.5773,
-                      "y": 0.1736,
-                      "rotation": -25.0,
+                      "x": 0.8137,
+                      "y": 0.3184,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.55287,
-                          "y": 0.139339
+                          "x": 0.820844,
+                          "y": 0.322545
                         },
                         {
-                          "x": 0.54914,
-                          "y": 0.087842
+                          "x": 0.814281,
+                          "y": 0.2246
                         },
                         {
-                          "x": 0.600654,
-                          "y": 0.206452
+                          "x": 0.806802,
+                          "y": 0.314357
                         },
                         {
-                          "x": 0.605891,
-                          "y": 0.26081
+                          "x": 0.813054,
+                          "y": 0.411752
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     }
                   },
                   "up": {
                     "auto": "left",
                     "left": {
-                      "x": 0.3,
-                      "y": 0.36,
-                      "rotation": -129.0,
+                      "x": 0.5,
+                      "y": 0.73,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.374194,
-                          "y": 0.30042
+                          "x": 0.427034,
+                          "y": 0.686184
                         },
                         {
-                          "x": 0.373059,
-                          "y": 0.36294
+                          "x": 0.572966,
+                          "y": 0.686184
                         },
                         {
-                          "x": 0.22361,
-                          "y": 0.421343
+                          "x": 0.571059,
+                          "y": 0.772671
                         },
                         {
-                          "x": 0.229834,
-                          "y": 0.357176
+                          "x": 0.428941,
+                          "y": 0.772671
                         }
                       ],
                       "visible": true
                     },
                     "right": {
-                      "x": 0.3244,
-                      "y": 0.2432,
-                      "rotation": -25.0,
+                      "x": 0.2919,
+                      "y": 0.244,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.361072,
-                          "y": 0.19998
+                          "x": 0.35532,
+                          "y": 0.198554
                         },
                         {
-                          "x": 0.230648,
-                          "y": 0.241369
+                          "x": 0.223461,
+                          "y": 0.198554
                         },
                         {
-                          "x": 0.289103,
-                          "y": 0.284696
+                          "x": 0.230006,
+                          "y": 0.28844
                         },
                         {
-                          "x": 0.416158,
-                          "y": 0.244991
+                          "x": 0.358745,
+                          "y": 0.28844
                         }
                       ],
                       "visible": false
@@ -1191,59 +1268,59 @@
                   "left": {
                     "auto": "left",
                     "left": {
-                      "x": 0.5741,
-                      "y": 0.4567,
-                      "rotation": -129.0,
+                      "x": 0.8252,
+                      "y": 0.4694,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.485573,
-                          "y": 0.405568
+                          "x": 0.832882,
+                          "y": 0.477259
                         },
                         {
-                          "x": 0.633649,
-                          "y": 0.357843
+                          "x": 0.825844,
+                          "y": 0.372751
                         },
                         {
-                          "x": 0.664827,
-                          "y": 0.509198
+                          "x": 0.817835,
+                          "y": 0.461809
                         },
                         {
-                          "x": 0.514435,
-                          "y": 0.555717
+                          "x": 0.824528,
+                          "y": 0.56557
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     },
                     "right": {
-                      "x": 0.4184,
-                      "y": 0.4353,
-                      "rotation": -25.0,
+                      "x": 0.1645,
+                      "y": 0.6521,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.444794,
-                          "y": 0.34277
+                          "x": 0.163746,
+                          "y": 0.552505
                         },
                         {
-                          "x": 0.446564,
-                          "y": 0.485922
+                          "x": 0.156223,
+                          "y": 0.664787
                         },
                         {
-                          "x": 0.392464,
-                          "y": 0.5259
+                          "x": 0.165152,
+                          "y": 0.751315
                         },
                         {
-                          "x": 0.391287,
-                          "y": 0.386755
+                          "x": 0.172294,
+                          "y": 0.640042
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     }
                   }
                 },
                 "anchorReview": true,
                 "required": false,
                 "baseSticker": false,
-                "defaultScale": 2.0,
+                "defaultScale": 1.46,
                 "defaultAnchorChoice": "auto",
                 "defaultStickerId": "jobs-briefcase-paw",
                 "defaultColorId": "kraft"
@@ -1435,6 +1512,239 @@
         }
       }
     },
+    "marketStall": {
+      "assetId": "market-stall",
+      "runtimeId": "marketStall",
+      "name": "Market Stall",
+      "category": "building",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 4,
+          "revisions": {
+            "1": {
+              "assetId": "market-stall",
+              "runtimeId": "marketStall",
+              "name": "Market Stall",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 44,
+                  "right": 556,
+                  "bottom": 552
+                },
+                "right": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 116,
+                  "top": 20,
+                  "right": 538,
+                  "bottom": 578
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 41,
+                  "right": 556,
+                  "bottom": 566
+                },
+                "left": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 104,
+                  "top": 19,
+                  "right": 526,
+                  "bottom": 578
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2
+                      },
+                      {
+                        "x": 1,
+                        "y": 2
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "2": {
+              "assetId": "market-stall",
+              "runtimeId": "marketStall",
+              "name": "Market Stall",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 44,
+                  "right": 556,
+                  "bottom": 575
+                },
+                "right": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 116,
+                  "top": 20,
+                  "right": 538,
+                  "bottom": 578
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 41,
+                  "right": 556,
+                  "bottom": 566
+                },
+                "left": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 104,
+                  "top": 19,
+                  "right": 526,
+                  "bottom": 578
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2
+                      },
+                      {
+                        "x": 1,
+                        "y": 2
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "4": {
+              "assetId": "market-stall",
+              "runtimeId": "marketStall",
+              "name": "Market Stall",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/down.png",
+                "right": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/right.png",
+                "up": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/up.png",
+                "left": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 44,
+                  "right": 556,
+                  "bottom": 575
+                },
+                "right": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 116,
+                  "top": 20,
+                  "right": 538,
+                  "bottom": 578
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 41,
+                  "right": 556,
+                  "bottom": 566
+                },
+                "left": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 104,
+                  "top": 19,
+                  "right": 526,
+                  "bottom": 578
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2
+                      },
+                      {
+                        "x": 1,
+                        "y": 2
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "operationTable": {
       "assetId": "operation-table",
       "runtimeId": "operationTable",
@@ -1443,7 +1753,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 8,
           "revisions": {
             "1": {
               "assetId": "operation-table",
@@ -1453,14 +1763,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -1494,6 +1804,298 @@
                   "top": 97,
                   "right": 281,
                   "bottom": 566
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "4": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "5": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "6": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 6,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "8": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 8,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/down.png",
+                "right": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/right.png",
+                "up": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/up.png",
+                "left": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
                 }
               },
               "access": {
@@ -1822,8 +2424,8 @@
               "tier": 1,
               "revision": 2,
               "status": "retired",
-              "width": 3,
-              "height": 2,
+              "width": 2,
+              "height": 1,
               "sprites": {
                 "down": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/down.png",
                 "right": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/right.png",
@@ -1863,6 +2465,27 @@
                   "right": 331,
                   "bottom": 518
                 }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "any-cell-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             },
             "3": {
@@ -3862,7 +4485,7 @@
           }
         },
         "2": {
-          "liveRevision": null,
+          "liveRevision": 6,
           "revisions": {
             "1": {
               "assetId": "catchen",
@@ -3880,6 +4503,83 @@
                 "right": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/right.png",
                 "up": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/up.png",
                 "left": "tools/camp_asset_studio/library/assets/catchen/tier-2/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 14,
+                  "top": 0,
+                  "right": 774,
+                  "bottom": 270
+                },
+                "right": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 19,
+                  "top": 127,
+                  "right": 251,
+                  "bottom": 765
+                },
+                "up": {
+                  "canvasWidth": 810,
+                  "canvasHeight": 270,
+                  "left": 40,
+                  "top": 22,
+                  "right": 797,
+                  "bottom": 270
+                },
+                "left": {
+                  "canvasWidth": 270,
+                  "canvasHeight": 810,
+                  "left": 27,
+                  "top": 88,
+                  "right": 242,
+                  "bottom": 789
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 2,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 3
+                  }
+                ]
+              }
+            },
+            "6": {
+              "assetId": "catchen",
+              "runtimeId": "catchen",
+              "name": "Catchen",
+              "category": "production-building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 6,
+              "status": "live",
+              "width": 3,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/down.png",
+                "right": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/right.png",
+                "up": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/up.png",
+                "left": "img/Buildings/Camp Runtime/catchen/tier-2/revision-6/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -4307,151 +5007,151 @@
                   "down": {
                     "auto": "right",
                     "left": {
-                      "x": 0.6956,
-                      "y": 0.2543,
-                      "rotation": -129.0,
+                      "x": 0.5,
+                      "y": 0.2336,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.626356,
-                          "y": 0.321269
+                          "x": 0.56591,
+                          "y": 0.188019
                         },
                         {
-                          "x": 0.621909,
-                          "y": 0.17152
+                          "x": 0.43409,
+                          "y": 0.188019
                         },
                         {
-                          "x": 0.76324,
-                          "y": 0.188819
+                          "x": 0.435649,
+                          "y": 0.278129
                         },
                         {
-                          "x": 0.769015,
-                          "y": 0.336633
+                          "x": 0.564351,
+                          "y": 0.278129
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     },
                     "right": {
-                      "x": 0.68,
-                      "y": 0.36,
-                      "rotation": -25.0,
+                      "x": 0.73,
+                      "y": 0.74,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.641262,
-                          "y": 0.278386
+                          "x": 0.66012,
+                          "y": 0.696318
                         },
                         {
-                          "x": 0.773641,
-                          "y": 0.316316
+                          "x": 0.806051,
+                          "y": 0.696318
                         },
                         {
-                          "x": 0.717773,
-                          "y": 0.439582
+                          "x": 0.798054,
+                          "y": 0.782541
                         },
                         {
-                          "x": 0.586664,
-                          "y": 0.403542
+                          "x": 0.655936,
+                          "y": 0.782541
                         }
                       ],
                       "visible": true
                     }
                   },
                   "right": {
-                    "auto": "right",
+                    "auto": "left",
                     "left": {
-                      "x": 0.4303,
-                      "y": 0.1652,
-                      "rotation": -129.0,
+                      "x": 0.1748,
+                      "y": 0.4694,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.513877,
-                          "y": 0.21969
+                          "x": 0.174156,
+                          "y": 0.372751
                         },
                         {
-                          "x": 0.371383,
-                          "y": 0.176231
+                          "x": 0.167118,
+                          "y": 0.477259
                         },
                         {
-                          "x": 0.348339,
-                          "y": 0.111828
+                          "x": 0.175472,
+                          "y": 0.56557
                         },
                         {
-                          "x": 0.486718,
-                          "y": 0.154725
+                          "x": 0.182165,
+                          "y": 0.461809
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     },
                     "right": {
-                      "x": 0.5773,
-                      "y": 0.1736,
-                      "rotation": -25.0,
+                      "x": 0.8137,
+                      "y": 0.3184,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.55287,
-                          "y": 0.139339
+                          "x": 0.820844,
+                          "y": 0.322545
                         },
                         {
-                          "x": 0.54914,
-                          "y": 0.087842
+                          "x": 0.814281,
+                          "y": 0.2246
                         },
                         {
-                          "x": 0.600654,
-                          "y": 0.206452
+                          "x": 0.806802,
+                          "y": 0.314357
                         },
                         {
-                          "x": 0.605891,
-                          "y": 0.26081
+                          "x": 0.813054,
+                          "y": 0.411752
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     }
                   },
                   "up": {
                     "auto": "left",
                     "left": {
-                      "x": 0.3,
-                      "y": 0.36,
-                      "rotation": -129.0,
+                      "x": 0.5,
+                      "y": 0.73,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.374194,
-                          "y": 0.30042
+                          "x": 0.427034,
+                          "y": 0.686184
                         },
                         {
-                          "x": 0.373059,
-                          "y": 0.36294
+                          "x": 0.572966,
+                          "y": 0.686184
                         },
                         {
-                          "x": 0.22361,
-                          "y": 0.421343
+                          "x": 0.571059,
+                          "y": 0.772671
                         },
                         {
-                          "x": 0.229834,
-                          "y": 0.357176
+                          "x": 0.428941,
+                          "y": 0.772671
                         }
                       ],
                       "visible": true
                     },
                     "right": {
-                      "x": 0.3244,
-                      "y": 0.2432,
-                      "rotation": -25.0,
+                      "x": 0.2919,
+                      "y": 0.244,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.361072,
-                          "y": 0.19998
+                          "x": 0.35532,
+                          "y": 0.198554
                         },
                         {
-                          "x": 0.230648,
-                          "y": 0.241369
+                          "x": 0.223461,
+                          "y": 0.198554
                         },
                         {
-                          "x": 0.289103,
-                          "y": 0.284696
+                          "x": 0.230006,
+                          "y": 0.28844
                         },
                         {
-                          "x": 0.416158,
-                          "y": 0.244991
+                          "x": 0.358745,
+                          "y": 0.28844
                         }
                       ],
                       "visible": false
@@ -4460,59 +5160,59 @@
                   "left": {
                     "auto": "left",
                     "left": {
-                      "x": 0.5741,
-                      "y": 0.4567,
-                      "rotation": -129.0,
+                      "x": 0.8252,
+                      "y": 0.4694,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.485573,
-                          "y": 0.405568
+                          "x": 0.832882,
+                          "y": 0.477259
                         },
                         {
-                          "x": 0.633649,
-                          "y": 0.357843
+                          "x": 0.825844,
+                          "y": 0.372751
                         },
                         {
-                          "x": 0.664827,
-                          "y": 0.509198
+                          "x": 0.817835,
+                          "y": 0.461809
                         },
                         {
-                          "x": 0.514435,
-                          "y": 0.555717
+                          "x": 0.824528,
+                          "y": 0.56557
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     },
                     "right": {
-                      "x": 0.4184,
-                      "y": 0.4353,
-                      "rotation": -25.0,
+                      "x": 0.1645,
+                      "y": 0.6521,
+                      "rotation": 0.0,
                       "quad": [
                         {
-                          "x": 0.444794,
-                          "y": 0.34277
+                          "x": 0.163746,
+                          "y": 0.552505
                         },
                         {
-                          "x": 0.446564,
-                          "y": 0.485922
+                          "x": 0.156223,
+                          "y": 0.664787
                         },
                         {
-                          "x": 0.392464,
-                          "y": 0.5259
+                          "x": 0.165152,
+                          "y": 0.751315
                         },
                         {
-                          "x": 0.391287,
-                          "y": 0.386755
+                          "x": 0.172294,
+                          "y": 0.640042
                         }
                       ],
-                      "visible": true
+                      "visible": false
                     }
                   }
                 },
                 "anchorReview": true,
                 "required": false,
                 "baseSticker": false,
-                "defaultScale": 2.0,
+                "defaultScale": 1.46,
                 "defaultAnchorChoice": "auto",
                 "defaultStickerId": "jobs-briefcase-paw",
                 "defaultColorId": "kraft"
@@ -4704,6 +5404,239 @@
         }
       }
     },
+    "marketStall": {
+      "assetId": "market-stall",
+      "runtimeId": "marketStall",
+      "name": "Market Stall",
+      "category": "building",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 4,
+          "revisions": {
+            "1": {
+              "assetId": "market-stall",
+              "runtimeId": "marketStall",
+              "name": "Market Stall",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 44,
+                  "right": 556,
+                  "bottom": 552
+                },
+                "right": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 116,
+                  "top": 20,
+                  "right": 538,
+                  "bottom": 578
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 41,
+                  "right": 556,
+                  "bottom": 566
+                },
+                "left": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 104,
+                  "top": 19,
+                  "right": 526,
+                  "bottom": 578
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2
+                      },
+                      {
+                        "x": 1,
+                        "y": 2
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "2": {
+              "assetId": "market-stall",
+              "runtimeId": "marketStall",
+              "name": "Market Stall",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/market-stall/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 44,
+                  "right": 556,
+                  "bottom": 575
+                },
+                "right": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 116,
+                  "top": 20,
+                  "right": 538,
+                  "bottom": 578
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 41,
+                  "right": 556,
+                  "bottom": 566
+                },
+                "left": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 104,
+                  "top": 19,
+                  "right": 526,
+                  "bottom": 578
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2
+                      },
+                      {
+                        "x": 1,
+                        "y": 2
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "4": {
+              "assetId": "market-stall",
+              "runtimeId": "marketStall",
+              "name": "Market Stall",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/down.png",
+                "right": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/right.png",
+                "up": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/up.png",
+                "left": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 44,
+                  "right": 556,
+                  "bottom": 575
+                },
+                "right": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 116,
+                  "top": 20,
+                  "right": 538,
+                  "bottom": 578
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 85,
+                  "top": 41,
+                  "right": 556,
+                  "bottom": 566
+                },
+                "left": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 640,
+                  "left": 104,
+                  "top": 19,
+                  "right": 526,
+                  "bottom": 578
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2
+                      },
+                      {
+                        "x": 1,
+                        "y": 2
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "operationTable": {
       "assetId": "operation-table",
       "runtimeId": "operationTable",
@@ -4712,7 +5645,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 8,
           "revisions": {
             "1": {
               "assetId": "operation-table",
@@ -4722,14 +5655,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-1/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -4763,6 +5696,298 @@
                   "top": 97,
                   "right": 281,
                   "bottom": 566
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "4": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "5": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "6": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 6,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/down.png",
+                "right": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/right.png",
+                "up": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/up.png",
+                "left": "tools/camp_asset_studio/library/assets/operation-table/tier-1/revision-6/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 1
+                      },
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 2
+                  }
+                ]
+              }
+            },
+            "8": {
+              "assetId": "operation-table",
+              "runtimeId": "operationTable",
+              "name": "Operation Table",
+              "category": "building",
+              "placeable": true,
+              "tier": 1,
+              "revision": 8,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/down.png",
+                "right": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/right.png",
+                "up": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/up.png",
+                "left": "img/Buildings/Camp Runtime/operation-table/tier-1/revision-8/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 61,
+                  "top": 15,
+                  "right": 580,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 320,
+                  "left": 60,
+                  "top": 15,
+                  "right": 579,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 320,
+                  "canvasHeight": 640,
+                  "left": 35,
+                  "top": 81,
+                  "right": 284,
+                  "bottom": 564
                 }
               },
               "access": {
@@ -5091,8 +6316,8 @@
               "tier": 1,
               "revision": 2,
               "status": "retired",
-              "width": 3,
-              "height": 2,
+              "width": 2,
+              "height": 1,
               "sprites": {
                 "down": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/down.png",
                 "right": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/right.png",
@@ -5132,6 +6357,27 @@
                   "right": 331,
                   "bottom": 518
                 }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "any-cell-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      },
+                      {
+                        "x": 1,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             },
             "3": {

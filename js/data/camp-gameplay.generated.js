@@ -50,6 +50,7 @@
         "ranks": 12
       },
       "build": {
+        "entryMode": "build",
         "durationSeconds": 300
       },
       "law": {
@@ -103,6 +104,7 @@
         "upgradeTierAvailableFromRank": 7
       },
       "build": {
+        "entryMode": "build",
         "durationSeconds": 900
       },
       "law": {
@@ -137,6 +139,7 @@
       "upgradeTiers": {},
       "simulation": {},
       "build": {
+        "entryMode": "build",
         "durationSeconds": 60,
         "costs": {
           "cardboardPlanks": 2,
@@ -161,6 +164,7 @@
       "upgradeTiers": {},
       "simulation": {},
       "build": {
+        "entryMode": "build",
         "durationSeconds": 600,
         "costs": {
           "pebbleBricks": 10,
@@ -185,6 +189,7 @@
       "upgradeTiers": {},
       "simulation": {},
       "build": {
+        "entryMode": "build",
         "durationSeconds": 1800,
         "costs": {
           "rockBricks": 10,
@@ -209,6 +214,7 @@
       "upgradeTiers": {},
       "simulation": {},
       "build": {
+        "entryMode": "build",
         "durationSeconds": 3600,
         "costs": {
           "rockBricks": 100,
@@ -293,6 +299,29 @@
         }
       },
       "simulation": {}
+    },
+    "marketStall": {
+      "assetId": "market-stall",
+      "name": "Market Stall",
+      "category": "building",
+      "repeatable": false,
+      "footprint": {
+        "width": 2,
+        "height": 2
+      },
+      "unlock": {
+        "kind": "not-wired"
+      },
+      "effects": {},
+      "upgradeTiers": {},
+      "simulation": {},
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 3600,
+        "costs": {
+          "cardboardPlanks": 20
+        }
+      }
     }
   }
 });

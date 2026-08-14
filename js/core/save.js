@@ -162,7 +162,7 @@ function validerStructureSauvegarde(d) {
     "dernierTimestamp", "chatons", "wood", "woodTotalRecolte", "cardboard", "cardboardTotalRecolte",
     "cardboardPieces", "cardboardPiecesTotalRecolte", "basicWood", "basicWoodTotalRecolte", "catnip",
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
-    "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
+    "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "basicWoodPlanksTotalProduit", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
     "workBoostFinTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
     "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
@@ -287,6 +287,13 @@ function validerStructureSauvegarde(d) {
         && typeof progressionCamp.storageShedUnlocked !== "boolean") {
       return "Invalid Camp storage progression data.";
     }
+    if (progressionCamp.woodCathouseUnlocked !== undefined
+        && typeof progressionCamp.woodCathouseUnlocked !== "boolean") {
+      return "Invalid Wood Cathouse progression data.";
+    }
+    if (["appealUnlocked", "appealIntroSeen", "appealRecruitConfirmationPending"].some(function(cle) {
+      return progressionCamp[cle] !== undefined && typeof progressionCamp[cle] !== "boolean";
+    })) return "Invalid Camp Appeal progression data.";
     if (progressionCamp.workBoostCueDismissed !== undefined
         && typeof progressionCamp.workBoostCueDismissed !== "boolean") {
       return "Invalid Camp Work boost cue data.";
@@ -788,6 +795,7 @@ function analyserSauvegardeBrute(raw) {
     cardboardPlanks:        etat.cardboardPlanks,
     cardboardPlanksTotalProduit: etat.cardboardPlanksTotalProduit,
     basicWoodPlanks:        etat.basicWoodPlanks,
+    basicWoodPlanksTotalProduit: etat.basicWoodPlanksTotalProduit,
     pebbleBricks:           etat.pebbleBricks,
     rockBricks:             etat.rockBricks,
     salads:                 etat.salads,
@@ -922,6 +930,7 @@ function analyserSauvegardeBrute(raw) {
     ? d.cardboardPlanksTotalProduit
     : Math.max(etat.cardboardPlanks, legacyTenPlanks ? 10 : 0);
   etat.basicWoodPlanks        = d.basicWoodPlanks        || 0;
+  etat.basicWoodPlanksTotalProduit = d.basicWoodPlanksTotalProduit || 0;
   etat.pebbleBricks           = d.pebbleBricks           !== undefined ? d.pebbleBricks           : (d.bricks || 0);
   etat.rockBricks             = d.rockBricks             || 0;
   etat.salads                 = d.salads                 || 0;
@@ -1027,6 +1036,16 @@ function analyserSauvegardeBrute(raw) {
     junkClearingUnlocked: progressionSource.junkClearingUnlocked === true,
     operationsTableUnlocked: progressionSource.operationsTableUnlocked === true,
     storageShedUnlocked: progressionSource.storageShedUnlocked === true,
+    // Inventory can come from exploration rewards.  Reconcile only direct
+    // production evidence; older possession/objective state is not sufficient.
+    woodCathouseUnlocked: progressionSource.woodCathouseUnlocked === true
+      || Number(d.basicWoodPlanksTotalProduit) > 0,
+    appealUnlocked: progressionSource.appealUnlocked === true,
+    appealIntroSeen: progressionSource.appealIntroSeen === true
+      && progressionSource.appealUnlocked === true,
+    appealRecruitConfirmationPending: progressionSource.appealRecruitConfirmationPending === true
+      && progressionSource.appealUnlocked !== true
+      && progressionSource.appealIntroSeen !== true,
     workBoostCueDismissed: progressionSource.workBoostCueDismissed === true,
     sawmillTutorialStage: deriverEtapeTutorielSawmill(d, campSource, progressionSource),
     firstBoxTutorialStage: ["place", "assign", "complete"].includes(progressionSource.firstBoxTutorialStage)

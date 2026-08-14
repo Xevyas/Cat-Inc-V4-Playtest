@@ -112,6 +112,25 @@
     </div>
   </div>
 
+  <!-- STORY APPEAL : shown once after the seventh recruit confirmation closes -->
+  <div id="ecran-story-appeal" class="ecran-intro" role="dialog" aria-modal="true" aria-label="Appeal Unlock" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Hmm...</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Getting cats to join us used to be pretty easy.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> A little food, a nice box... and boom. New recruit.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> But lately, they seem a lot harder to impress.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Maybe our glorious headquarters could use a little... improvement.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> If we make the camp nicer, more cats might actually want to live here.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Let's work on our <strong>Appeal</strong>!</p>
+        <p id="story-appeal-unlock-copy" class="intro-ligne intro-miaou">Appeal unlocked!</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Hey, we're not starting from nothing. That big old tree already makes the place pretty cozy.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Now let's see how attractive we can make this camp.</p>
+      </div>
+      <button class="bouton-intro" type="button" onclick="terminerIntroAppeal()">Let's improve the camp!</button>
+    </div>
+  </div>
+
   <!-- MANUAL FOCUS EXPLANATION : shown after the player presses Try -->
   <div id="manual-focus-explainer-modal" class="ecran-intro manual-focus-explainer-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="manual-focus-explainer-title" aria-describedby="manual-focus-explainer-copy" style="display:none">
     <div class="intro-boite manual-focus-explainer-box" role="document" tabindex="-1">
@@ -283,7 +302,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0061 · August 12, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0062 · August 14, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -318,11 +337,8 @@
         <div id="popover-stats-attrapage" class="popover-stats" role="region" aria-label="Recruiting stats" aria-hidden="true" style="display:none">
           <div class="popover-ligne"><span>Next visitor</span><span id="stat-recruit-difficulty"></span></div>
           <div class="popover-ligne"><span>Base arrival time</span><span id="stat-minimum"></span></div>
-          <div class="popover-ligne"><span>Camp Appeal</span><span id="stat-appeal"></span></div>
-          <div id="stat-decorations-row" class="popover-ligne" hidden><span>Decorations</span><span id="stat-decorations"></span></div>
-          <div id="stat-territory-row" class="popover-ligne" hidden><span>Territory influence</span><span id="stat-territory"></span></div>
-          <div class="popover-ligne"><span>Top 3 Cat prestige</span><span id="stat-prestige"></span></div>
-          <div class="popover-ligne"><span>Appeal speed multiplier</span><span id="stat-deficit"></span></div>
+          <div class="popover-ligne appeal-only"><span>Camp Appeal</span><span id="stat-appeal"></span></div>
+          <div class="popover-ligne appeal-only"><span>Appeal speed multiplier</span><span id="stat-deficit"></span></div>
           <div class="popover-ligne"><span>Housing</span><span id="stat-housing"></span></div>
           <div class="popover-ligne"><span>Estimated arrival time</span><span id="stat-raw"></span></div>
           <div class="popover-ligne"><span>Current time remaining</span><span id="stat-adjusted"></span></div>
@@ -383,7 +399,7 @@
           <span class="ressource-valeur" id="val-chatons">0 / 4</span>
         </div>
       </div>
-      <span class="camp-appeal-wrap camp-appeal-wrap-topbar">
+      <span class="camp-appeal-wrap camp-appeal-wrap-topbar" hidden>
         <button id="camp-appeal-summary" class="camp-appeal-summary" type="button" aria-label="Show Camp Appeal details" aria-expanded="false" aria-controls="camp-appeal-details" onclick="toggleDetailsAttractiviteCamp(event)">Appeal 0</button>
         <span id="camp-appeal-details" class="camp-appeal-details" role="region" aria-label="Camp Appeal details" hidden></span>
       </span>
@@ -664,7 +680,7 @@
           <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png" alt="">
           <span>Decorations</span>
         </button>
-        <button type="button" class="camp-dev-only" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
+        <button type="button" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
           <img class="camp-prototype-category-icon-image" src="img/Maps/Camp%20Runtime/Paths/Basic%20Trail_Camp_TopDown_Watercolor_Game_v1.png" alt="">
           <span>Paths</span>
         </button>
@@ -970,7 +986,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0061</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0062</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1246,16 +1262,16 @@
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0002"></script>
   <script src="js/data/content.js?v=0.0055"></script>
-  <script src="js/data/changelog.js?v=0.0061"></script>
+  <script src="js/data/changelog.js?v=0.0062"></script>
   <script src="js/data/dialogues.generated.js?v=0.0003"></script>
   <script src="js/data/dialogues.js?v=0.0005"></script>
   <script src="js/core/state.js?v=0.0045"></script>
   <script src="js/core/save.js?v=0.0051"></script>
   <script src="js/core/production.js?v=0.0036"></script>
-  <script src="js/data/camp-gameplay.generated.js?v=0.0003"></script>
+  <script src="js/data/camp-gameplay.generated.js?v=0.0004"></script>
   <script src="js/data/playable-content-scenario.js?v=0.0001"></script>
   <script src="js/core/incrementor-law.js?v=0.0002"></script>
-  <script src="js/data/camp-assets.generated.js?v=0.0011"></script>
+  <script src="js/data/camp-assets.generated.js?v=0.0012"></script>
   <script src="js/data/camp-templates.generated.js?v=0.0002"></script>
   <script src="js/core/camp-connectivity.js?v=0.0001"></script>
   <script src="js/core/camp-capabilities.js?v=0.0001"></script>
