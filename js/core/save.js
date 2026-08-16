@@ -18,10 +18,38 @@
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
   const JOB_IDS = [
     "lumberjack", "carpenter", "farmer", "chef", "explorator", "builder",
-    "miner", "stonemason", "gang-leader", "camp-engineer"
+    "miner", "stonemason", "gang-leader", "camp-engineer", "shop-owner"
   ];
   const SCOUTING_REWARD_IDS = ["humanLeftovers", "humanWorkersFood", "cannedCatFood"];
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
+  const CAMP_CANONICAL_REPAIR_IDS = [
+    "cardboardBox", "storage", "operationsTable", "jobCenter",
+    "trainingCenter", "laboratory", "marketStall", "smallFountain"
+  ];
+  function canonicalCampRepairEligible(typeId, definition) {
+    if (
+      !CAMP_CANONICAL_REPAIR_IDS.includes(typeId)
+      || !definition || !definition.build || definition.build.entryMode !== "repair"
+      || definition.unlock && definition.unlock.kind === "not-wired"
+    ) return false;
+    const assets = CatInc.data && CatInc.data.campAssets && CatInc.data.campAssets.assets || {};
+    const family = Object.keys(assets).map(function(runtimeId) { return assets[runtimeId]; })
+      .find(function(candidate) { return candidate && candidate.assetId === definition.assetId; });
+    const tier = family && family.tiers && family.tiers["1"];
+    const liveRevision = tier && tier.liveRevision;
+    const revision = liveRevision !== null && liveRevision !== undefined
+      && tier.revisions && tier.revisions[String(liveRevision)];
+    return Boolean(revision && revision.status === "live");
+  }
+  function campRepairBuildingIds() {
+    return Array.from(new Set(CAMP_BUILDING_IDS.concat(
+      Object.keys(CatInc.data && CatInc.data.campGameplay && CatInc.data.campGameplay.definitions || {})
+      .filter(function(typeId) {
+        const definition = CatInc.data.campGameplay.definitions[typeId];
+        return canonicalCampRepairEligible(typeId, definition);
+      })
+    )));
+  }
   const CAMP_SCHEMA_VERSION = 2;
   const SAWMILL_TUTORIAL_STAGES = [
     "inactive", "sawmill", "work-action", "wood-slot-1-recipe",
@@ -164,7 +192,7 @@ function validerStructureSauvegarde(d) {
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
     "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "basicWoodPlanksTotalProduit", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
-    "workBoostFinTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
+    "workBoostFinTs", "manualFocusOnboardingCompletedTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
     "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
   ];
   for (const cle of champsNumeriques) {
@@ -411,13 +439,13 @@ function validerStructureSauvegarde(d) {
         && typeof demolition.readyToClaim === "boolean";
     });
     if (!demolitionsValides) return "Invalid Camp demolition data.";
-    if (!camp.repairedBuildingIds.every(function(id) { return CAMP_BUILDING_IDS.includes(id); })) {
+    if (!camp.repairedBuildingIds.every(function(id) { return campRepairBuildingIds().includes(id); })) {
       return "Invalid repaired Camp building data.";
     }
-    const reparationsCampValides = Object.keys(camp.repairs).length <= CAMP_BUILDING_IDS.length
+    const reparationsCampValides = Object.keys(camp.repairs).length <= campRepairBuildingIds().length
       && Object.keys(camp.repairs).every(function(buildingId) {
         const reparation = camp.repairs[buildingId];
-        return CAMP_BUILDING_IDS.includes(buildingId)
+        return campRepairBuildingIds().includes(buildingId)
           && estObjetSauvegarde(reparation)
           && indexKittyValide(reparation.kittyIndex, false)
           && typeof reparation.startTs === "number" && Number.isFinite(reparation.startTs) && reparation.startTs >= 0
@@ -484,7 +512,10 @@ function validerStructureSauvegarde(d) {
           ));
       });
     if (!groundRewardsValides) return "Invalid Camp ground reward data.";
-    const buildingConstructionIds = ["operationsTable", "jobCenter", "trainingCenter", "laboratory", "storage"];
+    const buildingConstructionIds = [
+      "operationsTable", "jobCenter", "trainingCenter", "laboratory", "storage",
+      "marketStall", "smallFountain"
+    ];
     const constructionsBatimentsValides = Object.keys(camp.constructions).length <= 128
       && Object.keys(camp.constructions).every(function(uid) {
         const construction = camp.constructions[uid];
@@ -541,14 +572,14 @@ function validerStructureSauvegarde(d) {
     if (!ameliorationsCampValides) return "Invalid Camp upgrade data.";
   }
   if (d.batimentsCampRepares && !d.batimentsCampRepares.every(function(id) {
-    return CAMP_BUILDING_IDS.includes(id);
+    return campRepairBuildingIds().includes(id);
   })) {
     return "Invalid repaired Camp building data.";
   }
   if (d.reparationsCamp) {
     const reparationsValides = Object.keys(d.reparationsCamp).every(function(buildingId) {
       const reparation = d.reparationsCamp[buildingId];
-      return CAMP_BUILDING_IDS.includes(buildingId)
+      return campRepairBuildingIds().includes(buildingId)
         && estObjetSauvegarde(reparation)
         && Number.isInteger(reparation.kittyIndex)
         && reparation.kittyIndex >= 0
@@ -806,6 +837,7 @@ function analyserSauvegardeBrute(raw) {
     cannedCatFood:          etat.cannedCatFood,
     spherePerks:            etat.spherePerks,
     workBoostFinTs:         etat.workBoostFinTs,
+    manualFocusOnboardingCompletedTs: etat.manualFocusOnboardingCompletedTs,
     birdPremierSpawnTs:      etat.birdPremierSpawnTs,
     birdPremierDeclenche:    etat.birdPremierDeclenche,
     birdPremiereReussie:     etat.birdPremiereReussie,
@@ -942,12 +974,21 @@ function analyserSauvegardeBrute(raw) {
   etat.cannedCatFood          = d.cannedCatFood          || 0;
   etat.spherePerks            = d.spherePerks            || {};
   etat.workBoostFinTs         = d.workBoostFinTs         || 0;
+  etat.manualFocusOnboardingCompletedTs = Number.isFinite(d.manualFocusOnboardingCompletedTs)
+    ? d.manualFocusOnboardingCompletedTs
+    : 0;
   etat.birdPremierSpawnTs     = Number.isFinite(d.birdPremierSpawnTs)
     ? d.birdPremierSpawnTs
     : maintenant + 5 * 60 * 1000;
   etat.birdPremierDeclenche   = d.birdPremierDeclenche === true;
   etat.birdPremiereReussie    = d.birdPremiereReussie === true;
   etat.birdPityEchecs         = Number.isInteger(d.birdPityEchecs) ? Math.max(0, d.birdPityEchecs) : 0;
+  if (!etat.birdPremiereReussie && etat.birdPremierDeclenche
+      && (!(etat.manualFocusOnboardingCompletedTs > 0)
+        || maintenant < etat.manualFocusOnboardingCompletedTs + 30000)) {
+    etat.birdPremierDeclenche = false;
+    etat.birdPremierSpawnTs = 0;
+  }
 
   etat.sequenceEnCours         = d.sequenceEnCours         || false;
   etat.sequenceDebutTs         = d.sequenceDebutTs         || 0;
@@ -1008,9 +1049,9 @@ function analyserSauvegardeBrute(raw) {
   etat.camp.terrain = estObjetSauvegarde(campSource.terrain) ? campSource.terrain : null;
   etat.camp.demolitions = Array.isArray(campSource.demolitions) ? campSource.demolitions : [];
   etat.camp.repairedBuildingIds = Array.isArray(campSource.repairedBuildingIds)
-    ? campSource.repairedBuildingIds.filter(function(id) { return CAMP_BUILDING_IDS.includes(id); })
+    ? campSource.repairedBuildingIds.filter(function(id) { return campRepairBuildingIds().includes(id); })
     : (Array.isArray(d.batimentsCampRepares)
-      ? d.batimentsCampRepares.filter(function(id) { return CAMP_BUILDING_IDS.includes(id); })
+      ? d.batimentsCampRepares.filter(function(id) { return campRepairBuildingIds().includes(id); })
       : (ancienneProgressionWood ? ["sawmill"] : []));
   etat.camp.repairs = estObjetSauvegarde(campSource.repairs)
     ? campSource.repairs
@@ -1154,7 +1195,9 @@ function analyserSauvegardeBrute(raw) {
   etat.logs            = d.logs            || [];
   etat.releaseNotesSeenVersion = typeof d.releaseNotesSeenVersion === "string" ? d.releaseNotesSeenVersion : "";
   if (Array.isArray(d.storiesVues)) {
-    etat.storiesVues = d.storiesVues;
+    etat.storiesVues = d.storiesVues.filter(function(flag) {
+      return flag !== "story5Vue";
+    });
   } else {
     // Legacy saves kept story flags outside the exported state. Reconstruct
     // only what this save's own progression proves, never from the browser's
@@ -1171,7 +1214,6 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("story3Vue", chatons >= 3);
     ajouterStory("story4Vue", Array.isArray(d.cathouses) && d.cathouses.length >= 1);
     ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1 || (d.objectifsComplis || []).includes("tenPlanks"));
-    ajouterStory("story5Vue", chatons >= 8);
     ajouterStory("storyHouseEvacuationVue", chatons >= 15);
     ajouterStory("storyLeftHouseEvacuationVue", chatons >= 17);
     ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
@@ -1206,11 +1248,11 @@ function analyserSauvegardeBrute(raw) {
   etat.kittiesData.forEach(function(k) { k.metier = normaliserJobId(k.metier); });
   if (etat.formationEnCours) {
     etat.formationEnCours.metier = normaliserJobId(etat.formationEnCours.metier);
-    if (!etat.formationEnCours.metier) etat.formationEnCours = null;
+    if (!etat.formationEnCours.metier || etat.formationEnCours.metier === "shop-owner") etat.formationEnCours = null;
   }
   if (etat.formationTermineeEnAttente) {
     etat.formationTermineeEnAttente.metier = normaliserJobId(etat.formationTermineeEnAttente.metier);
-    if (!etat.formationTermineeEnAttente.metier) etat.formationTermineeEnAttente = null;
+    if (!etat.formationTermineeEnAttente.metier || etat.formationTermineeEnAttente.metier === "shop-owner") etat.formationTermineeEnAttente = null;
   }
   if (etat.formationIngenieurEnCours && etat.formationIngenieurEnCours.metier !== "camp-engineer") {
     etat.formationIngenieurEnCours = null;
@@ -1225,6 +1267,25 @@ function analyserSauvegardeBrute(raw) {
     const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
     etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: null, visage: assignerVisageChaton(nom), jobNiveau: 0 });
   }
+  let cannelleRoleBound = false;
+  etat.kittiesData.forEach(function(k) {
+    if (k.nom === "Cannelle" && !cannelleRoleBound) {
+      k.metier = "shop-owner";
+      cannelleRoleBound = true;
+    } else if (k.metier === "shop-owner") {
+      k.metier = null;
+    }
+  });
+  // Permanent specialists cannot occupy a training station in any lifecycle
+  // state. Resolve reservations after specialist roles have been rebound.
+  ["formationEnCours", "formationTermineeEnAttente",
+    "formationIngenieurEnCours", "formationIngenieurTermineeEnAttente"].forEach(function(field) {
+    const reservation = etat[field];
+    const kitty = reservation && Number.isInteger(reservation.kittyIndex)
+      ? etat.kittiesData[reservation.kittyIndex]
+      : null;
+    if (kitty && kitty.metier === "shop-owner") etat[field] = null;
+  });
   // Migration: cats from the pre-XP format used level 1 as their initial
   // value. Only that legacy shape may be converted; current level-1 cats
   // already have an xp field and must survive every reload unchanged.

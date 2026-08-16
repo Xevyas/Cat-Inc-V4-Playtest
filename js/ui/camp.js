@@ -289,6 +289,16 @@
     });
   }
 
+  function gameplayRuntimeItem(typeId, fallback) {
+    const definition = GAMEPLAY_MANIFEST.definitions && GAMEPLAY_MANIFEST.definitions[typeId];
+    const runtimeId = definition && definition.assetId
+      ? Object.keys(RUNTIME_MANIFEST.assets || {}).find(function(candidateId) {
+        return RUNTIME_MANIFEST.assets[candidateId].assetId === definition.assetId;
+      })
+      : null;
+    return runtimeItem(runtimeId || typeId, fallback);
+  }
+
   function runtimeVisualForTier(typeId, functionalTier) {
     const revision = runtimeRevision(typeId, functionalTier);
     if (!revision || !revision.sprites) return null;
@@ -538,7 +548,7 @@
         left: "img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/left.png?v=0.0001"
       })
     }),
-    operationsTable: Object.freeze({
+    operationsTable: gameplayItem("operationsTable", gameplayRuntimeItem("operationsTable", {
       id: "operationsTable",
       label: "Operations Table",
       width: 2,
@@ -548,7 +558,7 @@
       rotatable: true,
       blocksMovement: true,
       access: OPERATIONS_TABLE_ACCESS
-    }),
+    })),
     laboratory: runtimeItem("laboratory", Object.freeze({
       id: "laboratory",
       label: "Laboratory",
@@ -573,6 +583,27 @@
       access: STORAGE_ACCESS,
       stickerSlot: STORAGE_STICKER_SLOT
     }))),
+    marketStall: gameplayItem("marketStall", gameplayRuntimeItem("marketStall", {
+      id: "marketStall",
+      label: "Market Stall",
+      width: 2,
+      height: 2,
+      color: "market",
+      category: "building",
+      rotatable: true,
+      blocksMovement: true,
+      access: singleEntranceAccess(2, 2)
+    })),
+    smallFountain: gameplayItem("smallFountain", gameplayRuntimeItem("smallFountain", {
+      id: "smallFountain",
+      label: "Small Fountain",
+      width: 1,
+      height: 1,
+      color: "fountain",
+      category: "decoration",
+      rotatable: true,
+      blocksMovement: true
+    })),
     tree: runtimeItem("tree", {
       id: "tree",
       label: "Tree",

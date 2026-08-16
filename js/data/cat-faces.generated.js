@@ -46,6 +46,13 @@
       "alternative": false
     },
     {
+      "id": "cat-faces-cannelle-3",
+      "name": "Cannelle",
+      "runtimePath": "img/Cat faces/cannelle-3.png",
+      "revision": 1,
+      "alternative": false
+    },
+    {
       "id": "cat-faces-luna",
       "name": "Luna",
       "runtimePath": "img/Cat faces/Luna_Final.png",

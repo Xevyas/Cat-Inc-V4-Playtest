@@ -25,11 +25,10 @@
     Object.freeze({ id: "ecran-story-camp-intro", name: "A garden to rebuild", flag: "storyCampIntroVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo, Mochi and Luna inspect their cluttered new garden." }) }),
     Object.freeze({ id: "ecran-story-camp-full", name: "Room for one more", flag: "storyCampFullVue", asset: Object.freeze({ type: "icon", src: "img/Buildings/Cardboard Box_Final.png", alt: "A Cardboard Box shelter." }) }),
     Object.freeze({ id: "ecran-story-manual-focus", name: "A Little Encouragement", flag: "storyManualFocusVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo preparing to encourage the workers." }) }),
-    Object.freeze({ id: "ecran-story-appeal", name: "Appeal Unlock", flag: "storyAppealVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo presenting the Camp." }) }),
     Object.freeze({ id: "ecran-story-4", name: "Our first creation", flag: "story4Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 4.png", alt: "Three kittens admire their first cardboard shelter." }) }),
     Object.freeze({ id: "ecran-story-greatest-incrementor-part-1", name: "The Greatest Incrementor — Part 1", flag: "storyGreatestIncrementorPart1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/the-greatest-incrementor.png", alt: "Portrait of The Greatest Incrementor." }) }),
     Object.freeze({ id: "ecran-story-basic-wood", name: "Beyond Cardboard", flag: "storyBasicWoodVue", asset: Object.freeze({ type: "icon", src: "img/resources/Basic Wood_Final.png?v=0.0029", alt: "A stack of sturdy Basic Wood logs." }) }),
-    Object.freeze({ id: "ecran-story-5", name: "Gang on the rise", flag: "story5Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." }) }),
+    Object.freeze({ id: "ecran-story-first-expedition", name: "Beyond the Fence", flag: "storyFirstExpeditionVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo planning the first expedition." }) }),
     Object.freeze({ id: "ecran-story-house-evacuation", name: "They Built a Camp", flag: "storyHouseEvacuationVue" }),
     Object.freeze({ id: "ecran-story-left-house", name: "The Neighbors Are Leaving", flag: "storyLeftHouseEvacuationVue" }),
     Object.freeze({ id: "ecran-story-6a", name: "What's that thing?", flag: "story6aVue", asset: Object.freeze({ type: "icon", src: "img/resources/Books_Final.png", alt: "A mysterious book found during scouting." }) }),
@@ -341,69 +340,6 @@ const LEGACY_SCENE_BEATS = Object.freeze({
       "html": "Manual Focus is now unlocked. Each click on an active Work phase or Camp task stores 0.8 seconds of ×2 speed, up to 30 seconds. Focusing another action resets the reserve."
     }
   ],
-  "ecran-story-appeal": [
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Hmm..."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Getting cats to join us used to be pretty easy."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "A little food, a nice box... and boom. New recruit."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "But lately, they seem a lot harder to impress."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Maybe our glorious headquarters could use a little... improvement."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "If we make the camp nicer, more cats might actually want to live here."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Let's work on our <strong>Appeal</strong>!"
-    },
-    {
-      "id": "story-appeal-unlock-copy",
-      "classes": ["intro-miaou"],
-      "speakerClass": null,
-      "speakerName": null,
-      "html": "Appeal unlocked!"
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Hey, we're not starting from nothing. That big old tree already makes the place pretty cozy."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Now let's see how attractive we can make this camp."
-    }
-  ],
   "ecran-story-4": [
     {
       "classes": [],
@@ -620,76 +556,86 @@ const LEGACY_SCENE_BEATS = Object.freeze({
       "html": "Upgrade the existing Sawmill to Tier 2 for 5 Cardboard Planks and 2 Pebble Bricks. Other Work buildings will follow the same rule when their Tier 2 recipes are discovered."
     }
   ],
-  "ecran-story-5": [
+  "ecran-story-first-expedition": [
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "There we go. The Operations Table is finally ready."
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "It looks very official."
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "It's a table."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "An extremely official table."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "From here, we can actually plan expeditions instead of wandering around and hoping we find something useful."
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "So where do we go first?"
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "The humans throw away useful things all the time."
+    },
+    {
+      "classes": [],
+      "speakerClass": "mochi",
+      "speakerName": "Mochi",
+      "html": "And food."
+    },
+    {
+      "classes": [],
+      "speakerClass": "luna",
+      "speakerName": "Luna",
+      "html": "Mostly things that should not be food."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "Perfect. Then our first expedition is obvious."
+    },
+    {
+      "classes": [],
+      "speakerClass": "bernard",
+      "speakerName": "Bernardo",
+      "html": "We'll search the trash around the house and see what we can bring back."
+    },
     {
       "classes": [
         "intro-miaou"
       ],
       "speakerClass": null,
       "speakerName": null,
-      "html": "Eight kitties gathered in the garden"
+      "html": "Exploration unlocked!"
     },
     {
       "classes": [],
       "speakerClass": "bernard",
       "speakerName": "Bernardo",
-      "html": "Look at us now. There are eight of us, which means we are no longer a handful of Cats sharing a garden but a proper crew."
-    },
-    {
-      "classes": [],
-      "speakerClass": "mochi",
-      "speakerName": "Mochi",
-      "html": "Do proper crews get group snacks?"
-    },
-    {
-      "classes": [],
-      "speakerClass": "luna",
-      "speakerName": "Luna",
-      "html": "He has been waiting six Cats to ask that."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Proper crews earn their snacks by expanding their reach, and we have spent enough time staring at the same fence when there is an entire neighborhood outside it."
-    },
-    {
-      "classes": [],
-      "speakerClass": "mochi",
-      "speakerName": "Mochi",
-      "html": "I sniffed the trash bins yesterday. They seemed very promising."
-    },
-    {
-      "classes": [],
-      "speakerClass": "luna",
-      "speakerName": "Luna",
-      "html": "A glowing professional recommendation."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Then we need one place in Camp to plan routes, read the map and send teams safely."
-    },
-    {
-      "classes": [],
-      "speakerClass": "luna",
-      "speakerName": "Luna",
-      "html": "Also known as rummaging through our own rubbish."
-    },
-    {
-      "classes": [],
-      "speakerClass": "bernard",
-      "speakerName": "Bernardo",
-      "html": "Build an Operations Table in Camp. Exploration begins wherever opportunity smells strongest."
-    },
-    {
-      "classes": [
-        "intro-miaou"
-      ],
-      "speakerClass": null,
-      "speakerName": null,
-      "html": "<img class=\"titre-icone\" src=\"img/interface/Exploration_Final.png\" alt=\"\" style=\"image-rendering:pixelated;mix-blend-mode:multiply;\"> Operations Table discovered!"
+      "html": "Let's plan our first expedition."
     }
   ],
   "ecran-story-house-evacuation": [
@@ -1314,6 +1260,12 @@ const LEGACY_SCENE_BEATS = Object.freeze({
     index[scene.id] = scene.beats || [];
     return index;
   }, {}));
+  const QUICK_DIALOGUES = Object.freeze((DIALOGUE_CATALOG.quickDialogues || []).reduce(
+    function(index, dialogue) {
+      index[dialogue.id] = dialogue.text;
+      return index;
+    }, {}
+  ));
 
 
 function characterFromLine(line) {
@@ -1473,6 +1425,7 @@ function characterFromLine(line) {
     characters: CHARACTERS,
     scenes: SCENES,
     beats: SCENE_BEATS,
+    quickDialogues: QUICK_DIALOGUES,
     hydrateModal: hydrateModal,
     resetModal: resetModal,
     advanceModal: advanceModal

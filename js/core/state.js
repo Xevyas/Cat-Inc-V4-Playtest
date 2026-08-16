@@ -81,6 +81,7 @@ function creerEtatInitial() {
   cannedCatFood:        0,
   spherePerks:          {},
   workBoostFinTs:       0,
+  manualFocusOnboardingCompletedTs: 0,
 
   // Passive Catch/Recruit cooldown. false means the current cat is ready.
   sequenceEnCours:         false,

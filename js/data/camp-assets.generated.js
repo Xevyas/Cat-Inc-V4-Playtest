@@ -452,6 +452,200 @@
               }
             }
           }
+        },
+        "2": {
+          "liveRevision": 3,
+          "revisions": {
+            "3": {
+              "assetId": "cardboard-box",
+              "runtimeId": "cardboardBox",
+              "name": "Cardboard Box",
+              "category": "house",
+              "placeable": true,
+              "tier": 2,
+              "revision": 3,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/down.png",
+                "right": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/right.png",
+                "up": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/up.png",
+                "left": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/left.png"
+              },
+              "stickerCategory": "general",
+              "stickerSlot": {
+                "id": "front-surface",
+                "enabled": true,
+                "mode": "surface",
+                "category": "general",
+                "anchors": {
+                  "down": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.64,
+                      "y": 0.52,
+                      "quad": [
+                        {
+                          "x": 0.567826,
+                          "y": 0.449096
+                        },
+                        {
+                          "x": 0.711457,
+                          "y": 0.449096
+                        },
+                        {
+                          "x": 0.712546,
+                          "y": 0.591269
+                        },
+                        {
+                          "x": 0.568175,
+                          "y": 0.591269
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "right": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.6582,
+                      "y": 0.2982,
+                      "quad": [
+                        {
+                          "x": 0.60117,
+                          "y": 0.323809
+                        },
+                        {
+                          "x": 0.599047,
+                          "y": 0.223805
+                        },
+                        {
+                          "x": 0.713232,
+                          "y": 0.273411
+                        },
+                        {
+                          "x": 0.717742,
+                          "y": 0.373152
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "up": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.3668,
+                      "y": 0.2805,
+                      "quad": [
+                        {
+                          "x": 0.434264,
+                          "y": 0.298341
+                        },
+                        {
+                          "x": 0.29506,
+                          "y": 0.298341
+                        },
+                        {
+                          "x": 0.301305,
+                          "y": 0.263245
+                        },
+                        {
+                          "x": 0.436268,
+                          "y": 0.263245
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "left": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.3351,
+                      "y": 0.5007,
+                      "quad": [
+                        {
+                          "x": 0.39674,
+                          "y": 0.422275
+                        },
+                        {
+                          "x": 0.39443,
+                          "y": 0.531067
+                        },
+                        {
+                          "x": 0.272919,
+                          "y": 0.579688
+                        },
+                        {
+                          "x": 0.27782,
+                          "y": 0.471304
+                        }
+                      ],
+                      "visible": true
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": false,
+                "baseSticker": false,
+                "defaultScale": 1.16,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "general-heart",
+                "defaultColorId": "rose"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 77,
+                  "right": 310,
+                  "bottom": 333
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 38,
+                  "top": 23,
+                  "right": 321,
+                  "bottom": 330
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 77,
+                  "right": 311,
+                  "bottom": 330
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 39,
+                  "top": 23,
+                  "right": 321,
+                  "bottom": 330
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
@@ -2709,6 +2903,124 @@
         }
       }
     },
+    "smallFountain": {
+      "assetId": "small-fountain",
+      "runtimeId": "smallFountain",
+      "name": "Small fountain",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 2,
+          "revisions": {
+            "1": {
+              "assetId": "small-fountain",
+              "runtimeId": "smallFountain",
+              "name": "Small fountain",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 361
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 47,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 360
+                }
+              }
+            },
+            "2": {
+              "assetId": "small-fountain",
+              "runtimeId": "smallFountain",
+              "name": "Small fountain",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 361
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 47,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 360
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "storage": {
       "assetId": "small-storage-shed",
       "runtimeId": "storage",
@@ -4221,6 +4533,200 @@
                 "required": false,
                 "baseSticker": false,
                 "defaultScale": 1.31,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "general-heart",
+                "defaultColorId": "rose"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 77,
+                  "right": 310,
+                  "bottom": 333
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 38,
+                  "top": 23,
+                  "right": 321,
+                  "bottom": 330
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 77,
+                  "right": 311,
+                  "bottom": 330
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 39,
+                  "top": 23,
+                  "right": 321,
+                  "bottom": 330
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "2": {
+          "liveRevision": 3,
+          "revisions": {
+            "3": {
+              "assetId": "cardboard-box",
+              "runtimeId": "cardboardBox",
+              "name": "Cardboard Box",
+              "category": "house",
+              "placeable": true,
+              "tier": 2,
+              "revision": 3,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/down.png",
+                "right": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/right.png",
+                "up": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/up.png",
+                "left": "img/Buildings/Camp Runtime/cardboard-box/tier-2/revision-3/left.png"
+              },
+              "stickerCategory": "general",
+              "stickerSlot": {
+                "id": "front-surface",
+                "enabled": true,
+                "mode": "surface",
+                "category": "general",
+                "anchors": {
+                  "down": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.64,
+                      "y": 0.52,
+                      "quad": [
+                        {
+                          "x": 0.567826,
+                          "y": 0.449096
+                        },
+                        {
+                          "x": 0.711457,
+                          "y": 0.449096
+                        },
+                        {
+                          "x": 0.712546,
+                          "y": 0.591269
+                        },
+                        {
+                          "x": 0.568175,
+                          "y": 0.591269
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "right": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.6582,
+                      "y": 0.2982,
+                      "quad": [
+                        {
+                          "x": 0.60117,
+                          "y": 0.323809
+                        },
+                        {
+                          "x": 0.599047,
+                          "y": 0.223805
+                        },
+                        {
+                          "x": 0.713232,
+                          "y": 0.273411
+                        },
+                        {
+                          "x": 0.717742,
+                          "y": 0.373152
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "up": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.3668,
+                      "y": 0.2805,
+                      "quad": [
+                        {
+                          "x": 0.434264,
+                          "y": 0.298341
+                        },
+                        {
+                          "x": 0.29506,
+                          "y": 0.298341
+                        },
+                        {
+                          "x": 0.301305,
+                          "y": 0.263245
+                        },
+                        {
+                          "x": 0.436268,
+                          "y": 0.263245
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "left": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.3351,
+                      "y": 0.5007,
+                      "quad": [
+                        {
+                          "x": 0.39674,
+                          "y": 0.422275
+                        },
+                        {
+                          "x": 0.39443,
+                          "y": 0.531067
+                        },
+                        {
+                          "x": 0.272919,
+                          "y": 0.579688
+                        },
+                        {
+                          "x": 0.27782,
+                          "y": 0.471304
+                        }
+                      ],
+                      "visible": true
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": false,
+                "baseSticker": false,
+                "defaultScale": 1.16,
                 "defaultAnchorChoice": "auto",
                 "defaultStickerId": "general-heart",
                 "defaultColorId": "rose"
@@ -6594,6 +7100,124 @@
                   "top": 51,
                   "right": 319,
                   "bottom": 395
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "smallFountain": {
+      "assetId": "small-fountain",
+      "runtimeId": "smallFountain",
+      "name": "Small fountain",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 2,
+          "revisions": {
+            "1": {
+              "assetId": "small-fountain",
+              "runtimeId": "smallFountain",
+              "name": "Small fountain",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/small-fountain/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 361
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 47,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 360
+                }
+              }
+            },
+            "2": {
+              "assetId": "small-fountain",
+              "runtimeId": "smallFountain",
+              "name": "Small fountain",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/small-fountain/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 31,
+                  "right": 373,
+                  "bottom": 361
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 48,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 356
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 47,
+                  "top": 30,
+                  "right": 373,
+                  "bottom": 360
                 }
               }
             }

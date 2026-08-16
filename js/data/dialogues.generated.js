@@ -31,6 +31,13 @@
       "portrait": "img/Cat faces/Luna_Final.png",
       "speakerKey": "luna"
     },
+    "cannelle": {
+      "id": "cannelle",
+      "name": "Cannelle",
+      "side": "right",
+      "portrait": "img/Cat faces/cannelle-3.png",
+      "speakerKey": "cannelle"
+    },
     "incrementor": {
       "id": "incrementor",
       "name": "The Greatest Incrementor",
@@ -98,6 +105,15 @@
       "presetId": "happy",
       "presetRevision": 1
     },
+    "bernardPresetSleepy": {
+      "id": "bernardo",
+      "name": "Bernardo · Sleepy",
+      "side": "left",
+      "portrait": "img/Cat faces/Presets/cat-faces-bernardo/sleepy.png",
+      "speakerKey": "bernard",
+      "presetId": "sleepy",
+      "presetRevision": 1
+    },
     "mochiPresetChewingCatnip": {
       "id": "mochi",
       "name": "Mochi · Chewing catnip",
@@ -153,7 +169,173 @@
       "presetRevision": 1
     }
   },
+  "quickDialogues": [
+    {
+      "id": "sawmillRepaired",
+      "text": "The Sawmill is ready. Cats can now produce Cardboard Planks in Work."
+    },
+    {
+      "id": "firstPlank",
+      "text": "Good. The Sawmill works, and we finally have a proper building material."
+    },
+    {
+      "id": "firstBox",
+      "text": "We’ll run out of room quickly. I can see another structure farther into the garden that could be useful. Let’s clear a path to it first. We can deal with the rest of the junk later."
+    },
+    {
+      "id": "firstGroundReward",
+      "text": "Some junk may hide useful resources. Tap the resource on the ground to collect it."
+    },
+    {
+      "id": "catchenRepaired",
+      "text": "The Catchen is usable again. The others can start preparing Catnip Salad."
+    },
+    {
+      "id": "workerLevelTwo",
+      "text": "A stronger worker can clear the flowering bushes blocking the deeper garden."
+    },
+    {
+      "id": "pawsonryRepaired",
+      "text": "The Pawsonry is ready. We can finally turn gathered pebbles into proper bricks."
+    },
+    {
+      "id": "storageFull",
+      "text": "Our material piles are full. Build a Small Storage Shed and we can store 10 more units of every regular resource."
+    },
+    {
+      "id": "catchenTierTwo",
+      "text": "The Fishing Guide is useful, but Grilled Anchovy needs a Tier 2 Catchen first."
+    },
+    {
+      "id": "pawsonryTierTwo",
+      "text": "The Stone Guide opens stronger masonry. Upgrade the Pawsonry to Tier 2 before producing Rock Bricks."
+    }
+  ],
   "scenes": [
+    {
+      "id": "ecran-story-cannelle-recruit",
+      "name": "Cannelle's Proposition",
+      "flag": "storyCannelleRecruitVue",
+      "trigger": "Cannelle's successful eighth-recruit confirmation closes.",
+      "closeButton": {
+        "label": "Build Cannelle's shop",
+        "handler": "terminerStoryRecrutementCannelle()",
+        "actionSummary": "Unlock the Market Stall in Camp Buildings."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "So you're Bernardo. I've heard about this little operation."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "And you are?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "Cannelle. I travel, I trade, and I happen to have a few things a growing camp might find useful."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Useful things tend to interest me."
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "Good. But I'm not selling them out of the grass."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "What do you need?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "A proper Market Stall. Give me a counter, a roof and somewhere to display my stock, and then we can talk business."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Fine. Welcome to the gang, Cannelle."
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "Pleasure doing business with you. Soon, anyway."
+        }
+      ]
+    },
+    {
+      "id": "ecran-story-market-stall-complete",
+      "name": "Cannelle Opens Shop",
+      "flag": "storyMarketStallCompleteVue",
+      "trigger": "The completed Market Stall construction is claimed.",
+      "closeButton": {
+        "label": "Show me your stock",
+        "handler": "terminerStoryMarketStall()",
+        "actionSummary": "Activate Cannelle's shop and show its stock."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "Now this is more like it."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Satisfied?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "A roof, a counter and enough room for my stock. I'm ready to trade."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Show me what you've got."
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "Start with the blueprints. I think you'll like this one."
+        }
+      ]
+    },
     {
       "id": "ecran-intro",
       "name": "Introduction",
@@ -639,6 +821,69 @@
       }
     },
     {
+      "id": "ecran-story-appeal",
+      "name": "Appeal Unlock",
+      "flag": "storyAppealVue",
+      "trigger": "The seventh recruit joins and their success confirmation has closed.",
+      "closeButton": {
+        "label": "Let's improve the camp!",
+        "handler": "terminerIntroAppeal()",
+        "actionSummary": "Unlock Appeal, mark the introduction seen and return to the current screen."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Hmm...\nGetting cats to join us used to be pretty easy. A little food, a nice box... and boom, a new recruit."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "But lately, they seem a lot harder to impress. Maybe our glorious headquarters could use a little... improvement."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "If we make the camp nicer, more cats might actually want to live here. Let's work on our \u003cstrong\u003eAppeal\u003c/strong\u003e!"
+        },
+        {
+          "classes": [
+            "intro-miaou"
+          ],
+          "speakerClass": null,
+          "speakerName": null,
+          "portraitClass": null,
+          "html": "Appeal unlocked!",
+          "id": "story-appeal-unlock-copy"
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Hey, we're not starting from nothing. That big old tree already makes the place pretty cozy. Now let's see how attractive we can make this camp."
+        },
+        {
+          "classes": [],
+          "speakerClass": null,
+          "speakerName": null,
+          "portraitClass": null,
+          "html": "Decorations, Paths and Cardboard Box Tier 2 Unlocked !"
+        }
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/Cat faces/Bernardo.png",
+        "alt": "Portrait of Bernardo presenting the Camp."
+      }
+    },
+    {
       "id": "ecran-story-4",
       "name": "Our first creation",
       "flag": "story4Vue",
@@ -918,87 +1163,92 @@
       }
     },
     {
-      "id": "ecran-story-5",
-      "name": "Gang on the rise",
-      "flag": "story5Vue",
-      "trigger": "No automatic trigger is currently connected to this legacy Operations Table story.",
+      "id": "ecran-story-first-expedition",
+      "name": "Beyond the Fence",
+      "flag": "storyFirstExpeditionVue",
+      "trigger": "The repaired Operation Table is currently functional and this story has not been seen.",
       "closeButton": {
-        "label": "Plan our Camp!",
-        "handler": "ouvrirCarteDepuisStoryGangRise()",
-        "actionSummary": "Open Camp buildings and focus the Operations Table."
+        "label": "Plan our first expedition!",
+        "handler": "ouvrirPremiereExpeditionDepuisStory()",
+        "actionSummary": "Open Explorations and guide Search our trash without starting it."
       },
       "beats": [
-        {
-          "classes": [
-            "intro-miaou"
-          ],
-          "speakerClass": null,
-          "speakerName": null,
-          "portraitClass": null,
-          "html": "Eight Cats gather around Bernardo in the garden."
-        },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernardPresetHappy",
-          "html": "Look at us now! Eight Cats, one growing camp, and enough paws to explore beyond this garden."
+          "html": "There we go. The Operations Table is finally ready."
         },
         {
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
           "portraitClass": "mochi",
-          "html": "Do proper gangs get more snacks?"
-        },
-        {
-          "classes": [],
-          "speakerClass": "luna",
-          "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
-          "html": "You have been holding yourself to ask that before, haven't you?"
-        },
-        {
-          "classes": [],
-          "speakerClass": "bernard",
-          "speakerName": "Bernardo",
-          "portraitClass": "bernard",
-          "html": "The neighborhood is full of useful places, but we need safe routes before sending anyone beyond the fence."
-        },
-        {
-          "classes": [],
-          "speakerClass": "mochi",
-          "speakerName": "Mochi",
-          "portraitClass": "mochi",
-          "html": "I inspected the trash bins yesterday. They smell very promising."
+          "html": "It looks very official."
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "A thorough strategic assessment."
-        },
-        {
-          "classes": [],
-          "speakerClass": "bernard",
-          "speakerName": "Bernardo",
-          "portraitClass": "bernardPresetHappy",
-          "html": "We need to build an Operations Table for maps, routes, and assignments. At least that's how they were doing it in the movie the humans were watching. I was peaking through the window."
-        },
-        {
-          "classes": [],
-          "speakerClass": "luna",
-          "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
-          "html": "That seems like hard work you do up there."
+          "html": "It's a table."
         },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernard",
-          "html": "Always happy to give the best of me."
+          "html": "An extremely official table."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "From here, we can actually plan expeditions instead of wandering around and hoping we find something useful."
+        },
+        {
+          "classes": [],
+          "speakerClass": "mochi",
+          "speakerName": "Mochi",
+          "portraitClass": "mochi",
+          "html": "So where do we go first?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "luna",
+          "speakerName": "Luna",
+          "portraitClass": "luna",
+          "html": "The humans throw away useful things all the time."
+        },
+        {
+          "classes": [],
+          "speakerClass": "mochi",
+          "speakerName": "Mochi",
+          "portraitClass": "mochi",
+          "html": "And food."
+        },
+        {
+          "classes": [],
+          "speakerClass": "luna",
+          "speakerName": "Luna",
+          "portraitClass": "lunaPresetAmused",
+          "html": "Mostly things that should not be food."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernardPresetHappy",
+          "html": "Perfect. Then our first expedition is obvious."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "We'll search the trash around the house and see what we can bring back."
         },
         {
           "classes": [
@@ -1007,13 +1257,20 @@
           "speakerClass": null,
           "speakerName": null,
           "portraitClass": null,
-          "html": "\u003cimg class=\"titre-icone\" src=\"img/interface/Exploration_Final.png\" alt=\"\" style=\"image-rendering:pixelated;mix-blend-mode:multiply;\"\u003e Operations Table discovered!"
+          "html": "Exploration unlocked!"
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernardPresetHappy",
+          "html": "Let's plan our first expedition."
         }
       ],
       "asset": {
         "type": "icon",
         "src": "img/Cat faces/Bernardo.png",
-        "alt": "Portrait of Bernardo."
+        "alt": "Portrait of Bernardo planning the first expedition."
       }
     },
     {

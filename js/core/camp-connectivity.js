@@ -184,6 +184,7 @@
 
       const access = type.access;
       const portsActifs = ports.filter(function(port) { return port.active; }).length;
+      const portsLibres = ports.filter(function(port) { return port.clear; }).length;
       let portsRequis = 1;
       if (access.activationPolicy === "all-ports-reachable") {
         portsRequis = ports.length;
@@ -191,12 +192,13 @@
         portsRequis = Math.max(1, entier(access.minimumReachablePorts) || 1);
       }
       const active = ports.length > 0 && portsActifs >= portsRequis;
-      const entreeLibre = ports.some(function(port) { return port.clear; });
+      const clear = ports.length > 0 && portsLibres >= portsRequis;
       byItem[item.uid] = {
         active: active,
+        clear: clear,
         reason: active
           ? ""
-          : (entreeLibre
+          : (clear
             ? "Its entrance is not connected to the camp."
             : "Its entrance is blocked."),
         ports: ports

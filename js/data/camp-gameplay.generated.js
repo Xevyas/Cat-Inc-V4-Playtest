@@ -139,11 +139,10 @@
       "upgradeTiers": {},
       "simulation": {},
       "build": {
-        "entryMode": "build",
-        "durationSeconds": 60,
+        "entryMode": "repair",
+        "durationSeconds": 1800,
         "costs": {
-          "cardboardPlanks": 2,
-          "pebbleBricks": 1
+          "cardboardPlanks": 5
         }
       }
     },
@@ -167,8 +166,8 @@
         "entryMode": "build",
         "durationSeconds": 600,
         "costs": {
-          "pebbleBricks": 10,
-          "basicWoodPlanks": 1
+          "pebbleBricks": 5,
+          "basicWoodPlanks": 10
         }
       }
     },
@@ -310,7 +309,8 @@
         "height": 2
       },
       "unlock": {
-        "kind": "not-wired"
+        "kind": "runtime-rule",
+        "id": "cannelleRecruitStoryComplete"
       },
       "effects": {},
       "upgradeTiers": {},
@@ -320,6 +320,32 @@
         "durationSeconds": 3600,
         "costs": {
           "cardboardPlanks": 20
+        }
+      }
+    },
+    "smallFountain": {
+      "assetId": "small-fountain",
+      "name": "Small fountain",
+      "category": "decoration",
+      "repeatable": true,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "unlock": {
+        "kind": "runtime-rule",
+        "id": "smallFountainBlueprintLearned"
+      },
+      "effects": {},
+      "upgradeTiers": {},
+      "simulation": {
+        "ranks": 12
+      },
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 1800,
+        "costs": {
+          "pebbleBricks": 1
         }
       }
     }

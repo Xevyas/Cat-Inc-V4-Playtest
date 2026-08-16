@@ -463,6 +463,30 @@
     })
   ]);
 
+  const release0063Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Cannelle can now join the Camp, open her Market Stall and sell a growing selection of useful supplies.",
+        "The repaired Operation Table now leads into the first expedition, with its story and progression tracked from the Studio catalog.",
+        "Camp decorations now include the Small Fountain and the upgraded Cardboard Box artwork."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Early Camp progression now explains repairs, construction and Work boosts more clearly, including persistent indicators across tabs.",
+        "Dialogue and story content now comes from the governed Studio catalog so authored updates remain consistent in game."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Early-progression saves now recover safely when the first Cardboard Box, Sawmill or Operation Table is missing or ahead of its expected step."
+      ])
+    })
+  ]);
+
   const release0061Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -544,7 +568,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0062",
+    baseVersion: "0.0063",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -557,6 +581,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0063",
+      date: "2026-08-16",
+      categories: release0063Categories
+    }),
     Object.freeze({
       version: "0.0062",
       date: "2026-08-14",

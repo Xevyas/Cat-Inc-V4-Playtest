@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0166" />
+  <link rel="stylesheet" href="style.css?v=0.0167" />
   <style>
     /* First-paint guard: unknown neighbor DOM stays absent before game state loads. */
     .camp-prototype-map.camp-neighbor-red-unknown [data-camp-garden-zone="redGarden"],
@@ -115,19 +115,22 @@
   <!-- STORY APPEAL : shown once after the seventh recruit confirmation closes -->
   <div id="ecran-story-appeal" class="ecran-intro" role="dialog" aria-modal="true" aria-label="Appeal Unlock" aria-hidden="true" style="display:none">
     <div class="intro-boite">
-      <div class="intro-dialogue">
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Hmm...</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Getting cats to join us used to be pretty easy.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> A little food, a nice box... and boom. New recruit.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> But lately, they seem a lot harder to impress.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Maybe our glorious headquarters could use a little... improvement.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> If we make the camp nicer, more cats might actually want to live here.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Let's work on our <strong>Appeal</strong>!</p>
-        <p id="story-appeal-unlock-copy" class="intro-ligne intro-miaou">Appeal unlocked!</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Hey, we're not starting from nothing. That big old tree already makes the place pretty cozy.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Now let's see how attractive we can make this camp.</p>
-      </div>
+      <div class="intro-dialogue"></div>
       <button class="bouton-intro" type="button" onclick="terminerIntroAppeal()">Let's improve the camp!</button>
+    </div>
+  </div>
+
+  <!-- Cannelle stories: dialogue beats are rendered only from the Studio catalog. -->
+  <div id="ecran-story-cannelle-recruit" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cannelle's Proposition" style="display:none">
+    <div class="intro-boite" role="document" tabindex="-1">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="terminerStoryRecrutementCannelle()">Build Cannelle's shop</button>
+    </div>
+  </div>
+  <div id="ecran-story-market-stall-complete" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cannelle Opens Shop" style="display:none">
+    <div class="intro-boite" role="document" tabindex="-1">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="terminerStoryMarketStall()">Show me your stock</button>
     </div>
   </div>
 
@@ -202,12 +205,12 @@
     </div>
   </div>
 
-  <!-- STORY 5 : 8 kitties, Operations Table discovered -->
-  <div id="ecran-story-5" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+  <!-- FIRST EXPEDITION : repaired and functional Operation Table -->
+  <div id="ecran-story-first-expedition" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
       </div>
-      <button class="bouton-intro" onclick="ouvrirCarteDepuisStoryGangRise()">Plan our Camp!</button>
+      <button class="bouton-intro" onclick="ouvrirPremiereExpeditionDepuisStory()">Plan our first expedition!</button>
     </div>
   </div>
 
@@ -302,7 +305,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0062 · August 14, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0063 · August 16, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -495,7 +498,7 @@
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
     <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0029" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
     <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><span class="onglet-icone camp-tab-icon" aria-hidden="true"><i></i><i></i><i></i></span> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
-    <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span></button>
+    <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/Buildings/Job Center_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Facilities</span></button>
     <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
     <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Bag">Inventory</span></button>
@@ -503,8 +506,7 @@
   </div>
 
   <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none">
-    <span class="work-boost-label">⚡ Work ×10 — <span id="work-boost-countdown"></span></span>
-    <button id="work-boost-cue-dismiss" type="button" class="work-boost-cue-dismiss" aria-label="Dismiss Work boost tip" hidden onclick="dismissWorkBoostCue(event)">×</button>
+    <span class="work-boost-label">⚡ <span id="work-boost-copy">Work ×10</span> — <span id="work-boost-countdown"></span></span>
   </div>
 
   <aside id="camp-quick-dialogue" class="camp-quick-dialogue" role="status" aria-live="polite" data-touch-activation-root="true" onclick="continuerDialogueRapideCamp(event)" hidden>
@@ -676,7 +678,7 @@
           <img class="camp-prototype-category-icon-image camp-prototype-category-icon-operation-table" data-camp-building-icon="operation-table" src="img/interface/Exploration_Final.png" alt="" hidden>
           <span>Buildings</span>
         </button>
-        <button type="button" class="camp-dev-only" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
+        <button type="button" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
           <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png" alt="">
           <span>Decorations</span>
         </button>
@@ -986,7 +988,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0062</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0063</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1080,6 +1082,21 @@
       </div>
       <p id="camp-building-construction-modal-summary" class="camp-demolition-modal-summary"></p>
       <div id="camp-building-construction-modal-kitties" class="camp-demolition-modal-kitties"></div>
+    </div>
+  </div>
+
+  <!-- CANNELLE MARKET STALL SHOP -->
+  <div id="market-stall-shop-modal" class="explo-modal market-stall-shop-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="market-stall-shop-title" aria-describedby="market-stall-shop-status" style="display:none">
+    <div class="explo-modal-panneau market-stall-shop-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header market-stall-shop-header">
+        <img id="market-stall-shop-portrait" class="market-stall-shop-portrait" src="" alt="Cannelle">
+        <span><strong id="market-stall-shop-title">Cannelle</strong><small>Shop Owner · Level <span id="market-stall-shop-level">0</span></small></span>
+        <button class="explo-modal-close" aria-label="Close Cannelle's shop"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <p id="market-stall-shop-tier-hint" class="market-stall-shop-tier-hint">New items at Level 10</p>
+      <div id="market-stall-shop-tabs" class="market-stall-shop-tabs" role="tablist" aria-label="Shop categories" onkeydown="gererClavierCategoriesBoutiqueMarketStall(event)"></div>
+      <p id="market-stall-shop-status" class="market-stall-shop-status" role="status" aria-live="polite"></p>
+      <div id="market-stall-shop-grid" class="market-stall-shop-grid" role="tabpanel" aria-label="Cannelle merchandise"></div>
     </div>
   </div>
 
@@ -1260,24 +1277,25 @@
 
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
-  <script src="js/data/cat-faces.generated.js?v=0.0002"></script>
-  <script src="js/data/content.js?v=0.0055"></script>
-  <script src="js/data/changelog.js?v=0.0062"></script>
-  <script src="js/data/dialogues.generated.js?v=0.0003"></script>
-  <script src="js/data/dialogues.js?v=0.0005"></script>
-  <script src="js/core/state.js?v=0.0045"></script>
-  <script src="js/core/save.js?v=0.0051"></script>
+  <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
+  <script src="js/data/content.js?v=0.0056"></script>
+  <script src="js/data/changelog.js?v=0.0063"></script>
+  <script src="js/data/dialogues.generated.js?v=0.0004"></script>
+  <script src="js/data/dialogues.js?v=0.0006"></script>
+  <script src="js/data/shop.js?v=0.0001"></script>
+  <script src="js/core/state.js?v=0.0046"></script>
+  <script src="js/core/save.js?v=0.0052"></script>
   <script src="js/core/production.js?v=0.0036"></script>
-  <script src="js/data/camp-gameplay.generated.js?v=0.0004"></script>
+  <script src="js/data/camp-gameplay.generated.js?v=0.0005"></script>
   <script src="js/data/playable-content-scenario.js?v=0.0001"></script>
   <script src="js/core/incrementor-law.js?v=0.0002"></script>
-  <script src="js/data/camp-assets.generated.js?v=0.0012"></script>
-  <script src="js/data/camp-templates.generated.js?v=0.0002"></script>
-  <script src="js/core/camp-connectivity.js?v=0.0001"></script>
+  <script src="js/data/camp-assets.generated.js?v=0.0013"></script>
+  <script src="js/data/camp-templates.generated.js?v=0.0003"></script>
+  <script src="js/core/camp-connectivity.js?v=0.0002"></script>
   <script src="js/core/camp-capabilities.js?v=0.0001"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0027"></script>
+  <script src="js/ui/camp.js?v=0.0028"></script>
   <script src="js/ui/dialogs.js?v=0.0002"></script>
   <script src="js/ui/guidance.js?v=0.0003"></script>
   <script src="js/ui/touch-activation.js?v=0.0005"></script>
@@ -1286,7 +1304,7 @@
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0002"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0189"></script>
+  <script src="jeu.js?v=0.0190"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

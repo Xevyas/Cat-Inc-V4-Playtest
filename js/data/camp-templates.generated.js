@@ -95,6 +95,8 @@
         "10:5",
         "11:5",
         "11:7",
+        "8:8",
+        "9:8",
         "11:8",
         "6:10",
         "7:10",
@@ -174,18 +176,6 @@
           "x": 10,
           "y": 8,
           "zoneId": "home"
-        },
-        {
-          "uid": "home:10:10",
-          "typeId": "stoneBlockPile",
-          "x": 10,
-          "y": 10,
-          "zoneId": "home",
-          "reward": {
-            "resourceId": "pebbleBricks",
-            "quantity": 1,
-            "oneShot": true
-          }
         },
         {
           "uid": "redGarden:0:4",
@@ -622,17 +612,31 @@
           "zoneId": "home"
         },
         {
-          "uid": "home:8:8",
-          "typeId": "greenBush",
-          "x": 8,
-          "y": 8,
-          "zoneId": "home"
-        },
-        {
           "uid": "home:10:9",
           "typeId": "greenBush",
           "x": 10,
           "y": 9,
+          "zoneId": "home"
+        },
+        {
+          "uid": "home:10:11",
+          "typeId": "flowerBush",
+          "x": 10,
+          "y": 11,
+          "zoneId": "home"
+        },
+        {
+          "uid": "home:10:10",
+          "typeId": "pebblePile",
+          "x": 10,
+          "y": 10,
+          "zoneId": "home"
+        },
+        {
+          "uid": "home:11:10",
+          "typeId": "pebblePile",
+          "x": 11,
+          "y": 10,
           "zoneId": "home"
         }
       ],
@@ -667,6 +671,14 @@
           "x": 6,
           "y": 4,
           "rotation": 0,
+          "tier": 1
+        },
+        {
+          "uid": "camp-initial-operationsTable",
+          "typeId": "operationsTable",
+          "x": 8,
+          "y": 8,
+          "rotation": 180,
           "tier": 1
         }
       ]

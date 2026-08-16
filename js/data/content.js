@@ -117,6 +117,19 @@ const RESOURCE_INFO = {
 };
 
 const ITEMS = {
+  smallFountainBlueprint: {
+    id:           "smallFountainBlueprint",
+    category:     "blueprint",
+    nom:          "Small Fountain Blueprint",
+    emoji:        LIVRE_ICONE,
+    description:  "Cannelle's plan for a compact stone fountain that brings a little calm to the Camp.",
+    unlocksLabel: "Small Fountain in Camp Decorations",
+    studyDuration: 3600000,
+    learningMode: "timer-only",
+    actions: [
+      { id: "study", label: "Study (1h)" }
+    ]
+  },
   compass: {
     id:           "compass",
     type:         "unique",
@@ -672,7 +685,7 @@ const TIERS_KITTIES = [
 
 const NOMS_KITTIES = [
   "Bernardo", "Mochi", "Luna", "Whiskers", "Felix",
-  "Cleopatra", "Biscuit", "Cosmo", "Zelda", "Napoleon",
+  "Cleopatra", "Biscuit", "Cannelle", "Cosmo", "Zelda", "Napoleon",
   "Duchess", "Rascal", "Aurora", "Chester", "Pumpkin",
   "Oliver", "Mittens", "Shadow", "Simba", "Nala",
   "Tiger", "Max", "Lily", "Charlie", "Bella",
@@ -706,6 +719,12 @@ const CAT_FACES = {
   alt3:     "img/Cat faces/Alternative Kitty face 3_Final.png?v=0.0026",
   alt4:     "img/Cat faces/Alternative Kitty face 4_Final.png?v=0.0026"
 };
+const LIVE_CANNELLE_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
+  ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-cannelle-3"; })
+  : null;
+CAT_FACES.cannelle = LIVE_CANNELLE_FACE
+  ? LIVE_CANNELLE_FACE.runtimePath + "?v=live-r" + LIVE_CANNELLE_FACE.revision
+  : "";
 const LIVE_ALTERNATIVE_CAT_FACES = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.alternatives)
   ? CatInc.data.liveCatFaces.alternatives.map(function(item) {
       return item.runtimePath + "?v=live-r" + item.revision;
