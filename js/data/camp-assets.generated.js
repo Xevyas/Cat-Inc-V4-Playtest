@@ -154,7 +154,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -182,7 +183,7 @@
               "stickerCategory": "general",
               "stickerSlot": {
                 "id": "front-surface",
-                "enabled": true,
+                "enabled": false,
                 "mode": "pitched-roof",
                 "category": "general",
                 "anchors": {
@@ -443,7 +444,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -637,7 +639,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -838,11 +841,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -916,15 +921,18 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 2,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 3
@@ -993,15 +1001,18 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 2,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 3
@@ -1270,11 +1281,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -1563,11 +1576,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -1694,7 +1709,8 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -1777,11 +1793,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -1850,11 +1868,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -1923,11 +1943,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -2010,11 +2032,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -2083,11 +2107,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -2156,11 +2182,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -2229,11 +2257,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -2302,11 +2332,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -2441,11 +2473,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -2670,11 +2704,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -2743,11 +2779,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -2821,11 +2859,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -3051,6 +3091,125 @@
               "stickerCategory": "storage",
               "stickerSlot": {
                 "id": "front-surface",
+                "enabled": false,
+                "mode": "surface",
+                "category": "storage",
+                "anchors": {
+                  "down": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  },
+                  "right": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  },
+                  "up": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  },
+                  "left": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": true,
+                "baseSticker": true,
+                "defaultScale": 1.5,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "storage-stacked-boxes",
+                "defaultColorId": "kraft"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 30,
+                  "top": 6,
+                  "right": 331,
+                  "bottom": 339
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 30,
+                  "top": 0,
+                  "right": 321,
+                  "bottom": 353
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 33,
+                  "top": 0,
+                  "right": 326,
+                  "bottom": 352
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 39,
+                  "top": 0,
+                  "right": 329,
+                  "bottom": 354
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "2": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "small-storage-shed",
+              "runtimeId": "storage",
+              "name": "Small Storage Shed",
+              "category": "building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/left.png"
+              },
+              "stickerCategory": "storage",
+              "stickerSlot": {
+                "id": "front-surface",
                 "enabled": true,
                 "mode": "surface",
                 "category": "storage",
@@ -3136,7 +3295,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -3585,7 +3745,8 @@
                     "approachCells": [
                       {
                         "x": -1,
-                        "y": 0
+                        "y": 0,
+                        "side": "west"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -4292,7 +4453,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -4320,7 +4482,7 @@
               "stickerCategory": "general",
               "stickerSlot": {
                 "id": "front-surface",
-                "enabled": true,
+                "enabled": false,
                 "mode": "pitched-roof",
                 "category": "general",
                 "anchors": {
@@ -4581,7 +4743,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -4775,7 +4938,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -4976,11 +5140,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -5054,15 +5220,18 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 2,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 3
@@ -5131,15 +5300,18 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 2,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 3
@@ -5474,11 +5646,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -5767,11 +5941,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -5898,7 +6074,8 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -5981,11 +6158,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6054,11 +6233,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6127,11 +6308,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6214,11 +6397,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6287,11 +6472,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6360,11 +6547,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6433,11 +6622,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6506,11 +6697,13 @@
                     "approachCells": [
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 2
@@ -6645,11 +6838,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2
+                        "y": 2,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -6874,11 +7069,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -6947,11 +7144,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -7025,11 +7224,13 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -7255,6 +7456,125 @@
               "stickerCategory": "storage",
               "stickerSlot": {
                 "id": "front-surface",
+                "enabled": false,
+                "mode": "surface",
+                "category": "storage",
+                "anchors": {
+                  "down": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  },
+                  "right": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  },
+                  "up": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  },
+                  "left": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.3
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": true,
+                "baseSticker": true,
+                "defaultScale": 1.5,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "storage-stacked-boxes",
+                "defaultColorId": "kraft"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 30,
+                  "top": 6,
+                  "right": 331,
+                  "bottom": 339
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 30,
+                  "top": 0,
+                  "right": 321,
+                  "bottom": 353
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 33,
+                  "top": 0,
+                  "right": 326,
+                  "bottom": 352
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 39,
+                  "top": 0,
+                  "right": 329,
+                  "bottom": 354
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "2": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "small-storage-shed",
+              "runtimeId": "storage",
+              "name": "Small Storage Shed",
+              "category": "building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/small-storage-shed/tier-2/revision-1/left.png"
+              },
+              "stickerCategory": "storage",
+              "stickerSlot": {
+                "id": "front-surface",
                 "enabled": true,
                 "mode": "surface",
                 "category": "storage",
@@ -7340,7 +7660,8 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 1
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -7789,7 +8110,8 @@
                     "approachCells": [
                       {
                         "x": -1,
-                        "y": 0
+                        "y": 0,
+                        "side": "west"
                       }
                     ],
                     "minimumReachableCells": 1

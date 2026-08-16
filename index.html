@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0167" />
+  <link rel="stylesheet" href="style.css?v=0.0168" />
   <style>
-    /* First-paint guard: unknown neighbor DOM stays absent before game state loads. */
-    .camp-prototype-map.camp-neighbor-red-unknown [data-camp-garden-zone="redGarden"],
-    .camp-prototype-map.camp-neighbor-green-unknown [data-camp-garden-zone="greenGarden"] {
-      visibility: hidden !important;
-      pointer-events: none !important;
+    /* First-paint guard: only the gardens are fogged. Houses and river remain
+       visible while game state is loading. */
+    .camp-prototype-map.camp-neighbor-red-unknown [data-camp-fog-zone="redGarden"],
+    .camp-prototype-map.camp-neighbor-green-unknown [data-camp-fog-zone="greenGarden"] {
+      display: block;
     }
     .ecran-intro[data-dialogue-hydrated="true"] .story-continue-hint { color: rgba(92, 67, 44, .86); }
     .prologue-cat-portrait img.camp-cat-face-normalized {
@@ -305,7 +305,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0063 · August 16, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0064 · August 16, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -499,7 +499,7 @@
     <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0029" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
     <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><span class="onglet-icone camp-tab-icon" aria-hidden="true"><i></i><i></i><i></i></span> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
-    <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/Buildings/Job Center_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Facilities</span></button>
+    <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/Jobs.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Jobs</span></button>
     <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
     <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Bag">Inventory</span></button>
     <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Logs">Logs</span></button>
@@ -536,13 +536,6 @@
                   <span class="camp-dev-only">Debug categories can place other camp items or claim adjacent territory. Natural clearing debris cannot be moved; the Junk menu provides independent decorative copies.</span>
                 </span>
               </span>
-            </div>
-            <div id="camp-active-objectives" class="camp-active-objectives" aria-label="Active objectives" hidden>
-              <div class="camp-active-objectives-heading">
-                <strong>Active goals</strong>
-                <button id="camp-active-objectives-toggle" class="camp-active-objectives-toggle" type="button" aria-label="Collapse Active goals" aria-expanded="true" aria-controls="camp-active-objectives-list" onclick="basculerObjectifsCamp(event)">−</button>
-              </div>
-              <div id="camp-active-objectives-list" class="camp-active-objectives-list"></div>
             </div>
           </div>
           <div class="camp-prototype-heading-actions">
@@ -627,6 +620,10 @@
           <div class="camp-prototype-grid" aria-hidden="true"></div>
           <div id="camp-prototype-items" class="camp-prototype-items"></div>
           <button id="bird-btn" class="camp-bird-perch" type="button" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
+           <div class="camp-prototype-neighbor-fog" aria-hidden="true">
+             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-red" data-camp-fog-zone="redGarden"></span>
+             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"></span>
+           </div>
            <div id="camp-prototype-fences" class="camp-prototype-fences" aria-hidden="true"></div>
            <div id="camp-prototype-connectivity-statuses" class="camp-prototype-connectivity-statuses" aria-hidden="true"></div>
           <div id="camp-production-dismiss-surface" class="camp-production-dismiss-surface" data-touch-activation="manual" aria-hidden="true" hidden></div>
@@ -736,7 +733,7 @@
 
   <!-- CONTENU FACILITIES -->
   <div id="contenu-facilities" role="tabpanel" aria-labelledby="onglet-facilities" aria-hidden="true" style="display:none">
-    <div id="facilities-subtabs" class="facilities-subtabs" role="tablist" aria-label="Facilities sections" aria-hidden="true" data-has-tabs="false">
+    <div id="facilities-subtabs" class="facilities-subtabs" role="tablist" aria-label="Jobs sections" aria-hidden="true" data-has-tabs="false">
       <button id="facilities-subtab-jobs" class="facilities-subtab btn-filtre-work facilities-subtab-active btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="section-job-center" onclick="selectionnerVueFacilitiesMobile('jobs')">Jobs</button>
       <button id="facilities-subtab-training" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-training-center" onclick="selectionnerVueFacilitiesMobile('training')">Train</button>
       <button id="facilities-subtab-lab" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-laboratory" onclick="selectionnerVueFacilitiesMobile('lab')" style="display:none">Lab</button>
@@ -745,7 +742,7 @@
       <section class="panneau panneau-buildings" id="section-job-center">
         <h2 class="panneau-titre panneau-titre-aide">Job Center <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job Center" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)">?</button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train unassigned cats for jobs that match the gang's needs.</span></span></h2>
         <div class="bloc-action bloc-action-building">
-          <img class="work-sprite" src="img/Buildings/Job Center_Final.png" alt="">
+          <img class="work-sprite" src="img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001" alt="Front view of the Job Center">
           <div class="bloc-entete-textes">
             <span class="bloc-desc">Jobs improve production and unlock specialized roles.</span>
           </div>
@@ -988,7 +985,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0063</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0064</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1278,24 +1275,24 @@
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
-  <script src="js/data/content.js?v=0.0056"></script>
-  <script src="js/data/changelog.js?v=0.0063"></script>
-  <script src="js/data/dialogues.generated.js?v=0.0004"></script>
+  <script src="js/data/content.js?v=0.0057"></script>
+  <script src="js/data/changelog.js?v=0.0064"></script>
+  <script src="js/data/dialogues.generated.js?v=0.0005"></script>
   <script src="js/data/dialogues.js?v=0.0006"></script>
   <script src="js/data/shop.js?v=0.0001"></script>
   <script src="js/core/state.js?v=0.0046"></script>
-  <script src="js/core/save.js?v=0.0052"></script>
+  <script src="js/core/save.js?v=0.0053"></script>
   <script src="js/core/production.js?v=0.0036"></script>
-  <script src="js/data/camp-gameplay.generated.js?v=0.0005"></script>
+  <script src="js/data/camp-gameplay.generated.js?v=0.0006"></script>
   <script src="js/data/playable-content-scenario.js?v=0.0001"></script>
-  <script src="js/core/incrementor-law.js?v=0.0002"></script>
-  <script src="js/data/camp-assets.generated.js?v=0.0013"></script>
+  <script src="js/core/incrementor-law.js?v=0.0003"></script>
+  <script src="js/data/camp-assets.generated.js?v=0.0014"></script>
   <script src="js/data/camp-templates.generated.js?v=0.0003"></script>
-  <script src="js/core/camp-connectivity.js?v=0.0002"></script>
+  <script src="js/core/camp-connectivity.js?v=0.0003"></script>
   <script src="js/core/camp-capabilities.js?v=0.0001"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0028"></script>
+  <script src="js/ui/camp.js?v=0.0029"></script>
   <script src="js/ui/dialogs.js?v=0.0002"></script>
   <script src="js/ui/guidance.js?v=0.0003"></script>
   <script src="js/ui/touch-activation.js?v=0.0005"></script>
@@ -1304,7 +1301,7 @@
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0002"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0190"></script>
+  <script src="jeu.js?v=0.0191"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

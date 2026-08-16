@@ -487,6 +487,31 @@
     })
   ]);
 
+  const release0064Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Camp buildings now use canonical Studio-authored upgrade tiers and progression rules.",
+        "Cat Houses now let residents be assigned or swapped directly from the Camp.",
+        "Neighbor plots now reveal through governed access paths with visible boundary fences."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Jobs and Camp actions now use clearer icons and ready-state alerts.",
+        "Camp placement now supports irregular building footprints more faithfully."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Professions now apply only after their job is validated.",
+        "Neighbor fog and boundary fences now stay consistent as access changes."
+      ])
+    })
+  ]);
+
   const release0061Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -568,7 +593,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0063",
+    baseVersion: "0.0064",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -581,6 +606,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0064",
+      date: "2026-08-16",
+      categories: release0064Categories
+    }),
     Object.freeze({
       version: "0.0063",
       date: "2026-08-16",

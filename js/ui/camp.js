@@ -36,6 +36,8 @@
     ? root.location.search
     : "";
   const runtimeDebug = /(?:^|[?&])debug=1(?:&|$)/.test(runtimeSearch);
+  const runtimeFootprintFixture = runtimeDebug
+    && /(?:^|[?&])footprintFixture=1(?:&|$)/.test(runtimeSearch);
 
   function runtimeQueryValue(name) {
     const match = runtimeSearch.match(new RegExp("(?:^|[?&])" + name + "=([^&]*)"));
@@ -249,6 +251,24 @@
   function runtimeItem(typeId, fallback) {
     const revision = runtimeRevision(typeId, 1);
     if (!revision) return Object.freeze(fallback);
+    const family = RUNTIME_MANIFEST.assets && RUNTIME_MANIFEST.assets[typeId];
+    const tierFootprints = {};
+    const tierAccess = {};
+    Object.keys(family && family.tiers || {}).forEach(function(tierNumber) {
+      const tierRevision = runtimeRevision(typeId, Number(tierNumber));
+      if (!tierRevision) return;
+      tierFootprints[tierNumber] = Object.freeze({
+        width: tierRevision.width,
+        height: tierRevision.height,
+        occupiedCells: Array.isArray(tierRevision.occupiedCells)
+          ? Object.freeze(tierRevision.occupiedCells.map(function(cell) { return Object.freeze({...cell}); }))
+          : undefined
+      });
+      const tierFallbackAccess = Number(tierNumber) === 1 ? fallback.access : null;
+      tierAccess[tierNumber] = Object.prototype.hasOwnProperty.call(tierRevision, "access")
+        ? runtimeAccess(tierRevision.access, tierFallbackAccess)
+        : tierFallbackAccess;
+    });
     const sprites = {};
     Object.keys(revision.sprites || {}).forEach(function(direction) {
       sprites[direction] = runtimeSpritePath(revision.sprites[direction], revision);
@@ -258,6 +278,9 @@
       label: revision.name || fallback.label,
       width: revision.width,
       height: revision.height,
+      occupiedCells: revision.occupiedCells,
+      tierFootprints: Object.freeze(tierFootprints),
+      tierAccess: Object.freeze(tierAccess),
       asset: sprites.down || fallback.asset,
       assets: Object.freeze(sprites),
       access: Object.prototype.hasOwnProperty.call(revision, "access")
@@ -309,7 +332,10 @@
     return {
       tier: revision.tier,
       revision: revision.revision,
-      sprites: sprites
+      sprites: sprites,
+      width: revision.width,
+      height: revision.height,
+      occupiedCells: revision.occupiedCells
     };
   }
 
@@ -731,6 +757,13 @@
           label: (revision.name || family.name || runtimeId) + " · T" + tierNumber,
           width: revision.width,
           height: revision.height,
+          occupiedCells: revision.occupiedCells,
+          tierFootprints: Object.freeze({
+            [String(tierNumber)]: Object.freeze({
+              width: revision.width, height: revision.height,
+              occupiedCells: revision.occupiedCells
+            })
+          }),
           color: "dev-visual",
           category: "dev-library",
           rotatable: Object.keys(sprites).length > 1,
@@ -746,6 +779,36 @@
         });
       });
     });
+    if (runtimeFootprintFixture && baseTypes.cardboardBox) {
+      const fixture = baseTypes.cardboardBox;
+      visualTypes.cardboardBox = Object.freeze({
+        ...fixture,
+        occupiedCells: undefined,
+        tierAccess: Object.freeze({
+          ...(fixture.tierAccess || {}),
+          2: Object.freeze({
+            activationPolicy: "all-ports-reachable",
+            ports: Object.freeze([Object.freeze({
+              id: "fixture-notch",
+              side: "west",
+              cellPolicy: "all-cells-reachable",
+              approachCells: Object.freeze([Object.freeze({x: 0, y: 0, side: "west"})]),
+              minimumReachableCells: 1
+            })])
+          })
+        }),
+        tierFootprints: Object.freeze({
+          1: Object.freeze({width: 1, height: 1}),
+          2: Object.freeze({
+            width: 2, height: 2,
+            occupiedCells: Object.freeze([
+              Object.freeze({x: 1, y: 0}), Object.freeze({x: 0, y: 1}),
+              Object.freeze({x: 1, y: 1})
+            ])
+          })
+        })
+      });
+    }
     return visualTypes;
   }
 
@@ -1137,8 +1200,7 @@
     const zonesConquises = new Set(normalise.claimedZoneIds);
     const cellulesLibres = new Set(normalise.clearedCells);
     (Array.isArray(layout) ? layout : []).forEach(function(item) {
-      const rectangle = rectangleItem(item);
-      cellulesRectangle(rectangle).forEach(function(cellule) {
+      cellulesOccupeesItem(item).forEach(function(cellule) {
         const zone = zoneTerrainPourCellule(cellule.x, cellule.y);
         if (!zone) return;
         zonesConquises.add(zone.id);
@@ -1151,23 +1213,30 @@
     });
   }
 
-  function dimensionsType(typeOuId, rotation) {
+  function dimensionsType(typeOuId, rotation, tier) {
     const type = typeof typeOuId === "string" ? ITEM_TYPES[typeOuId] : typeOuId;
     if (!type) return null;
-    const angle = type.rotatable ? normaliserRotation(rotation) : 0;
-    const permute = angle === 90 || angle === 270;
-    return {
-      width: permute ? type.height : type.width,
-      height: permute ? type.width : type.height,
-      rotation: angle
-    };
+    return campConnectivity.dimensionsType(type, rotation, tier);
+  }
+
+  function cellulesOccupeesItem(item, requestedTier) {
+    if (!item) return [];
+    const typeId = LEGACY_TYPE_ALIASES[item.type] || item.type;
+    const type = ITEM_TYPES[typeId];
+    return campConnectivity.cellulesOccupeesItem(item, type, requestedTier);
+  }
+
+  function cellulesReserveesItem(item) {
+    if (!item) return [];
+    const typeId = LEGACY_TYPE_ALIASES[item.type] || item.type;
+    return campConnectivity.cellulesReserveesItem(item, ITEM_TYPES[typeId]);
   }
 
   function rectangleItem(item) {
     const typeId = item && (LEGACY_TYPE_ALIASES[item.type] || item.type);
     const type = typeId && ITEM_TYPES[typeId];
     if (!type) return null;
-    const dimensions = dimensionsType(type, item.rotation);
+    const dimensions = dimensionsType(type, item.rotation, item.tier || 1);
     return {
       x: entier(item.x),
       y: entier(item.y),
@@ -1183,7 +1252,7 @@
       && a.y + a.height > b.y;
   }
 
-  function testerPlacement(layout, typeId, x, y, ignoreUid, rotation, terrain) {
+  function testerPlacement(layout, typeId, x, y, ignoreUid, rotation, terrain, tier) {
     const type = ITEM_TYPES[typeId];
     const positionX = entier(x);
     const positionY = entier(y);
@@ -1192,7 +1261,7 @@
       return { valide: false, raison: "Choose a grid position." };
     }
 
-    const dimensions = dimensionsType(type, rotation);
+    const dimensions = dimensionsType(type, rotation, tier || 1);
     const rectangle = {
       x: positionX,
       y: positionY,
@@ -1209,7 +1278,7 @@
     }
     if (
       terrain
-      && cellulesRectangle(rectangle).some(function(cellule) {
+      && campConnectivity.cellulesOccupeesItem({x: positionX, y: positionY, rotation: rotation, tier: tier || 1}, type).some(function(cellule) {
         return !estCelluleConstructible(terrain, cellule.x, cellule.y);
       })
     ) {
@@ -1220,8 +1289,10 @@
     for (let index = 0; index < elements.length; index += 1) {
       const autre = elements[index];
       if (!autre || autre.uid === ignoreUid) continue;
-      const autreRectangle = rectangleItem(autre);
-      if (autreRectangle && rectanglesSeChevauchent(rectangle, autreRectangle)) {
+      const candidateCells = new Set(campConnectivity.cellulesOccupeesItem(
+        {x: positionX, y: positionY, rotation: rotation, tier: tier || 1}, type
+      ).map(function(cell) { return cleCellule(cell.x, cell.y); }));
+      if (cellulesReserveesItem(autre).some(function(cell) { return candidateCells.has(cleCellule(cell.x, cell.y)); })) {
         const autreType = ITEM_TYPES[autre.type];
         return {
           valide: false,
@@ -1248,13 +1319,14 @@
       const y = entier(item.y);
       const type = ITEM_TYPES[typeId];
       const rotation = type.rotatable ? normaliserRotation(item.rotation) : 0;
-      if (!testerPlacement(layout, typeId, x, y, null, rotation, terrain).valide) return;
+      const tier = Number.isInteger(item.tier) && item.tier > 0 ? item.tier : 1;
+      if (!testerPlacement(layout, typeId, x, y, null, rotation, terrain, tier).valide) return;
       const normalise = {
         uid: uid,
         type: typeId,
         x: x,
         y: y,
-        tier: Number.isInteger(item.tier) && item.tier > 0 ? item.tier : 1
+        tier: tier
       };
       if (type.rotatable) normalise.rotation = rotation;
       if (type.category === "house" || type.category === "building") {
@@ -1305,7 +1377,7 @@
 
   function raccordsRouteItem(layout, item, routesIndexees) {
     const type = item && ITEM_TYPES[item.type];
-    const access = type && type.access;
+    const access = campConnectivity.resoudreAccesType(type, item && item.tier || 1);
     if (!type || !access || !Array.isArray(access.ports)) return [];
     const routesParCellule = routesIndexees instanceof Map
       ? routesIndexees
@@ -1314,7 +1386,9 @@
       (Array.isArray(layout) ? layout : []).forEach(function(entree) {
         const routeType = entree && ITEM_TYPES[entree.type];
         if (!routeType || routeType.category !== "road") return;
-        routesParCellule.set(cleCellule(entree.x, entree.y), routeType);
+        campConnectivity.cellulesOccupeesItem(entree, routeType).forEach(function(cell) {
+          routesParCellule.set(cleCellule(cell.x, cell.y), routeType);
+        });
       });
     }
     const portsCalcules = campConnectivity.portsItem(item, type);
@@ -1331,7 +1405,7 @@
       const cellulesRaccordees = portCalcule.cells.map(function(cellule) {
         const routeType = routesParCellule.get(cleCellule(cellule.x, cellule.y));
         if (!routeType) return null;
-        const direction = directionAccesItem(cellule, item);
+        const direction = cellule.side || directionAccesItem(cellule, item);
         const axeVertical = direction === "north" || direction === "south";
         const ancrageAutomatique = axeVertical
           ? (cellule.x - rectangle.x + 0.5) / rectangle.width
@@ -1454,7 +1528,9 @@
     layoutNormalise.forEach(function(item) {
       const routeType = item && ITEM_TYPES[item.type];
       if (!routeType || routeType.category !== "road") return;
-      routesParCellule.set(cleCellule(item.x, item.y), routeType);
+      campConnectivity.cellulesOccupeesItem(item, routeType).forEach(function(cell) {
+        routesParCellule.set(cleCellule(cell.x, cell.y), routeType);
+      });
     });
     const positionX = entier(x);
     const positionY = entier(y);
@@ -1704,6 +1780,9 @@
     dureeDemolitionObstacle: dureeDemolitionObstacle,
     adapterTerrainAuLayout: adapterTerrainAuLayout,
     dimensionsType: dimensionsType,
+    resoudreAccesType: campConnectivity.resoudreAccesType,
+    cellulesOccupeesItem: cellulesOccupeesItem,
+    cellulesReserveesItem: cellulesReserveesItem,
     rectangleItem: rectangleItem,
     rectanglesSeChevauchent: rectanglesSeChevauchent,
     testerPlacement: testerPlacement,

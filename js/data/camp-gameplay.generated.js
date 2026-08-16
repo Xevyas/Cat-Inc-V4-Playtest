@@ -45,7 +45,24 @@
       "effects": {
         "housingCapacity": 1
       },
-      "upgradeTiers": {},
+      "upgradeTiers": {
+        "2": {
+          "durationSeconds": 1800,
+          "costs": {
+            "cardboardPlanks": 5
+          },
+          "effects": {
+            "housingCapacity": 1,
+            "appeal": 1
+          },
+          "unlock": {
+            "kind": "runtime-rule",
+            "id": "appealUnlocked"
+          },
+          "costGrowth": 1.7,
+          "durationGrowth": 1.4
+        }
+      },
       "simulation": {
         "ranks": 12
       },
@@ -68,7 +85,8 @@
           }
         },
         "rounding": "ceil",
-        "refundRate": 0.5
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
       }
     },
     "storage": {
@@ -89,14 +107,21 @@
       },
       "upgradeTiers": {
         "2": {
-          "durationSeconds": 900,
+          "durationSeconds": 3600,
           "costs": {
-            "basicWoodPlanks": 5,
-            "pebbleBricks": 5
+            "cardboardPlanks": 5,
+            "pebbleBricks": 1
           },
           "effects": {
-            "storageCapacity": 20
-          }
+            "storageCapacity": 15,
+            "appeal": 0.5
+          },
+          "unlock": {
+            "kind": "runtime-rule",
+            "id": "appealUnlocked"
+          },
+          "costGrowth": 1.5,
+          "durationGrowth": 1.4
         }
       },
       "simulation": {
@@ -112,14 +137,15 @@
         "baseCosts": {
           "cardboardPlanks": 3
         },
-        "growth": 1.25,
+        "growth": 1.5,
         "authoredRanks": {
           "1": {
             "cardboardPlanks": 3
           }
         },
         "rounding": "ceil",
-        "refundRate": 0.5
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
       }
     },
     "operationsTable": {

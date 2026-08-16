@@ -216,7 +216,7 @@
       "id": "ecran-story-cannelle-recruit",
       "name": "Cannelle's Proposition",
       "flag": "storyCannelleRecruitVue",
-      "trigger": "Cannelle's successful eighth-recruit confirmation closes.",
+      "trigger": "Cannelle's successful tenth-recruit confirmation closes.",
       "closeButton": {
         "label": "Build Cannelle's shop",
         "handler": "terminerStoryRecrutementCannelle()",
@@ -286,7 +286,12 @@
           "portraitClass": "cannelle",
           "html": "Pleasure doing business with you. Soon, anyway."
         }
-      ]
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/Cat faces/cannelle-3.png",
+        "alt": "Cannelle"
+      }
     },
     {
       "id": "ecran-story-market-stall-complete",
@@ -874,7 +879,7 @@
           "speakerClass": null,
           "speakerName": null,
           "portraitClass": null,
-          "html": "Decorations, Paths and Cardboard Box Tier 2 Unlocked !"
+          "html": "Decorations, Paths and Tier 2 for Cardboard Boxes and Storage Sheds Unlocked !"
         }
       ],
       "asset": {

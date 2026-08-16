@@ -26,6 +26,41 @@
     "cardboardBox", "storage", "operationsTable", "jobCenter",
     "trainingCenter", "laboratory", "marketStall", "smallFountain"
   ];
+  function canonicalCampUpgradeEligible(typeId, startTier, targetTier) {
+    const definition = CatInc.data && CatInc.data.campGameplay
+      && CatInc.data.campGameplay.definitions && CatInc.data.campGameplay.definitions[typeId];
+    const tier = definition && definition.upgradeTiers && definition.upgradeTiers[String(targetTier)];
+    if (tier && targetTier === startTier + 1) return true;
+    // Production upgrades predate per-tier authored unlock/visual records.
+    return CAMP_BUILDING_IDS.includes(typeId) && startTier === 1 && targetTier === 2;
+  }
+  function canonicalCampUpgradeQuoteValid(upgrade) {
+    const definition = CatInc.data && CatInc.data.campGameplay
+      && CatInc.data.campGameplay.definitions && CatInc.data.campGameplay.definitions[upgrade.type];
+    const tier = definition && definition.upgradeTiers
+      && definition.upgradeTiers[String(upgrade.targetTier)];
+    const legacyProduction = CAMP_BUILDING_IDS.includes(upgrade.type)
+      && upgrade.startTier === 1 && upgrade.targetTier === 2;
+    const rank = Number.isInteger(upgrade.rank) && upgrade.rank > 0
+      ? upgrade.rank : (legacyProduction && upgrade.rank === undefined ? 1 : null);
+    const law = CatInc.incrementorLaw;
+    if (!tier || rank === null || !law || typeof law.scaleCosts !== "function") return false;
+    const expected = law.scaleCosts(
+      tier.costs,
+      rank,
+      Number(tier.costGrowth) || 1,
+      definition && definition.law && definition.law.rounding || "ceil"
+    );
+    const expectedKeys = Object.keys(expected).sort();
+    const actualKeys = Object.keys(upgrade.costs).sort();
+    return expectedKeys.length === actualKeys.length
+      && expectedKeys.every(function(resourceId, index) {
+        return actualKeys[index] === resourceId
+          && typeof upgrade.costs[resourceId] === "number"
+          && Number.isFinite(upgrade.costs[resourceId])
+          && upgrade.costs[resourceId] === expected[resourceId];
+      });
+  }
   function canonicalCampRepairEligible(typeId, definition) {
     if (
       !CAMP_CANONICAL_REPAIR_IDS.includes(typeId)
@@ -547,27 +582,29 @@ function validerStructureSauvegarde(d) {
           });
       });
     if (!constructionsBatimentsValides) return "Invalid Camp building construction data.";
-    const upgradeResources = ["cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks"];
     const ameliorationsCampValides = Object.keys(camp.upgrades).length <= 128
       && Object.keys(camp.upgrades).every(function(uid) {
         const upgrade = camp.upgrades[uid];
         return typeof uid === "string" && uid.length > 0 && uid.length <= 160 && !/[<>]/.test(uid)
           && estObjetSauvegarde(upgrade)
-          && CAMP_BUILDING_IDS.includes(upgrade.type)
+          && typeof upgrade.type === "string"
           && indexKittyValide(upgrade.kittyIndex, false)
           && Number.isInteger(upgrade.startTier) && upgrade.startTier > 0 && upgrade.startTier <= 100
           && Number.isInteger(upgrade.targetTier) && upgrade.targetTier === upgrade.startTier + 1 && upgrade.targetTier <= 100
+          && canonicalCampUpgradeEligible(upgrade.type, upgrade.startTier, upgrade.targetTier)
+          && (upgrade.rank === undefined || (Number.isInteger(upgrade.rank) && upgrade.rank > 0))
           && typeof upgrade.startTs === "number" && Number.isFinite(upgrade.startTs) && upgrade.startTs >= 0
           && typeof upgrade.duration === "number" && Number.isFinite(upgrade.duration) && upgrade.duration > 0
           && typeof upgrade.readyToClaim === "boolean"
           && estObjetSauvegarde(upgrade.costs)
-          && Object.keys(upgrade.costs).length <= upgradeResources.length
+          && Object.keys(upgrade.costs).length <= 8
           && Object.keys(upgrade.costs).every(function(resourceId) {
-            return upgradeResources.includes(resourceId)
+            return typeof resourceId === "string" && /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
               && typeof upgrade.costs[resourceId] === "number"
               && Number.isFinite(upgrade.costs[resourceId])
               && upgrade.costs[resourceId] >= 0;
-          });
+          })
+          && canonicalCampUpgradeQuoteValid(upgrade);
       });
     if (!ameliorationsCampValides) return "Invalid Camp upgrade data.";
   }
@@ -1286,6 +1323,49 @@ function analyserSauvegardeBrute(raw) {
       : null;
     if (kitty && kitty.metier === "shop-owner") etat[field] = null;
   });
+  // Older current-version saves assigned the profession when the timer ended,
+  // even though the ready record still awaited explicit validation. The ready
+  // record is authoritative: keep the Cat reserved, but remove that premature
+  // capability until the player validates it through the existing action.
+  const prematureReadyKittyIndices = new Set();
+  ["formationTermineeEnAttente", "formationIngenieurTermineeEnAttente"].forEach(function(field) {
+    const reservation = etat[field];
+    const kitty = reservation && Number.isInteger(reservation.kittyIndex)
+      ? etat.kittiesData[reservation.kittyIndex]
+      : null;
+    if (!kitty) return;
+    prematureReadyKittyIndices.add(reservation.kittyIndex);
+    if (kitty.metier !== reservation.metier) return;
+    kitty.metier = null;
+    if (field === "formationIngenieurTermineeEnAttente") delete kitty.engineerRank;
+  });
+  if (prematureReadyKittyIndices.size > 0) {
+    Object.keys(etat.managers).forEach(function(family) {
+      if (prematureReadyKittyIndices.has(etat.managers[family])) etat.managers[family] = null;
+    });
+    const regularJobs = new Set(JOB_IDS.filter(function(jobId) {
+      return !["gang-leader", "camp-engineer", "shop-owner"].includes(jobId);
+    }));
+    const managerJobs = new Set([
+      "lumberjack", "carpenter", "farmer", "chef", "builder", "miner", "stonemason"
+    ]);
+    const hasValidatedRegularJob = etat.kittiesData.some(function(kitty) {
+      return kitty && regularJobs.has(kitty.metier);
+    });
+    const hasValidatedManagerJob = etat.kittiesData.some(function(kitty) {
+      return kitty && managerJobs.has(kitty.metier);
+    });
+    if (!hasValidatedRegularJob) etat.managersDebloques = false;
+    if (!hasValidatedManagerJob) etat.managerRoleTutorialShown = false;
+    const hasValidatedExplorator = etat.kittiesData.some(function(kitty) {
+      return kitty && kitty.metier === "explorator";
+    });
+    if (!hasValidatedExplorator) {
+      etat.storiesVues = etat.storiesVues.filter(function(flag) {
+        return flag !== "storyExploratorVue";
+      });
+    }
+  }
   // Migration: cats from the pre-XP format used level 1 as their initial
   // value. Only that legacy shape may be converted; current level-1 cats
   // already have an xp field and must survive every reload unchanged.

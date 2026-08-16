@@ -66,6 +66,27 @@
     }, {});
   }
 
+  // Tier actions share the same authored rounding as Tier 1 construction,
+  // but do not belong to a Law family of their own.
+  function coutsEchelles(costs, rank, growth, rounding) {
+    const rang = entierPositif(rank, 1);
+    const facteur = Number.isFinite(Number(growth)) && Number(growth) > 0
+      ? Number(growth) : 1;
+    return Object.keys(copierCouts(costs)).reduce(function(resultat, resourceId) {
+      const base = Number(costs[resourceId]) || 0;
+      resultat[resourceId] = base === 0 ? 0 : Math.max(1,
+        arrondir(base * Math.pow(facteur, rang - 1), rounding || "ceil"));
+      return resultat;
+    }, {});
+  }
+
+  function valeurEchelonnee(value, rank, growth, rounding) {
+    const rang = entierPositif(rank, 1);
+    const facteur = Number.isFinite(Number(growth)) && Number(growth) > 0
+      ? Number(growth) : 1;
+    return Math.max(1, arrondir((Number(value) || 0) * Math.pow(facteur, rang - 1), rounding || "ceil"));
+  }
+
   function remboursement(typeId, paidCosts) {
     const config = definition(typeId);
     if (!config) return {};
@@ -81,6 +102,8 @@
     definition: definition,
     nextRank: rangSuivant,
     costForRank: coutPourRang,
+    scaleCosts: coutsEchelles,
+    scaleValue: valeurEchelonnee,
     copyCosts: copierCouts,
     refundForPaidCosts: remboursement
   });

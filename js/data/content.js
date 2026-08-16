@@ -685,7 +685,7 @@ const TIERS_KITTIES = [
 
 const NOMS_KITTIES = [
   "Bernardo", "Mochi", "Luna", "Whiskers", "Felix",
-  "Cleopatra", "Biscuit", "Cannelle", "Cosmo", "Zelda", "Napoleon",
+  "Cleopatra", "Biscuit", "Cosmo", "Zelda", "Cannelle", "Napoleon",
   "Duchess", "Rascal", "Aurora", "Chester", "Pumpkin",
   "Oliver", "Mittens", "Shadow", "Simba", "Nala",
   "Tiger", "Max", "Lily", "Charlie", "Bella",
