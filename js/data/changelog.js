@@ -512,6 +512,30 @@
     })
   ]);
 
+  const release0065Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Camp actions now become faster with Cat levels, and assigned House residents share their comfort bonus.",
+        "The Wood Cathouse now follows the canonical Camp House placement, assignment and validation flow."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Camp editing, Cat assignment states and ready-to-learn books now provide clearer mobile feedback.",
+        "Camp tasks with multiple Cats now show every assigned worker."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Cats assigned to another activity can no longer be selected for a conflicting Camp action.",
+        "The first real Basic Wood Plank now announces the Wood Cathouse through Bernardo's persistent dialogue without repeating after reload."
+      ])
+    })
+  ]);
+
   const release0061Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -593,7 +617,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0064",
+    baseVersion: "0.0065",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -606,6 +630,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0065",
+      date: "2026-08-17",
+      categories: release0065Categories
+    }),
     Object.freeze({
       version: "0.0064",
       date: "2026-08-16",

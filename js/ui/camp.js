@@ -504,6 +504,17 @@
       access: CARDBOARD_BOX_ACCESS,
       asset: "img/Buildings/Camp%20Runtime/cardboard-box/tier-1/revision-5/down.png?v=0.0001"
     })),
+    woodCathouse: gameplayItem("woodCathouse", gameplayRuntimeItem("woodCathouse", {
+      id: "woodCathouse",
+      label: "Wood Cathouse",
+      width: 1,
+      height: 1,
+      color: "wood",
+      category: "house",
+      rotatable: true,
+      blocksMovement: true,
+      access: singleEntranceAccess(1, 1)
+    })),
     jobCenter: runtimeItem("jobCenter", {
       id: "jobCenter",
       label: "Job Center",

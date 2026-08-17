@@ -374,6 +374,47 @@
           "pebbleBricks": 1
         }
       }
+    },
+    "woodCathouse": {
+      "assetId": "wood-cathouse",
+      "name": "Wood Cathouse",
+      "category": "house",
+      "repeatable": true,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "unlock": {
+        "kind": "runtime-rule",
+        "id": "woodCathouseUnlocked"
+      },
+      "effects": {
+        "housingCapacity": 1,
+        "residentLevelBonusMultiplier": 1.05
+      },
+      "upgradeTiers": {},
+      "simulation": {
+        "ranks": 12
+      },
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 1800
+      },
+      "law": {
+        "family": "wood-cathouse",
+        "baseCosts": {
+          "basicWoodPlanks": 2
+        },
+        "growth": 1.7,
+        "authoredRanks": {
+          "1": {
+            "basicWoodPlanks": 2
+          }
+        },
+        "rounding": "ceil",
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
+      }
     }
   }
 });

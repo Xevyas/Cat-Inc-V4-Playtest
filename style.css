@@ -758,7 +758,7 @@ body.camp-prologue-reveal .camp-prototype-map {
 .camp-garden-access-site .camp-task-worker {
   --camp-task-progress: 0%;
   position: absolute;
-  left: 50%;
+  left: calc(50% + var(--camp-task-worker-offset, 0px));
   top: 50%;
   z-index: 1000;
   display: grid;
@@ -1082,6 +1082,11 @@ body[data-onglet-actif="camp"].camp-recruitment-unlocked[data-dev-mode="true"] .
   max-height: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+.camp-prototype-fence-junction-river-end {
+  /* Keep the transparent canvas clipped at the bank while lifting the full
+     authored post above it. */
+  transform: translate(-50%, -70%);
 }
 .camp-prototype-fence-edge-foreground {
   z-index: 14;
@@ -5624,25 +5629,32 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 .camp-garden-access-site > span:first-child {
   position: absolute;
   top: 50%;
-  min-width: 54px;
-  padding: 4px 6px;
-  border: 2px solid #755437;
-  border-radius: 9px;
-  background: rgba(255, 247, 218, .96);
-  box-shadow: 0 3px 8px rgba(53, 37, 24, .3);
+  min-width: 92px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 3px solid #8d5a16;
+  border-radius: 13px;
+  background: #ffd84a;
+  box-shadow:
+    0 0 0 3px rgba(255, 249, 200, .92),
+    0 4px 12px rgba(111, 67, 16, .42),
+    0 0 22px rgba(255, 211, 54, .78);
   display: grid;
+  align-content: center;
   gap: 1px;
-  font-size: clamp(.38rem, 1vw, .58rem);
-  font-weight: 800;
-  line-height: 1.05;
+  box-sizing: border-box;
+  color: #57330c;
+  font-size: clamp(.58rem, 1.35vw, .78rem);
+  font-weight: 900;
+  line-height: 1.1;
   text-align: center;
   transform: translateY(-50%);
 }
 .camp-garden-access-site-west > span:first-child {
-  left: calc(50% + 9px);
+  right: calc(50% + 11px);
 }
 .camp-garden-access-site-east > span:first-child {
-  right: calc(50% + 9px);
+  left: calc(50% + 11px);
 }
 .camp-garden-access-site small { font-size: .85em; }
 .camp-garden-access-site:focus-visible {
@@ -5994,15 +6006,15 @@ body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
   left: 4px;
   top: 4px;
   display: grid;
-  width: clamp(20px, 3vw, 28px);
+  width: clamp(40px, 6vw, 56px);
   aspect-ratio: 1;
   place-items: center;
-  border: 2px solid #fff7d7;
+  border: 4px solid #fff7d7;
   border-radius: 50%;
   background: #c34c24;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(68, 36, 21, .38);
-  font-size: clamp(.72rem, 1.8vw, 1rem);
+  box-shadow: 0 4px 12px rgba(68, 36, 21, .38);
+  font-size: clamp(1.44rem, 3.6vw, 2rem);
   font-weight: 1000;
   line-height: 1;
   pointer-events: none;
@@ -6435,6 +6447,33 @@ body.camp-prototype-editing .camp-location-cats {
   background: #fff0dd;
   color: #8c3909;
   box-shadow: 0 0 0 3px rgba(189, 74, 8, .2), 0 5px 14px rgba(61, 42, 28, .2);
+}
+
+.camp-prototype-trail-exit {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  body.camp-prototype-editing .camp-prototype-trail-exit:not([hidden]) {
+    position: fixed;
+    z-index: 270;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    display: inline-flex;
+    min-width: 88px;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 14px;
+    border: 3px solid #fff7d7;
+    border-radius: 999px;
+    background: #287a4d;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(45, 32, 20, .34);
+    font: inherit;
+    touch-action: manipulation;
+  }
 }
 .camp-prototype-category-icon {
   position: relative;
@@ -9963,6 +10002,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 
 .inv-item-carte {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -9976,6 +10016,26 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 .inv-item-carte:hover   { background-color: #f7f3ee; border-color: #d0a878; }
 .inv-item-actif         { border-color: var(--couleur-accent) !important; background-color: #fef6ed !important; }
+.inv-item-learn-ready { padding-right: 38px; }
+.inv-item-learn-alert {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: #e84855;
+  color: white;
+  box-shadow: 0 1px 4px rgba(90, 25, 25, 0.35);
+  font-size: .75rem;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 
 .inv-unique-carte {
   min-height: 104px;

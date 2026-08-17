@@ -1186,7 +1186,7 @@
               "revision": 6,
               "status": "retired",
               "width": 2,
-              "height": 2,
+              "height": 3,
               "sprites": {
                 "down": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/down.png",
                 "right": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/right.png",
@@ -1281,12 +1281,12 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2,
+                        "y": 3,
                         "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2,
+                        "y": 3,
                         "side": "south"
                       }
                     ],
@@ -2652,8 +2652,8 @@
               "tier": 1,
               "revision": 2,
               "status": "retired",
-              "width": 2,
-              "height": 1,
+              "width": 3,
+              "height": 2,
               "sprites": {
                 "down": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/down.png",
                 "right": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/right.png",
@@ -2693,29 +2693,6 @@
                   "right": 331,
                   "bottom": 518
                 }
-              },
-              "access": {
-                "activationPolicy": "all-ports-reachable",
-                "ports": [
-                  {
-                    "id": "access-1",
-                    "side": "south",
-                    "cellPolicy": "any-cell-reachable",
-                    "approachCells": [
-                      {
-                        "x": 0,
-                        "y": 1,
-                        "side": "south"
-                      },
-                      {
-                        "x": 1,
-                        "y": 1,
-                        "side": "south"
-                      }
-                    ],
-                    "minimumReachableCells": 1
-                  }
-                ]
               }
             },
             "3": {
@@ -3682,7 +3659,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 3,
           "revisions": {
             "1": {
               "assetId": "wood-cathouse",
@@ -3692,14 +3669,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -3747,6 +3724,146 @@
                         "x": -1,
                         "y": 0,
                         "side": "west"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "2": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 78,
+                  "right": 286,
+                  "bottom": 304
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 25,
+                  "right": 284,
+                  "bottom": 305
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 78,
+                  "right": 286,
+                  "bottom": 303
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 24,
+                  "right": 284,
+                  "bottom": 305
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "3": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/down.png",
+                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/right.png",
+                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/up.png",
+                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 47,
+                  "top": 38,
+                  "right": 314,
+                  "bottom": 321
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 0,
+                  "right": 312,
+                  "bottom": 322
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 47,
+                  "top": 38,
+                  "right": 314,
+                  "bottom": 320
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 0,
+                  "right": 312,
+                  "bottom": 322
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1
@@ -5551,7 +5668,7 @@
               "revision": 6,
               "status": "retired",
               "width": 2,
-              "height": 2,
+              "height": 3,
               "sprites": {
                 "down": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/down.png",
                 "right": "tools/camp_asset_studio/library/assets/job-center/tier-1/revision-6/right.png",
@@ -5646,12 +5763,12 @@
                     "approachCells": [
                       {
                         "x": 0,
-                        "y": 2,
+                        "y": 3,
                         "side": "south"
                       },
                       {
                         "x": 1,
-                        "y": 2,
+                        "y": 3,
                         "side": "south"
                       }
                     ],
@@ -7017,8 +7134,8 @@
               "tier": 1,
               "revision": 2,
               "status": "retired",
-              "width": 2,
-              "height": 1,
+              "width": 3,
+              "height": 2,
               "sprites": {
                 "down": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/down.png",
                 "right": "tools/camp_asset_studio/library/assets/sawmill/tier-1/revision-2/right.png",
@@ -7058,29 +7175,6 @@
                   "right": 331,
                   "bottom": 518
                 }
-              },
-              "access": {
-                "activationPolicy": "all-ports-reachable",
-                "ports": [
-                  {
-                    "id": "access-1",
-                    "side": "south",
-                    "cellPolicy": "any-cell-reachable",
-                    "approachCells": [
-                      {
-                        "x": 0,
-                        "y": 1,
-                        "side": "south"
-                      },
-                      {
-                        "x": 1,
-                        "y": 1,
-                        "side": "south"
-                      }
-                    ],
-                    "minimumReachableCells": 1
-                  }
-                ]
               }
             },
             "3": {
@@ -8047,7 +8141,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 3,
           "revisions": {
             "1": {
               "assetId": "wood-cathouse",
@@ -8057,14 +8151,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-1/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -8112,6 +8206,146 @@
                         "x": -1,
                         "y": 0,
                         "side": "west"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "2": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 78,
+                  "right": 286,
+                  "bottom": 304
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 25,
+                  "right": 284,
+                  "bottom": 305
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 78,
+                  "right": 286,
+                  "bottom": 303
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 75,
+                  "top": 24,
+                  "right": 284,
+                  "bottom": 305
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "3": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/down.png",
+                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/right.png",
+                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/up.png",
+                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 47,
+                  "top": 38,
+                  "right": 314,
+                  "bottom": 321
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 0,
+                  "right": 312,
+                  "bottom": 322
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 47,
+                  "top": 38,
+                  "right": 314,
+                  "bottom": 320
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 0,
+                  "right": 312,
+                  "bottom": 322
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
                       }
                     ],
                     "minimumReachableCells": 1

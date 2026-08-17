@@ -305,7 +305,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0064 · August 16, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0065 · August 17, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -497,7 +497,7 @@
   <!-- ONGLETS: moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
     <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0029" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
-    <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><span class="onglet-icone camp-tab-icon" aria-hidden="true"><i></i><i></i><i></i></span> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
+    <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><img class="onglet-icone" src="img/interface/Camp.png" alt=""> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/Jobs.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Jobs</span></button>
     <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
@@ -665,6 +665,10 @@
         </div>
         <div id="camp-prototype-palette" class="camp-prototype-palette" role="toolbar" aria-label="Prototype camp items"></div>
       </section>
+      <button id="camp-prototype-trail-exit" class="camp-prototype-trail-exit" type="button" aria-label="Finish Trail editing" onclick="quitterEditionCampPrototype()" hidden>
+        <span aria-hidden="true">✓</span>
+        <strong>Done</strong>
+      </button>
       <nav class="camp-prototype-edit-dock" aria-label="Camp construction categories">
         <button type="button" data-camp-category="house" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('house')">
           <img class="camp-prototype-category-icon-image" src="img/Buildings/Cardboard%20Box_Final.png" alt="">
@@ -985,7 +989,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0064</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0065</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1276,7 +1280,7 @@
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
   <script src="js/data/content.js?v=0.0057"></script>
-  <script src="js/data/changelog.js?v=0.0064"></script>
+  <script src="js/data/changelog.js?v=0.0065"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
   <script src="js/data/dialogues.js?v=0.0006"></script>
   <script src="js/data/shop.js?v=0.0001"></script>

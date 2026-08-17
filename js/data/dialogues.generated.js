@@ -209,6 +209,10 @@
     {
       "id": "pawsonryTierTwo",
       "text": "The Stone Guide opens stronger masonry. Upgrade the Pawsonry to Tier 2 before producing Rock Bricks."
+    },
+    {
+      "id": "woodCathouseUnlocked",
+      "text": "Now that's real wood. We can finally build a proper Wood Cathouse. Check Houses in the Camp."
     }
   ],
   "scenes": [

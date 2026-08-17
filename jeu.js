@@ -331,9 +331,13 @@ const OBJECTIFS = [
   // ── Cathouse (real)
   {
     id: "buildRealCathouse", label: "Build a Wood Cathouse",
-    // Use lifetime gathering, not the fluctuating current stock consumed by the Sawmill.
-    visible:  function(e) { return e.basicWoodTotalRecolte >= 1 || e.cathouseCount > 0; },
-    accompli: function(e) { return e.cathouseCount >= 1; }
+    visible:  function(e) {
+      return catHouseDebloquee() || e.cathouseCount > 0
+        || nombreAssetsCampPossedesPourLoi("woodCathouse") > 0;
+    },
+    accompli: function(e) {
+      return e.cathouseCount > 0 || nombreAssetsCampPossedesPourLoi("woodCathouse") > 0;
+    }
   }
 ];
 
@@ -385,7 +389,7 @@ const OBJECTIF_GUIDE = Object.freeze({
   firstBrick:               { ordre: 240, onglet: "work",         cible: "#work-recipe-slots-rock", filtre: "rock", progression: function(e) { return { actuel: e.pebbleBricks >= 1 || e.objectifsComplis.includes("firstBrick") ? 1 : 0, cible: 1 }; } },
   firstBasicSawmill:        { ordre: 250, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function() { return { actuel: allocationCount("basicWoodPlanks"), cible: 1 }; } },
   firstBasicWoodPlank:      { ordre: 260, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.basicWoodPlanks, cible: 1 }; } },
-  buildRealCathouse:        { ordre: 270, onglet: "camp",         cible: '[data-camp-category="house"]', action: "Open Houses", progression: function(e) { return { actuel: e.cathouseCount, cible: 1 }; } },
+  buildRealCathouse:        { ordre: 270, onglet: "camp",         cible: '[data-camp-category="house"]', action: "Open Houses", progression: function(e) { return { actuel: Math.max(e.cathouseCount, nombreAssetsCampPossedesPourLoi("woodCathouse")), cible: 1 }; } },
   buildJobCenter:           { ordre: 280, onglet: "camp",         cible: '[data-camp-category="building"]', action: "Open Buildings", progression: function(e) {
     const briques = Math.min(10, e.pebbleBricks);
     const planches = Math.min(1, e.basicWoodPlanks);
@@ -689,6 +693,10 @@ function kittyIsInExplorationStaging(kittyIdx) {
       return Array.isArray(slots) && slots.includes(kittyIdx);
     });
   return inCampaignSlot || inZoneSlot;
+}
+
+function kittyIsUnavailableForNewAssignment(kittyIdx) {
+  return kittyIsBusy(kittyIdx) || kittyIsInExplorationStaging(kittyIdx);
 }
 
 function kittyHasNonReplaceableAction(kittyIdx) {
@@ -1187,14 +1195,10 @@ const CAMP_HOUSING_CAPACITY = Object.freeze({
 });
 
 function capaciteLogementCamp() {
-  const connexions = connexionsCampPrototypeActuelles();
-  const capaciteBoites = campPrototypeLayout.filter(function(item) {
-    return item && item.type === "cardboardBox" && item.construit === true
-      && connexions.byItem[item.uid] && connexions.byItem[item.uid].active;
-  }).reduce(function(total, item) {
-    return total + effetGameplayCampPourTier("cardboardBox", item.tier || 1, "housingCapacity", 0);
+  const capaciteMaisonsPlacees = maisonsCampActivesPourHousing().reduce(function(total, item) {
+    return total + capaciteMaisonCampHousing(item);
   }, 0);
-  const capaciteMaisons = capaciteBoites
+  const capaciteMaisons = capaciteMaisonsPlacees
     // These three legacy counters keep imported V3 saves playable until their
     // matching visual Camp assets are migrated to placed instances.
     + Math.max(0, Number(etat.cathouseCount) || 0) * CAMP_HOUSING_CAPACITY.woodCathouse
@@ -1444,13 +1448,13 @@ function jobLevelMultiplier(kitty) {
 
 function kittyGatherProductionMultiplier(kitty) {
   return kitty && !estSpecialistePermanentNonAssignable(kitty)
-    ? Math.pow(GATHER_LEVEL_MULTIPLIER, kitty.niveau)
+    ? Math.pow(GATHER_LEVEL_MULTIPLIER, kitty.niveau) * residentLevelBonusMultiplierForKitty(kitty)
     : 1;
 }
 
 function kittyProcessProductionMultiplier(kitty) {
   return kitty && !estSpecialistePermanentNonAssignable(kitty)
-    ? productionProcBonus(kitty)
+    ? productionProcBonus(kitty) * residentLevelBonusMultiplierForKitty(kitty)
     : 1;
 }
 
@@ -1504,6 +1508,34 @@ function niveauMaxChat(kitty) {
   return info && Number.isFinite(info.maxLevel)
     ? Math.min(MAX_CAT_LEVEL, info.maxLevel)
     : MAX_CAT_LEVEL;
+}
+
+const CAMP_ACTION_SPEED_LEVEL_BASE = 1.02;
+
+function multiplicateurVitesseActionCampKitty(kitty) {
+  const niveau = Math.max(0, Number(kitty && kitty.niveau) || 0);
+  return Math.pow(CAMP_ACTION_SPEED_LEVEL_BASE, niveau) * residentLevelBonusMultiplierForKitty(kitty);
+}
+
+function multiplicateurVitesseActionsCamp(kittyIndices) {
+  const indices = Array.isArray(kittyIndices) ? kittyIndices : [];
+  const multiplicateurs = indices.map(function(kittyIndex) {
+    return Number.isInteger(kittyIndex) && etat.kittiesData[kittyIndex]
+      ? multiplicateurVitesseActionCampKitty(etat.kittiesData[kittyIndex])
+      : null;
+  }).filter(function(multiplier) {
+    return Number.isFinite(multiplier) && multiplier > 0;
+  });
+  if (multiplicateurs.length === 0) return 1;
+  return multiplicateurs.reduce(function(total, multiplier) {
+    return total + multiplier;
+  }, 0) / multiplicateurs.length;
+}
+
+function dureeEffectiveActionCamp(dureeBase, kittyIndices) {
+  const duree = Number(dureeBase);
+  if (!Number.isFinite(duree) || duree <= 0) return 0;
+  return duree / multiplicateurVitesseActionsCamp(kittyIndices);
 }
 
 function ingenieurPeutEtreForme(metierId) {
@@ -2223,10 +2255,12 @@ function marquerSequencePrete() {
   return true;
 }
 
-function woodHouseCostExponent() {
+function woodHouseCostExponent(canonicalGrowth) {
   if (spherePerkLearned('builder-expo-3')) return 1.5;
   if (spherePerkLearned('builder-expo-2')) return 1.55;
-  return spherePerkLearned('builder-cost') ? 1.6 : 1.7;
+  if (spherePerkLearned('builder-cost')) return 1.6;
+  const growth = Number(canonicalGrowth);
+  return Number.isFinite(growth) && growth >= 1 ? growth : 1.7;
 }
 
 function woodHouseCostMultiplier() {
@@ -3688,6 +3722,7 @@ function renduRessources(u) {
   const campVisible = campDebloque();
   ecrireStyle(domParId("onglet-camp"), "display", campVisible ? "inline-flex" : "none");
   actualiserBadgeOnglet("camp", campVisible);
+  actualiserIndicateurApprentissageInventaire();
   actualiserIndicateurFormationJob();
   const logsVisible = etat.chatons >= 3;
   ecrireStyle(domParId("onglet-logs"), "display", logsVisible ? "inline-flex" : "none");
@@ -4361,7 +4396,7 @@ function renduWorkSummary(unlockedFamilies) {
       const progress = progressionsSlotRecette(slot, pair).overall;
       const durations = dureesAffichageRecette(pair, kitty, familyId, slotIdx);
       const ratePerMinute = Number.isFinite(durations.cycle) && durations.cycle > 0
-        ? productionProcBonus(kitty) / durations.cycle * 60
+        ? kittyProcessProductionMultiplier(kitty) / durations.cycle * 60
         : 0;
       active.push({ pair: pair, slotIdx: slotIdx, kitty: kitty, progress: progress, ratePerMinute: ratePerMinute });
       stateParts.push(familyId, slotIdx, pair.recipeId, slot.kittyIndex, kitty.niveau,
@@ -4499,7 +4534,7 @@ function renduSlotRecette(familyId, slotIdx) {
   const gatherUnitDuration = kitty && gatherRate > 0
     ? 1 / (gatherRate * durations.gatheringSpeed)
     : Infinity;
-  const outputPerCycle = kitty ? productionProcBonus(kitty) : 1;
+  const outputPerCycle = kitty ? kittyProcessProductionMultiplier(kitty) : 1;
   const outputRate = kitty && durations && durations.cycle > 0 ? outputPerCycle / durations.cycle : 0;
   const processingDuration = durations ? durations.processing : Infinity;
   const fullCycleDuration = durations ? durations.cycle : Infinity;
@@ -4543,7 +4578,7 @@ function renduSlotRecette(familyId, slotIdx) {
     + '<button type="button" class="work-recipe-selected" aria-label="Change recipe in slot ' + (slotIdx + 1) + ', currently Tier ' + pair.tier + ' ' + echapperAttributHtml(pair.procLabel) + '" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><span class="work-recipe-tier work-tier-badge work-tier-badge-tier-' + pair.tier + '" aria-hidden="true">T' + pair.tier + '</span><img src="' + pair.procIcon + '" alt=""><span><small>RECIPE</small><strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
     + '</div>'
     + '<div class="work-recipe-flow">'
-    + '<section class="work-recipe-resource work-recipe-resource-input' + (gatherFocusable ? ' work-manual-focus-available' : '') + (gatherFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="gathering"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%">' + gatherInfo + manualFocusBadgeHtml(gatherFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span class="work-recipe-gathered">' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small>' + (kitty ? formaterTemps(gatherDuration) + ' (1 every ' + formaterTemps(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
+    + '<section class="work-recipe-resource work-recipe-resource-input' + (gatherFocusable ? ' work-manual-focus-available' : '') + (gatherFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="gathering"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%">' + gatherInfo + manualFocusBadgeHtml(gatherFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span class="work-recipe-gathered">' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small class="work-recipe-input-details">' + (kitty ? formaterTemps(gatherDuration) + ' (1 every ' + formaterTemps(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
       + '<section class="work-recipe-cat">' + catHtml + '</section>'
     + '<section class="work-recipe-resource work-recipe-resource-output' + (processFocusable ? ' work-manual-focus-available' : '') + (processFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="processing"' + produceTrigger + ' style="--fill:' + Math.round(progress.processing * 100) + '%">' + processInfo + manualFocusBadgeHtml(processFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">PROCESSING</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small class="work-recipe-output-details">' + formaterTemps(processingDuration) + ' for ' + libelleNombreDecimal(outputPerCycle, 2) + ' · Stock ' + formaterNombre(etat[pair.procRes]) + ' / ' + formaterNombre(stockage.capacite) + '</small>' : '<small class="work-recipe-output-details">Output</small>') + '</section>'
     + '</div>';
@@ -4582,6 +4617,33 @@ function actualiserIndicateurFormationJob() {
     : "");
   if (bouton.getAttribute("aria-label") !== labelAccessible) bouton.setAttribute("aria-label", labelAccessible);
   if (enAttente) bouton.title = label + " - Training ready to validate";
+  else if (!bouton.classList.contains("onglet-nouveau") && bouton.hasAttribute("title")) bouton.removeAttribute("title");
+}
+
+function livrePretAApprendre(itemId) {
+  const item = ITEMS[itemId];
+  return Boolean(item && item.learningGame
+    && etat.itemsEtudies.includes(itemId)
+    && !etat.itemsAppris.includes(itemId));
+}
+
+function livresAcquisPretsAApprendre() {
+  return etat.itemsAcquis.filter(livrePretAApprendre);
+}
+
+function actualiserIndicateurApprentissageInventaire() {
+  const bouton = document.getElementById("onglet-inventaire");
+  if (!bouton) return;
+  const nombrePret = livresAcquisPretsAApprendre().length;
+  const enAttente = nombrePret > 0;
+  basculerClasse(bouton, "onglet-formation-alerte", enAttente);
+  const labelElement = bouton.querySelector(".onglet-label");
+  const label = labelElement ? labelElement.textContent.trim() : "Inventory";
+  const labelAccessible = label + (enAttente
+    ? " (" + nombrePret + " book" + (nombrePret === 1 ? "" : "s") + " ready to learn)"
+    : "");
+  if (bouton.getAttribute("aria-label") !== labelAccessible) bouton.setAttribute("aria-label", labelAccessible);
+  if (enAttente) bouton.title = label + " - Book ready to learn";
   else if (!bouton.classList.contains("onglet-nouveau") && bouton.hasAttribute("title")) bouton.removeAttribute("title");
 }
 
@@ -4638,7 +4700,7 @@ function tauxProductionSlotRecette(pair, slot) {
   const cycleDuration = slotIdx >= 0
     ? dureesAffichageRecette(pair, kitty, pair.family, slotIdx).cycle
     : dureeCycleRecette(pair, kitty);
-  return Number.isFinite(cycleDuration) && cycleDuration > 0 ? productionProcBonus(kitty) / cycleDuration : 0;
+  return Number.isFinite(cycleDuration) && cycleDuration > 0 ? kittyProcessProductionMultiplier(kitty) / cycleDuration : 0;
 }
 
 function tauxProductionBrute(action) {
@@ -4909,7 +4971,9 @@ function renduBuildings(u) {
         + " connected" : "")
     : "");
 
-  ecrireStyle(domParId("bloc-wood-cathouse"), "display", u.catHouse ? "flex" : "none");
+  // Canonical Wood Cathouses are built through Camp Houses. Keep the legacy
+  // counter and Auto Build code for imported saves, but hide instant purchase.
+  ecrireStyle(domParId("bloc-wood-cathouse"), "display", "none");
   const autoBuildDisponible = spherePerkLearned('builder-auto');
   const autoBuildToggle = domParId("builder-auto-toggle");
   ecrireStyle(autoBuildToggle, "display", autoBuildDisponible ? "flex" : "none");
@@ -5085,7 +5149,14 @@ let labRenderKey = null;
 
 function laboratoireKittysDisponibles() {
   return etat.kittiesData.reduce(function(acc, kitty, index) {
-    if (kitty && kitty.metier === null && !kittyIsBusy(index) && !kittyIsInExplorationStaging(index)) acc.push({ kitty: kitty, index: index });
+    if (kitty && kitty.metier === null && !kittyIsUnavailableForNewAssignment(index)) acc.push({ kitty: kitty, index: index });
+    return acc;
+  }, []);
+}
+
+function laboratoireKittysRoster() {
+  return etat.kittiesData.reduce(function(acc, kitty, index) {
+    if (kitty && kitty.metier === null) acc.push({ kitty: kitty, index: index });
     return acc;
   }, []);
 }
@@ -5174,7 +5245,7 @@ function renduLaboratoire() {
 }
 
 function selectionnerIngenieurLaboratoire(index) {
-  if (etat.formationIngenieurEnCours || !etat.kittiesData[index] || etat.kittiesData[index].metier !== null || kittyIsBusy(index) || kittyIsInExplorationStaging(index)) return;
+  if (etat.formationIngenieurEnCours || !etat.kittiesData[index] || etat.kittiesData[index].metier !== null || kittyIsUnavailableForNewAssignment(index)) return;
   labEngineerKittySelectionne = index;
   labDirty = true;
   if (jcModalOuvert && jcModalOuvert.mode === "engineer") {
@@ -5194,7 +5265,7 @@ function selectionnerMetierIngenieur(jobId) {
 function lancerFormationIngenieur() {
   if (!batimentFonctionnelCamp("laboratory").available || etat.formationIngenieurEnCours || etat.formationIngenieurTermineeEnAttente || !ingenieurPeutEtreForme(ENGINEER_JOB_ID) || labEngineerKittySelectionne === null || labEngineerMetierSelectionne !== ENGINEER_JOB_ID) return;
   const kitty = etat.kittiesData[labEngineerKittySelectionne];
-  if (!kitty || kitty.metier !== null || kittyIsBusy(labEngineerKittySelectionne) || kittyIsInExplorationStaging(labEngineerKittySelectionne)) return;
+  if (!kitty || kitty.metier !== null || kittyIsUnavailableForNewAssignment(labEngineerKittySelectionne)) return;
   const engineerRank = rangIngenieurSuivant(ENGINEER_JOB_ID);
   etat.formationIngenieurEnCours = {
     kittyIndex: labEngineerKittySelectionne,
@@ -6116,15 +6187,17 @@ function renduManagement() {
     const gatherLevelPercent = Math.round((Math.pow(GATHER_LEVEL_MULTIPLIER, 1) - 1) * 100);
     const processLevelPercent = Math.round((productionProcBonus({ niveau: 1 }) - 1) * 100);
     const managerLevelPercent = Math.round((jobLevelMultiplier({ niveau: 1 }) - 1) * 100);
+    const campActionSpeedHelpLine = "<span>Camp Actions Speed by 2%</span>";
     const experienceHelpBody = isShopOwner
-      ? "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks new merchandise tiers every 10 levels.</span><span>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span>"
+      ? "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks new merchandise tiers every 10 levels.</span><span>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span>" + campActionSpeedHelpLine
       : isEngineer
-      ? "<strong>Each additional level increases the following passives:</strong><span>" + (engineerInfo ? engineerInfo.help : "AFK Timer Bonus by 6 minutes per level") + "</span>"
+      ? "<strong>Each additional level increases the following passives:</strong><span>" + (engineerInfo ? engineerInfo.help : "AFK Timer Bonus by 6 minutes per level") + "</span>" + campActionSpeedHelpLine
       : "<strong>Each additional level increases these bonuses:</strong>" +
         "<span>Gather Production Bonus by " + gatherLevelPercent + "%</span>" +
         "<span>Process Production Bonus by " + processLevelPercent + "%</span>" +
         "<span>Exploration Power by 1</span>" +
-        "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>";
+        "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>" +
+        campActionSpeedHelpLine;
     const experienceHelp =
       "<span class='detail-section-titre-label'>Experience</span>" +
       "<span id='experience-help-wrap' class='detail-help-wrap'>" +
@@ -6135,18 +6208,22 @@ function renduManagement() {
     const managerSpeedBonusLine = !isEngineer && k.metier && !isShopOwner && METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille]
       ? "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2) + "</span> Manager Speed Bonus</span>"
       : "";
+    const campActionSpeedLine = "<span class='xp-bonus-ligne'><span class='bonus-var'>×"
+      + multiplicateurVitesseActionCampKitty(k).toFixed(2)
+      + "</span> Camp Actions Speed</span>";
     const levelBonuses = k.niveau > 0 ? (
       isShopOwner
-        ? "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span></div>"
+        ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span></div>"
         : isEngineer
-        ? "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'><span class='bonus-var'>+" + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? (k.niveau * engineerInfo.value) + "%" : (k.niveau * (engineerInfo ? engineerInfo.value : 6)) + " min") + "</span> " + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? "AFK Ratio Bonus" : "AFK Timer Bonus") + "</span></div>"
+        ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? (k.niveau * engineerInfo.value) + "%" : (k.niveau * (engineerInfo ? engineerInfo.value : 6)) + " min") + "</span> " + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? "AFK Ratio Bonus" : "AFK Timer Bonus") + "</span></div>"
         : "<div class='xp-bonus-actifs'>" +
-          "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + Math.pow(GATHER_LEVEL_MULTIPLIER, k.niveau).toFixed(2) + "</span> Gather Production Bonus</span>" +
-          "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + productionProcBonus(k).toFixed(2) + "</span> Process Production Bonus</span>" +
+          campActionSpeedLine +
+          "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyGatherProductionMultiplier(k).toFixed(2) + "</span> Gather Production Bonus</span>" +
+          "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyProcessProductionMultiplier(k).toFixed(2) + "</span> Process Production Bonus</span>" +
           managerSpeedBonusLine +
           "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>" +
           "</div>"
-    ) : "";
+    ) : "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "</div>";
     droite.innerHTML +=
       "<div class='detail-section' id='detail-experience'>" +
       "<div class='detail-section-titre detail-section-titre-with-help'>" + experienceHelp + "</div>" +
@@ -6432,7 +6509,15 @@ function actualiserProgressionSlotRecette(familyId, slotIdx) {
   ecrireTexte(inputEl.querySelector(".work-recipe-gathered"), libelleNombreDecimal(gathered, 1) + " / " + libelleNombreDecimal(target, 1));
   ecrireTexte(outputEl.querySelector(".work-recipe-output-progress"), outputProgress);
   const durations = dureesAffichageRecette(pair, kitty, familyId, slotIdx);
-  const outputPerCycle = productionProcBonus(kitty);
+  const gatherRate = tauxGatheringRecette(pair, kitty);
+  const gatherUnitDuration = gatherRate > 0
+    ? 1 / (gatherRate * durations.gatheringSpeed)
+    : Infinity;
+  ecrireTexte(
+    inputEl.querySelector(".work-recipe-input-details"),
+    formaterTemps(durations.gathering) + " (1 every " + formaterTemps(gatherUnitDuration) + ")"
+  );
+  const outputPerCycle = kittyProcessProductionMultiplier(kitty);
   ecrireTexte(
     outputEl.querySelector(".work-recipe-output-details"),
     formaterTemps(durations.processing) + " for " + libelleNombreDecimal(outputPerCycle, 2) + " · Stock " + formaterNombre(etat[pair.procRes])
@@ -7618,9 +7703,11 @@ function renduModalExplo() {
       : false;
     const requiresExplorator = !!(exploModalOuvert.zoneId && exploModalOuvert.slotIndex === 0);
     const validExplorator = !requiresExplorator || estExplorateurDeZone(i);
-    const disabled     = onExplo || inOtherSlot || inWorker || isManager || inTraining || isLearning || inDemolition || onZoneExplo || inZoneSlot || onScouting || !validExplorator;
+    const occupied     = kittyIsBusy(i);
+    const disabled     = onExplo || inOtherSlot || inWorker || isManager || inTraining || isLearning
+      || inDemolition || onZoneExplo || inZoneSlot || onScouting || occupied || !validExplorator;
     const forcable     = validExplorator && !onExplo && !inOtherSlot && !inTraining && !isLearning && !inDemolition && !onZoneExplo && !inZoneSlot && !onScouting && (inWorker || isManager);
-    let statusLabel    = !validExplorator ? "Explorator required" : (onExplo || onZoneExplo || onScouting || inTraining || isLearning || inDemolition || isManager || inWorker) ? kittyAllocationLabel(i).text : (inOtherSlot || inZoneSlot) ? "in another slot" : "";
+    let statusLabel    = !validExplorator ? "Explorator required" : occupied ? kittyAllocationLabel(i).text : (inOtherSlot || inZoneSlot) ? "in another slot" : "";
 
     html += '<div class="explo-modal-kitty' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for this exploration") + ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
@@ -8237,7 +8324,7 @@ function workResourceDetails(pair, slot, phase, familyId, slotIdx) {
   const rawTime = gather ? Number(pair.rawCfg.secondesParUnite) : Number(pair.procCfg[pair.procSecUnite]);
   const adjustedTime = rawTime / (speedMultiplier * (gather ? productionMultiplier : 1));
   const target = quantiteInputEffective(pair, pair.inputs[0]);
-  const outputPerCycle = kitty ? productionProcBonus(kitty) : 1;
+  const outputPerCycle = kitty ? kittyProcessProductionMultiplier(kitty) : 1;
   return {
     pair: pair,
     kitty: kitty,
@@ -8958,11 +9045,12 @@ function renderItemsList() {
     if (!item) return "";
     const appris = etat.itemsAppris.includes(itemId);
     const etudie = etat.itemsEtudies.includes(itemId);
+    const pretAApprendre = livrePretAApprendre(itemId);
     const actif  = itemSelectionne === itemId;
     let html = '';
 
-    html += '<div id="inv-item-card-' + itemId + '" class="inv-item-carte' + (actif ? " inv-item-actif" : "") +
-            '" data-item-id="' + itemId + '"' + attributsActivationClavier((actif ? "Hide " : "Show ") + item.nom + " details") +
+    html += '<div id="inv-item-card-' + itemId + '" class="inv-item-carte' + (actif ? " inv-item-actif" : "") + (pretAApprendre ? " inv-item-learn-ready" : "") +
+            '" data-item-id="' + itemId + '"' + attributsActivationClavier((actif ? "Hide " : "Show ") + item.nom + " details" + (pretAApprendre ? ", ready to learn" : "")) +
             ' aria-expanded="' + (actif ? "true" : "false") + '" aria-controls="inv-item-detail-' + itemId + '" onclick="selectionnerItem(\'' + itemId + '\')">';
     html += '<span class="inv-item-emoji">' + item.emoji + '</span>';
     html += '<div class="inv-item-entete">';
@@ -8970,6 +9058,7 @@ function renderItemsList() {
     if (appris) html += '<span class="inv-item-tag">' + CHECK_ICON + ' Learned</span>';
     else if (etudie) html += '<span class="inv-item-tag inv-item-tag-studied">Studied</span>';
     html += '</div>';
+    if (pretAApprendre) html += '<span class="inv-item-learn-alert" aria-label="Ready to learn" title="Ready to learn">!</span>';
     html += '</div>';
 
     if (actif) {
@@ -9241,15 +9330,18 @@ function renduModalJC() {
 
   if (jcModalOuvert.mode === "engineer") {
     if (titreEl) titreEl.textContent = "Choose a Stray Cat for engineering training";
-    const available = laboratoireKittysDisponibles();
-    if (available.length === 0) {
-      html = '<p class="jc-modal-vide">No available Stray Cats.</p>';
+    const roster = laboratoireKittysRoster();
+    if (roster.length === 0) {
+      html = '<p class="jc-modal-vide">No Stray Cats.</p>';
     } else {
-      available.forEach(function(entry) {
+      roster.forEach(function(entry) {
         const k = entry.kitty;
-        html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " for engineering training") + ' onclick="selectionnerIngenieurLaboratoire(' + entry.index + ')">';
+        const unavailable = kittyIsUnavailableForNewAssignment(entry.index);
+        const status = unavailable ? kittyAllocationLabel(entry.index).text : "";
+        html += '<div class="jc-modal-kitty' + (unavailable ? ' jc-modal-kitty-disabled' : '') + '"'
+          + (unavailable ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for engineering training") + ' onclick="selectionnerIngenieurLaboratoire(' + entry.index + ')"') + '>';
         html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
-        html += '<div class="jc-modal-kitty-info"><span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span><span class="jc-modal-kitty-tier">Stray Cat · Level ' + (k.niveau || 0) + '</span></div>';
+        html += '<div class="jc-modal-kitty-info"><span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span><span class="jc-modal-kitty-tier">Stray Cat · Level ' + (k.niveau || 0) + (status ? ' — ' + echapperAttributHtml(status) : '') + '</span></div>';
         html += '</div>';
       });
     }
@@ -9262,7 +9354,7 @@ function renduModalJC() {
       stray.forEach(function(idx) {
         const k        = etat.kittiesData[idx];
         const tier     = TIERS_KITTIES[k.tier] || "Kitty";
-        const busy     = kittyIsBusy(idx);
+        const busy     = kittyIsUnavailableForNewAssignment(idx);
         const enWorker = kittyIsInWorkerSlot(idx);
         const forcable = busy && enWorker && !kittyHasNonReplaceableAction(idx) && !kittyIsInExplorationStaging(idx);
         const busyLbl  = busy ? kittyAllocationLabel(idx).text : "";
@@ -9305,7 +9397,7 @@ function renduModalJC() {
           const isLearning = kittyIsLearningBook(idx);
           const inExplorationStaging = kittyIsInExplorationStaging(idx);
           const forcable = (enWorker || !!autreFamille) && !kittyHasNonReplaceableAction(idx) && !inExplorationStaging;
-          const occupe   = enWorker || !!autreFamille || onExplo || onZoneExplo || onScouting || inTraining || isLearning || inExplorationStaging;
+          const occupe   = kittyIsUnavailableForNewAssignment(idx);
           const statutTxt = occupe ? " — " + kittyAllocationLabel(idx).text : "";
           html += '<div class="jc-modal-kitty' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
                   (occupe ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " as manager") + ' onclick="assignerManager(\'' + famille + '\',' + idx + ')"') + '>';
@@ -9352,8 +9444,8 @@ function renduModalJC() {
 }
 
 function selectionnerKittyFormation(kittyIndex) {
-  if (!kittyEligiblePourAffectationOrdinaire(kittyIndex) || kittyIsBusy(kittyIndex)
-      || kittyIsInExplorationStaging(kittyIndex)) return;
+  if (!kittyEligiblePourAffectationOrdinaire(kittyIndex)
+      || kittyIsUnavailableForNewAssignment(kittyIndex)) return;
   jcFormationKittySelectionne = kittyIndex;
   jouerSonAffectation();
   fermerModalJC();
@@ -9400,7 +9492,7 @@ function lancerFormation() {
       || !kittyEligiblePourAffectationOrdinaire(jcFormationKittySelectionne)) return;
   if (!explorateurPresent() && jcMetierSelectionne !== "explorator") return;
   if (metierDejaAttribue(jcMetierSelectionne)) return;
-  if (kittyIsBusy(jcFormationKittySelectionne) || kittyIsInExplorationStaging(jcFormationKittySelectionne)) return;
+  if (kittyIsUnavailableForNewAssignment(jcFormationKittySelectionne)) return;
   const metier = METIERS[jcMetierSelectionne];
   etat.formationEnCours = {
     kittyIndex: jcFormationKittySelectionne,
@@ -9467,8 +9559,8 @@ function validerFormation() {
 }
 
 function assignerManager(famille, kittyIndex) {
-  if (!kittyEligiblePourAffectationOrdinaire(kittyIndex) || kittyIsBusy(kittyIndex)
-      || kittyIsInExplorationStaging(kittyIndex)) return;
+  if (!kittyEligiblePourAffectationOrdinaire(kittyIndex)
+      || kittyIsUnavailableForNewAssignment(kittyIndex)) return;
   etat.managers[famille] = kittyIndex;
   jouerSonAffectation();
   fermerModalJC();
@@ -9851,12 +9943,14 @@ function renduModalWorker() {
   const pair = slot && paireRecette(slot.recipeId);
   if (!pair) return;
   ecrireTexte(domParId("worker-modal-titre"), "Assign a Cat to " + pair.procLabel);
-  const bonusFn = function(niveau) { return Math.pow(GATHER_LEVEL_MULTIPLIER, niveau) * productionProcBonus({ niveau: niveau }); };
+  const bonusFn = function(kitty) {
+    return kittyGatherProductionMultiplier(kitty) * kittyProcessProductionMultiplier(kitty);
+  };
   let html = "";
   const ordre = etat.kittiesData
     .map(function(k, i) { return { k: k, i: i }; })
     .filter(function(entry) { return kittyEligiblePourAffectationOrdinaire(entry.k); });
-  ordre.sort(function(a, b) { return bonusFn(b.k.niveau) - bonusFn(a.k.niveau); });
+  ordre.sort(function(a, b) { return bonusFn(b.k) - bonusFn(a.k); });
   ordre.forEach(function(entry) {
     const k = entry.k, i = entry.i;
     const onExplo     = kittyIsOnExpedition(i);
@@ -9889,7 +9983,7 @@ function renduModalWorker() {
     if (status) html += '<span class="worker-modal-kitty-status">' + status + '</span>';
     html += '</div>';
     html += '<div class="worker-modal-kitty-bonus">';
-    html += '<div class="worker-modal-kitty-bonus-ligne"><span>×' + Math.pow(GATHER_LEVEL_MULTIPLIER, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Gather Prod</span></span><span>×' + productionProcBonus(k).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Process Prod</span></span></div>';
+    html += '<div class="worker-modal-kitty-bonus-ligne"><span>×' + kittyGatherProductionMultiplier(k).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Gather Prod</span></span><span>×' + kittyProcessProductionMultiplier(k).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Process Prod</span></span></div>';
     html += '</div>';
     if (forcable) html += '<button class="btn-forcer" data-worker-kitty-index="' + i + '" aria-label="' + echapperAttributHtml(forceLabel) + '" onclick="forcerWorkerRecette(' + i + ',\'' + workerModalOuvert.familyId + '\',' + workerModalOuvert.slotIdx + ');event.stopPropagation()">' + (campTutorialActif() ? 'Reassign' : 'Force') + '</button>';
     else html += '<div></div>';
@@ -10005,7 +10099,7 @@ function renduJobCenter(u) {
       html += '</div>';
     } else {
       // Auto-clear if selected kitty went on expedition or into a worker slot
-      if (jcFormationKittySelectionne !== null && (kittyIsBusy(jcFormationKittySelectionne) || kittyIsInExplorationStaging(jcFormationKittySelectionne))) {
+      if (jcFormationKittySelectionne !== null && kittyIsUnavailableForNewAssignment(jcFormationKittySelectionne)) {
         jcFormationKittySelectionne = null;
       }
       // Kitty slot
@@ -10457,7 +10551,7 @@ function verifierDeblocageWoodCathouseApresFabrication(resultatsRecettes, option
   progression.woodCathouseUnlocked = true;
   if (!(options && options.silent)) {
     ajouterLog("unlock", "Wood Cathouse unlocked after producing the first Basic Wood Plank.");
-    afficherNotification("Wood Cathouse unlocked in Houses!");
+    mettreDialogueRapideCampEnFile("woodCathouseUnlocked");
   }
   return true;
 }
@@ -12824,9 +12918,9 @@ const CAMP_GARDEN_ACCESS_DEFINITIONS = Object.freeze({
     label: "East garden passage",
     actionLabel: "Open the east garden passage",
     durationSeconds: 60 * 60,
-    minCatLevel: 1,
-    requiredCats: 2,
-    costs: Object.freeze({ basicWoodPlanks: 10, pebbleBricks: 5 })
+    minCatLevel: 8,
+    requiredCats: 1,
+    costs: Object.freeze({ basicWoodPlanks: 30, pebbleBricks: 30 })
   })
 });
 
@@ -12958,6 +13052,9 @@ function conditionGameplayUnlockCamp(unlock) {
   if (unlock.kind === "runtime-rule" && unlock.id === "operationsTableUnlocked") {
     return operationsTableDebloquee();
   }
+  if (unlock.kind === "runtime-rule" && unlock.id === "woodCathouseUnlocked") {
+    return catHouseDebloquee();
+  }
   if (unlock.kind === "resource-cap-reached" && unlock.scope === "regular-storage") {
     return Boolean(progressionCamp().storageShedUnlocked);
   }
@@ -12980,13 +13077,13 @@ function reparationCampDebloquee(buildingId) {
 }
 
 function maisonCampDebloquee(typeId) {
-  if (typeId === "cardboardBox") {
-    return conditionGameplayCampDebloquee(typeId)
-      || Object.values(etat.camp.houseConstructions || {}).some(function(construction) {
-        return construction && construction.type === typeId;
-      });
-  }
-  return false;
+  const type = typeCampPrototype(typeId);
+  if (!type || type.category !== "house") return false;
+  return conditionGameplayCampDebloquee(typeId)
+    || nombreAssetsCampPlaces(typeId) > 0
+    || Object.values(etat.camp.houseConstructions || {}).some(function(construction) {
+      return construction && construction.type === typeId;
+    });
 }
 
 function constructionsMaisonsCampActives() {
@@ -13050,7 +13147,7 @@ function devisMaisonCamp(typeId) {
   const rank = rangSuivantMaisonCamp(typeId);
   const definition = definitionGameplayCamp(typeId);
   const costs = incrementorLawApi.costForRank(typeId, rank, {
-    growth: woodHouseCostExponent(),
+    growth: woodHouseCostExponent(definition && definition.law && definition.law.growth),
     multiplier: woodHouseCostMultiplier()
   });
   return costs ? {
@@ -13063,6 +13160,22 @@ function devisMaisonCamp(typeId) {
       definition && definition.law && definition.law.rounding
     )
   } : null;
+}
+
+function residentLevelBonusMultiplierForKitty(kitty) {
+  const kittyIndex = Array.isArray(etat.kittiesData) ? etat.kittiesData.indexOf(kitty) : -1;
+  if (kittyIndex < 0) return 1;
+  const houseUid = housingAssignmentsCamp()[String(kittyIndex)];
+  if (!houseUid) return 1;
+  const house = maisonsCampActivesPourHousing().find(function(item) { return item.uid === houseUid; });
+  if (!house) return 1;
+  const multiplier = effetGameplayCampPourTier(
+    house.type,
+    house.tier || 1,
+    "residentLevelBonusMultiplier",
+    1
+  );
+  return Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
 }
 
 function coutMaisonCamp(typeId) {
@@ -13549,7 +13662,10 @@ function normaliserReparationsCamp(claimKitty) {
   Object.keys(etat.camp.repairs).forEach(function(buildingId) {
     const reparation = etat.camp.repairs[buildingId];
     const definition = definitionReparationCamp(buildingId);
-    const dureeAttendue = definition && definition.duration;
+    const dureeAttendue = definition && dureeEffectiveActionCamp(
+      definition.duration,
+      [reparation && reparation.kittyIndex]
+    );
     const valide = Boolean(
       dureeAttendue
       && !batimentCampRepare(buildingId)
@@ -14439,9 +14555,26 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       ? Math.max(1, Number(cible.requiredCats) || 1)
       : 0;
     const savedRequiredCats = demolition && Number(demolition.requiredCats);
+    const paidCosts = demolition && demolition.paidCosts;
+    const legacyRightAccessPaid = Boolean(
+      cible
+      && cible.uid === "garden-access-greenGarden"
+      && targetKind === "access"
+      && modernAssignment
+      && savedRequiredCats === 2
+      && kittyIndices.length === 2
+      && paidCosts
+      && typeof paidCosts === "object"
+      && !Array.isArray(paidCosts)
+      && Object.keys(paidCosts).length === 2
+      && Number(paidCosts.basicWoodPlanks) === 10
+      && Number(paidCosts.pebbleBricks) === 5
+    );
     const assignmentCountValide = modernAssignment
-      ? kittyIndices.length === requiredCats
+      ? legacyRightAccessPaid || (
+        kittyIndices.length === requiredCats
         && (!Number.isInteger(savedRequiredCats) || savedRequiredCats === requiredCats)
+      )
       : targetKind !== "access" && kittyIndices.length === 1;
     const startTs = demolition && Number(demolition.startTs);
     const dureeStockee = demolition && Number(demolition.duree);
@@ -14451,8 +14584,10 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
     const dureeActuelle = cible && typeof campPrototypeApi.dureeDemolitionObstacle === "function"
       ? Number(campPrototypeApi.dureeDemolitionObstacle(cible))
       : 0;
-    const duree = Number.isFinite(dureeActuelle) && dureeActuelle > 0
-      ? dureeActuelle
+    const duree = legacyRightAccessPaid
+      ? dureeStockee
+      : Number.isFinite(dureeActuelle) && dureeActuelle > 0
+      ? dureeEffectiveActionCamp(dureeActuelle, kittyIndices)
       : dureeStockee;
     const valide = Boolean(
       cible
@@ -14484,8 +14619,11 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       readyToClaim: demolition.readyToClaim === true
     };
     if (modernAssignment) {
-      entree.requiredCats = requiredCats;
+      entree.requiredCats = legacyRightAccessPaid ? savedRequiredCats : requiredCats;
       entree.kittyIndices = kittyIndices;
+      if (paidCosts && typeof paidCosts === "object" && !Array.isArray(paidCosts)) {
+        entree.paidCosts = Object.assign({}, paidCosts);
+      }
     }
     if (
       demolition.obstacleUid !== entree.obstacleUid
@@ -14493,6 +14631,7 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       || demolition.kittyIndex !== entree.kittyIndex
       || (modernAssignment && JSON.stringify(demolition.kittyIndices) !== JSON.stringify(entree.kittyIndices))
       || (modernAssignment && demolition.requiredCats !== entree.requiredCats)
+      || (modernAssignment && JSON.stringify(demolition.paidCosts || null) !== JSON.stringify(entree.paidCosts || null))
       || (!modernAssignment && Object.prototype.hasOwnProperty.call(demolition, "requiredCats"))
       || demolition.startTs !== entree.startTs
       || demolition.duree !== entree.duree
@@ -17621,17 +17760,20 @@ function rendreCampTaskPanel(options) {
       const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
       const levelTooLow = (Number(kitty.niveau) || 0) < definition.minLevel;
       const assignedElsewhere = selectedSlot >= 0 && selectedSlot !== state.activeSlot;
-      if (busy || levelTooLow || assignedElsewhere) return;
-      eligibleCount += 1;
+      const disabled = busy || levelTooLow || assignedElsewhere;
+      if (!disabled) eligibleCount += 1;
       const row = document.createElement("button");
       row.type = "button";
       row.dataset.campTaskCat = String(kittyIndex);
       row.className = "camp-demolition-kitty camp-task-cat-choice"
-        + (selectedSlot >= 0 ? " camp-demolition-kitty-selected" : "");
+        + (selectedSlot >= 0 ? " camp-demolition-kitty-selected" : "")
+        + (disabled ? " camp-demolition-kitty-disabled" : "");
+      row.disabled = disabled;
+      row.setAttribute("aria-disabled", String(disabled));
       row.setAttribute("aria-label", selectedSlot >= 0
         ? "Change " + kitty.nom + " in slot " + (selectedSlot + 1)
         : "Assign " + kitty.nom + " to " + definition.actionLabel);
-      row.addEventListener("click", function() { campTaskPanelSelectKitty(kittyIndex); });
+      if (!disabled) row.addEventListener("click", function() { campTaskPanelSelectKitty(kittyIndex); });
       const iconWrap = document.createElement("span");
       iconWrap.className = "camp-demolition-kitty-icon";
       iconWrap.innerHTML = kittyIconHtml(kitty);
@@ -17647,7 +17789,10 @@ function rendreCampTaskPanel(options) {
       row.appendChild(copy);
       const status = document.createElement("span");
       status.className = "camp-demolition-kitty-status";
-      status.textContent = selectedSlot >= 0 ? "Selected" : "Available";
+      status.textContent = busy
+        ? kittyAllocationLabel(kittyIndex).text
+        : (levelTooLow ? "Requires level " + definition.minLevel
+          : (selectedSlot >= 0 ? "Selected" : "Available"));
       row.appendChild(status);
       picker.appendChild(row);
     });
@@ -17911,7 +18056,7 @@ function renduModalConstructionMaisonCamp() {
   let html = "";
   etat.kittiesData.forEach(function(kitty, kittyIndex) {
     if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
-    const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
+    const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const status = busy ? kittyAllocationLabel(kittyIndex).text : "Available";
     const tier = TIERS_KITTIES[kitty.tier] || "Kitty";
     html += '<div class="camp-demolition-kitty'
@@ -17979,7 +18124,7 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
     type: typeId,
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duree: duree,
+    duree: dureeEffectiveActionCamp(duree, [kittyIndex]),
     coutCardboardPlanks: cout.cardboardPlanks,
     lawRank: devis.rank,
     paidCosts: incrementorLawApi.copyCosts(cout),
@@ -17995,7 +18140,7 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
   invaliderConnexionsCampPrototype();
   ajouterLog("event", kitty.nom + " started building " + type.label + " at Base Camp.");
   definirMessageCampPrototype(kitty.nom + " is building " + type.label
-    + " · " + formaterTemps(duree) + " remaining.");
+    + " · " + formaterTemps(etat.camp.houseConstructions[item.uid].duree) + " remaining.");
   campGuidanceActionCommit({
     type: "camp.house-construction-started",
     houseType: typeId,
@@ -18133,7 +18278,7 @@ function renduModalConstructionBatimentCamp() {
   let html = "";
   etat.kittiesData.forEach(function(kitty, kittyIndex) {
     if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
-    const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
+    const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const status = busy ? kittyAllocationLabel(kittyIndex).text : "Available";
     html += '<div class="camp-demolition-kitty' + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (busy ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + kitty.nom + " to build " + type.label)
@@ -18171,7 +18316,7 @@ function selectionnerKittyConstructionBatimentCamp(kittyIndex) {
     type: typeId,
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duration: devis.duration,
+    duration: dureeEffectiveActionCamp(devis.duration, [kittyIndex]),
     costs: incrementorLawApi.copyCosts(devis.costs),
     readyToClaim: false
   };
@@ -18191,7 +18336,7 @@ function selectionnerKittyConstructionBatimentCamp(kittyIndex) {
   invaliderConnexionsCampPrototype();
   ajouterLog("event", kitty.nom + " started building " + type.label + " at Base Camp.");
   definirMessageCampPrototype(type.label + " construction in progress · "
-    + formaterTemps(devis.duration) + " remaining.");
+    + formaterTemps(construction.duration) + " remaining.");
   sauvegarderCampPrototype();
   sauvegarder();
   renduCampPrototype();
@@ -18384,7 +18529,7 @@ function renduModalAmeliorationCamp() {
   let html = "";
   etat.kittiesData.forEach(function(kitty, kittyIndex) {
     if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
-    const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
+    const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const disabled = busy || !ressourcesOk;
     const status = !ressourcesOk ? "Resources missing" : (busy ? kittyAllocationLabel(kittyIndex).text : "Available");
     html += '<div class="camp-demolition-kitty' + (disabled ? ' camp-demolition-kitty-disabled' : '') + '"'
@@ -18431,7 +18576,7 @@ function selectionnerKittyAmeliorationCamp(kittyIndex) {
     targetTier: upgrade.targetTier,
     rank: upgrade.rank,
     startTs: Date.now(),
-    duration: upgrade.duration,
+    duration: dureeEffectiveActionCamp(upgrade.duration, [selectedKittyIndex]),
     costs: Object.assign({}, upgrade.costs),
     readyToClaim: false
   };
@@ -18441,7 +18586,7 @@ function selectionnerKittyAmeliorationCamp(kittyIndex) {
   ajouterLog("event", kitty.nom + " started upgrading " + type.label
     + " to Tier " + upgrade.targetTier + ".");
   definirMessageCampPrototype(type.label + " upgrade in progress · "
-    + formaterTemps(upgrade.duration) + " remaining.");
+    + formaterTemps(etat.camp.upgrades[item.uid].duration) + " remaining.");
   sauvegarder();
   rendu();
   renduCampPrototype();
@@ -18524,7 +18669,7 @@ function renduModalReparationCamp() {
   let html = "";
   etat.kittiesData.forEach(function(kitty, kittyIndex) {
     if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
-    const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
+    const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const disabled = busy || !coutAbordable;
     const status = busy
       ? kittyAllocationLabel(kittyIndex).text
@@ -18584,14 +18729,14 @@ function selectionnerKittyReparationCamp(kittyIndex) {
   etat.camp.repairs[buildingId] = {
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duree: duree,
+    duree: dureeEffectiveActionCamp(duree, [kittyIndex]),
     readyToClaim: false
   };
   fermerModalReparationCamp();
   jouerSonReparation();
   ajouterLog("event", kitty.nom + " started repairing " + type.label + " at Base Camp.");
   definirMessageCampPrototype(kitty.nom + " is repairing " + type.label
-    + " · " + formaterTemps(duree) + " remaining.");
+    + " · " + formaterTemps(etat.camp.repairs[buildingId].duree) + " remaining.");
   sauvegarder();
   renduCampPrototype();
   renduManagement();
@@ -18683,7 +18828,7 @@ function renduModalDemolitionCamp() {
   let html = "";
   etat.kittiesData.forEach(function(kitty, kittyIndex) {
     if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
-    const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
+    const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const levelTooLow = (Number(kitty.niveau) || 0) < minLevel;
     const selected = campPrototypeDemolitionSelection.includes(kittyIndex);
     const disabled = busy || levelTooLow || (!selected && campPrototypeDemolitionSelection.length >= requiredCats);
@@ -18750,7 +18895,10 @@ function demarrerDemolitionCampPrototype() {
   if (kittyIndices.some(function(index) {
     return !kittyPeutExecuterTacheCamp(index, niveauMinimumCibleDemolition(obstacle));
   })) return false;
-  const duree = campPrototypeApi.dureeDemolitionObstacle(obstacle);
+  const duree = dureeEffectiveActionCamp(
+    campPrototypeApi.dureeDemolitionObstacle(obstacle),
+    kittyIndices
+  );
   if (!duree) return false;
   const costs = Object.assign({}, obstacle.costs || {});
   if (!Object.keys(costs).every(function(resourceId) {
@@ -19179,6 +19327,11 @@ function ajouterJonctionClotureCampPrototype(host, jonction) {
   const element = document.createElement("span");
   element.className = "camp-prototype-fence-junction camp-prototype-fence-junction-modular"
     + " camp-prototype-fence-edge-" + (jonction.system ? "system" : "player");
+  if (jonction.system
+      && jonction.y === campPrototypeApi.GRID_HEIGHT
+      && jonction.orientations.has("vertical")) {
+    element.classList.add("camp-prototype-fence-junction-river-end");
+  }
   element.dataset.campFenceJunction = jonction.type + ":" + jonction.x + ":" + jonction.y;
   element.style.left = (jonction.x / campPrototypeApi.GRID_WIDTH * 100) + "%";
   element.style.top = (jonction.y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
@@ -19349,7 +19502,7 @@ function rendreTerrainCampPrototype(presencesCamp) {
     const element = document.createElement("button");
     element.type = "button";
     element.className = "camp-garden-access-site"
-      + (geometry.edge.x < campPrototypeApi.TERRITORY_ZONES.home.x
+      + (zone.x < campPrototypeApi.TERRITORY_ZONES.home.x
         ? " camp-garden-access-site-west" : " camp-garden-access-site-east")
       + (demolition ? " camp-prototype-obstacle-demolition-active" : "")
       + (preteAValider ? " camp-task-ready-to-claim" : "");
@@ -19599,7 +19752,8 @@ function actualiserCommandesCampPrototype() {
       placementActif
       && campPrototypePlacementEnCours.valide
       && (
-        typeCampPrototype(campPrototypePlacementEnCours.type).category !== "house"
+        campPrototypePlacementEnCours.mode !== "new"
+        || typeCampPrototype(campPrototypePlacementEnCours.type).category !== "house"
         || ressourcesMaisonCampSuffisantes(campPrototypePlacementEnCours.type)
       )
       && Number.isFinite(campPrototypePlacementEnCours.x)
@@ -19617,6 +19771,13 @@ function actualiserCommandesCampPrototype() {
   if (gomme) {
     gomme.classList.toggle("camp-prototype-action-active", campPrototypeGommeRoutes);
     gomme.setAttribute("aria-pressed", campPrototypeGommeRoutes ? "true" : "false");
+  }
+  const sortieTrailMobile = document.getElementById("camp-prototype-trail-exit");
+  if (sortieTrailMobile) {
+    sortieTrailMobile.hidden = !(
+      campPrototypeModeEdition
+      && (campPrototypeTypeAPlacer === "road" || campPrototypeGommeRoutes)
+    );
   }
   const gommeClotures = document.getElementById("camp-prototype-fence-erase");
   if (gommeClotures) {
@@ -20782,12 +20943,20 @@ function configurerTimerTacheCamp(timer, tache) {
   }
 }
 
-function ajouterTacheTemporeeChatCamp(element, presence) {
+function ajouterTacheTemporeeChatCamp(element, presence, position, total) {
   if (!element || !presence || !presence.timedTask) return;
   const state = etatTacheTemporeeCamp(presence.timedTask, Date.now());
   if (!state) return;
   const worker = document.createElement(state.readyToClaim ? "button" : "span");
   worker.className = "camp-task-worker";
+  const nombreWorkers = Math.max(1, Number(total) || 1);
+  const positionWorker = Math.max(0, Number(position) || 0);
+  if (nombreWorkers > 1) {
+    worker.style.setProperty(
+      "--camp-task-worker-offset",
+      ((positionWorker - (nombreWorkers - 1) / 2) * 34) + "px"
+    );
+  }
   if (state.readyToClaim) worker.classList.add("camp-task-worker-ready");
    const focusActive = manualFocusTacheCampActif(presence.timedTask);
    const focusReserve = focusActive ? synchroniserReserveManualFocus() : 0;
@@ -20868,14 +21037,25 @@ function ajouterTacheTemporeeChatCamp(element, presence) {
 
 function ajouterPortraitsChatsCamp(element, presences) {
   if (!element || !Array.isArray(presences) || presences.length === 0) return;
-  const presenceTemporee = presences.find(function(presence) { return Boolean(presence.timedTask); });
-  if (presenceTemporee) ajouterTacheTemporeeChatCamp(element, presenceTemporee);
+  const presencesTemporees = presences.filter(function(presence) {
+    return Boolean(presence.timedTask);
+  });
+  presencesTemporees.forEach(function(presence, position) {
+    ajouterTacheTemporeeChatCamp(element, presence, position, presencesTemporees.length);
+  });
+  const kittyIndicesTemporaires = new Set(presencesTemporees.map(function(presence) {
+    return presence.kittyIndex;
+  }));
   const presencesOrdinaires = presences.filter(function(presence) {
-    return !presenceTemporee || presence.kittyIndex !== presenceTemporee.kittyIndex;
+    return !kittyIndicesTemporaires.has(presence.kittyIndex);
   });
   if (!presencesOrdinaires.length) {
+    const nomsTemporaires = presencesTemporees.map(function(presence) {
+      return presence.kitty.nom;
+    }).join(", ");
     element.setAttribute("aria-label", (element.getAttribute("aria-label") || "Camp location")
-      + ", Cat working here: " + presenceTemporee.kitty.nom);
+      + (presencesTemporees.length === 1 ? ", Cat working here: " : ", Cats working here: ")
+      + nomsTemporaires);
     return;
   }
   const type = element.dataset.campType && typeCampPrototype(element.dataset.campType);
@@ -21277,7 +21457,7 @@ function modifierCloturesCampPrototype(edges, effacer) {
 }
 
 function basculerGommeRoutesCampPrototype() {
-  if (!DEV_MODE) return;
+  if (!DEV_MODE && !appealCampDebloque()) return;
   campPrototypeModeEdition = true;
   campPrototypeGommeRoutes = !campPrototypeGommeRoutes;
   campPrototypeTypeAPlacer = null;
@@ -21458,7 +21638,8 @@ function validerPlacementCampPrototype() {
     etat.camp.upgrades[item.uid] = {
       type: item.type, kittyIndex: pending.kittyIndex,
       startTier: item.tier || 1, targetTier: currentQuote.targetTier,
-      rank: currentQuote.rank, startTs: Date.now(), duration: currentQuote.duration,
+      rank: currentQuote.rank, startTs: Date.now(),
+      duration: dureeEffectiveActionCamp(currentQuote.duration, [pending.kittyIndex]),
       costs: Object.assign({}, currentQuote.costs), readyToClaim: false
     };
     campPrototypeUpgradeReposition = null;
@@ -22310,6 +22491,19 @@ function initialiserCampPrototype() {
     terminerInteractionCampPrototype(event, true);
   });
   board.addEventListener("contextmenu", function(event) {
+    const interaction = campPrototypePointeur;
+    const cible = event.target && event.target.closest
+      ? event.target.closest("[data-camp-uid]") : null;
+    if (
+      interaction
+      && interaction.mode === "hold-select"
+      && cible
+      && cible.dataset.campUid === interaction.uid
+    ) {
+      event.preventDefault();
+      selectionnerItemParAppuiProlongeCampPrototype(interaction.uid);
+      return;
+    }
     invaliderGesteActivationItemCampPrototype();
     annulerAppuiProlongeCampPrototype();
     if (
