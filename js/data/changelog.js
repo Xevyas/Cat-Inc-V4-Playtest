@@ -512,6 +512,21 @@
     })
   ]);
 
+  const release0066Categories = Object.freeze([
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Updated the Job Center build cost."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Fixed mobile Operation Table repositioning by using the shared building long-press Edit flow."
+      ])
+    })
+  ]);
+
   const release0065Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -617,7 +632,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0065",
+    baseVersion: "0.0066",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -630,6 +645,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0066",
+      date: "2026-08-18",
+      categories: release0066Categories
+    }),
     Object.freeze({
       version: "0.0065",
       date: "2026-08-17",

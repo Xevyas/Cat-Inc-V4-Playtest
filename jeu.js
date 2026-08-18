@@ -13925,8 +13925,7 @@ function typeCampPrototypeModifiable(typeId) {
     type
     && type.id !== "tree"
     && !verrouilleParReparation
-    && (DEV_MODE || type.category === "house" || Boolean(CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id])
-      || Boolean(CAMP_BUILDING_CONSTRUCTION_CONFIG[type.id]))
+    && (DEV_MODE || type.category === "house" || type.category === "building")
   );
 }
 

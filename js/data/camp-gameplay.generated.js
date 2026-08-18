@@ -192,8 +192,8 @@
         "entryMode": "build",
         "durationSeconds": 600,
         "costs": {
-          "pebbleBricks": 5,
-          "basicWoodPlanks": 10
+          "pebbleBricks": 10,
+          "basicWoodPlanks": 2
         }
       }
     },
