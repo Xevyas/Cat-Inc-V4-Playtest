@@ -512,6 +512,30 @@
     })
   ]);
 
+  const release0067Categories = Object.freeze([
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Bird Work Boost now multiplies production by 5.",
+        "Wood Cathouse comfort now amplifies only the level-derived action-speed bonus."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Available Cats are now ordered by their real effectiveness for Work, Camp and Exploration assignments.",
+        "Camp action icons and Bernardo level-bonus details are now clearer and more consistent."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Exploration rewards can now be claimed partially when storage has room for only some items.",
+        "Wood Cathouse construction now follows the canonical paid-cost recovery and placement flow."
+      ])
+    })
+  ]);
+
   const release0066Categories = Object.freeze([
     Object.freeze({
       label: "Balancing",
@@ -632,7 +656,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0066",
+    baseVersion: "0.0067",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -645,6 +669,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0067",
+      date: "2026-08-20",
+      categories: release0067Categories
+    }),
     Object.freeze({
       version: "0.0066",
       date: "2026-08-18",

@@ -42,7 +42,7 @@
     }),
     Object.freeze({
       id: "first-work-boost",
-      label: "The first bird activates Work ×10",
+      label: "The first bird activates Work ×5",
       check: function(state, context) {
         const now = Number(context && context.now) || Date.now();
         return Boolean(state && state.birdPremiereReussie === true
@@ -75,7 +75,7 @@
     }),
     Object.freeze({
       id: "catch-first-bird", action: "catch-first-bird", milestoneId: "first-work-boost",
-      durationSeconds: 0, resources: Object.freeze({}), outputs: Object.freeze({ workBoost: 10 }),
+      durationSeconds: 0, resources: Object.freeze({}), outputs: Object.freeze({ workBoost: 5 }),
       unlocks: Object.freeze(["work-boost"])
     })
   ]);

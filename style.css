@@ -5127,15 +5127,27 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-production-upgrade strong { align-self: end; font-size: .76rem; }
 .camp-production-upgrade span { align-self: start; color: inherit; font-size: .58rem; letter-spacing: .04em; }
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-upgrade-compact img,
 .camp-prototype-interaction-menu:not(.camp-production-menu) .camp-sticker-customize-action img,
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-jobs-action img,
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-exploration-action img {
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-jobs-action img {
   width: 50px;
   height: 50px;
   object-fit: contain;
 }
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-exploration-action img {
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-action-icon {
+  display: block;
+  place-self: center;
+  grid-row: auto;
+  grid-column: auto;
+  width: 50px;
+  height: 50px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-upgrade-compact {
+  grid-template: 1fr / 1fr;
+}
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-exploration-action .camp-action-icon {
   width: 54px;
   height: 54px;
 }

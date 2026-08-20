@@ -507,6 +507,36 @@ function kittyEligiblePourAffectationOrdinaire(kittyOuIndex) {
     && !estSpecialistePermanentNonAssignable(kitty));
 }
 
+function ordonnerCandidatsAffectationChats(candidats) {
+  const liste = Array.isArray(candidats) ? candidats : [];
+  const scoreValide = function(candidate) {
+    return candidate && typeof candidate.effectivenessScore === "number"
+      && Number.isFinite(candidate.effectivenessScore);
+  };
+  const groupesAvecScores = [false, true].reduce(function(resultat, disponible) {
+    const groupe = liste.filter(function(candidate) {
+      return Boolean(candidate && candidate.availableForCurrentAction) === disponible;
+    });
+    resultat[String(disponible)] = groupe.length > 0 && groupe.every(scoreValide);
+    return resultat;
+  }, {});
+  return liste.slice().sort(function(a, b) {
+    const disponibiliteA = a && a.availableForCurrentAction ? 1 : 0;
+    const disponibiliteB = b && b.availableForCurrentAction ? 1 : 0;
+    if (disponibiliteA !== disponibiliteB) return disponibiliteB - disponibiliteA;
+    const indexA = a && Number.isInteger(a.kittyIndex) ? a.kittyIndex : Number.MAX_SAFE_INTEGER;
+    const indexB = b && Number.isInteger(b.kittyIndex) ? b.kittyIndex : Number.MAX_SAFE_INTEGER;
+    if (groupesAvecScores[String(Boolean(disponibiliteA))]
+        && a.effectivenessScore !== b.effectivenessScore) {
+      return b.effectivenessScore - a.effectivenessScore;
+    }
+    const niveauA = etat.kittiesData[indexA] ? Number(etat.kittiesData[indexA].niveau) || 0 : 0;
+    const niveauB = etat.kittiesData[indexB] ? Number(etat.kittiesData[indexB].niveau) || 0 : 0;
+    if (niveauA !== niveauB) return niveauB - niveauA;
+    return indexA - indexB;
+  });
+}
+
 function kittyPeutExecuterTacheCamp(kittyIndex, minLevel) {
   const kitty = etat.kittiesData[kittyIndex];
   return Boolean(kitty
@@ -1446,15 +1476,29 @@ function jobLevelMultiplier(kitty) {
   return Math.pow(1.05, kitty ? kitty.niveau : 0);
 }
 
+function amplifierBonusNiveauMultiplicatif(levelMultiplier, residentMultiplier) {
+  const base = Number(levelMultiplier);
+  const resident = Number(residentMultiplier);
+  if (!Number.isFinite(base)) return levelMultiplier;
+  if (!Number.isFinite(resident) || resident <= 0) return base;
+  return 1 + (base - 1) * resident;
+}
+
 function kittyGatherProductionMultiplier(kitty) {
   return kitty && !estSpecialistePermanentNonAssignable(kitty)
-    ? Math.pow(GATHER_LEVEL_MULTIPLIER, kitty.niveau) * residentLevelBonusMultiplierForKitty(kitty)
+    ? amplifierBonusNiveauMultiplicatif(
+        Math.pow(GATHER_LEVEL_MULTIPLIER, kitty.niveau),
+        residentLevelBonusMultiplierForKitty(kitty)
+      )
     : 1;
 }
 
 function kittyProcessProductionMultiplier(kitty) {
   return kitty && !estSpecialistePermanentNonAssignable(kitty)
-    ? productionProcBonus(kitty) * residentLevelBonusMultiplierForKitty(kitty)
+    ? amplifierBonusNiveauMultiplicatif(
+        productionProcBonus(kitty),
+        residentLevelBonusMultiplierForKitty(kitty)
+      )
     : 1;
 }
 
@@ -1514,7 +1558,10 @@ const CAMP_ACTION_SPEED_LEVEL_BASE = 1.02;
 
 function multiplicateurVitesseActionCampKitty(kitty) {
   const niveau = Math.max(0, Number(kitty && kitty.niveau) || 0);
-  return Math.pow(CAMP_ACTION_SPEED_LEVEL_BASE, niveau) * residentLevelBonusMultiplierForKitty(kitty);
+  return amplifierBonusNiveauMultiplicatif(
+    Math.pow(CAMP_ACTION_SPEED_LEVEL_BASE, niveau),
+    residentLevelBonusMultiplierForKitty(kitty)
+  );
 }
 
 function multiplicateurVitesseActionsCamp(kittyIndices) {
@@ -2114,17 +2161,25 @@ function recupererButinScouting(scoutingId) {
   const recompenses = Object.keys(butin.rewards || {}).map(function(recompenseId) {
     return { recompense: recompenseId, qty: Number(butin.rewards[recompenseId]) || 0 };
   });
-  if (!autoriserEntreeStockageRecompenses(recompenses)) return false;
-  const rewardReady = Object.keys(butin.rewards).some(function(recompenseId) {
-    return Number(butin.rewards[recompenseId]) > 0;
-  });
-  if (rewardReady && typeof jouerSonRewardChest === "function") jouerSonRewardChest();
-  Object.keys(butin.rewards).forEach(function(recompenseId) {
-    appliquerRecompense(recompenseId, butin.rewards[recompenseId]);
+  const repartition = repartirRecompensesExploration(recompenses);
+  if (!repartition.reclamees.length) {
+    notifierRecompensesStockageEnAttente(repartition.restantes);
+    return false;
+  }
+  if (typeof jouerSonRewardChest === "function") jouerSonRewardChest();
+  repartition.reclamees.forEach(function(entry) {
+    appliquerRecompense(entry.recompense, entry.qty);
   });
   const totalRuns = butin.successful + butin.failed;
-  ajouterLog("event", "Scouting rewards claimed after " + totalRuns + " run" + (totalRuns === 1 ? "" : "s") + ".");
-  delete etat.butinsScouting[scoutingId];
+  if (repartition.restantes.length) {
+    butin.rewards = recompensesVersObjet(repartition.restantes);
+    ajouterLog("event", "Scouting rewards partially claimed after " + totalRuns + " run"
+      + (totalRuns === 1 ? "" : "s") + ". Storage-limited rewards are still waiting.");
+    notifierRecompensesStockageEnAttente(repartition.restantes);
+  } else {
+    ajouterLog("event", "Scouting rewards claimed after " + totalRuns + " run" + (totalRuns === 1 ? "" : "s") + ".");
+    delete etat.butinsScouting[scoutingId];
+  }
   carteDirty = true;
   exploTabDirty = true;
   sauvegarder(); rendu();
@@ -3760,7 +3815,9 @@ function actualiserIndicateurWorkBoost(boostEl, boostActif, workCue, boostRestan
   const countdown = boostEl.querySelector("#work-boost-countdown");
   const copy = boostEl.querySelector("#work-boost-copy");
   if (countdown) ecrireTexte(countdown, boostActif ? formaterTemps(boostRestant) : "");
-  if (copy) ecrireTexte(copy, workCue ? "Bird Boost! Work ×10" : "Work ×10");
+  if (copy) ecrireTexte(copy, workCue
+    ? "Bird Boost! Work ×" + BIRD_WORK_BOOST_BASE_MULTIPLIER
+    : "Work ×" + BIRD_WORK_BOOST_BASE_MULTIPLIER);
   boostEl.classList.toggle("work-boost-first-cue", Boolean(boostActif && workCue));
   const workTab = domParId("onglet-work");
   const workTabBadge = domParId("work-boost-tab-badge");
@@ -3768,7 +3825,9 @@ function actualiserIndicateurWorkBoost(boostEl, boostActif, workCue, boostRestan
   if (workTabBadge) {
     workTabBadge.hidden = !boostActif;
     ecrireTexte(workTabBadge, boostActif
-      ? (workCue ? "⚡ Bird Boost! ×10 · " : "⚡ ×10 · ") + formaterTemps(boostRestant)
+      ? (workCue
+        ? "⚡ Bird Boost! ×" + BIRD_WORK_BOOST_BASE_MULTIPLIER + " · "
+        : "⚡ ×" + BIRD_WORK_BOOST_BASE_MULTIPLIER + " · ") + formaterTemps(boostRestant)
       : "");
   }
   ecrireStyle(boostEl, "display", boostActif ? "block" : "none");
@@ -6030,6 +6089,71 @@ function distribuerFood(mode) {
   afficherFoodDistributionRecap(distributionRecap);
 }
 
+function presentationBonusNiveauExperience(k, engineerInfo) {
+  const isEngineer = k.metier === ENGINEER_JOB_ID;
+  const isShopOwner = estSpecialistePermanentNonAssignable(k);
+  const isBernardo = k.nom === "Bernardo";
+  const campActionSpeedHelpLine = "<span>Camp Actions Speed by 2%</span>";
+  const campActionSpeedLine = "<span class='xp-bonus-ligne'><span class='bonus-var'>×"
+    + multiplicateurVitesseActionCampKitty(k).toFixed(2)
+    + "</span> Camp Actions Speed</span>";
+
+  if (isBernardo) {
+    if (k.metier !== "gang-leader") {
+      return {
+        helpBody: "<strong>Bernardo has not learned the Gang Leader job yet.</strong>"
+          + "<span>Increasing his level has no gameplay effect until he becomes Gang Leader.</span>",
+        levelBonuses: "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'>"
+          + "His level has no gameplay effect until he becomes Gang Leader.</span></div>"
+      };
+    }
+    const workSpeed = gangLeaderBonus().toFixed(2);
+    return {
+      helpBody: "<strong>Bernardo's level amplifies his Gang Leader Work speed bonus.</strong>"
+        + "<span>Current global Work speed: ×" + workSpeed + "</span>",
+      levelBonuses: "<div class='xp-bonus-actifs'>"
+        + "<span class='xp-bonus-ligne'><span class='bonus-var'>×" + workSpeed
+        + "</span> Gang Leader Work Speed</span>"
+        + "<span class='xp-bonus-ligne'>Bernardo's level amplifies this bonus for all workers.</span>"
+        + "</div>"
+    };
+  }
+
+  const gatherLevelPercent = Math.round((Math.pow(GATHER_LEVEL_MULTIPLIER, 1) - 1) * 100);
+  const processLevelPercent = Math.round((productionProcBonus({ niveau: 1 }) - 1) * 100);
+  const managerLevelPercent = Math.round((jobLevelMultiplier({ niveau: 1 }) - 1) * 100);
+  const managerSpeedBonusLine = !isEngineer && k.metier && !isShopOwner
+    && METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille]
+    ? "<span class='xp-bonus-ligne'><span class='bonus-var'>x"
+      + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2)
+      + "</span> Manager Speed Bonus</span>"
+    : "";
+  const helpBody = isShopOwner
+    ? "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks new merchandise tiers every 10 levels.</span><span>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span>" + campActionSpeedHelpLine
+    : isEngineer
+    ? "<strong>Each additional level increases the following passives:</strong><span>" + (engineerInfo ? engineerInfo.help : "AFK Timer Bonus by 6 minutes per level") + "</span>" + campActionSpeedHelpLine
+    : "<strong>Each additional level increases these bonuses:</strong>"
+      + "<span>Gather Production Bonus by " + gatherLevelPercent + "%</span>"
+      + "<span>Process Production Bonus by " + processLevelPercent + "%</span>"
+      + "<span>Exploration Power by 1</span>"
+      + "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>"
+      + campActionSpeedHelpLine;
+  const levelBonuses = k.niveau > 0 ? (
+    isShopOwner
+      ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span></div>"
+      : isEngineer
+      ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? (k.niveau * engineerInfo.value) + "%" : (k.niveau * (engineerInfo ? engineerInfo.value : 6)) + " min") + "</span> " + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? "AFK Ratio Bonus" : "AFK Timer Bonus") + "</span></div>"
+      : "<div class='xp-bonus-actifs'>"
+        + campActionSpeedLine
+        + "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyGatherProductionMultiplier(k).toFixed(2) + "</span> Gather Production Bonus</span>"
+        + "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyProcessProductionMultiplier(k).toFixed(2) + "</span> Process Production Bonus</span>"
+        + managerSpeedBonusLine
+        + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>"
+        + "</div>"
+  ) : "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "</div>";
+  return { helpBody: helpBody, levelBonuses: levelBonuses };
+}
+
 function renduManagement() {
   const liste  = document.getElementById("liste-kitties");
   const detail = document.getElementById("detail-kitty");
@@ -6159,7 +6283,6 @@ function renduManagement() {
   if (etat.premiereSaladeFaite) {
     hasContent = true;
     const isEngineer = k.metier === ENGINEER_JOB_ID;
-    const isShopOwner = estSpecialistePermanentNonAssignable(k);
     const engineerInfo = isEngineer ? rangIngenieurInfo(k) : null;
     const maxLevel = niveauMaxChat(k);
     const atMaxLevel = Number.isFinite(maxLevel) && k.niveau >= maxLevel;
@@ -6182,22 +6305,8 @@ function renduManagement() {
     const autoLevelBtn = atMaxLevel
       ? "<div class='xp-max-level'>Maximum level reached</div>"
       : "<button class='btn-xp-auto'" + (autoBtnDisabled ? " disabled" : "") + " onclick='nourrirAutoNiveau(" + kittySelectionnee + ")'>Auto-feed to next level (<span class='xp-gain'>" + xpManquant + " XP needed</span>)</button>";
-    // Keep these derived values aligned with the level multipliers used by
-    // Gathering, Processing and manager speed calculations below.
-    const gatherLevelPercent = Math.round((Math.pow(GATHER_LEVEL_MULTIPLIER, 1) - 1) * 100);
-    const processLevelPercent = Math.round((productionProcBonus({ niveau: 1 }) - 1) * 100);
-    const managerLevelPercent = Math.round((jobLevelMultiplier({ niveau: 1 }) - 1) * 100);
-    const campActionSpeedHelpLine = "<span>Camp Actions Speed by 2%</span>";
-    const experienceHelpBody = isShopOwner
-      ? "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks new merchandise tiers every 10 levels.</span><span>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span>" + campActionSpeedHelpLine
-      : isEngineer
-      ? "<strong>Each additional level increases the following passives:</strong><span>" + (engineerInfo ? engineerInfo.help : "AFK Timer Bonus by 6 minutes per level") + "</span>" + campActionSpeedHelpLine
-      : "<strong>Each additional level increases these bonuses:</strong>" +
-        "<span>Gather Production Bonus by " + gatherLevelPercent + "%</span>" +
-        "<span>Process Production Bonus by " + processLevelPercent + "%</span>" +
-        "<span>Exploration Power by 1</span>" +
-        "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>" +
-        campActionSpeedHelpLine;
+    const experiencePresentation = presentationBonusNiveauExperience(k, engineerInfo);
+    const experienceHelpBody = experiencePresentation.helpBody;
     const experienceHelp =
       "<span class='detail-section-titre-label'>Experience</span>" +
       "<span id='experience-help-wrap' class='detail-help-wrap'>" +
@@ -6205,25 +6314,7 @@ function renduManagement() {
       "<span id='experience-bonus-help' class='detail-help-popover' role='note' aria-hidden='" + (experienceHelpOuvert ? "false" : "true") + "' style='display:" + (experienceHelpOuvert ? "block" : "none") + "'>" +
       experienceHelpBody +
       "</span></span>";
-    const managerSpeedBonusLine = !isEngineer && k.metier && !isShopOwner && METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille]
-      ? "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2) + "</span> Manager Speed Bonus</span>"
-      : "";
-    const campActionSpeedLine = "<span class='xp-bonus-ligne'><span class='bonus-var'>×"
-      + multiplicateurVitesseActionCampKitty(k).toFixed(2)
-      + "</span> Camp Actions Speed</span>";
-    const levelBonuses = k.niveau > 0 ? (
-      isShopOwner
-        ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span></div>"
-        : isEngineer
-        ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? (k.niveau * engineerInfo.value) + "%" : (k.niveau * (engineerInfo ? engineerInfo.value : 6)) + " min") + "</span> " + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? "AFK Ratio Bonus" : "AFK Timer Bonus") + "</span></div>"
-        : "<div class='xp-bonus-actifs'>" +
-          campActionSpeedLine +
-          "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyGatherProductionMultiplier(k).toFixed(2) + "</span> Gather Production Bonus</span>" +
-          "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyProcessProductionMultiplier(k).toFixed(2) + "</span> Process Production Bonus</span>" +
-          managerSpeedBonusLine +
-          "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>" +
-          "</div>"
-    ) : "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "</div>";
+    const levelBonuses = experiencePresentation.levelBonuses;
     droite.innerHTML +=
       "<div class='detail-section' id='detail-experience'>" +
       "<div class='detail-section-titre detail-section-titre-with-help'>" + experienceHelp + "</div>" +
@@ -7680,34 +7771,46 @@ function renduModalExplo() {
     .filter(function(entry) {
       if (!kittyEligiblePourAffectationOrdinaire(entry.k)) return false;
       return !requiredExploratorSlot || estExplorateurDeZone(entry.i);
+    })
+    .map(function(entry) {
+      const i = entry.i;
+      const onExplo = kittyIsOnExpedition(i);
+      const inOtherSlot = exploModalOuvert.campId
+        ? kittyDejaSelectionnee(i, exploModalOuvert.campId, exploModalOuvert.slotIndex) : false;
+      const inWorker = kittyIsInWorkerSlot(i);
+      const isManager = kittyEstManager(i);
+      const inTraining = kittyIsInTraining(i);
+      const isLearning = kittyIsLearningBook(i);
+      const inDemolition = kittyIsDemolishingCamp(i);
+      const onZoneExplo = kittyIsOnZoneExplo(i);
+      const onScouting = kittyIsOnScouting(i)
+        || (kittyIsInScoutingStaging(i) && scoutingsStagingKitty[exploModalOuvert.scoutingId] !== i);
+      const inZoneSlot = exploModalOuvert.zoneId
+        ? (carteExploSlots[exploModalOuvert.zoneId] || []).some(function(ki, si) {
+            return ki === i && si !== exploModalOuvert.slotIndex;
+          })
+        : false;
+      const validExplorator = !requiredExploratorSlot || estExplorateurDeZone(i);
+      const occupied = kittyIsBusy(i);
+      const disabled = onExplo || inOtherSlot || inWorker || isManager || inTraining || isLearning
+        || inDemolition || onZoneExplo || inZoneSlot || onScouting || occupied || !validExplorator;
+      return Object.assign(entry, {
+        kittyIndex: i,
+        availableForCurrentAction: !disabled,
+        effectivenessScore: exploModalOuvert.scoutingId ? undefined : kittyEP(i),
+        disabled: disabled,
+        forcable: validExplorator && !onExplo && !inOtherSlot && !inTraining && !isLearning
+          && !inDemolition && !onZoneExplo && !inZoneSlot && !onScouting && (inWorker || isManager),
+        statusLabel: !validExplorator ? "Explorator required"
+          : occupied ? kittyAllocationLabel(i).text
+            : (inOtherSlot || inZoneSlot) ? "in another slot" : ""
+      });
     });
-  kittyList.sort(function(a, b) {
-    var aExp = a.k.metier === "explorator" ? 0 : 1;
-    var bExp = b.k.metier === "explorator" ? 0 : 1;
-    if (aExp !== bExp) return aExp - bExp;
-    return b.k.niveau - a.k.niveau;
-  });
-  kittyList.forEach(function(entry) {
+  ordonnerCandidatsAffectationChats(kittyList).forEach(function(entry) {
     var k = entry.k, i = entry.i;
-    const onExplo      = kittyIsOnExpedition(i);
-    const inOtherSlot  = exploModalOuvert.campId ? kittyDejaSelectionnee(i, exploModalOuvert.campId, exploModalOuvert.slotIndex) : false;
-    const inWorker     = kittyIsInWorkerSlot(i);
-    const isManager    = kittyEstManager(i);
-    const inTraining   = kittyIsInTraining(i);
-    const isLearning   = kittyIsLearningBook(i);
-    const inDemolition = kittyIsDemolishingCamp(i);
-    const onZoneExplo  = kittyIsOnZoneExplo(i);
-    const onScouting   = kittyIsOnScouting(i) || (kittyIsInScoutingStaging(i) && scoutingsStagingKitty[exploModalOuvert.scoutingId] !== i);
-    const inZoneSlot   = exploModalOuvert.zoneId
-      ? (carteExploSlots[exploModalOuvert.zoneId] || []).some(function(ki, si) { return ki === i && si !== exploModalOuvert.slotIndex; })
-      : false;
-    const requiresExplorator = !!(exploModalOuvert.zoneId && exploModalOuvert.slotIndex === 0);
-    const validExplorator = !requiresExplorator || estExplorateurDeZone(i);
-    const occupied     = kittyIsBusy(i);
-    const disabled     = onExplo || inOtherSlot || inWorker || isManager || inTraining || isLearning
-      || inDemolition || onZoneExplo || inZoneSlot || onScouting || occupied || !validExplorator;
-    const forcable     = validExplorator && !onExplo && !inOtherSlot && !inTraining && !isLearning && !inDemolition && !onZoneExplo && !inZoneSlot && !onScouting && (inWorker || isManager);
-    let statusLabel    = !validExplorator ? "Explorator required" : occupied ? kittyAllocationLabel(i).text : (inOtherSlot || inZoneSlot) ? "in another slot" : "";
+    const disabled = entry.disabled;
+    const forcable = entry.forcable;
+    const statusLabel = entry.statusLabel;
 
     html += '<div class="explo-modal-kitty' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for this exploration") + ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
@@ -8005,12 +8108,23 @@ function recupererRecompenseCampaign(campaignId) {
   const camp = CONFIG.campaigns[campaignId];
   if (!resultat || !resultat.success || !camp) return;
   if (!autoriserActionTableOperationsCamp()) return false;
-  if (!autoriserEntreeStockageRecompenses(resultat.recompenses)) return false;
+  const repartition = repartirRecompensesExploration(resultat.recompenses);
+  if (!repartition.reclamees.length) {
+    notifierRecompensesStockageEnAttente(repartition.restantes);
+    return false;
+  }
   if (typeof jouerSonRewardChest === "function") jouerSonRewardChest();
-  resultat.recompenses.forEach(function(entry) { appliquerRecompense(entry.recompense, entry.qty); });
-  if (!etat.campaignsCompletees.includes(campaignId)) etat.campaignsCompletees.push(campaignId);
-  delete etat.resultatsCampaigns[campaignId];
-  ajouterLog("unlock", "Campaign completed: " + camp.nom + ". Reward claimed.");
+  repartition.reclamees.forEach(function(entry) { appliquerRecompense(entry.recompense, entry.qty); });
+  if (repartition.restantes.length) {
+    resultat.recompenses = repartition.restantes;
+    ajouterLog("event", "Campaign reward partially claimed: " + camp.nom
+      + ". Storage-limited rewards are still waiting.");
+    notifierRecompensesStockageEnAttente(repartition.restantes);
+  } else {
+    if (!etat.campaignsCompletees.includes(campaignId)) etat.campaignsCompletees.push(campaignId);
+    delete etat.resultatsCampaigns[campaignId];
+    ajouterLog("unlock", "Campaign completed: " + camp.nom + ". Reward claimed.");
+  }
   carteDirty = true;
   exploTabDirty = true;
   verifierObjectifs(); sauvegarder(); rendu();
@@ -9330,13 +9444,20 @@ function renduModalJC() {
 
   if (jcModalOuvert.mode === "engineer") {
     if (titreEl) titreEl.textContent = "Choose a Stray Cat for engineering training";
-    const roster = laboratoireKittysRoster();
+    const roster = ordonnerCandidatsAffectationChats(laboratoireKittysRoster().map(function(entry) {
+      const unavailable = kittyIsUnavailableForNewAssignment(entry.index);
+      return Object.assign({}, entry, {
+        kittyIndex: entry.index,
+        availableForCurrentAction: !unavailable,
+        unavailable: unavailable
+      });
+    }));
     if (roster.length === 0) {
       html = '<p class="jc-modal-vide">No Stray Cats.</p>';
     } else {
       roster.forEach(function(entry) {
         const k = entry.kitty;
-        const unavailable = kittyIsUnavailableForNewAssignment(entry.index);
+        const unavailable = entry.unavailable;
         const status = unavailable ? kittyAllocationLabel(entry.index).text : "";
         html += '<div class="jc-modal-kitty' + (unavailable ? ' jc-modal-kitty-disabled' : '') + '"'
           + (unavailable ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for engineering training") + ' onclick="selectionnerIngenieurLaboratoire(' + entry.index + ')"') + '>';
@@ -9347,11 +9468,17 @@ function renduModalJC() {
     }
   } else if (jcModalOuvert.mode === "formation") {
     if (titreEl) titreEl.innerHTML = KITTY_ICON + " Choose a Stray Cat";
-    const stray = kittysSansMetier();
+    const stray = ordonnerCandidatsAffectationChats(kittysSansMetier().map(function(idx) {
+      return {
+        kittyIndex: idx,
+        availableForCurrentAction: !kittyIsUnavailableForNewAssignment(idx)
+      };
+    }));
     if (stray.length === 0) {
       html = '<p class="jc-modal-vide">No Stray Cats available.</p>';
     } else {
-      stray.forEach(function(idx) {
+      stray.forEach(function(entry) {
+        const idx = entry.kittyIndex;
         const k        = etat.kittiesData[idx];
         const tier     = TIERS_KITTIES[k.tier] || "Kitty";
         const busy     = kittyIsUnavailableForNewAssignment(idx);
@@ -9377,14 +9504,21 @@ function renduModalJC() {
       if (etat.managers[f] !== null && etat.managers[f] !== undefined) dejaMgr[etat.managers[f]] = f;
     });
     {
-      const eligibles = etat.kittiesData.reduce(function(acc, k, i) {
-        if (metiersEligibles.includes(k.metier) && kittyEligiblePourAffectationOrdinaire(k)) acc.push(i);
+      const eligibles = ordonnerCandidatsAffectationChats(etat.kittiesData.reduce(function(acc, k, i) {
+        if (metiersEligibles.includes(k.metier) && kittyEligiblePourAffectationOrdinaire(k)) {
+          acc.push({
+            kittyIndex: i,
+            availableForCurrentAction: !kittyIsUnavailableForNewAssignment(i),
+            effectivenessScore: managerSpeedMultiplier(k, famille)
+          });
+        }
         return acc;
-      }, []);
+      }, []));
       if (eligibles.length === 0) {
         html = '<p class="jc-modal-vide">No cat with the required job.</p>';
       } else {
-        eligibles.forEach(function(idx) {
+        eligibles.forEach(function(entry) {
+          const idx = entry.kittyIndex;
           const k = etat.kittiesData[idx];
           const m = METIERS[k.metier];
           const bonus = managerSpeedMultiplier(k, famille).toFixed(2);
@@ -9943,15 +10077,25 @@ function renduModalWorker() {
   const pair = slot && paireRecette(slot.recipeId);
   if (!pair) return;
   ecrireTexte(domParId("worker-modal-titre"), "Assign a Cat to " + pair.procLabel);
-  const bonusFn = function(kitty) {
-    return kittyGatherProductionMultiplier(kitty) * kittyProcessProductionMultiplier(kitty);
-  };
   let html = "";
   const ordre = etat.kittiesData
     .map(function(k, i) { return { k: k, i: i }; })
-    .filter(function(entry) { return kittyEligiblePourAffectationOrdinaire(entry.k); });
-  ordre.sort(function(a, b) { return bonusFn(b.k) - bonusFn(a.k); });
-  ordre.forEach(function(entry) {
+    .filter(function(entry) { return kittyEligiblePourAffectationOrdinaire(entry.k); })
+    .map(function(entry) {
+      const i = entry.i;
+      const occupied = kittyIsBusy(i);
+      const inExplorationStaging = kittyIsInExplorationStaging(i);
+      return Object.assign(entry, {
+        kittyIndex: i,
+        availableForCurrentAction: !occupied && !inExplorationStaging,
+        effectivenessScore: tauxPerformanceRecettePourKitty(
+          pair, entry.k, workerModalOuvert.familyId, workerModalOuvert.slotIdx
+        ),
+        occupied: occupied,
+        inExplorationStaging: inExplorationStaging
+      });
+    });
+  ordonnerCandidatsAffectationChats(ordre).forEach(function(entry) {
     const k = entry.k, i = entry.i;
     const onExplo     = kittyIsOnExpedition(i);
     const onZoneExplo = kittyIsOnZoneExplo(i);
@@ -9961,8 +10105,8 @@ function renduModalWorker() {
     const isManager   = kittyEstManager(i);
     const isLearning  = kittyIsLearningBook(i);
     const inDemolition = kittyIsDemolishingCamp(i);
-    const inExplorationStaging = kittyIsInExplorationStaging(i);
-    const occupied    = kittyIsBusy(i);
+    const inExplorationStaging = entry.inExplorationStaging;
+    const occupied    = entry.occupied;
     const disabled    = occupied || inExplorationStaging;
     const tutorialReassignable = campTutorialPickerEtape()
       && campTutorialWorkerResolvable(i, workerModalOuvert.slotIdx)
@@ -10405,9 +10549,12 @@ function acheterLaboratoire() {
 
 let vitesse  = 1;
 const TICK_DT = 0.1; // seconds per tick
+const BIRD_WORK_BOOST_BASE_MULTIPLIER = 5;
 
 function workBoostMult() {
-  return (etat.workBoostFinTs && Date.now() < etat.workBoostFinTs) ? 10 : 1;
+  return (etat.workBoostFinTs && Date.now() < etat.workBoostFinTs)
+    ? BIRD_WORK_BOOST_BASE_MULTIPLIER
+    : 1;
 }
 
 function definitionMoteurRecette(pair) {
@@ -10460,6 +10607,26 @@ function dureeRestanteCycleRecetteHeritee(pair, slot, modifiers) {
   if (slot.phase === "processing") return Math.max(0, processingRemaining);
   const gathered = Math.max(0, Number(slot.gatheredInputs && slot.gatheredInputs[pair.rawRes]) || 0);
   return Math.max(0, targetRaw - Math.min(targetRaw, gathered)) / gatheringRate + 1 / processingRate;
+}
+
+function tauxPerformanceRecettePourKitty(pair, kitty, familyId, slotIdx) {
+  if (!pair || !kitty) return null;
+  const manualSpeeds = vitessesManualFocusRecette(familyId, slotIdx);
+  const modifiers = Object.assign(modificateursRecette(pair, kitty), {
+    gatheringManualSpeed: manualSpeeds.gathering,
+    processingManualSpeed: manualSpeeds.processing
+  });
+  const enginePair = definitionMoteurRecette(pair);
+  const cycleDuration = dureeRestanteCycleRecetteHeritee(enginePair, {
+    phase: "gathering",
+    phaseProgress: 0,
+    gatheredInputs: {}
+  }, modifiers);
+  const outputPerCycle = Number(modifiers.complexProduction);
+  return Number.isFinite(cycleDuration) && cycleDuration > 0
+    && Number.isFinite(outputPerCycle) && outputPerCycle > 0
+    ? outputPerCycle / cycleDuration
+    : null;
 }
 
 function reglerSlotRecetteHeriteApresCycle(pair, slot, result) {
@@ -12704,6 +12871,17 @@ const CAMP_PROTOTYPE_FUNCTION_BY_TYPE = Object.freeze({
   storage: "inventory",
   marketStall: "shop"
 });
+const CAMP_PROTOTYPE_FUNCTION_ICON_BY_ID = Object.freeze({
+  explorations: "img/interface/Exploration_Final.png",
+  jobs: "img/interface/Jobs.png",
+  inventory: "img/interface/Inventory_Final.png"
+});
+function iconeFonctionCampPrototype(functionId) {
+  const src = CAMP_PROTOTYPE_FUNCTION_ICON_BY_ID[functionId];
+  return src
+    ? '<img class="camp-action-icon" src="' + src + '" alt="">'
+    : '<span aria-hidden="true">→</span>';
+}
 const CAMP_BUILDING_REPAIR_DURATIONS = Object.freeze({
   sawmill: 60,
   catchen: 10 * 60,
@@ -13219,6 +13397,21 @@ function normaliserConstructionsMaisonsCamp(claimKitty) {
   let changed = false;
   Object.keys(etat.camp.houseConstructions).forEach(function(uid) {
     const construction = etat.camp.houseConstructions[uid];
+    if (construction && construction.type === "cardboardBox"
+        && (!construction.paidCosts || typeof construction.paidCosts !== "object")
+        && Number.isFinite(construction.coutCardboardPlanks)
+        && construction.coutCardboardPlanks >= 0) {
+      construction.paidCosts = { cardboardPlanks: construction.coutCardboardPlanks };
+      changed = true;
+    }
+    const paidCostIds = construction && construction.paidCosts
+      && typeof construction.paidCosts === "object"
+      && !Array.isArray(construction.paidCosts)
+      ? Object.keys(construction.paidCosts)
+      : [];
+    const paidCosts = incrementorLawApi.copyCosts(construction && construction.paidCosts);
+    const paidCostsValides = paidCostIds.length > 0
+      && Object.keys(paidCosts).length === paidCostIds.length;
     const valide = Boolean(
       typeof uid === "string"
       && uid
@@ -13228,18 +13421,15 @@ function normaliserConstructionsMaisonsCamp(claimKitty) {
       && Number.isFinite(construction.startTs)
       && Number.isFinite(construction.duree)
       && construction.duree > 0
-      && Number.isFinite(construction.coutCardboardPlanks)
-      && construction.coutCardboardPlanks >= 0
+      && Number.isInteger(construction.lawRank)
+      && construction.lawRank > 0
+      && paidCostsValides
       && (typeof claimKitty !== "function" || claimKitty(construction.kittyIndex))
     );
     if (!valide) {
       delete etat.camp.houseConstructions[uid];
       changed = true;
       return;
-    }
-    if (!construction.paidCosts || typeof construction.paidCosts !== "object") {
-      construction.paidCosts = { cardboardPlanks: construction.coutCardboardPlanks };
-      changed = true;
     }
   });
   return changed;
@@ -13250,7 +13440,7 @@ function coutsPayesMaisonCamp(constructionOuItem) {
   if (source.paidCosts && typeof source.paidCosts === "object") {
     return incrementorLawApi.copyCosts(source.paidCosts);
   }
-  if (Number.isFinite(source.coutCardboardPlanks)) {
+  if (source.type === "cardboardBox" && Number.isFinite(source.coutCardboardPlanks)) {
     return { cardboardPlanks: Math.max(0, source.coutCardboardPlanks) };
   }
   if (source.costs && typeof source.costs === "object") {
@@ -14034,24 +14224,52 @@ function verifierDeblocageSmallStorageShed() {
   return true;
 }
 
-function autoriserEntreeStockageRecompenses(recompenses) {
-  const ajouts = {};
+function repartirRecompensesExploration(recompenses) {
+  const quantites = {};
+  const ordre = [];
   (Array.isArray(recompenses) ? recompenses : []).forEach(function(entry) {
-    if (!entry || !ressourceSoumiseStockage(entry.recompense)) return;
-    ajouts[entry.recompense] = (ajouts[entry.recompense] || 0)
-      + Math.max(0, Number(entry.qty) || 0);
+    if (!entry || !entry.recompense) return;
+    const qty = Math.max(0, Number(entry.qty) || 0);
+    if (!qty) return;
+    if (!Object.prototype.hasOwnProperty.call(quantites, entry.recompense)) {
+      quantites[entry.recompense] = 0;
+      ordre.push(entry.recompense);
+    }
+    quantites[entry.recompense] += qty;
   });
-  const bloquee = Object.keys(ajouts).find(function(resourceId) {
-    const stockage = etatStockageRessource(resourceId);
-    return stockage.stock + ajouts[resourceId] > stockage.capacite;
+  const reclamees = [];
+  const restantes = [];
+  ordre.forEach(function(recompenseId) {
+    const qty = quantites[recompenseId];
+    let qtyReclamee = qty;
+    if (ressourceSoumiseStockage(recompenseId)) {
+      const stockage = etatStockageRessource(recompenseId);
+      qtyReclamee = Math.min(qty, Math.max(0, stockage.capacite - stockage.stock));
+    }
+    if (qtyReclamee > 0) reclamees.push({ recompense: recompenseId, qty: qtyReclamee });
+    if (qtyReclamee < qty) restantes.push({ recompense: recompenseId, qty: qty - qtyReclamee });
   });
-  if (!bloquee) return true;
-  const stockage = etatStockageRessource(bloquee);
-  const label = RESOURCE_DISPLAY_NAMES[bloquee] || bloquee;
+  return { reclamees: reclamees, restantes: restantes };
+}
+
+function recompensesVersObjet(recompenses) {
+  const resultat = {};
+  (Array.isArray(recompenses) ? recompenses : []).forEach(function(entry) {
+    resultat[entry.recompense] = entry.qty;
+  });
+  return resultat;
+}
+
+function notifierRecompensesStockageEnAttente(recompenses) {
+  const bloquee = (Array.isArray(recompenses) ? recompenses : []).find(function(entry) {
+    return entry && entry.qty > 0 && ressourceSoumiseStockage(entry.recompense);
+  });
+  if (!bloquee) return;
+  const stockage = etatStockageRessource(bloquee.recompense);
+  const label = RESOURCE_DISPLAY_NAMES[bloquee.recompense] || bloquee.recompense;
   afficherNotification("Storage full for " + label + " ("
     + formaterNombre(stockage.stock) + " / " + formaterNombre(stockage.capacite)
     + "). The reward is still waiting.");
-  return false;
 }
 
 function itemCampPrototype(uid) {
@@ -16023,8 +16241,8 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
 function boutonAmeliorationCamp(type, upgrade) {
   const compact = arguments[2] === true;
   const contenu = compact
-    ? '<img src="img/interface/Upgrade.png" alt="">'
-    : '<img src="img/interface/Upgrade.png" alt=""><strong>Upgrade</strong><span>Tier '
+    ? '<img class="camp-action-icon" src="img/interface/Upgrade.png" alt="">'
+    : '<img class="camp-action-icon" src="img/interface/Upgrade.png" alt=""><strong>Upgrade</strong><span>Tier '
       + upgrade.targetTier + '</span>';
   return '<button type="button" class="camp-production-upgrade' + (compact ? ' camp-upgrade-compact' : '')
     + '" role="menuitem" data-camp-menu-action="upgrade" aria-label="Upgrade '
@@ -16905,10 +17123,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
             + (type.id === "jobCenter" ? ' camp-jobs-action' : '')
             + '" role="menuitem" data-camp-menu-action="function" aria-label="Open '
             + echapperAttributHtml(type.id === "jobCenter" ? "Jobs" : type.label) + '">'
-            + (type.id === "operationsTable"
-              ? '<img src="img/interface/Exploration_Final.png" alt="">'
-              : (type.id === "jobCenter" ? '<img src="img/interface/Jobs.png" alt="">'
-                : '<span aria-hidden="true">→</span>')) + '</button>'
+            + iconeFonctionCampPrototype(fonction) + '</button>'
           : '');
       if (!famille && upgradeDisponible) menu.innerHTML += boutonAmeliorationCamp(type, upgradeDisponible, true);
     } else {
@@ -17753,13 +17968,31 @@ function rendreCampTaskPanel(options) {
     pickerHeader.appendChild(closePicker);
     picker.appendChild(pickerHeader);
     let eligibleCount = 0;
-    (etat.kittiesData || []).forEach(function(kitty, kittyIndex) {
-      if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
+    const candidatsCamp = (etat.kittiesData || []).map(function(kitty, kittyIndex) {
+      if (!kittyEligiblePourAffectationOrdinaire(kitty)) return null;
       const selectedSlot = state.selection.indexOf(kittyIndex);
       const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
       const levelTooLow = (Number(kitty.niveau) || 0) < definition.minLevel;
       const assignedElsewhere = selectedSlot >= 0 && selectedSlot !== state.activeSlot;
       const disabled = busy || levelTooLow || assignedElsewhere;
+      return {
+        kitty: kitty,
+        kittyIndex: kittyIndex,
+        availableForCurrentAction: !disabled,
+        effectivenessScore: multiplicateurVitesseActionCampKitty(kitty),
+        selectedSlot: selectedSlot,
+        busy: busy,
+        levelTooLow: levelTooLow,
+        disabled: disabled
+      };
+    }).filter(Boolean);
+    ordonnerCandidatsAffectationChats(candidatsCamp).forEach(function(candidate) {
+      const kitty = candidate.kitty;
+      const kittyIndex = candidate.kittyIndex;
+      const selectedSlot = candidate.selectedSlot;
+      const busy = candidate.busy;
+      const levelTooLow = candidate.levelTooLow;
+      const disabled = candidate.disabled;
       if (!disabled) eligibleCount += 1;
       const row = document.createElement("button");
       row.type = "button";
@@ -18124,7 +18357,6 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
     kittyIndex: kittyIndex,
     startTs: Date.now(),
     duree: dureeEffectiveActionCamp(duree, [kittyIndex]),
-    coutCardboardPlanks: cout.cardboardPlanks,
     lawRank: devis.rank,
     paidCosts: incrementorLawApi.copyCosts(cout),
     readyToClaim: false
@@ -19681,12 +19913,12 @@ function categorieDockCampPrototypeVisible(categorie) {
   return DEV_MODE;
 }
 
-function actualiserIconeCategorieBatimentCamp(bouton, visible) {
+function actualiserIconeCategorieBatimentCamp(bouton) {
   if (!bouton) return;
-  const iconeFallback = bouton.querySelector('[data-camp-building-icon="fallback"]');
-  const iconeOperationTable = bouton.querySelector('[data-camp-building-icon="operation-table"]');
-  if (iconeFallback) iconeFallback.hidden = visible;
-  if (iconeOperationTable) iconeOperationTable.hidden = !visible;
+  const icone = bouton.querySelector('[data-camp-building-icon="storage"]');
+  const storageType = typeCampPrototype("storage");
+  const src = assetCampPrototypePourRotation(storageType, 0, 1);
+  if (icone && src && icone.getAttribute("src") !== src) icone.src = src;
 }
 
 function actualiserCommandesCampPrototype() {
@@ -21180,7 +21412,7 @@ function conquerirZoneCampPrototype(zoneId) {
 function reinitialiserTerrainCampPrototype() {
   if (!DEV_MODE) return;
   constructionsMaisonsCampActives().forEach(function(construction) {
-    etat.cardboardPlanks += construction.coutCardboardPlanks || 0;
+    crediterCoutsCamp(coutsPayesMaisonCamp(construction));
   });
   etat.camp.houseConstructions = {};
   constructionsBatimentsCampActives().forEach(function(construction) {
@@ -23630,7 +23862,8 @@ function clickerBird() {
     etat.birdPityEchecs = 0;
     if (typeof enregistrerOiseauQuotidien === "function") enregistrerOiseauQuotidien();
     etat.workBoostFinTs = Date.now() + 60000;
-    ajouterLog("event", "Bernardo caught a bird, boosting worker production x10 for 1 minute!");
+    ajouterLog("event", "Bernardo caught a bird, boosting worker production x"
+      + BIRD_WORK_BOOST_BASE_MULTIPLIER + " for 1 minute!");
     var successMessage = document.getElementById("bird-success-titre");
     if (successMessage) successMessage.textContent = premiere
       ? "Great catch! That first bird was easier while you got the hang of the mini-game. Don't get used to it. The mini-game will be harder from now on. Catching a bird boosts worker production for a short time, and other bird types may appear in the future."
