@@ -57,6 +57,20 @@
     let generation = 0;
     let compactedRecords = 0;
 
+    function recordDiagnostic(name, record, details) {
+      const diagnostic = CatInc.mobileInputDiagnostic;
+      if (!diagnostic || !diagnostic.enabled || typeof diagnostic.recordAuthority !== "function") return;
+      const target = record && (record.root || record.target);
+      diagnostic.recordAuthority(name, Object.assign({
+        gestureToken: record && record.token ? record.token.id : null,
+        pointerId: record ? record.pointerId : finitePointerId(details),
+        pointerType: record ? record.pointerType : details && details.pointerType || null,
+        state: record ? record.state : null,
+        target: target && target.id ? "#" + target.id : null,
+        actionId: target && target.getAttribute ? target.getAttribute("data-input-action") : null
+      }, details || {}));
+    }
+
     function finitePointerId(eventOrId) {
       const raw = eventOrId && typeof eventOrId === "object" ? eventOrId.pointerId : eventOrId;
       if (raw === null || raw === undefined || raw === "") return null;
@@ -134,6 +148,9 @@
       ledger.set(token.id, record);
       queueFor(pointerId).push(record);
       activeByPointer.set(pointerId, record);
+      recordDiagnostic("authority.owned", record, {
+        ownership: kind, external: record.external, manual: record.manual
+      });
       return record;
     }
 
@@ -142,6 +159,7 @@
       if (!ALLOWED_TRANSITIONS[record.state].includes(nextState)) return false;
       record.state = nextState;
       record.transitions.push(nextState);
+      recordDiagnostic("authority.transition", record, { nextState: nextState });
       if ((nextState === STATES.QUIESCENT || nextState === STATES.CLOSED) && record.cleanupCount === 0) {
         record.cleanupCount = 1;
       }
@@ -383,7 +401,14 @@
         ? event.target.closest(EXTERNAL_TOUCH_SELECTOR) : null;
       const manualTarget = event.target && typeof event.target.closest === "function"
         ? event.target.closest("[data-touch-activation='manual']") : null;
-      if (!rootAction && !externalTouch && !manualTarget) return;
+      if (!rootAction && !externalTouch && !manualTarget) {
+        recordDiagnostic("authority.unowned", null, {
+          pointerId: pointerId,
+          pointerType: event.pointerType,
+          decision: "no-action-root"
+        });
+        return;
+      }
       makeRecord(event, "touch", {
         root: rootAction,
         external: Boolean(externalTouch),
@@ -412,6 +437,7 @@
       if (!claim(record)) return false;
       transition(record, STATES.ACTIVATED_AWAIT_CLICK);
       record.activationCount = 1;
+      recordDiagnostic("authority.activation", record, { activation: "legacy-click-adapter" });
       scheduleMicrotask(function() {
         if (!record.root || record.root.isConnected === false || record.root.disabled
           || record.root.getAttribute("aria-disabled") === "true") return;
@@ -540,6 +566,9 @@
       if (record.activationCount !== 0 || !claim(record)) return false;
       transition(record, STATES.ACTIVATED_AWAIT_CLICK);
       record.activationCount = 1;
+      recordDiagnostic("authority.activation", record, {
+        actionId: actionId, activation: "semantic-action"
+      });
       activate(payload, token);
       scheduleTask(function() { quiesce(record); });
       return true;

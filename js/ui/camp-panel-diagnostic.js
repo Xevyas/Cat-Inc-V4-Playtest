@@ -7,6 +7,7 @@
   const MAX_EVENTS = 160;
   const MAX_SNAPSHOTS = 80;
   const MAX_STACK_LINES = 6;
+  let mobileUiStateProvider = null;
   const state = enabled ? {
     startedAt: new Date().toISOString(),
     startedAtPerformance: typeof performance !== "undefined" ? performance.now() : 0,
@@ -127,6 +128,14 @@
     const width = viewport && viewport.width !== null ? viewport.width : finite(global.innerWidth) || 0;
     const height = viewport && viewport.height !== null ? viewport.height : finite(global.innerHeight) || 0;
     return { left: left, top: top, right: left + width, bottom: top + height, width: width, height: height };
+  }
+
+  function compactRect(value) {
+    if (!value) return null;
+    return {
+      left: finite(value.left), top: finite(value.top), right: finite(value.right),
+      bottom: finite(value.bottom), width: finite(value.width), height: finite(value.height)
+    };
   }
 
   function intersects(a, b) {
@@ -350,6 +359,32 @@
     global.setTimeout(function() { capture("+700ms", details); }, 700);
   }
 
+  // The mobile report reuses the Camp diagnostic's geometry and classification
+  // authority without enabling the larger Camp snapshot/listener framework.
+  function mobileEvidence() {
+    if (typeof document === "undefined") return null;
+    const menu = document.getElementById("camp-prototype-interaction-menu");
+    const menuData = elementData(menu);
+    const viewport = visibleViewportRect();
+    const chain = parentChain(menu);
+    const hits = hitTesting(menu, menuData && menuData.rect, viewport);
+    let uiState = {};
+    try { uiState = mobileUiStateProvider ? mobileUiStateProvider() || {} : {}; }
+    catch (error) { uiState = { providerError: String(error && error.message || error) }; }
+    return {
+      mode: uiState.campPrototypeModeEdition ? "edit" : "normal",
+      activeTab: uiState.activeTab || null,
+      selectedUid: uiState.campPrototypeInteractionUid || (menu && menu.dataset.campUid) || null,
+      buildingId: menu && menu.dataset.campBuildingId || null,
+      workFamily: menu && menu.dataset.workFamily || null,
+      interactionKind: menu && menu.dataset.interactionKind || null,
+      menuOpen: Boolean(menu && !menu.hidden),
+      menuClassification: classify(menuData, viewport, chain, hits),
+      menuRect: compactRect(menuData && menuData.rect),
+      hitTesting: hits.slice(0, 3)
+    };
+  }
+
   function report() {
     if (!enabled) return null;
     return {
@@ -408,6 +443,8 @@
   root.campPanelDiagnostic = {
     enabled: enabled,
     configure: function(options) {
+      mobileUiStateProvider = options && typeof options.getUiState === "function"
+        ? options.getUiState : null;
       if (!enabled) return false;
       state.gameVersion = options && options.gameVersion || null;
       state.getUiState = options && typeof options.getUiState === "function" ? options.getUiState : null;
@@ -421,6 +458,7 @@
     inputEventDetails: inputEventDetails,
     capture: capture,
     scheduleOpenSnapshots: scheduleOpenSnapshots,
+    mobileEvidence: mobileEvidence,
     report: report,
     _test: { classify: classify, intersects: intersects }
   };

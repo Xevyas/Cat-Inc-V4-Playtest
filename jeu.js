@@ -40,8 +40,12 @@ const campTemplateData = globalThis.CatInc.data.campTemplates;
 const incrementorLawApi = globalThis.CatInc.incrementorLaw;
 const campPanelDiagnostic = globalThis.CatInc.campPanelDiagnostic;
 const mobileInputDiagnostic = globalThis.CatInc.mobileInputDiagnostic || Object.freeze({
+  enabled: false,
   configure: function() { return false; },
-  recordOutcome: function() { return null; }
+  recordOutcome: function() { return null; },
+  recordBusiness: function() { return null; },
+  startTiming: function() { return null; },
+  endTiming: function() { return null; }
 });
 
 function templateCampActif() {
@@ -6472,9 +6476,12 @@ window.addEventListener("blur", function() {
 });
 
 function rendu() {
+  const diagnosticStart = typeof mobileInputDiagnostic !== "undefined" && mobileInputDiagnostic.enabled
+    ? mobileInputDiagnostic.startTiming("rendu") : null;
   if (renduVerrouilleParInteraction()) {
     renduInteractionEnAttente = true;
     planifierRenduApresInteraction();
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("rendu", diagnosticStart, { deferred: true });
     return;
   }
   // Action mini-games own the foreground while they are open. The simulation
@@ -6482,6 +6489,7 @@ function rendu() {
   // 100 ms competes with their animation on mobile WebKit.
   if (typeof miniJeuRuntimeActif === "function" && miniJeuRuntimeActif()) {
     miniJeuRuntime.renduEnAttente = true;
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("rendu", diagnosticStart, { deferred: true });
     return;
   }
   renduInteractionEnAttente = false;
@@ -6497,6 +6505,7 @@ function rendu() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorations(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
+  if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("rendu", diagnosticStart, { activeTab: ongletActif });
 }
 
 // The simulation clock stays at 100 ms, but it must not rebuild every active
@@ -6505,8 +6514,11 @@ function rendu() {
 // Keep this split explicit: future systems should add a cheap dynamic updater
 // here instead of adding another full render to tick().
 function renduDynamique() {
+  const diagnosticStart = typeof mobileInputDiagnostic !== "undefined" && mobileInputDiagnostic.enabled
+    ? mobileInputDiagnostic.startTiming("renduDynamique") : null;
   if (typeof miniJeuRuntimeActif === "function" && miniJeuRuntimeActif()) {
     miniJeuRuntime.renduEnAttente = true;
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { deferred: true });
     return;
   }
   const u = unlocks();
@@ -6523,14 +6535,17 @@ function renduDynamique() {
   // never remain stale.
   if (ongletActif === "explorations" && (carteDirty || exploTabDirty)) {
     rendu();
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif, promoted: true });
     return;
   }
   if (ongletActif === "facilities" && (jcDirty || labDirty)) {
     rendu();
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif, promoted: true });
     return;
   }
   if (ongletActif === "inventaire" && inventaireDirty) {
     rendu();
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif, promoted: true });
     return;
   }
 
@@ -6540,6 +6555,7 @@ function renduDynamique() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
+  if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif });
 }
 
 let renduOngletPlanifie = false;
@@ -10724,6 +10740,8 @@ function verifierDeblocageWoodCathouseApresFabrication(resultatsRecettes, option
 }
 
 function tick() {
+  const diagnosticStart = typeof mobileInputDiagnostic !== "undefined" && mobileInputDiagnostic.enabled
+    ? mobileInputDiagnostic.startTiming("tick") : null;
   // Cathouse reduction accumulation (speed-aware)
   if (etat.cathouses.length > 0) {
   }
@@ -10872,6 +10890,7 @@ function tick() {
 
   verifierObjectifs();
   renduDynamique();
+  if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("tick", diagnosticStart, null);
 }
 
 setInterval(tick, 100);
@@ -12694,6 +12713,12 @@ document.addEventListener("click", function(event) {
   if (!continueButton
       && event.target.closest("button, a, input, select, textarea, [role=button]")) return;
   if (DIALOGUE_DATA.advanceModal(modal)) {
+    if (typeof mobileInputDiagnostic !== "undefined"
+        && typeof mobileInputDiagnostic.recordBusiness === "function") mobileInputDiagnostic.recordBusiness("story.advance", {
+      modalId: modal.id || null,
+      surface: continueButton ? "explicit-bottom-control" : "dialogue-body",
+      dialogueIndex: Number(modal.dataset.dialogueIndex) || 0
+    }, event);
     synchroniserDeblocageAppealDepuisStory(modal);
     jouerVoixBulleDialogue(modal);
     event.preventDefault();
@@ -16151,6 +16176,10 @@ function ouvrirStickerCustomizerCampPrototype(uid, options) {
 
 function executerActionMenuCampPrototype(action, event) {
   if (!action) return false;
+  if (typeof mobileInputDiagnostic !== "undefined"
+      && typeof mobileInputDiagnostic.recordBusiness === "function") {
+    mobileInputDiagnostic.recordBusiness("camp.menu-action", { action: action }, event);
+  }
   if (event) {
     event.preventDefault();
     event.stopPropagation();
@@ -17189,7 +17218,12 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
 function activerItemCampPrototype(uid) {
   const openerToken = arguments[1] || null;
   campPanelDiagnostic.recordCall("activerItemCampPrototype", { uid: uid || null });
-  if (typeof mobileInputDiagnostic !== "undefined") {
+  if (typeof mobileInputDiagnostic !== "undefined"
+      && typeof mobileInputDiagnostic.recordBusiness === "function") {
+    mobileInputDiagnostic.recordBusiness("camp.building-activation", { uid: uid || null }, openerToken);
+  }
+  if (typeof mobileInputDiagnostic !== "undefined"
+      && typeof mobileInputDiagnostic.recordOutcome === "function") {
     mobileInputDiagnostic.recordOutcome("camp.item-activation", { uid: uid || null });
   }
   const item = itemCampPrototype(uid);
@@ -22899,6 +22933,10 @@ function changerOnglet(id, options) {
     bouton.tabIndex = actif ? 0 : -1;
   });
   document.body.dataset.ongletActif = id;
+  if (typeof mobileInputDiagnostic !== "undefined"
+      && typeof mobileInputDiagnostic.recordBusiness === "function") {
+    mobileInputDiagnostic.recordBusiness("navigation.tab-change", { tabId: id });
+  }
   if (id === "work" && etat.birdPremiereReussie) {
     const progression = progressionCamp();
     if (!progression.workBoostCueDismissed) {
@@ -23931,6 +23969,9 @@ campPanelDiagnostic.configure({
 });
 mobileInputDiagnostic.configure({
   gameVersion: GAME_RELEASE_VERSION,
+  getCampEvidence: function() {
+    return campPanelDiagnostic.mobileEvidence();
+  },
   getUiState: function() {
     return {
       activeTab: document.body.dataset.ongletActif || null,
