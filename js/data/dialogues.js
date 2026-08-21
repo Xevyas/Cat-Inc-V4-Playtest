@@ -1372,6 +1372,7 @@ function characterFromLine(line) {
     renderSceneSource(modal, dialogue);
     dialogue.classList.add("story-conversation");
     dialogue.setAttribute("aria-live", "polite");
+    dialogue.setAttribute("data-touch-activation-root", "true");
     dialogue.querySelectorAll(".intro-ligne").forEach(hydrateLine);
     const hint = document.createElement("button");
     hint.className = "story-continue-hint";

@@ -9,7 +9,7 @@
   const EXTERNAL_TOUCH_SELECTOR = "#camp-prototype-items [data-camp-uid]";
   const MANUAL_CONTROL_SELECTOR = [
     "input", "select", "textarea", "[contenteditable='true']", "[role='slider']",
-    "#camp-prototype-placement-actions", ".recruit-pitch-btn", "[data-touch-activation='manual']"
+    ".recruit-pitch-btn", "[data-touch-activation='manual']"
   ].join(",");
   const TAP_MOVE_TOLERANCE = 8;
   const TAP_MAX_DURATION_MS = 450;
@@ -82,10 +82,9 @@
       if (!target || typeof target.closest !== "function") return null;
       if (target.closest(MANUAL_CONTROL_SELECTOR)) return null;
       const declared = target.closest("[data-touch-activation-root]");
-      if (declared && !declared.disabled && declared.getAttribute("aria-disabled") !== "true") return declared;
-      if (target.closest(EXTERNAL_TOUCH_SELECTOR)) return null;
       const action = target.closest(ACTION_SELECTOR);
       if (!action || action.disabled || action.getAttribute("aria-disabled") === "true") return null;
+      if (target.closest(EXTERNAL_TOUCH_SELECTOR) && !declared) return null;
       return action;
     }
 
