@@ -3204,11 +3204,13 @@ function verifierObjectifs() {
   const tutorielTermine = objectifsActifsTries().filter(function(obj) { return !obj.mainStory; }).length === 0;
   const afficherFinTutoriel = tutorielTermine && !etat.tutorialCompletionPopupSeen && !tutorielCompletionEnAttente;
   if (afficherFinTutoriel) tutorielCompletionEnAttente = true;
-  if (changed || afficherFinTutoriel) { rendu(); sauvegarder(); }
+  const structureModifiee = changed || afficherFinTutoriel;
+  if (structureModifiee) { rendu(); sauvegarder(); }
   renduObjectifs();
   if (afficherFinTutoriel) {
     setTimeout(ouvrirCompletionTutorielSiNecessaire, 0);
   }
+  return structureModifiee;
 }
 
 function fermerTutorialComplete() {
@@ -13566,6 +13568,13 @@ function terminerConstructionsMaisonsCamp(maintenant) {
   return true;
 }
 
+function rendreApresValidationTacheCamp(structureDejaRendue) {
+  const ongletActif = document.body.dataset.ongletActif || "gang";
+  if (!structureDejaRendue) rendu();
+  if (ongletActif !== "camp") renduCampPrototype();
+  if (ongletActif === "gang") renduManagement();
+}
+
 function validerConstructionMaisonCamp(uid) {
   const construction = constructionMaisonCampPourItem(uid);
   if (!construction || !construction.readyToClaim) return false;
@@ -13599,11 +13608,9 @@ function validerConstructionMaisonCamp(uid) {
     renduStories();
   }
   sauvegarderCampPrototype();
-  verifierObjectifs();
+  const objectifsOntRendu = verifierObjectifs();
   sauvegarder();
-  rendu();
-  renduCampPrototype();
-  if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
+  rendreApresValidationTacheCamp(objectifsOntRendu);
   return true;
 }
 
@@ -13811,9 +13818,7 @@ function validerConstructionBatimentCamp(uid) {
   }
   sauvegarderCampPrototype();
   sauvegarder();
-  rendu();
-  renduCampPrototype();
-  if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
+  rendreApresValidationTacheCamp(false);
   return true;
 }
 
@@ -13948,9 +13953,7 @@ function validerReparationCamp(buildingId) {
   }
   if (buildingId === "pawsonry") mettreDialogueRapideCampEnFile("pawsonryRepaired");
   sauvegarder();
-  rendu();
-  renduCampPrototype();
-  if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
+  rendreApresValidationTacheCamp(false);
   return true;
 }
 
@@ -14062,9 +14065,7 @@ function validerAmeliorationCamp(uid) {
   afficherNotification((type ? type.label : job.type) + " reached Tier " + job.targetTier + "!");
   sauvegarderCampPrototype();
   sauvegarder();
-  rendu();
-  renduCampPrototype();
-  if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
+  rendreApresValidationTacheCamp(false);
   return true;
 }
 
@@ -19285,10 +19286,8 @@ function validerDemolitionCampPrototype(uid, targetKind) {
     : "⛏ " + obstacle.label + " cleared at Base Camp!");
   invaliderConnexionsCampPrototype();
   sauvegarderCampPrototype();
-  verifierObjectifs();
-  rendu();
-  renduCampPrototype();
-  if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
+  const objectifsOntRendu = verifierObjectifs();
+  rendreApresValidationTacheCamp(objectifsOntRendu);
   return true;
 }
 
@@ -21234,6 +21233,7 @@ function ajouterTacheTemporeeChatCamp(element, presence, position, total) {
     + (state.readyToClaim ? " · Ready to validate" : "");
   if (state.readyToClaim) {
     worker.type = "button";
+    worker.dataset.touchActivationRoot = "true";
     worker.setAttribute("aria-label", "Validate " + presence.activity + " with " + presence.kitty.nom);
     worker.addEventListener("pointerdown", function(event) { event.stopPropagation(); });
     worker.addEventListener("click", function(event) {
