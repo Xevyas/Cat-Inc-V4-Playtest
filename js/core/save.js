@@ -85,6 +85,26 @@
       })
     )));
   }
+  function canonicalCampHouseConstructionEligible(typeId) {
+    const definition = CatInc.data && CatInc.data.campGameplay
+      && CatInc.data.campGameplay.definitions && CatInc.data.campGameplay.definitions[typeId];
+    return Boolean(definition
+      && definition.category === "house"
+      && definition.repeatable === true
+      && definition.build && definition.build.entryMode === "build"
+      && CatInc.incrementorLaw && CatInc.incrementorLaw.definition(typeId));
+  }
+  function campPaidCostsValid(paidCosts) {
+    return estObjetSauvegarde(paidCosts)
+      && Object.keys(paidCosts).length > 0
+      && Object.keys(paidCosts).length <= 8
+      && Object.keys(paidCosts).every(function(resourceId) {
+        return /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
+          && typeof paidCosts[resourceId] === "number"
+          && Number.isFinite(paidCosts[resourceId])
+          && paidCosts[resourceId] >= 0;
+      });
+  }
   const CAMP_SCHEMA_VERSION = 2;
   const SAWMILL_TUTORIAL_STAGES = [
     "inactive", "sawmill", "work-action", "wood-slot-1-recipe",
@@ -491,26 +511,23 @@ function validerStructureSauvegarde(d) {
     const constructionsCampValides = Object.keys(camp.houseConstructions).length <= 128
       && Object.keys(camp.houseConstructions).every(function(uid) {
         const construction = camp.houseConstructions[uid];
+        const coutLegacyCardboardValide = construction
+          && construction.type === "cardboardBox"
+          && typeof construction.coutCardboardPlanks === "number"
+          && Number.isFinite(construction.coutCardboardPlanks)
+          && construction.coutCardboardPlanks >= 0;
+        const coutsPayesValides = construction && construction.paidCosts !== undefined
+          ? campPaidCostsValid(construction.paidCosts)
+          : coutLegacyCardboardValide;
         return typeof uid === "string" && uid.length > 0 && uid.length <= 160 && !/[<>]/.test(uid)
           && estObjetSauvegarde(construction)
-          && construction.type === "cardboardBox"
+          && canonicalCampHouseConstructionEligible(construction.type)
           && indexKittyValide(construction.kittyIndex, false)
           && typeof construction.startTs === "number" && Number.isFinite(construction.startTs) && construction.startTs >= 0
           && typeof construction.duree === "number" && Number.isFinite(construction.duree) && construction.duree > 0
-          && typeof construction.coutCardboardPlanks === "number"
-          && Number.isFinite(construction.coutCardboardPlanks) && construction.coutCardboardPlanks >= 0
-          && (construction.lawRank === undefined
-            || (Number.isInteger(construction.lawRank) && construction.lawRank > 0))
-          && (construction.paidCosts === undefined || (
-            estObjetSauvegarde(construction.paidCosts)
-            && Object.keys(construction.paidCosts).length <= 8
-            && Object.keys(construction.paidCosts).every(function(resourceId) {
-              return /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
-                && typeof construction.paidCosts[resourceId] === "number"
-                && Number.isFinite(construction.paidCosts[resourceId])
-                && construction.paidCosts[resourceId] >= 0;
-            })
-          ))
+          && Number.isInteger(construction.lawRank) && construction.lawRank > 0
+          && coutsPayesValides
+          && (construction.coutCardboardPlanks === undefined || coutLegacyCardboardValide)
           && typeof construction.readyToClaim === "boolean";
       });
     if (!constructionsCampValides) return "Invalid Camp house construction data.";
