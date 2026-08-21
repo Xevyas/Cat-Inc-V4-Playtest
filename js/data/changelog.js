@@ -548,6 +548,29 @@
     })
   ]);
 
+  const release0072Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Camp tasks can now force-reassign Cats from replaceable Work roles while preserving protected activities.",
+        "The first Catnip Salad now starts a guided Chef's Kiss feeding tutorial through Mochi's permanent bonus."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "The Job Center now costs 10 Pebble Bricks and 2 Basic Wood Planks."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Jobs and its facility sections now appear only after their corresponding Camp buildings are complete.",
+        "Deleting a completed Camp building now requires confirmation and previews its 50% paid-cost refund."
+      ])
+    })
+  ]);
+
   const release0067Categories = Object.freeze([
     Object.freeze({
       label: "Balancing",
@@ -692,7 +715,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0071",
+    baseVersion: "0.0072",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -705,6 +728,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0072",
+      date: "2026-08-21",
+      categories: release0072Categories
+    }),
     Object.freeze({
       version: "0.0071",
       date: "2026-08-21",

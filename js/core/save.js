@@ -115,6 +115,9 @@
     index[stage] = position;
     return index;
   }, {});
+  const CHEF_KISS_FEED_TUTORIAL_STAGES = [
+    "inactive", "story", "gang", "mochi", "feed", "bonuses", "complete"
+  ];
   const RESOURCE_BAR_KEYS = [
     "cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks",
     "salads", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood"
@@ -384,6 +387,10 @@ function validerStructureSauvegarde(d) {
     if (progressionCamp.sawmillTutorialStage !== undefined
         && !SAWMILL_TUTORIAL_STAGES.includes(progressionCamp.sawmillTutorialStage)) {
       return "Invalid Sawmill tutorial stage.";
+    }
+    if (progressionCamp.chefKissFeedTutorialStage !== undefined
+        && !CHEF_KISS_FEED_TUTORIAL_STAGES.includes(progressionCamp.chefKissFeedTutorialStage)) {
+      return "Invalid Chef's Kiss Feed tutorial stage.";
     }
     if (progressionCamp.firstBoxTutorialStage !== undefined
         && !["inactive", "place", "assign", "complete"].includes(progressionCamp.firstBoxTutorialStage)) {
@@ -1143,6 +1150,9 @@ function analyserSauvegardeBrute(raw) {
       && progressionSource.appealIntroSeen !== true,
     workBoostCueDismissed: progressionSource.workBoostCueDismissed === true,
     sawmillTutorialStage: deriverEtapeTutorielSawmill(d, campSource, progressionSource),
+    chefKissFeedTutorialStage: CHEF_KISS_FEED_TUTORIAL_STAGES.includes(
+      progressionSource.chefKissFeedTutorialStage
+    ) ? progressionSource.chefKissFeedTutorialStage : (d.premiereSaladeFaite ? "complete" : "inactive"),
     firstBoxTutorialStage: ["place", "assign", "complete"].includes(progressionSource.firstBoxTutorialStage)
       ? progressionSource.firstBoxTutorialStage : "inactive",
     firstBoxUnlockDialogueDismissed: progressionSource.firstBoxUnlockDialogueDismissed === true,
@@ -1287,7 +1297,7 @@ function analyserSauvegardeBrute(raw) {
     etat.ongletsVisites = ["gang", "logs"];
     if (etat.chatons >= 3) etat.ongletsVisites.push("work");
     if (etat.chatons >= 3) etat.ongletsVisites.push("camp");
-    if (etat.jobCenterDebloque) etat.ongletsVisites.push("facilities");
+    if (etat.jobCenterConstruit) etat.ongletsVisites.push("facilities");
     if (etat.chatons >= 8) etat.ongletsVisites.push("explorations");
     if (etat.cardboardPiecesTotalRecolte >= 1) etat.ongletsVisites.push("inventaire");
   }

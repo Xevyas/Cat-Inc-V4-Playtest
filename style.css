@@ -13778,6 +13778,27 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   box-shadow: 0 3px 10px rgba(51, 39, 25, .14);
 }
 .camp-sawmill-tutorial-work-status[hidden] { display: none; }
+.camp-feed-tutorial-status {
+  position: relative;
+  z-index: 81;
+}
+.camp-feed-tutorial-status span { display: block; }
+.camp-feed-tutorial-status button {
+  margin-top: 8px;
+  pointer-events: auto;
+}
+.camp-feed-tutorial-status button[hidden] { display: none; }
+.camp-feed-tutorial-active[data-onglet-actif="gang"] #contenu-gang {
+  position: relative;
+}
+.camp-feed-tutorial-active[data-onglet-actif="gang"] #contenu-gang::after {
+  content: "";
+  position: absolute;
+  z-index: 80;
+  inset: 0;
+  background: rgba(35, 31, 24, .12);
+  pointer-events: none;
+}
 .camp-sawmill-tutorial-active .camp-prototype-viewport::after {
   content: "";
   position: absolute;
@@ -13800,9 +13821,29 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 .camp-sawmill-tutorial-target {
   position: relative !important;
   z-index: 261 !important;
+  isolation: isolate;
   outline: 3px solid #ffe07a !important;
   outline-offset: 3px;
   box-shadow: 0 0 0 6px rgba(255, 224, 122, .58), 0 0 22px rgba(255, 206, 87, .86) !important;
+}
+.camp-sawmill-tutorial-target::before,
+.camp-sawmill-tutorial-target::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.camp-sawmill-tutorial-target::before {
+  inset: -7px;
+  border: 3px solid rgba(255, 237, 156, .96);
+  box-shadow: 0 0 0 8px rgba(255, 245, 199, .25), 0 0 34px rgba(255, 224, 111, .94);
+  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+}
+.camp-sawmill-tutorial-target::after {
+  inset: -12px;
+  background: radial-gradient(ellipse, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
+  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
 }
 .camp-sawmill-tutorial-target:focus-visible {
   outline-color: #fff !important;
@@ -13880,6 +13921,8 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-re
 
 @media (prefers-reduced-motion: reduce) {
   .camp-sawmill-tutorial-target,
+  .camp-sawmill-tutorial-target::before,
+  .camp-sawmill-tutorial-target::after,
   .camp-guided-junk-target,
   .camp-catchen-tutorial-target,
   .camp-first-box-house-cue,
@@ -13889,6 +13932,14 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-re
   .camp-recruit-route-tutorial-attention * {
     animation: none !important;
     transition: none !important;
+  }
+  .camp-sawmill-tutorial-target::before {
+    opacity: .78;
+    transform: none;
+  }
+  .camp-sawmill-tutorial-target::after {
+    opacity: .55;
+    transform: none;
   }
 }
 

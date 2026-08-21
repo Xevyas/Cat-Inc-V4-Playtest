@@ -49,6 +49,7 @@ function makeCampState() {
       appealRecruitConfirmationPending: false,
       workBoostCueDismissed: false,
       sawmillTutorialStage: "inactive",
+      chefKissFeedTutorialStage: "inactive",
       firstBoxTutorialStage: "inactive",
       firstBoxUnlockDialogueDismissed: false,
       firstBoxRecruitConfirmationPending: false,

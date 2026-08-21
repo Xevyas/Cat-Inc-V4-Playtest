@@ -296,7 +296,7 @@
     <div class="intro-boite">
       <div class="intro-dialogue">
       </div>
-      <button class="bouton-intro" onclick="fermerModal('ecran-story-salad')">Let's get stronger!</button>
+      <button class="bouton-intro" onclick="fermerStorySalad()">Let's get stronger!</button>
     </div>
   </div>
 
@@ -305,7 +305,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0071 · August 21, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0072 · August 21, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -347,15 +347,15 @@
           <div class="popover-ligne"><span>Current time remaining</span><span id="stat-adjusted"></span></div>
         </div>
       </div>
-      <button id="bouton-sequence">Catch a cat 🐾</button>
+      <button id="bouton-sequence" disabled>Cat status</button>
       <div class="conteneur-barre" id="conteneur-barre-sequence" style="display:none">
         <div id="barre-sequence" class="barre barre-verte">
           <img id="sequence-chat-marker" class="sequence-chat-marker" src="img/Cat faces/Bernardo.png?v=0.0026" alt="Bernardo">
         </div>
       </div>
       <div id="info-sequence" class="info-subtile" aria-live="polite">
-        <span id="info-sequence-label" class="info-sequence-label">Next Cat</span>
-        <span id="info-sequence-timer" class="info-sequence-timer">Ready</span>
+        <span id="info-sequence-label" class="info-sequence-label">Cat status</span>
+        <span id="info-sequence-timer" class="info-sequence-timer">—</span>
       </div>
     </div>
   </header>
@@ -742,17 +742,13 @@
       <button id="facilities-subtab-lab" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-laboratory" onclick="selectionnerVueFacilitiesMobile('lab')" style="display:none">Lab</button>
     </div>
     <div class="grille grille-2col" id="facilities-grid">
-      <section class="panneau panneau-buildings" id="section-job-center">
+      <section class="panneau panneau-buildings" id="section-job-center" style="display:none">
         <h2 class="panneau-titre panneau-titre-aide">Job Center <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job Center" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)">?</button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train unassigned cats for jobs that match the gang's needs.</span></span></h2>
         <div class="bloc-action bloc-action-building">
           <img class="work-sprite" src="img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001" alt="Front view of the Job Center">
           <div class="bloc-entete-textes">
             <span class="bloc-desc">Jobs improve production and unlock specialized roles.</span>
           </div>
-          <button onclick="acheterJobCenter()" id="bouton-jobcenter" class="btn-achat btn-achat-cout-multiple">
-            <span class="cout-groupe">10<span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"></span>
-            <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>1<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
-          </button>
         </div>
         <div id="jc-interface" style="display:none"></div>
       </section>
@@ -764,10 +760,6 @@
             <div class="bloc-entete-textes">
               <span class="bloc-desc" id="training-center-intro-copy">A place where cats sharpen their skills. Unlock specializations to make every job more powerful.</span>
             </div>
-            <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat btn-achat-cout-multiple">
-              <span class="cout-groupe">10<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>
-              <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>20<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
-            </button>
           </div>
         </div>
         <div id="tc-interface" class="tc-interface" style="display:none"></div>
@@ -779,10 +771,6 @@
           <div class="bloc-entete-textes">
             <span class="bloc-desc">A laboratory where cats can discover new engineering laws and principles.</span>
           </div>
-          <button onclick="acheterLaboratoire()" id="bouton-laboratory" class="btn-achat btn-achat-cout-multiple">
-            <span class="cout-groupe">100<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>
-            <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>100<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
-          </button>
         </div>
         <div id="laboratory-interface" style="display:none"></div>
       </section>
@@ -868,6 +856,10 @@
 
   <!-- CONTENU GANG -->
   <div id="contenu-gang" role="tabpanel" aria-labelledby="onglet-gang" aria-hidden="false">
+    <p id="camp-feed-tutorial-status" class="camp-sawmill-tutorial-work-status camp-feed-tutorial-status" role="status" aria-live="polite" hidden>
+      <span id="camp-feed-tutorial-copy"></span>
+      <button id="camp-feed-tutorial-confirm" type="button" onclick="confirmerChefKissFeedTutorial()" hidden>Got it!</button>
+    </p>
     <div id="gang-tools" style="display:none"></div>
     <div id="gang-subtabs" class="gang-subtabs" role="tablist" aria-label="Gang views" style="display:none"></div>
     <div id="food-management-panel" style="display:none"></div>
@@ -988,7 +980,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0071</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0072</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1279,7 +1271,7 @@
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
   <script src="js/data/content.js?v=0.0057"></script>
-  <script src="js/data/changelog.js?v=0.0071"></script>
+  <script src="js/data/changelog.js?v=0.0072"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
   <script src="js/data/dialogues.js?v=0.0007"></script>
   <script src="js/data/shop.js?v=0.0001"></script>
