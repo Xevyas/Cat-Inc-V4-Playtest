@@ -571,6 +571,35 @@
     })
   ]);
 
+  const release0073Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Job perk trees now use the governed Perks V2 system, with learned progress preserved in saves and effects applied consistently across Recruiting, Work, Camp and Exploration.",
+        "Cardboard Boxes and Wood Cathouses now include their next functional and visual tiers, with Studio-approved Camp artwork."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Builder, Gang Leader and Explorator perks now follow their canonical governed effects, costs and prerequisites."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Perk trees now present clearer governed nodes and connectors, while unavailable capabilities stay locked until their perk is learned.",
+        "Camp visuals now use only explicitly approved live revisions and their declared tier fallback."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Camp construction speed, housing capacity and Exploration assignment now resolve through one authoritative perk state after saving and loading."
+      ])
+    })
+  ]);
+
   const release0067Categories = Object.freeze([
     Object.freeze({
       label: "Balancing",
@@ -715,7 +744,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0072",
+    baseVersion: "0.0073",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -728,6 +757,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0073",
+      date: "2026-08-22",
+      categories: release0073Categories
+    }),
     Object.freeze({
       version: "0.0072",
       date: "2026-08-21",

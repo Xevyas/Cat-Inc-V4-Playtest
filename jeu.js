@@ -12,7 +12,6 @@ const LIVRE_ICONE = gameContentData.LIVRE_ICONE;
 const RESOURCE_INFO = gameContentData.RESOURCE_INFO;
 const ITEMS = gameContentData.ITEMS;
 const METIERS = gameContentData.METIERS;
-const SPHERE_GRIDS = gameContentData.SPHERE_GRIDS;
 const ZONES_CARTE = gameContentData.ZONES_CARTE;
 const REGIONS = gameContentData.REGIONS;
 
@@ -38,6 +37,7 @@ const campCapabilitiesApi = globalThis.CatInc.campCapabilities;
 const campGameplayData = globalThis.CatInc.data.campGameplay;
 const campTemplateData = globalThis.CatInc.data.campTemplates;
 const incrementorLawApi = globalThis.CatInc.incrementorLaw;
+const perksV2Api = globalThis.CatInc.perksV2;
 const campPanelDiagnostic = globalThis.CatInc.campPanelDiagnostic;
 const mobileInputDiagnostic = globalThis.CatInc.mobileInputDiagnostic || Object.freeze({
   enabled: false,
@@ -416,6 +416,24 @@ const creerEtatInitial = stateCore.creerEtatInitial;
 const remplacerEtat = stateCore.remplacerEtat;
 const etat = creerEtatInitial();
 
+function progressionPerksV2() {
+  return perksV2Api ? perksV2Api.normalizeProgress(etat.perksV2) : { version: 2, learned: [] };
+}
+
+function multiplicateurRecruitPerksV2() {
+  return perksV2Api
+    ? perksV2Api.recruitSpeedMultiplier(progressionPerksV2())
+    : 1;
+}
+
+function foodManagementDisponible() {
+  return !!(perksV2Api && perksV2Api.hasFoodManagement(progressionPerksV2()));
+}
+
+function explorationAutoAssignDisponible() {
+  return !!(perksV2Api && perksV2Api.hasExplorationAutoAssign(progressionPerksV2()));
+}
+
 function reinitialiserEtat() {
   remplacerEtat(etat, creerEtatInitial());
   workStructureInitialisee = false;
@@ -616,6 +634,7 @@ function exclusifyStagedKitty(ki, exceptType, exceptId) {
 }
 
 function autoAssignExplo(type, id) {
+  if (!explorationAutoAssignDisponible()) return false;
   var allKittyIndices = Object.keys(etat.kittiesData).map(Number).filter(function(i) { return !!etat.kittiesData[i]; });
 
   if (type === 'scouting') {
@@ -766,13 +785,6 @@ function kittyHasNonReplaceableAction(kittyIdx) {
 // invalid duplicate is found, the later assignment is released.
 function normaliserOccupationsChatons() {
   var changed = false;
-  ["gl-explo", "gl-explo-halves", "gl-explo-luck", "gl-explo-power", "gl-explo-catfood"]
-    .forEach(function(perkId) {
-      if (etat.spherePerks && Object.prototype.hasOwnProperty.call(etat.spherePerks, perkId)) {
-        delete etat.spherePerks[perkId];
-        changed = true;
-      }
-    });
   var claimed = new Set();
   var kittyValide = function(ki) {
     return Number.isInteger(ki) && !!etat.kittiesData[ki];
@@ -1250,25 +1262,7 @@ function capaciteLogementCamp() {
     + Math.max(0, Number(etat.cathouseCount) || 0) * CAMP_HOUSING_CAPACITY.woodCathouse
     + Math.max(0, Number(etat.stoneCathouseCount) || 0) * CAMP_HOUSING_CAPACITY.stoneCathouse
     + Math.max(0, Number(etat.solidStoneCathouseCount) || 0) * CAMP_HOUSING_CAPACITY.solidStoneCathouse;
-  return CAMP_BASE_HOUSING_CAPACITY + capaciteMaisons
-    + bonusCapaciteLogementBuilder(capaciteMaisons);
-}
-
-function bonusCapaciteLogementBuilder(capaciteMaisons) {
-  const builder = managerKittyForFamily("houses");
-  if (!builder) return 0;
-  const boites = cardboardBoxesActivesCampPrototype();
-  const maisonsBois = Math.max(0, Number(etat.cathouseCount) || 0);
-  return Math.floor(Math.max(0, capaciteMaisons) * (managerSpeedMultiplier(builder, "houses") - 1))
-    + (spherePerkLearned("builder-box-boost") ? Math.floor(boites / 3) : 0)
-    + (spherePerkLearned("builder-box-speed") ? boites : 0)
-    + (spherePerkLearned("builder-wood-speed") ? maisonsBois * 2 : 0);
-}
-
-function bonusPourcentageCapaciteBuilder() {
-  return (spherePerkLearned("builder-speed") ? 25 : 0)
-    + (spherePerkLearned("builder-speed-2") ? 25 : 0)
-    + (spherePerkLearned("builder-speed-3") ? 25 : 0);
+  return CAMP_BASE_HOUSING_CAPACITY + capaciteMaisons;
 }
 
 function placesLogementLibresCamp() {
@@ -1441,21 +1435,20 @@ function gangLeaderBonus() {
 }
 
 function gangLeaderPerksHtml(kittyIndex) {
-  if (!etat.spherePerks) return "";
   var html = "";
-  if (etat.spherePerks['gl-qol'] === 'learned') {
+  if (foodManagementDisponible()) {
     html += "<div class='detail-job-bonus'>Food Management unlocked (perk)</div>";
   }
-  if (etat.spherePerks['gl-daily-1'] === 'learned') {
+  if (recompenseQuetesQuotidiennes() > 1) {
     html += "<div class='detail-job-bonus'><span class='bonus-var'>×" + recompenseQuetesQuotidiennes() + "</span> Daily Quest reward (perk)</div>";
   }
-  if (etat.spherePerks['gl-mini'] === 'learned') {
+  if (manualFocusMultiplier() > WORK_MANUAL_FOCUS_BASE_MULTIPLIER) {
     html += "<div class='detail-job-bonus'><span class='bonus-var'>×" + manualFocusMultiplier() + "</span> Manual Focus power (perk)</div>";
   }
-  if (etat.spherePerks['gl-manual-capacity'] === 'learned') {
+  if (manualFocusMaxSeconds() > WORK_MANUAL_FOCUS_BASE_MAX_SECONDS) {
     html += "<div class='detail-job-bonus'><span class='bonus-var'>" + manualFocusMaxSeconds() + "s</span> Manual Focus capacity (perk)</div>";
   }
-  if (etat.spherePerks['gl-manual-click'] === 'learned') {
+  if (manualFocusSecondsPerClick() > WORK_MANUAL_FOCUS_BASE_SECONDS_PER_CLICK) {
     html += "<div class='detail-job-bonus'><span class='bonus-var'>" + manualFocusSecondsPerClick() + "s</span> Manual Focus per click (perk)</div>";
   }
   return html;
@@ -1527,7 +1520,7 @@ const MAP_FAMILLE = {
   pebblegathering: "rock", rockgathering: "rock",
   brickfactory: "pawsonry", rockFactory: "pawsonry"
 };
-const METIER_PAR_FAMILLE = { wood: ["lumberjack"], food: ["farmer"], sawmill: ["carpenter"], catchen: ["chef"], rock: ["miner"], pawsonry: ["stonemason"], houses: ["builder"] };
+const METIER_PAR_FAMILLE = { wood: ["lumberjack"], food: ["farmer"], sawmill: ["carpenter"], catchen: ["chef"], rock: ["miner"], pawsonry: ["stonemason"] };
 const ENGINEER_JOB_ID = "camp-engineer";
 const ENGINEER_TRAINING_DURATIONS = [7200, 14400, 28800, 43200, 57600, 72000, 86400];
 const ENGINEER_RANKS = Object.freeze({
@@ -1580,11 +1573,25 @@ function multiplicateurVitesseActionCampKitty(kitty) {
   );
 }
 
-function multiplicateurVitesseActionsCamp(kittyIndices) {
+function multiplicateurVitesseBuilderCamp(kitty, taskKind) {
+  if (!perksV2Api || !kitty) return 1;
+  return perksV2Api.assignedCampActionSpeedMultiplier(
+    progressionPerksV2(), kitty.metier, taskKind
+  );
+}
+
+function multiplicateurVitesseGlobaleConstructionCamp(taskKind) {
+  return perksV2Api
+    ? perksV2Api.globalCampActionSpeedMultiplier(progressionPerksV2(), taskKind)
+    : 1;
+}
+
+function multiplicateurVitesseActionsCamp(kittyIndices, taskKind) {
   const indices = Array.isArray(kittyIndices) ? kittyIndices : [];
   const multiplicateurs = indices.map(function(kittyIndex) {
-    return Number.isInteger(kittyIndex) && etat.kittiesData[kittyIndex]
-      ? multiplicateurVitesseActionCampKitty(etat.kittiesData[kittyIndex])
+    const kitty = Number.isInteger(kittyIndex) ? etat.kittiesData[kittyIndex] : null;
+    return kitty
+      ? multiplicateurVitesseActionCampKitty(kitty) * multiplicateurVitesseBuilderCamp(kitty, taskKind)
       : null;
   }).filter(function(multiplier) {
     return Number.isFinite(multiplier) && multiplier > 0;
@@ -1595,10 +1602,13 @@ function multiplicateurVitesseActionsCamp(kittyIndices) {
   }, 0) / multiplicateurs.length;
 }
 
-function dureeEffectiveActionCamp(dureeBase, kittyIndices) {
+function dureeEffectiveActionCamp(dureeBase, kittyIndices, taskKind) {
   const duree = Number(dureeBase);
   if (!Number.isFinite(duree) || duree <= 0) return 0;
-  return duree / multiplicateurVitesseActionsCamp(kittyIndices);
+  return duree / (
+    multiplicateurVitesseActionsCamp(kittyIndices, taskKind)
+    * multiplicateurVitesseGlobaleConstructionCamp(taskKind)
+  );
 }
 
 function ingenieurPeutEtreForme(metierId) {
@@ -1615,159 +1625,62 @@ function laboratoireIngenieurDuree() {
 function gangSousOngletsDebloques() {
   return ingenieursFormes().length > 0;
 }
-const MANAGER_SPHERE_PERKS = {
-  wood: { production: 'lj-prod', production2: 'lj-prod-2', speed: 'lj-speed', speed2: 'lj-speed-2', slot: 'lj-slot', recipeFamily: 'wood' },
-  food: { production: 'farmer-prod', production2: 'farmer-prod-2', speed: 'farmer-speed', speed2: 'farmer-speed-2', slot: 'farmer-slot', recipeFamily: 'food' },
-  rock: { production: 'miner-prod', production2: 'miner-prod-2', speed: 'miner-speed', speed2: 'miner-speed-2', slot: 'miner-slot', recipeFamily: 'rock' },
-  sawmill: { cost: 'carpenter-cost', cost2: 'carpenter-cost-2', speed: 'carpenter-speed', speed2: 'carpenter-speed-2', slot: 'carpenter-slot', recipeFamily: 'wood' },
-  catchen: { cost: 'chef-cost', cost2: 'chef-cost-2', speed: 'chef-speed', speed2: 'chef-speed-2', slot: 'chef-slot', recipeFamily: 'food' },
-  pawsonry: { cost: 'stonemason-cost', cost2: 'stonemason-cost-2', speed: 'stonemason-speed', speed2: 'stonemason-speed-2', slot: 'stonemason-slot', recipeFamily: 'rock' },
-  houses: {
-    auto: 'builder-auto',
-    perfect1: 'builder-perfect-1',
-    perfect2: 'builder-perfect-2',
-    formula: 'builder-cost',
-    formula2: 'builder-expo-2',
-    formula3: 'builder-expo-3',
-    houseCost: 'builder-cost-half-1',
-    houseCost2: 'builder-cost-half-2',
-    boxBoost: 'builder-box-boost',
-    speed: 'builder-speed',
-    speed2: 'builder-speed-2',
-    speed3: 'builder-speed-3',
-    boxSpeed: 'builder-box-speed',
-    woodSpeed: 'builder-wood-speed'
-  }
-};
+function perkNodesV2PourJob(jobId) {
+  return perksV2Api ? perksV2Api.nodesForJob(jobId) : [];
+}
 
-function spherePerkLearned(perkId) {
-  return !!(perkId && etat.spherePerks && etat.spherePerks[perkId] === 'learned');
+function perkV2Effectif(perkId) {
+  return !!(perksV2Api && perkId && perksV2Api.isEffective(progressionPerksV2(), perkId));
 }
 
 function managerSpeedMultiplier(kitty, famille) {
   if (estSpecialistePermanentNonAssignable(kitty)) return 1;
   const base = (kitty.managerMult || 1.5) * jobLevelMultiplier(kitty);
-  const perks = MANAGER_SPHERE_PERKS[famille];
-  if (!perks) return base;
-  const boost = (spherePerkLearned(perks.speed) ? 0.25 : 0)
-    + (spherePerkLearned(perks.speed2) ? 0.25 : 0)
-    + (spherePerkLearned(perks.speed3) ? 0.25 : 0);
-  return base * (1 + boost);
+  const perkMultiplier = perksV2Api
+    ? perksV2Api.workManagerSpeedMultiplier(progressionPerksV2(), famille)
+    : 1;
+  return base * perkMultiplier;
 }
 
 function managerProductionMultiplier(famille) {
-  const perks = MANAGER_SPHERE_PERKS[famille];
-  if (!perks) return 1;
-  return 1 + (spherePerkLearned(perks.production) ? 0.25 : 0)
-    + (spherePerkLearned(perks.production2) ? 0.25 : 0);
+  return perksV2Api
+    ? perksV2Api.workGatherOutputMultiplier(progressionPerksV2(), famille)
+    : 1;
 }
 
 function managerCostMultiplier(famille) {
-  const perks = MANAGER_SPHERE_PERKS[famille];
-  if (!perks) return 1;
-  if (spherePerkLearned(perks.cost2)) return 0.6;
-  return spherePerkLearned(perks.cost) ? 0.8 : 1;
+  const target = perksV2Api
+    ? perksV2Api.workRecipeInputTarget(progressionPerksV2(), famille, 10)
+    : 10;
+  return target / 10;
 }
 
-function managerSphereStateKey(famille) {
-  const perks = MANAGER_SPHERE_PERKS[famille];
-  if (!perks) return "";
-  return (spherePerkLearned(perks.production) ? "prod" : "")
-    + (spherePerkLearned(perks.production2) ? "prod2" : "")
-    + (spherePerkLearned(perks.speed) ? "speed" : "")
-    + (spherePerkLearned(perks.speed2) ? "speed2" : "")
-    + (spherePerkLearned(perks.speed3) ? "speed3" : "")
-    + (spherePerkLearned(perks.cost) ? "cost" : "")
-    + (spherePerkLearned(perks.cost2) ? "cost2" : "")
-    + (spherePerkLearned(perks.formula) ? "formula" : "")
-    + (spherePerkLearned(perks.formula2) ? "formula2" : "")
-    + (spherePerkLearned(perks.formula3) ? "formula3" : "")
-    + (spherePerkLearned(perks.houseCost) ? "houseCost" : "")
-    + (spherePerkLearned(perks.houseCost2) ? "houseCost2" : "")
-    + (spherePerkLearned(perks.perfect1) ? "perfect1" : "")
-    + (spherePerkLearned(perks.perfect2) ? "perfect2" : "")
-    + (spherePerkLearned(perks.boxBoost) ? "boxBoost" : "")
-    + (spherePerkLearned(perks.boxSpeed) ? "boxSpeed" : "")
-    + (spherePerkLearned(perks.woodSpeed) ? "woodSpeed" : "")
-    + (spherePerkLearned(perks.slot) ? "slot" : "");
+function managerPerksV2StateKey(famille) {
+  const jobId = METIER_PAR_FAMILLE[famille] && METIER_PAR_FAMILLE[famille][0];
+  return jobId ? progressionPerksV2().learned.filter(function(perkId) {
+    return perkNodesV2PourJob(jobId).some(function(node) { return node.id === perkId; });
+  }).join(",") : "";
 }
 
-function managerPerksHtml(famille, className, hideHouseBuildPerks) {
-  const perks = MANAGER_SPHERE_PERKS[famille];
-  if (!perks) return "";
+function jobPerksV2Html(jobId, className) {
   const cls = className || "manager-perk-txt";
-  let html = "";
-  if (famille === "houses") {
-    if (!hideHouseBuildPerks) {
-      if (spherePerkLearned(perks.auto)) {
-        html += '<span class="' + cls + '">Auto Build Wood Houses (perk)</span>';
-      }
-      if (spherePerkLearned(perks.perfect1)) {
-        html += '<span class="' + cls + '">Free Cardboard Boxes with Auto Build (perk)</span>';
-      }
-      if (spherePerkLearned(perks.perfect2)) {
-        html += '<span class="' + cls + '">Free Wood Cathouses with Auto Build (perk)</span>';
-      }
-      if (spherePerkLearned(perks.formula)) {
-        html += '<span class="' + cls + '"><span class="bonus-var">' + woodHouseCostExponent() + '^n</span> house cost exponent (perk)</span>';
-      }
-      if (spherePerkLearned(perks.houseCost)) {
-        html += '<span class="' + cls + '"><span class="bonus-var">×' + woodHouseCostMultiplier() + '</span> Wood House cost (perk)</span>';
-      }
-    }
-    if (spherePerkLearned(perks.speed)) {
-      html += '<span class="' + cls + '"><span class="bonus-var">+' + bonusPourcentageCapaciteBuilder() + '%</span> Builder housing capacity (perk)</span>';
-    }
-    if (spherePerkLearned(perks.boxBoost)) {
-      html += '<span class="' + cls + '"><span class="bonus-var">+1</span> capacity per 3 connected Cardboard Boxes (perk)</span>';
-    }
-    if (spherePerkLearned(perks.boxSpeed)) {
-      html += '<span class="' + cls + '"><span class="bonus-var">+1</span> capacity per connected Cardboard Box (perk)</span>';
-    }
-    if (spherePerkLearned(perks.woodSpeed)) {
-      html += '<span class="' + cls + '"><span class="bonus-var">+2</span> capacity per Wood Cathouse (perk)</span>';
-    }
-    return html;
-  }
-  if (spherePerkLearned(perks.production)) {
-    html += '<span class="' + cls + '"><span class="bonus-var">×1.25</span> production quantity (perk)</span>';
-  }
-  if (spherePerkLearned(perks.production2)) {
-    html += '<span class="' + cls + '"><span class="bonus-var">×1.5</span> production quantity (perk)</span>';
-  }
-  if (spherePerkLearned(perks.cost)) {
-    html += '<span class="' + cls + '"><span class="bonus-var">×0.8</span> gathering target (perk)</span>';
-  }
-  if (spherePerkLearned(perks.cost2)) {
-    html += '<span class="' + cls + '"><span class="bonus-var">×0.6</span> gathering target (perk)</span>';
-  }
-  if (spherePerkLearned(perks.formula) && !hideHouseBuildPerks) {
-    html += '<span class="' + cls + '">1.6^n house cost (perk)</span>';
-  }
-  if (spherePerkLearned(perks.auto) && !hideHouseBuildPerks) {
-    html += '<span class="' + cls + '">Auto build Wood Houses (perk)</span>';
-  }
-  if (spherePerkLearned(perks.speed)) {
-    html += '<span class="' + cls + '"><span class="bonus-var">×1.25</span> manager speed (perk)</span>';
-  }
-  if (spherePerkLearned(perks.speed2)) {
-    html += '<span class="' + cls + '"><span class="bonus-var">×1.5</span> manager speed (perk)</span>';
-  }
-  if (spherePerkLearned(perks.slot) && perks.recipeFamily) {
-    const familyLabel = WORK_FAMILIES[perks.recipeFamily] ? WORK_FAMILIES[perks.recipeFamily].label : perks.recipeFamily;
-    html += '<span class="' + cls + '">+1 ' + familyLabel + ' recipe slot (perk)</span>';
-  }
-  return html;
+  return perkNodesV2PourJob(jobId).filter(function(node) {
+    return !node.granted && perkV2Effectif(node.id);
+  }).map(function(node) {
+    return '<span class="' + cls + '">' + echapperAttributHtml(node.name) + ' (perk)</span>';
+  }).join("");
+}
+
+function managerPerksHtml(famille, className) {
+  const jobId = METIER_PAR_FAMILLE[famille] && METIER_PAR_FAMILLE[famille][0];
+  return jobId ? jobPerksV2Html(jobId, className) : "";
 }
 
 function nombreSlotsRecettesAssignables(recipeFamily) {
-  const hasFamilySlotPerk = Object.keys(MANAGER_SPHERE_PERKS).some(function(managerFamily) {
-    const perks = MANAGER_SPHERE_PERKS[managerFamily];
-    return perks.recipeFamily === recipeFamily && spherePerkLearned(perks.slot);
-  });
-  // A family has two base slots and one unified manager-perk expansion.
-  // Multiple matching manager perks must never create a fourth assignable slot.
-  return hasFamilySlotPerk ? 3 : 2;
+  const delta = perksV2Api
+    ? perksV2Api.workRecipeSlotDelta(progressionPerksV2(), recipeFamily)
+    : 0;
+  return 2 + Math.max(0, Math.min(2, Math.floor(delta)));
 }
 
 function slotRecetteOverflowVide(slot) {
@@ -2327,22 +2240,37 @@ function marquerSequencePrete() {
 }
 
 function woodHouseCostExponent(canonicalGrowth) {
-  if (spherePerkLearned('builder-expo-3')) return 1.5;
-  if (spherePerkLearned('builder-expo-2')) return 1.55;
-  if (spherePerkLearned('builder-cost')) return 1.6;
   const growth = Number(canonicalGrowth);
-  return Number.isFinite(growth) && growth >= 1 ? growth : 1.7;
+  const baseGrowth = Number.isFinite(growth) && growth >= 1 ? growth : 1.7;
+  return perksV2Api ? perksV2Api.houseCostExponent(progressionPerksV2(), baseGrowth) : baseGrowth;
 }
 
-function woodHouseCostMultiplier() {
-  if (spherePerkLearned('builder-cost-half-2')) return 0.25;
-  return spherePerkLearned('builder-cost-half-1') ? 0.5 : 1;
+function woodHouseCostMultiplier(definition) {
+  const eligibleHouse = definition && definition.category === "house"
+    && definition.repeatable === true;
+  return eligibleHouse && perksV2Api
+    ? perksV2Api.houseConstructionCostMultiplier(progressionPerksV2())
+    : 1;
+}
+
+function coutsPayablesConstructionMaisonCamp(coutsTheoriques, multiplicateur) {
+  const facteur = Number.isFinite(Number(multiplicateur))
+    ? Math.max(0, Number(multiplicateur)) : 1;
+  return Object.keys(coutsTheoriques || {}).reduce(function(coutsPayables, resourceId) {
+    const montantTheorique = Number(coutsTheoriques[resourceId]) || 0;
+    coutsPayables[resourceId] = montantTheorique > 0
+      ? Math.max(1, Math.ceil(montantTheorique * facteur))
+      : 0;
+    return coutsPayables;
+  }, {});
 }
 
 function woodHouseCostForCount(count) {
+  const definition = definitionGameplayCamp("cardboardBox");
+  const canonicalGrowth = definition && definition.law && definition.law.growth;
   const cout = incrementorLawApi.costForRank("cardboardBox", Math.max(0, Number(count) || 0) + 1, {
-    growth: woodHouseCostExponent(),
-    multiplier: woodHouseCostMultiplier()
+    growth: woodHouseCostExponent(canonicalGrowth),
+    multiplier: 1
   });
   return cout ? cout.cardboardPlanks : 1;
 }
@@ -2353,38 +2281,6 @@ function coutProchaineCathouse() {
 
 function coutProchaineCatHouse() {
   return woodHouseCostForCount(etat.cathouseCount);
-}
-
-function autoBuildWoodHousesIfNeeded() {
-  if (!etat.autoBuildWoodHouses || !spherePerkLearned('builder-auto')) return 0;
-  let construits = 0;
-  while (construits < 1000) {
-    let construitCettePasse = false;
-    const coutCarton = coutProchaineCathouse();
-    if (coutCarton * 2 < etat.cardboardPlanks) {
-      if (!spherePerkLearned('builder-perfect-1')) {
-        etat.cardboardPlanks -= coutCarton;
-      }
-      etat.cathouses.push(Date.now());
-      construits += 1;
-      construitCettePasse = true;
-    }
-    if (construits >= 1000) break;
-    const coutBois = coutProchaineCatHouse();
-    if (coutBois * 2 < etat.basicWoodPlanks) {
-      if (!spherePerkLearned('builder-perfect-2')) {
-        etat.basicWoodPlanks -= coutBois;
-      }
-      etat.cathouseCount += 1;
-      construits += 1;
-      construitCettePasse = true;
-    }
-    if (!construitCettePasse) break;
-  }
-  if (construits > 0) {
-    ajouterLog("event", "Auto-built " + construits + " Wood House" + (construits > 1 ? "s." : "."));
-  }
-  return construits;
 }
 
 function coutProchaineStoneCathouse() {
@@ -2924,20 +2820,26 @@ function sauvegarderManuel() {
   afficherNotification("💾 Game saved!");
 }
 
+function telechargerSauvegardeBrute(raw, nomFichier) {
+  if (typeof raw !== "string" || !raw || !nomFichier) return false;
+  const blob = new Blob([raw], { type: "text/plain" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = nomFichier;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
 function exporterSauvegarde() {
   sauvegarder();
   const raw = localStorage.getItem(SAVE_KEY);
   if (!raw) return;
   const date = new Date().toISOString().slice(0, 10);
-  const blob = new Blob([raw], { type: "text/plain" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = "cat-inc-save-" + date + ".txt";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  if (!telechargerSauvegardeBrute(raw, "cat-inc-save-" + date + ".txt")) return;
   afficherNotification("⬇️ Save exported!");
 }
 
@@ -3145,9 +3047,7 @@ function quetesQuotidiennesCompletes(q) {
 }
 
 function recompenseQuetesQuotidiennes() {
-  if (!etat.spherePerks) return 1;
-  if (etat.spherePerks['gl-daily-2'] === 'learned') return 3;
-  return etat.spherePerks['gl-daily-1'] === 'learned' ? 2 : 1;
+  return perksV2Api ? perksV2Api.dailyRewardAmount(progressionPerksV2()) : 1;
 }
 
 function reclamerRecompenseQuotidienne() {
@@ -4162,21 +4062,26 @@ function manualFocusDebloque() {
 }
 
 function manualFocusMultiplier() {
-  if (!etat.spherePerks || etat.spherePerks['gl-mini'] !== 'learned') {
-    return WORK_MANUAL_FOCUS_BASE_MULTIPLIER;
-  }
-  return etat.spherePerks['gl-manual-power'] === 'learned' ? 4 : 3;
+  return perksV2Api
+    ? perksV2Api.manualFocusMultiplier(
+        progressionPerksV2(), WORK_MANUAL_FOCUS_BASE_MULTIPLIER
+      )
+    : WORK_MANUAL_FOCUS_BASE_MULTIPLIER;
 }
 
 function manualFocusSecondsPerClick() {
-  return etat.spherePerks && etat.spherePerks['gl-manual-click'] === 'learned'
-    ? 2
+  return perksV2Api
+    ? perksV2Api.manualFocusChargeSeconds(
+        progressionPerksV2(), WORK_MANUAL_FOCUS_BASE_SECONDS_PER_CLICK
+      )
     : WORK_MANUAL_FOCUS_BASE_SECONDS_PER_CLICK;
 }
 
 function manualFocusMaxSeconds() {
-  return etat.spherePerks && etat.spherePerks['gl-manual-capacity'] === 'learned'
-    ? 60
+  return perksV2Api
+    ? perksV2Api.manualFocusCapacitySeconds(
+        progressionPerksV2(), WORK_MANUAL_FOCUS_BASE_MAX_SECONDS
+      )
     : WORK_MANUAL_FOCUS_BASE_MAX_SECONDS;
 }
 
@@ -5046,13 +4951,8 @@ function renduBuildings(u) {
     : "");
 
   // Canonical Wood Cathouses are built through Camp Houses. Keep the legacy
-  // counter and Auto Build code for imported saves, but hide instant purchase.
+  // counter for imported saves, but hide instant purchase.
   ecrireStyle(domParId("bloc-wood-cathouse"), "display", "none");
-  const autoBuildDisponible = spherePerkLearned('builder-auto');
-  const autoBuildToggle = domParId("builder-auto-toggle");
-  ecrireStyle(autoBuildToggle, "display", autoBuildDisponible ? "flex" : "none");
-  const autoBuildInput = domParId("toggle-auto-build-wood-houses");
-  if (autoBuildInput) autoBuildInput.checked = !!etat.autoBuildWoodHouses;
   if (u.catHouse) {
     const cout2 = coutProchaineCatHouse();
     ecrireTexte(domParId("possede-cathouse2"), etat.cathouseCount);
@@ -5061,8 +4961,6 @@ function renduBuildings(u) {
     ecrireTexte(domParId("reduction-wood-cathouse"), etat.cathouseCount > 0
       ? "+" + (etat.cathouseCount * CAMP_HOUSING_CAPACITY.woodCathouse) + " Cat capacity" : "");
   }
-
-  renderManagerSlot("houses");
 
   // ── Stone Houses
   const secStone = domParId("section-stone-houses");
@@ -5375,41 +5273,21 @@ function trainingCenterKitties() {
   return roster;
 }
 
-function sphereEtatEffectif(sphere) {
-  if (!sphere) return null;
-  // A job's central perk is acquired with the job and can never be downgraded
-  // by an adjacent perk trying to unlock one of its connections.
-  if (sphere.etat === 'learned') return 'learned';
-  return (etat.spherePerks && etat.spherePerks[sphere.id]) || sphere.etat;
+function etatPerkV2(node) {
+  if (!node || !node.available) return "unavailable";
+  if (perkV2Effectif(node.id)) return node.granted ? "granted" : "learned";
+  const prerequisitesOk = node.prerequisites.every(perkV2Effectif);
+  if (!prerequisitesOk) return "locked";
+  const canAfford = Object.keys(node.costs).every(function(resourceId) {
+    return Number(etat[resourceId]) >= Number(node.costs[resourceId]);
+  });
+  return canAfford ? "available" : "unaffordable";
 }
 
-function synchroniserDeblocagesSpherePerks() {
-  if (!etat.spherePerks) etat.spherePerks = {};
-  var changed = false;
-  var unlockedSomething = true;
-  while (unlockedSomething) {
-    unlockedSomething = false;
-    Object.keys(SPHERE_GRIDS).forEach(function(jobId) {
-      var grid = SPHERE_GRIDS[jobId];
-      var byId = {};
-      grid.spheres.forEach(function(sphere) { byId[sphere.id] = sphere; });
-      grid.connections.forEach(function(connection) {
-        var parent = byId[connection[0]];
-        var child = byId[connection[1]];
-        if (!parent || !child) return;
-        var parentState = parent.etat === 'learned'
-          ? 'learned'
-          : (etat.spherePerks[parent.id] || parent.etat);
-        var childState = etat.spherePerks[child.id] || child.etat;
-        if (parentState === 'learned' && childState === 'locked') {
-          etat.spherePerks[child.id] = 'unlocked';
-          unlockedSomething = true;
-          changed = true;
-        }
-      });
-    });
-  }
-  return changed;
+function noeudPerkV2(perkId) {
+  return globalThis.CatInc.data.perksV2.nodes.find(function(node) {
+    return node.id === perkId && node.available;
+  }) || null;
 }
 
 function renduTrainingCenter() {
@@ -5423,11 +5301,11 @@ function renduTrainingCenter() {
   const selectedExists = roster.some(function(entry) { return entry.i === tcSpecKittySelectionne; });
   if (!selectedExists) tcSpecKittySelectionne = roster.length > 0 ? roster[0].i : null;
   const k = tcSpecKittySelectionne !== null ? etat.kittiesData[tcSpecKittySelectionne] : null;
-  const selectedGrid = k && SPHERE_GRIDS[k.metier];
-  const sphereKey = selectedGrid ? selectedGrid.spheres.map(function(s) {
-    return s.id + ":" + sphereEtatEffectif(s);
-  }).join(",") : "";
-  const key = rosterKey + '|' + (tcSpecKittySelectionne ?? '') + '|' + (k ? k.metier + '|' + k.jobNiveau : '') + '|' + sphereKey;
+  const selectedGrid = k ? perkNodesV2PourJob(k.metier) : [];
+  const sphereKey = selectedGrid.map(function(node) {
+    return node.id + ":" + etatPerkV2(node);
+  }).join(",");
+  const key = rosterKey + '|' + (tcSpecKittySelectionne ?? '') + '|' + (k ? k.metier + '|' + k.jobNiveau : '') + '|' + sphereKey + '|' + etat.cannedCatFood;
   if (key === _tcKey) return;
   _tcKey = key;
 
@@ -5470,14 +5348,14 @@ function renduTrainingCenter() {
     html += '<div class="tc-selected-icon">' + kittyIconHtml(k) + '</div>';
     html += '<div><div class="tc-selected-name">' + echapperAttributHtml(k.nom) + '</div><div class="tc-selected-job">' + echapperAttributHtml(metier ? metier.emoji + ' ' + metier.nom : k.metier) + ' · Specialization Lv. ' + level.cur + ' / ' + level.max + '</div></div>';
     html += '</div>';
-    if (selectedGrid) html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
+    if (selectedGrid.length) html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
     else html += '<p class="tc-empty">This job does not have a specialization sphere yet.</p>';
   } else {
     html += '<div class="tc-empty tc-empty-large">Select a cat to view its sphere.</div>';
   }
   html += '</section></div></div>';
   el.innerHTML = html;
-  if (k && selectedGrid) renduSphereGrid(k.metier);
+  if (k && selectedGrid.length) renduSphereGrid(k.metier);
 }
 
 function renduSphereGrid(jobId) {
@@ -5486,49 +5364,70 @@ function renduSphereGrid(jobId) {
   _sphereGridJob      = jobId;
   _sphereSelectionnee = null;
 
-  var def = SPHERE_GRIDS[jobId];
-  if (!def) { containerEl.innerHTML = ''; return; }
+  var canonicalNodes = perkNodesV2PourJob(jobId);
+  if (!canonicalNodes.length) { containerEl.innerHTML = ''; return; }
+  var def = {
+    spheres: canonicalNodes.map(function(node) {
+      return {
+        id: node.id,
+        x: node.layout.x,
+        y: node.layout.y,
+        r: node.granted ? 36 : 30,
+        couleur: node.granted ? '#1e5f70' : '#3f8a68',
+        nom: node.name,
+        desc: node.description,
+        canonical: node
+      };
+    }),
+    prerequisiteEdges: canonicalNodes.flatMap(function(node) {
+      return node.prerequisites.map(function(prerequisiteId) {
+        return [prerequisiteId, node.id];
+      });
+    })
+  };
 
   var sphereMap = {};
   def.spheres.forEach(function(s) { sphereMap[s.id] = s; });
 
-  // Resolve actual state without ever downgrading a job's learned central perk.
   function sphereEtat(s) {
-    return sphereEtatEffectif(s);
+    return etatPerkV2(s.canonical);
   }
+
+  var canvasWidth = Math.max(580, Math.max.apply(null, def.spheres.map(function(s) { return s.x; })) + 60);
+  var canvasHeight = Math.max(580, Math.max.apply(null, def.spheres.map(function(s) { return s.y; })) + 60);
 
   var parts = [];
   var sphereFogNow = Date.now();
   var sphereFogClass = SPHERE_FOG_MOTION_ENABLED ? ' sphere-fog-motion' : '';
   var sphereFogStyle = '--sphere-fog-animation-delay:-' + (sphereFogNow % MAP_FOG_ANIMATION_DURATION_MS) + 'ms;'
     + '--sphere-fog-secondary-animation-delay:-' + (sphereFogNow % MAP_FOG_SECONDARY_DURATION_MS) + 'ms;';
-  parts.push('<svg viewBox="0 0 580 580" xmlns="http://www.w3.org/2000/svg" class="sphere-svg' + sphereFogClass + '" style="' + sphereFogStyle + '">');
+  parts.push('<svg viewBox="0 0 ' + canvasWidth + ' ' + canvasHeight + '" xmlns="http://www.w3.org/2000/svg" class="sphere-svg' + sphereFogClass + '" style="' + sphereFogStyle + '">');
   parts.push(
     '<defs>'
-    + '<clipPath id="sphere-fog-clip"><rect x="0" y="0" width="580" height="580" rx="12" ry="12"></rect></clipPath>'
+    + '<clipPath id="sphere-fog-clip"><rect x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" rx="12" ry="12"></rect></clipPath>'
     + '<filter id="sphere-fog-seam-softener" x="-2%" y="-1%" width="104%" height="102%" color-interpolation-filters="sRGB">'
     + '<feGaussianBlur in="SourceGraphic" stdDeviation="1.8 0"></feGaussianBlur>'
     + '</filter>'
     + '</defs>'
     + '<g clip-path="url(#sphere-fog-clip)">'
-    + '<rect x="0" y="0" width="580" height="580" fill="#2f2925"></rect>'
+    + '<rect x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" fill="#2f2925"></rect>'
     + '<g class="sphere-fog-primary-track" filter="url(#sphere-fog-seam-softener)">'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="0" width="580" height="580" preserveAspectRatio="none"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="0" width="580" height="580" preserveAspectRatio="none" transform="translate(1160 0) scale(-1 1)"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="1160" y="0" width="580" height="580" preserveAspectRatio="none"></image>'
+    + '<image href="img/Maps/Perks fog.png" x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" preserveAspectRatio="none"></image>'
+    + '<image href="img/Maps/Perks fog.png" x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" preserveAspectRatio="none" transform="translate(' + (canvasWidth * 2) + ' 0) scale(-1 1)"></image>'
+    + '<image href="img/Maps/Perks fog.png" x="' + (canvasWidth * 2) + '" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" preserveAspectRatio="none"></image>'
     + '</g>'
     + '<g class="sphere-fog-secondary-track" filter="url(#sphere-fog-seam-softener)">'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="-35" width="580" height="650" preserveAspectRatio="none"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="-35" width="580" height="650" preserveAspectRatio="none" transform="translate(1160 0) scale(-1 1)"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="1160" y="-35" width="580" height="650" preserveAspectRatio="none"></image>'
+    + '<image href="img/Maps/Perks fog.png" x="0" y="-35" width="' + canvasWidth + '" height="' + (canvasHeight + 70) + '" preserveAspectRatio="none"></image>'
+    + '<image href="img/Maps/Perks fog.png" x="0" y="-35" width="' + canvasWidth + '" height="' + (canvasHeight + 70) + '" preserveAspectRatio="none" transform="translate(' + (canvasWidth * 2) + ' 0) scale(-1 1)"></image>'
+    + '<image href="img/Maps/Perks fog.png" x="' + (canvasWidth * 2) + '" y="-35" width="' + canvasWidth + '" height="' + (canvasHeight + 70) + '" preserveAspectRatio="none"></image>'
     + '</g></g>'
   );
 
-  // Connections
-  def.connections.forEach(function(conn) {
+  // Read-only edges are derived from the canonical prerequisite IDs.
+  def.prerequisiteEdges.forEach(function(conn) {
     var a = sphereMap[conn[0]], b = sphereMap[conn[1]];
     if (!a || !b) return;
-    var learned = sphereEtat(a) === 'learned';
+    var learned = sphereEtat(a) === 'learned' || sphereEtat(a) === 'granted';
     parts.push(
       '<line x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '"'
       + ' stroke="' + (learned ? a.couleur : '#cccccc') + '" stroke-width="2"'
@@ -5539,13 +5438,13 @@ function renduSphereGrid(jobId) {
   // Spheres
   def.spheres.forEach(function(s) {
     var actualEtat = sphereEtat(s);
-    var isLearned  = actualEtat === 'learned';
-    var isUnlocked = actualEtat === 'unlocked';
+    var isLearned  = actualEtat === 'learned' || actualEtat === 'granted';
+    var isUnlocked = actualEtat === 'available' || actualEtat === 'unaffordable';
     var fill, strokeColor, textColor, opacity;
     if (isLearned) {
       fill = s.couleur; strokeColor = 'rgba(255,255,255,0.5)'; textColor = '#ffffff'; opacity = 1;
     } else if (isUnlocked) {
-      fill = '#ffffff'; strokeColor = s.couleur; textColor = s.couleur; opacity = 1;
+      fill = '#ffffff'; strokeColor = actualEtat === 'unaffordable' ? '#b78332' : s.couleur; textColor = strokeColor; opacity = 1;
     } else {
       // Keep locked nodes visually muted through their grey palette, but leave
       // the circle itself opaque so dotted connectors beneath cannot show
@@ -5555,7 +5454,8 @@ function renduSphereGrid(jobId) {
 
     parts.push(
       '<g id="sphere-node-' + s.id + '"'
-      + ((isLearned || isUnlocked) ? ' onclick="clickerSphere(\'' + s.id + '\')" style="cursor:pointer"' : '')
+      + ' role="button" tabindex="0" aria-label="' + echapperAttributHtml(s.nom + ' — ' + actualEtat) + '"'
+      + ' onclick="clickerSphere(\'' + s.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();clickerSphere(\'' + s.id + '\');}" style="cursor:pointer"'
       + ' opacity="' + opacity + '">'
     );
     // Selection ring (hidden by default)
@@ -5610,17 +5510,15 @@ function clickerSphere(sphereId) {
   _sphereSelectionnee = sphereId;
   var ring = document.getElementById('sphere-ring-' + sphereId);
   if (ring) ring.setAttribute('opacity', '1');
-  // Find sphere data
-  var def    = _sphereGridJob ? SPHERE_GRIDS[_sphereGridJob] : null;
-  var sphere = def ? def.spheres.find(function(s) { return s.id === sphereId; }) : null;
-  var actualEtat = sphereEtatEffectif(sphere);
+  var sphere = noeudPerkV2(sphereId);
+  var actualEtat = etatPerkV2(sphere);
   var nomEl  = document.getElementById('sphere-detail-nom');
   var descEl = document.getElementById('sphere-detail-desc');
-  if (nomEl)  nomEl.textContent = sphere ? String(sphere.nom).toUpperCase() : '';
+  if (nomEl) nomEl.textContent = sphere ? String(sphere.name).toUpperCase() : '';
   if (descEl) {
     var learnHtml = '';
-    if (actualEtat === 'unlocked' && sphere && sphere.cout) {
-      var cout = sphere.cout;
+    if ((actualEtat === 'available' || actualEtat === 'unaffordable') && sphere) {
+      var cout = sphere.costs;
       var canAfford = Object.keys(cout).every(function(res) { return (etat[res] || 0) >= cout[res]; });
       var coutLabel = Object.keys(cout).map(function(res) {
         var noms = { cannedCatFood: 'Canned Cat Food' };
@@ -5629,42 +5527,48 @@ function clickerSphere(sphereId) {
       learnHtml = '<div class="sphere-cout">'
         + '<span class="sphere-cout-label">Cost: ' + coutLabel + '</span>'
         + (canAfford
-            ? '<button class="sphere-learn-btn" onclick="apprendrePerk(\'' + sphereId + '\')">Learn</button>'
+            ? '<button class="sphere-learn-btn" onclick="apprendrePerkV2(\'' + sphereId + '\')">Learn</button>'
             : '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Not enough resources</button>')
         + '</div>';
+    } else if (actualEtat === 'locked') {
+      learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Locked — learn every prerequisite first.</span></div>';
+    } else if (actualEtat === 'granted') {
+      learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Granted with this job.</span></div>';
+    } else if (actualEtat === 'learned') {
+      learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Learned.</span></div>';
     }
-    descEl.innerHTML = (sphere ? '<p class="sphere-desc-texte">' + sphere.desc + '</p>' : '') + learnHtml;
+    descEl.innerHTML = (sphere ? '<p class="sphere-desc-texte">' + echapperAttributHtml(sphere.description) + '</p>' : '') + learnHtml;
   }
 }
 
-function apprendrePerk(sphereId) {
-  if (_sphereGridJob && !batimentFonctionnelCamp("trainingCenter").available) return;
-  if (!etat.spherePerks) etat.spherePerks = {};
-  var def    = _sphereGridJob ? SPHERE_GRIDS[_sphereGridJob] : null;
-  var sphere = def ? def.spheres.find(function(s) { return s.id === sphereId; }) : null;
-  // Check and deduct cost
-  if (sphere && sphere.cout) {
-    var canAfford = Object.keys(sphere.cout).every(function(res) { return (etat[res] || 0) >= sphere.cout[res]; });
-    if (!canAfford) { afficherNotification("Not enough resources to learn this perk."); return; }
-    Object.keys(sphere.cout).forEach(function(res) { etat[res] -= sphere.cout[res]; });
+function apprendrePerkV2(perkId) {
+  if (!perksV2Api || !_sphereGridJob || !batimentFonctionnelCamp("trainingCenter").available) return false;
+  const kitty = tcSpecKittySelectionne !== null ? etat.kittiesData[tcSpecKittySelectionne] : null;
+  if (!kitty || kitty.metier !== _sphereGridJob) return false;
+  const result = perksV2Api.learn(
+    progressionPerksV2(),
+    perkId,
+    { cannedCatFood: etat.cannedCatFood },
+    { jobId: kitty.metier }
+  );
+  if (!result.ok) {
+    const messages = {
+      job: "This perk does not belong to the selected Cat's job.",
+      prerequisites: "Learn every prerequisite first.",
+      cost: "Not enough Canned Cat Food to learn this perk.",
+      learned: "This perk is already effective."
+    };
+    afficherNotification(messages[result.reason] || "This perk cannot be learned.");
+    return false;
   }
-  etat.spherePerks[sphereId] = 'learned';
-  if (sphere && /-slot$/.test(sphereId)) {
-    if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
-  }
-  // Unlock children of this sphere
-  if (def) {
-    def.connections.forEach(function(conn) {
-      var enfant = def.spheres.find(function(s) { return s.id === conn[1]; });
-      if (conn[0] === sphereId && enfant && sphereEtatEffectif(enfant) === 'locked') {
-        etat.spherePerks[conn[1]] = 'unlocked';
-      }
-    });
-  }
+  etat.perksV2 = result.progress;
+  etat.cannedCatFood = result.resources.cannedCatFood;
+  if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
+  if (perkId === "exploratorAutoAssign") exploTabDirty = true;
   sauvegarder();
-  _tcKey = null; // force TC re-render so sphere grid rebuilds
-  renduTrainingCenter();
-  renduGangTools();
+  _tcKey = null;
+  rendu();
+  return true;
 }
 
 function specialiserJobKitty(index) {
@@ -5679,12 +5583,10 @@ function specialiserJobKitty(index) {
 }
 
 function jobLevelInfo(metier) {
-  var grid = SPHERE_GRIDS[metier];
-  if (!grid) return { cur: 1, max: 1 };
-  var cur = grid.spheres.filter(function(s) {
-    return (etat.spherePerks && etat.spherePerks[s.id] === 'learned') || s.etat === 'learned';
-  }).length;
-  return { cur: cur, max: grid.spheres.length };
+  var nodes = perkNodesV2PourJob(metier);
+  if (!nodes.length) return { cur: 1, max: 1 };
+  var cur = nodes.filter(function(node) { return perkV2Effectif(node.id); }).length;
+  return { cur: cur, max: nodes.length };
 }
 
 // ── 9g. Management tab
@@ -5794,7 +5696,7 @@ function deselectionnerKitty() {
 function renduGangTools() {
   var el = document.getElementById('gang-tools');
   if (!el) return;
-  var qolLearned = etat.spherePerks && etat.spherePerks['gl-qol'] === 'learned';
+  var qolLearned = foodManagementDisponible();
   if (qolLearned) {
     el.style.display = 'block';
     el.innerHTML = '<button class="gang-tool-btn' + (_foodMgmtOuvert ? ' gang-tool-btn-actif' : '') + '" onclick="toggleFoodManagement()">Food Management</button>';
@@ -6340,12 +6242,15 @@ function renduManagement() {
               })()
           : k.metier === "explorator"
             ? "<div class='detail-job-bonus'>Halves all missions type times in Exploration</div>"
-              + (etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned' ? "<div class='detail-job-bonus'>Auto Assign for Exploration missions (perk)</div>" : "")
+              + (explorationAutoAssignDisponible() ? "<div class='detail-job-bonus'>Auto Assign for Exploration missions (perk)</div>" : "")
               + (exploratorPowerMultiplier(kittySelectionnee) > 1 ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + exploratorPowerMultiplier(kittySelectionnee) + "</span> Exploration Power (perk)</div>" : "")
               + (exploratorCatFoodMultiplier(kittySelectionnee) > 1 ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + exploratorCatFoodMultiplier(kittySelectionnee) + "</span> Canned Cat Food chance in scoutings (perk)</div>" : "")
               + (exploratorDoubleChance(kittySelectionnee) > 0 ? "<div class='detail-job-bonus'><span class='bonus-var'>" + Math.round(exploratorDoubleChance(kittySelectionnee) * 100) + "%</span> chance to double scouting reward (perk)</div>" : "")
               + (exploratorTripleChance(kittySelectionnee) > 0 ? "<div class='detail-job-bonus'><span class='bonus-var'>" + Math.round(exploratorTripleChance(kittySelectionnee) * 100) + "%</span> chance to upgrade a doubled reward to triple (perk)</div>" : "")
               + (exploratorLuckyFoodChance(kittySelectionnee) > 0 ? "<div class='detail-job-bonus'><span class='bonus-var'>" + Math.round(exploratorLuckyFoodChance(kittySelectionnee) * 100) + "%</span> chance to preserve scouting Canned Cat Food stock (perk)</div>" : "")
+          : k.metier === "builder"
+            ? "<div class='detail-job-bonus'>Camp Construction Specialist · personal speed applies when assigned to Construction, Repair or Tier Upgrade</div>"
+              + jobPerksV2Html("builder", "detail-job-perk")
             : (METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2) + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" + managerPerksHtml(METIERS[k.metier].famille, "detail-job-perk") : "")
       ) : "";
       const _jlvl = jobLevelInfo(k.metier);
@@ -6989,7 +6894,7 @@ function renderCampaignCards() {
       }
       const requiredExploratorAssigned = zone.slots === 0 || estExplorateurDeZone(slots[0]);
       const canLaunch = allFilled && requiredExploratorAssigned && !etat.exploZoneEnCours;
-      if (!etat.exploZoneEnCours && etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
+      if (!etat.exploZoneEnCours && explorationAutoAssignDisponible()) {
         html += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'zone\',\'' + zoneId + '\')">Auto Assign</button>';
       }
       html += '<button class="btn-lancer-explo"' + (canLaunch ? '' : ' disabled') + ' onclick="lancerExploZone()">Explore &#x27A4;</button>';
@@ -7086,7 +6991,7 @@ function renderCampaignCards() {
         } else {
           html += '<div class="explo-power-display explo-power-hint">Click a slot to assign a cat.</div>';
         }
-        if (etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
+        if (explorationAutoAssignDisponible()) {
           html += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'campaign\',\'' + camp.id + '\')">Auto Assign</button>';
         }
         html += '<button class="btn-lancer-explo"' + (allFilled ? '' : ' disabled') + ' onclick="lancerExplo(\'' + camp.id + '\')">Send on campaign &#x27A4;</button>';
@@ -7178,7 +7083,7 @@ function renderCampaignCards() {
           } else {
             scoutHtml += '<div class="explo-power-display explo-power-hint">Click a slot to assign a cat.</div>';
           }
-          if (etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
+          if (explorationAutoAssignDisponible()) {
             scoutHtml += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'scouting\',\'' + sc.id + '\')">Auto Assign</button>';
           }
           scoutHtml += '<button class="btn-lancer-explo"' + (stagedKi !== undefined ? '' : ' disabled') + ' onclick="lancerScouting(\'' + sc.id + '\')">Send to scout &#x27A4;</button>';
@@ -7500,7 +7405,7 @@ function renduCarteDetail() {
     }
     const requiredExploratorAssigned = zone.slots === 0 || estExplorateurDeZone(slots[0]);
     const canLaunch = allFilled && requiredExploratorAssigned && !etat.exploZoneEnCours;
-    if (!etat.exploZoneEnCours && etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
+    if (!etat.exploZoneEnCours && explorationAutoAssignDisponible()) {
       html += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'zone\',\'' + zoneId + '\')">Auto Assign</button>';
     }
     html += '<button class="btn-lancer-explo"' + (canLaunch ? '' : ' disabled') + ' onclick="lancerExploZone()">Explore ➤</button>';
@@ -8151,9 +8056,10 @@ function reessayerCampaign(campaignId) {
 
 function exploratorPowerMultiplier(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
-  if (!k || k.metier !== 'explorator' || !etat.spherePerks) return 1;
-  return etat.spherePerks['ex-power-2'] === 'learned' ? 1.5
-    : etat.spherePerks['ex-power'] === 'learned' ? 1.25 : 1;
+  if (!k || k.metier !== 'explorator') return 1;
+  return perksV2Api
+    ? perksV2Api.explorationPowerMultiplier(progressionPerksV2(), k.metier)
+    : 1;
 }
 
 // Returns the effective Exploration Power with job-specific sphere perks.
@@ -8168,31 +8074,35 @@ function kittyEP(ki) {
 function exploratorCatFoodMultiplier(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
   if (!k || k.metier !== 'explorator') return 1;
-  if (!etat.spherePerks) return 1;
-  return etat.spherePerks['ex-food-2'] === 'learned' ? 2
-    : etat.spherePerks['ex-food'] === 'learned' ? 1.5 : 1;
+  return perksV2Api
+    ? perksV2Api.explorationRewardChanceMultiplier(
+        progressionPerksV2(), k.metier, 'cannedCatFood'
+      )
+    : 1;
 }
 
 function exploratorDoubleChance(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
   if (!k || k.metier !== 'explorator') return 0;
-  if (!etat.spherePerks) return 0;
-  return etat.spherePerks['ex-luck-2'] === 'learned' ? 0.40
-    : etat.spherePerks['ex-luck'] === 'learned' ? 0.20 : 0;
+  return perksV2Api
+    ? perksV2Api.explorationDoubleRewardChance(progressionPerksV2())
+    : 0;
 }
 
 function exploratorTripleChance(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
-  if (!k || k.metier !== 'explorator' || !etat.spherePerks) return 0;
-  return etat.spherePerks['ex-triple-2'] === 'learned' ? 0.30
-    : etat.spherePerks['ex-triple'] === 'learned' ? 0.15 : 0;
+  if (!k || k.metier !== 'explorator') return 0;
+  return perksV2Api
+    ? perksV2Api.explorationConditionalTripleChance(progressionPerksV2())
+    : 0;
 }
 
 function exploratorLuckyFoodChance(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
-  if (!k || k.metier !== 'explorator' || !etat.spherePerks) return 0;
-  return etat.spherePerks['ex-food-lucky-2'] === 'learned' ? 0.30
-    : etat.spherePerks['ex-food-lucky'] === 'learned' ? 0.15 : 0;
+  if (!k || k.metier !== 'explorator') return 0;
+  return perksV2Api
+    ? perksV2Api.explorationStockPreservationChance(progressionPerksV2())
+    : 0;
 }
 
 function scoutingCatFoodMultiplier(kittyIndex) {
@@ -9591,7 +9501,7 @@ function selectionnerKittyFormation(kittyIndex) {
 
 function selectionnerTrainingCat(kittyIndex) {
   const kitty = etat.kittiesData[kittyIndex];
-  if (!kittyEligiblePourAffectationOrdinaire(kitty) || !kitty.metier || !METIERS[kitty.metier]) return;
+  if (!kitty || !kitty.metier || !METIERS[kitty.metier]) return;
   tcSpecKittySelectionne = kittyIndex;
   _tcKey = null;
   renduTrainingCenter();
@@ -9793,14 +9703,8 @@ function retirerManager(famille) {
 function renderManagerSlot(famille) {
   const el = domParId("manager-slot-" + famille);
   if (!el) return;
-  const debloque = famille === "houses"
-    ? etat.itemsAppris.includes("constructionPlan")
-    : batimentFonctionnelCamp("jobCenter").available;
+  const debloque = batimentFonctionnelCamp("jobCenter").available;
   if (!debloque) {
-    if (famille === "houses") {
-      ecrireStyle(el, "display", "none");
-      return;
-    }
     ecrireStyle(el, "display", "flex");
     if (el.dataset.slotState !== "locked") {
       el.dataset.slotState = "locked";
@@ -9822,14 +9726,14 @@ function renderManagerSlot(famille) {
 
   // Only rebuild DOM when state changes — prevents destroying the button mid-click
   const currentState = el.dataset.slotState || "";
-  const newState = kitty ? "filled:" + managerIdx + ":" + managerSpeedMultiplier(kitty, famille).toFixed(2) + ":" + managerSphereStateKey(famille) : "empty";
+  const newState = kitty ? "filled:" + managerIdx + ":" + managerSpeedMultiplier(kitty, famille).toFixed(2) + ":" + managerPerksV2StateKey(famille) : "empty";
   if (currentState === newState) return;
   el.dataset.slotState = newState;
 
   if (kitty) {
     const tierIdx = kitty.tier || 0;
     const m = METIERS[kitty.metier];
-    const bonusTxt = m ? '<span class="manager-speed-line"><span class="bonus-var">×' + managerSpeedMultiplier(kitty, famille).toFixed(2) + '</span> ' + (m.bonusLabel || "production speed") + '</span>' + managerPerksHtml(famille, null, famille === "houses") : '';
+    const bonusTxt = m ? '<span class="manager-speed-line"><span class="bonus-var">×' + managerSpeedMultiplier(kitty, famille).toFixed(2) + '</span> ' + (m.bonusLabel || "production speed") + '</span>' + managerPerksHtml(famille) : '';
     el.innerHTML = '<div class="manager-slot-filled">'
       + '<div class="manager-cercle kitty-photo-tier-' + tierIdx + '">' + kittyIconHtml(kitty) + '</div>'
       + '<div class="manager-info">'
@@ -10455,12 +10359,6 @@ function acheterCatHouse() {
   afficherNotification("🏠 Wood Cathouse built!");
   ajouterLog("event", "Wood Cathouse #" + etat.cathouseCount + " built!");
   verifierObjectifs(); sauvegarder(); rendu();
-}
-
-function basculerAutoBuildWoodHouses(checked) {
-  etat.autoBuildWoodHouses = !!checked && spherePerkLearned('builder-auto');
-  sauvegarder();
-  rendu();
 }
 
 function acheterStoneCathouse() {
@@ -13175,9 +13073,16 @@ function tierVisuelCanoniqueLiveCamp(typeId, tierNumber) {
     && globalThis.CatInc.data.campAssets && globalThis.CatInc.data.campAssets.assets || {};
   const family = Object.keys(assets).map(function(runtimeId) { return assets[runtimeId]; })
     .find(function(candidate) { return candidate && candidate.assetId === (definition && definition.assetId); });
-  const tier = family && family.tiers && family.tiers[String(tierNumber)];
-  const revision = tier && tier.revisions && tier.revisions[String(tier.liveRevision)];
-  return Boolean(revision && revision.status === "live");
+  const revisionLive = function(candidateTier) {
+    const tier = family && family.tiers && family.tiers[String(candidateTier)];
+    const revision = tier && tier.revisions && tier.revisions[String(tier.liveRevision)];
+    return Boolean(revision && revision.status === "live");
+  };
+  if (revisionLive(tierNumber)) return true;
+  const config = definition && definition.upgradeTiers
+    && definition.upgradeTiers[String(tierNumber)];
+  return Number.isInteger(config && config.visualFallbackTier)
+    && revisionLive(config.visualFallbackTier);
 }
 
 function configurationAmeliorationCamp(typeId, targetTier) {
@@ -13473,6 +13378,12 @@ function conditionGameplayUnlockCamp(unlock) {
   if (unlock.kind === "resource-cap-reached" && unlock.scope === "regular-storage") {
     return Boolean(progressionCamp().storageShedUnlocked);
   }
+  if (unlock.kind === "perk-tier-unlock") {
+    return Boolean(perksV2Api
+      && perksV2Api.campTierUnlocked(
+        progressionPerksV2(), unlock.targetTypeId, unlock.targetTier
+      ));
+  }
   return false;
 }
 
@@ -13561,11 +13472,14 @@ function rangSuivantMaisonCamp(typeId) {
 function devisMaisonCamp(typeId) {
   const rank = rangSuivantMaisonCamp(typeId);
   const definition = definitionGameplayCamp(typeId);
-  const costs = incrementorLawApi.costForRank(typeId, rank, {
-    growth: woodHouseCostExponent(definition && definition.law && definition.law.growth),
-    multiplier: woodHouseCostMultiplier()
+  const theoreticalCosts = incrementorLawApi.costForRank(typeId, rank, {
+    growth: woodHouseCostExponent(definition && definition.law && definition.law.growth)
   });
-  return costs ? {
+  const costs = theoreticalCosts && coutsPayablesConstructionMaisonCamp(
+    theoreticalCosts,
+    woodHouseCostMultiplier(definition)
+  );
+  return theoreticalCosts && costs ? {
     rank: rank,
     costs: costs,
     duration: incrementorLawApi.scaleValue(
@@ -14094,7 +14008,8 @@ function normaliserReparationsCamp(claimKitty) {
     const definition = definitionReparationCamp(buildingId);
     const dureeAttendue = definition && dureeEffectiveActionCamp(
       definition.duration,
-      [reparation && reparation.kittyIndex]
+      [reparation && reparation.kittyIndex],
+      "repair"
     );
     const valide = Boolean(
       dureeAttendue
@@ -15040,7 +14955,7 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
     const duree = legacyRightAccessPaid
       ? dureeStockee
       : Number.isFinite(dureeActuelle) && dureeActuelle > 0
-      ? dureeEffectiveActionCamp(dureeActuelle, kittyIndices)
+      ? dureeEffectiveActionCamp(dureeActuelle, kittyIndices, "junk")
       : dureeStockee;
     const valide = Boolean(
       cible
@@ -18628,7 +18543,7 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
     type: typeId,
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duree: dureeEffectiveActionCamp(duree, [kittyIndex]),
+    duree: dureeEffectiveActionCamp(duree, [kittyIndex], "construction"),
     lawRank: devis.rank,
     paidCosts: incrementorLawApi.copyCosts(cout),
     readyToClaim: false
@@ -18819,7 +18734,7 @@ function selectionnerKittyConstructionBatimentCamp(kittyIndex) {
     type: typeId,
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duration: dureeEffectiveActionCamp(devis.duration, [kittyIndex]),
+    duration: dureeEffectiveActionCamp(devis.duration, [kittyIndex], "construction"),
     costs: incrementorLawApi.copyCosts(devis.costs),
     readyToClaim: false
   };
@@ -18863,6 +18778,16 @@ function prochaineAmeliorationCamp(item) {
   if (!config || !definition || !visualAvailable
       || !(targetUnlock ? conditionGameplayUnlockCamp(targetUnlock) : legacyProductionUnlock)
       || ameliorationCampPourItem(item.uid)) return null;
+  const uniqueCampLimit = Number(config.tier && config.tier.maxInstancesAtTier) || 0;
+  const uniqueReservations = uniqueCampLimit > 0
+    ? campPrototypeLayout.filter(function(candidate) {
+      return candidate && candidate.type === item.type && candidate.construit === true
+        && (Number(candidate.tier) || 1) === targetTier;
+    }).length + ameliorationsCampActives().filter(function(job) {
+      return job && job.type === item.type && job.targetTier === targetTier;
+    }).length
+    : 0;
+  if (uniqueCampLimit > 0 && uniqueReservations >= uniqueCampLimit) return null;
   const rank = definition.repeatable
     ? incrementorLawApi.nextRank(
       campPrototypeLayout.filter(function(candidate) {
@@ -19081,7 +19006,7 @@ function selectionnerKittyAmeliorationCamp(kittyIndex) {
     targetTier: upgrade.targetTier,
     rank: upgrade.rank,
     startTs: Date.now(),
-    duration: dureeEffectiveActionCamp(upgrade.duration, [selectedKittyIndex]),
+    duration: dureeEffectiveActionCamp(upgrade.duration, [selectedKittyIndex], "upgrade"),
     costs: Object.assign({}, upgrade.costs),
     readyToClaim: false
   };
@@ -19235,7 +19160,7 @@ function selectionnerKittyReparationCamp(kittyIndex) {
   etat.camp.repairs[buildingId] = {
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duree: dureeEffectiveActionCamp(duree, [kittyIndex]),
+    duree: dureeEffectiveActionCamp(duree, [kittyIndex], "repair"),
     readyToClaim: false
   };
   fermerModalReparationCamp();
@@ -19403,7 +19328,8 @@ function demarrerDemolitionCampPrototype() {
   })) return false;
   const duree = dureeEffectiveActionCamp(
     campPrototypeApi.dureeDemolitionObstacle(obstacle),
-    kittyIndices
+    kittyIndices,
+    "junk"
   );
   if (!duree) return false;
   const costs = Object.assign({}, obstacle.costs || {});
@@ -22148,7 +22074,7 @@ function validerPlacementCampPrototype() {
       type: item.type, kittyIndex: pending.kittyIndex,
       startTier: item.tier || 1, targetTier: currentQuote.targetTier,
       rank: currentQuote.rank, startTs: Date.now(),
-      duration: dureeEffectiveActionCamp(currentQuote.duration, [pending.kittyIndex]),
+      duration: dureeEffectiveActionCamp(currentQuote.duration, [pending.kittyIndex], "upgrade"),
       costs: Object.assign({}, currentQuote.costs), readyToClaim: false
     };
     campPrototypeUpgradeReposition = null;
@@ -22247,15 +22173,31 @@ function libelleRemboursementSuppressionCamp(remboursement) {
   return ressources.length > 0 ? ressources.join(" + ") : "0 resources";
 }
 
+function tauxRemboursementSuppressionCamp(typeId) {
+  const definition = incrementorLawApi.definition(typeId);
+  const tauxBase = definition && Number.isFinite(Number(definition.refundRate))
+    ? Number(definition.refundRate) : 0;
+  return perksV2Api
+    ? perksV2Api.demolitionRefundRatio(progressionPerksV2(), tauxBase)
+    : tauxBase;
+}
+
+function remboursementSuppressionCamp(item) {
+  if (!item || item.construit !== true) return {};
+  return incrementorLawApi.refundForPaidCosts(
+    item.type,
+    coutsPayesMaisonCamp(item),
+    { refundRate: tauxRemboursementSuppressionCamp(item.type) }
+  );
+}
+
 function executerSuppressionItemCampPrototype(uid) {
   const item = itemCampPrototype(uid);
   if (!campPrototypeModeEdition || !item || campPrototypeSelectionUid !== uid) return false;
   const type = typeCampPrototype(item.type);
   if (!type || !typeCampPrototypeModifiable(item.type)) return false;
   const label = type.label;
-  const remboursement = item.construit === true
-    ? incrementorLawApi.refundForPaidCosts(item.type, coutsPayesMaisonCamp(item))
-    : {};
+  const remboursement = remboursementSuppressionCamp(item);
   campPrototypeLayout = campPrototypeLayout.filter(function(candidate) {
     return candidate.uid !== item.uid;
   });
@@ -22269,7 +22211,9 @@ function executerSuppressionItemCampPrototype(uid) {
   sauvegarderCampPrototype();
   sauvegarder();
   quitterEditionCampPrototype(false);
-  definirMessageCampPrototype(label + " permanently removed from Base Camp. 50% of its actual paid cost was refunded.");
+  definirMessageCampPrototype(label + " permanently removed from Base Camp. "
+    + Math.round(tauxRemboursementSuppressionCamp(item.type) * 100)
+    + "% of its actual paid cost was refunded.");
   return true;
 }
 
@@ -22327,13 +22271,12 @@ function supprimerSelectionCampPrototype() {
     && (type.category === "building" || type.category === "house");
   if (construitSupprimable) {
     const uid = item.uid;
-    const remboursementAttendu = incrementorLawApi.refundForPaidCosts(
-      item.type,
-      coutsPayesMaisonCamp(item)
-    );
+    const remboursementAttendu = remboursementSuppressionCamp(item);
+    const pourcentageRemboursement = Math.round(tauxRemboursementSuppressionCamp(item.type) * 100);
     ouvrirConfirmationTravail(
       "Permanently delete " + type.label + "?",
-      "This deletion is permanent. 50% of the actual paid construction cost will be refunded: "
+      "This deletion is permanent. " + pourcentageRemboursement
+        + "% of the actual paid construction cost will be refunded: "
         + libelleRemboursementSuppressionCamp(remboursementAttendu) + ".",
       function() { executerSuppressionItemCampPrototype(uid); },
       "Delete permanently"
@@ -23697,7 +23640,8 @@ var _recruitTrackWidth = 0;
 
 function multiplicateurVitesseMiniJeuRecruit() {
   const difficultyMultiplier = 1 + (Math.max(1, _recruitDifficulty) - 1) * 0.1;
-  return difficultyMultiplier * multiplicateurVitesseAppealCamp(scoreAttractiviteCamp().total);
+  return difficultyMultiplier * multiplicateurVitesseAppealCamp(scoreAttractiviteCamp().total)
+    * multiplicateurRecruitPerksV2();
 }
 
 function choisirDialogueRecruit() {
@@ -24273,7 +24217,127 @@ mobileInputDiagnostic.configure({
 });
 initialiserCampPrototype();
 normaliserFormuleRecrutementCamp();
-synchroniserDeblocagesSpherePerks();
+if (globalThis.CatInc.devTools) {
+  globalThis.CatInc.devTools.configure({
+    getState: function() { return etat; },
+    save: sauvegarder,
+    captureCurrentRaw: function() {
+      sauvegarder();
+      return localStorage.getItem(SAVE_KEY);
+    },
+    createFreshRaw: function() {
+      return saveCore.serialiserEtat(stateCore.creerEtatInitial());
+    },
+    activateRaw: function(raw) {
+      const analysis = analyserSauvegardeBrute(raw);
+      if (!analysis.ok) throw new Error(analysis.erreur || "Invalid player save.");
+      sauvegardeVerrouillee = true;
+      localStorage.setItem(SAVE_KEY, raw);
+      location.reload();
+      return true;
+    },
+    preparePlayerExport: function() {
+      synchroniserEtatCampDepuisPrototype();
+      const serialized = saveCore.serialiserEtat(etat);
+      const analysis = analyserSauvegardeBrute(serialized);
+      if (!analysis.ok) return { ok: false, reason: analysis.erreur };
+      const normalized = saveCore.migrerDonneesSauvegarde(analysis.data, {
+        maintenant: Date.now(),
+        nomsKitties: NOMS_KITTIES,
+        jobIds: Object.keys(METIERS).concat(["shop-owner"]),
+        assignerVisageChaton: assignerVisageChaton,
+        normaliserVisageChaton: normaliserVisageChaton
+      });
+      const raw = saveCore.serialiserEtat(normalized);
+      const finalAnalysis = analyserSauvegardeBrute(raw);
+      return finalAnalysis.ok
+        ? { ok: true, raw: raw }
+        : { ok: false, reason: finalAnalysis.erreur };
+    },
+    downloadPlayerSave: function(raw) {
+      const date = new Date().toISOString().slice(0, 10);
+      const downloaded = telechargerSauvegardeBrute(raw, "cat-inc-support-save-" + date + ".txt");
+      if (downloaded) afficherNotification("Validated player save exported!");
+      return downloaded;
+    },
+    rerender: function() {
+      _tcKey = null;
+      jcDirty = true;
+      workStructureInitialisee = false;
+      rendu();
+      renduManagement();
+    },
+    markExplorationDirty: function() {
+      carteDirty = true;
+      exploTabDirty = true;
+      _zoneInfoKey = null;
+    },
+    trainingCenterStatus: function() {
+      return batimentFonctionnelCamp("trainingCenter").available
+        ? "The existing Training Center is functional."
+        : "Training Center physical placement/repair is still required through normal Camp gameplay.";
+    },
+    catEligibleForJob: function(kittyIndex) {
+      const kitty = etat.kittiesData[kittyIndex];
+      return Boolean(kitty && kitty.metier === null
+        && kittyEligiblePourAffectationOrdinaire(kittyIndex)
+        && !kittyIsUnavailableForNewAssignment(kittyIndex));
+    },
+    grantJob: function(input) {
+      const kittyIndex = Number(input.kittyIndex);
+      const jobId = String(input.jobId || "");
+      const kitty = etat.kittiesData[kittyIndex];
+      const metier = METIERS[jobId];
+      if (!batimentFonctionnelCamp("jobCenter").available) {
+        return { ok: false, reason: "The existing Job Center must be functional." };
+      }
+      if (!Number.isInteger(kittyIndex) || !kitty || kitty.metier !== null
+          || !kittyEligiblePourAffectationOrdinaire(kittyIndex)
+          || kittyIsUnavailableForNewAssignment(kittyIndex)) {
+        return { ok: false, reason: "Select an eligible, unassigned, unoccupied Cat." };
+      }
+      if (!metier || ["gang-leader", "camp-engineer"].includes(jobId)) {
+        return { ok: false, reason: "Select an available normal Job Center profession." };
+      }
+      if (metier.unlockItem && !etat.itemsAppris.includes(metier.unlockItem)) {
+        return { ok: false, reason: metier.nom + " is not yet available in the canonical Job Center." };
+      }
+      if (!explorateurPresent() && jobId !== "explorator") {
+        return { ok: false, reason: "The first canonical profession must be Explorator." };
+      }
+      if (metierDejaAttribue(jobId)) {
+        return { ok: false, reason: "That unique profession is already assigned." };
+      }
+      if (etat.formationEnCours || etat.formationTermineeEnAttente) {
+        return { ok: false, reason: "Finish the existing Job Center training first." };
+      }
+      etat.formationTermineeEnAttente = {
+        kittyIndex: kittyIndex,
+        metier: jobId,
+        finishedTs: Date.now()
+      };
+      const granted = validerFormation();
+      return granted
+        ? { ok: true, summary: "Granted " + metier.nom + " to " + kitty.nom + " through the canonical validation seam." }
+        : { ok: false, reason: "Canonical Job Center validation rejected the grant." };
+    },
+    markCampJobsReady: function() {
+      let count = 0;
+      function mark(job) {
+        if (!job || job.readyToClaim === true) return;
+        job.readyToClaim = true;
+        count += 1;
+      }
+      Object.keys(etat.camp && etat.camp.constructions || {}).forEach(function(uid) { mark(etat.camp.constructions[uid]); });
+      Object.keys(etat.camp && etat.camp.houseConstructions || {}).forEach(function(uid) { mark(etat.camp.houseConstructions[uid]); });
+      Object.keys(etat.camp && etat.camp.repairs || {}).forEach(function(id) { mark(etat.camp.repairs[id]); });
+      Object.keys(etat.camp && etat.camp.upgrades || {}).forEach(function(uid) { mark(etat.camp.upgrades[uid]); });
+      campPrototypeDemolitionsActives().forEach(mark);
+      if (count > 0) sauvegarderCampPrototype();
+      return count;
+    }
+  });
+}
 const resumeAbsence    = partieExistante ? appliquerProgressionHorsLigne() : null;
 const resumeAbsenceApresRechargement = recupererResumeAbsenceApresRechargement();
 resumeAbsenceRechargeEffectue = !!resumeAbsenceApresRechargement;

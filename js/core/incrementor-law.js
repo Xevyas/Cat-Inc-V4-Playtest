@@ -61,7 +61,10 @@
       return resultat;
     }, {});
     return Object.keys(coutsBase).reduce(function(resultat, resourceId) {
-      resultat[resourceId] = Math.max(1, arrondir(coutsBase[resourceId] * multiplicateur, config.rounding));
+      const montantCanonique = Number(coutsBase[resourceId]) || 0;
+      resultat[resourceId] = montantCanonique === 0
+        ? 0
+        : Math.max(1, arrondir(montantCanonique * multiplicateur, config.rounding));
       return resultat;
     }, {});
   }
@@ -87,12 +90,16 @@
     return Math.max(1, arrondir((Number(value) || 0) * Math.pow(facteur, rang - 1), rounding || "ceil"));
   }
 
-  function remboursement(typeId, paidCosts) {
+  function remboursement(typeId, paidCosts, options) {
     const config = definition(typeId);
     if (!config) return {};
     const couts = copierCouts(paidCosts);
+    const requestedRate = Number(options && options.refundRate);
+    const refundRate = Number.isFinite(requestedRate) && requestedRate >= 0 && requestedRate <= 1
+      ? requestedRate
+      : config.refundRate;
     return Object.keys(couts).reduce(function(resultat, resourceId) {
-      resultat[resourceId] = Math.floor(couts[resourceId] * config.refundRate);
+      resultat[resourceId] = Math.min(couts[resourceId], Math.floor(couts[resourceId] * refundRate));
       return resultat;
     }, {});
   }

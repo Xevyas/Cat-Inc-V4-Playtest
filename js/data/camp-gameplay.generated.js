@@ -61,6 +61,23 @@
           },
           "costGrowth": 1.7,
           "durationGrowth": 1.4
+        },
+        "3": {
+          "durationSeconds": 14400,
+          "costs": {
+            "cardboardPlanks": 100
+          },
+          "effects": {
+            "housingCapacity": 2,
+            "appeal": 3
+          },
+          "unlock": {
+            "kind": "perk-tier-unlock",
+            "targetTypeId": "cardboardBox",
+            "targetTier": 3
+          },
+          "maxInstancesAtTier": 1,
+          "visualFallbackTier": 2
         }
       },
       "simulation": {
@@ -392,7 +409,39 @@
         "housingCapacity": 1,
         "residentLevelBonusMultiplier": 1.05
       },
-      "upgradeTiers": {},
+      "upgradeTiers": {
+        "2": {
+          "durationSeconds": 3600,
+          "costs": {
+            "basicWoodPlanks": 8
+          },
+          "effects": {
+            "residentLevelBonusMultiplier": 1.05,
+            "housingCapacity": 1,
+            "appeal": 1
+          },
+          "costGrowth": 1.7,
+          "durationGrowth": 1.4
+        },
+        "3": {
+          "durationSeconds": 21600,
+          "costs": {
+            "basicWoodPlanks": 100
+          },
+          "effects": {
+            "housingCapacity": 2,
+            "appeal": 5,
+            "residentLevelBonusMultiplier": 1.15
+          },
+          "unlock": {
+            "kind": "perk-tier-unlock",
+            "targetTypeId": "woodCathouse",
+            "targetTier": 3
+          },
+          "maxInstancesAtTier": 1,
+          "visualFallbackTier": 2
+        }
+      },
       "simulation": {
         "ranks": 12
       },

@@ -17,6 +17,7 @@ const RESOURCE_INFO = {
     usage:   "Used inside that recipe slot (10 pieces per plank). It is never stored globally."
   },
   "inv-res-cardboard-plank": {
+    resourceId: "cardboardPlanks",
     nom:     "Cardboard Planks",
     tier:    "Tier 1 · Wood family (processed)",
     desc:    "Sturdy planks pressed from cardboard. The backbone of early construction.",
@@ -31,6 +32,7 @@ const RESOURCE_INFO = {
     usage:   "Used inside that recipe slot (10 logs per plank). It is never stored globally."
   },
   "inv-res-wood-plank": {
+    resourceId: "basicWoodPlanks",
     nom:     "Basic Wood Planks",
     tier:    "Tier 2 · Wood family (processed)",
     desc:    "Refined wooden planks, sanded and shaped. A real upgrade from cardboard.",
@@ -45,6 +47,7 @@ const RESOURCE_INFO = {
     usage:   "Used as the input for that recipe (10 Catnip per salad). It is never stored globally."
   },
   "inv-res-salads": {
+    resourceId: "salads",
     nom:     "Catnip Salad",
     tier:    "Tier 1 · Food family (processed)",
     desc:    "A balanced catnip salad. Even Bernardo eats his greens.",
@@ -59,6 +62,7 @@ const RESOURCE_INFO = {
     usage:   "Used as the input for that recipe (10 Anchovies per serving). It is never stored globally."
   },
   "inv-res-grilled-anchovy": {
+    resourceId: "grilledAnchovy",
     nom:     "Grilled Anchovy",
     tier:    "Tier 2 · Food family (processed)",
     desc:    "Golden, crispy, perfectly grilled. Worth every second of cooking.",
@@ -73,6 +77,7 @@ const RESOURCE_INFO = {
     usage:   "Used inside that recipe slot (10 pebbles per brick). It is never stored globally."
   },
   "inv-res-pebble-brick": {
+    resourceId: "pebbleBricks",
     nom:     "Pebble Bricks",
     tier:    "Tier 1 · Rock family (processed)",
     desc:    "Compact bricks made from compressed pebbles. Surprisingly solid.",
@@ -87,6 +92,7 @@ const RESOURCE_INFO = {
     usage:   "Used inside that recipe slot (10 rocks per brick). It is never stored globally."
   },
   "inv-res-rock-brick": {
+    resourceId: "rockBricks",
     nom:     "Rock Bricks",
     tier:    "Tier 2 · Rock family (processed)",
     desc:    "Solid bricks forged from dense rock. Built to last.",
@@ -94,6 +100,7 @@ const RESOURCE_INFO = {
     usage:   "Used in advanced construction."
   },
   "inv-res-human-leftovers": {
+    resourceId: "humanLeftovers",
     nom:     "Human Leftovers",
     tier:    null,
     desc:    "Bits and pieces left behind by humans. One human's trash is another cat's treasure.",
@@ -101,6 +108,7 @@ const RESOURCE_INFO = {
     usage:   "Feed to a Cat in the Gang tab to give them +1 XP."
   },
   "inv-res-human-workers-food": {
+    resourceId: "humanWorkersFood",
     nom:     "Workers Food",
     tier:    null,
     desc:    "Packed lunches left behind by the construction workers. Still good.",
@@ -108,6 +116,7 @@ const RESOURCE_INFO = {
     usage:   "Feed to a Cat in the Gang tab to give them +15 XP."
   },
   "inv-res-canned-cat-food": {
+    resourceId: "cannedCatFood",
     nom:     "Canned Cat Food",
     tier:    "Training Materials",
     desc:    "A sealed can of premium cat food found in the supermarket. This is the good stuff.",
@@ -347,299 +356,11 @@ const METIERS = {
   farmer:        { id: "farmer",      nom: "Farmer",       emoji: "🌾", famille: "food",    familleNom: "Food resource family",    duree: 3600 },
   chef:          { id: "chef",        nom: "Chef",         emoji: "🍳", famille: "catchen",    familleNom: "Catchen resource family",    duree: 3600 },
   explorator:    { id: "explorator",  nom: "Explorator",   emoji: "🧭", famille: "exploration", familleNom: "Exploration family",         duree: 3600 },
-  builder:       { id: "builder",     nom: "Wood Builder", emoji: "🏗️", famille: "houses",     familleNom: "Wood Houses",                duree: 3600, unlockItem: "constructionPlan", bonusLabel: "housing capacity" },
+  builder:       { id: "builder",     nom: "Builder",      emoji: "🏗️", famille: null,         familleNom: "Camp construction",          duree: 3600, unlockItem: "constructionPlan" },
   miner:         { id: "miner",       nom: "Miner",        emoji: "⛏️", famille: "rock",        familleNom: "Rock resource family",       duree: 3600, unlockItem: "stoneGuide" },
   stonemason:    { id: "stonemason",  nom: "Stonemason",   emoji: "🪨", famille: "pawsonry",    familleNom: "Pawsonry resource family",   duree: 3600, unlockItem: "stoneGuide" },
   "gang-leader": { id: "gang-leader", nom: "Gang Leader",  emoji: "👑", famille: null,          familleNom: "Work speed",                 duree: 0 },
   "camp-engineer": { id: "camp-engineer", nom: "Camp Engineer", emoji: "🔧", famille: "engineering", familleNom: "Passive camp systems", duree: 3600, engineer: true }
-};
-
-// ── Sphere grids (one per job, UX-only for now) ─────────────────────────────
-function simpleResourceSphereGrid(prefix, resourceLabel) {
-  const recipeFamilyLabel = resourceLabel === 'Rock' ? 'Rocks' : resourceLabel;
-  return {
-    spheres: [
-      { id: prefix + '-prod-2', x: 90, y: 290, r: 36, couleur: '#ffbf00',
-        nom: 'PROD BOOST II',
-        desc: 'Increases production of "' + resourceLabel + '" resources by an additional 25% (total 50%). This adds to the worker\'s level bonus.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: prefix + '-prod', x: 195, y: 290, r: 36, couleur: '#ffbf00',
-        nom: 'PROD BOOST I',
-        desc: 'Increases production of "' + resourceLabel + '" resources by 25%. This adds to the worker\'s level bonus.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: prefix + '-c', x: 290, y: 290, r: 36, couleur: '#1e5f70',
-        nom: 'PROD SPEED',
-        desc: 'The manager increases the production speed of the "' + resourceLabel + '" family. The base manager bonus is already active when the job is learned.',
-        etat: 'learned' },
-      { id: prefix + '-speed', x: 385, y: 290, r: 36, couleur: '#85d46e',
-        nom: 'SPEED BOOST I',
-        desc: 'Increases the speed boost granted to "' + resourceLabel + '" resources by 25%. This adds to the manager\'s level bonus.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: prefix + '-speed-2', x: 490, y: 290, r: 36, couleur: '#85d46e',
-        nom: 'SPEED BOOST II',
-        desc: 'Increases the speed boost granted to "' + resourceLabel + '" resources by an additional 25% (total 50%). This adds to the manager\'s level bonus.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: prefix + '-slot', x: 290, y: 460, r: 36, couleur: '#3aaecf',
-        nom: 'NEW SLOT',
-        desc: 'Adds one recipe slot to the ' + recipeFamilyLabel + ' family.',
-        etat: 'unlocked', cout: { cannedCatFood: 3 } },
-    ],
-    connections: [
-      [prefix + '-prod', prefix + '-prod-2'],
-      [prefix + '-prod', prefix + '-c'],
-      [prefix + '-c', prefix + '-speed'],
-      [prefix + '-speed', prefix + '-speed-2'],
-      [prefix + '-c', prefix + '-slot'],
-    ]
-  };
-}
-
-function complexResourceSphereGrid(prefix, resourceLabel, rawLabel) {
-  return {
-    spheres: [
-      { id: prefix + '-cost', x: 195, y: 290, r: 36, couleur: '#ffbf00',
-        nom: 'REDUCED COST I',
-        desc: 'Changes the Gathering target for the matching Processing recipe from 10 gather resources to 8.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: prefix + '-cost-2', x: 90, y: 290, r: 36, couleur: '#ffbf00',
-        nom: 'REDUCED COST II',
-        desc: 'Changes the Gathering target for the matching Processing recipe from 10 gather resources to 6.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: prefix + '-c', x: 290, y: 290, r: 36, couleur: '#1e5f70',
-        nom: 'PROD SPEED',
-        desc: 'The manager increases the production speed of the ' + resourceLabel + ' family. The base manager bonus is already active when the job is learned.',
-        etat: 'learned' },
-      { id: prefix + '-speed', x: 385, y: 290, r: 36, couleur: '#85d46e',
-        nom: 'SPEED BOOST I',
-        desc: 'Increases the speed boost granted to the resources by 25%.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: prefix + '-speed-2', x: 490, y: 290, r: 36, couleur: '#85d46e',
-        nom: 'SPEED BOOST II',
-        desc: 'Increases the speed boost granted to the resources by an additional 25% (total 50%).',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: prefix + '-slot', x: 290, y: 460, r: 36, couleur: '#3aaecf',
-        nom: 'NEW SLOT',
-        desc: 'Adds one recipe slot to the ' + rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1) + ' family.',
-        etat: 'unlocked', cout: { cannedCatFood: 3 } },
-    ],
-    connections: [
-      [prefix + '-cost', prefix + '-c'],
-      [prefix + '-cost', prefix + '-cost-2'],
-      [prefix + '-c', prefix + '-speed'],
-      [prefix + '-speed', prefix + '-speed-2'],
-      [prefix + '-c', prefix + '-slot'],
-    ]
-  };
-}
-
-function builderSphereGrid() {
-  return {
-    spheres: [
-      { id: 'builder-c', x: 290, y: 300, r: 36, couleur: '#1e5f70',
-        nom: 'HOUSING',
-        desc: 'Houses add Cat capacity. An assigned Wood Builder increases that capacity, but Houses never reduce visitor arrival time.',
-        etat: 'learned' },
-      // Blue branch: automatic construction
-      { id: 'builder-auto', x: 290, y: 190, r: 30, couleur: '#3aaecf',
-        nom: 'AUTO BUILD',
-        desc: 'Automatically builds Wood Houses when the next house costs less than 50% of the available Planks. Adds an On/Off toggle in the Houses tab.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'builder-perfect-1', x: 290, y: 110, r: 28, couleur: '#3aaecf',
-        nom: 'PERFECT BUILD I',
-        desc: 'Auto Build no longer consumes materials when it builds Cardboard Boxes.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'builder-perfect-2', x: 290, y: 35, r: 28, couleur: '#3aaecf',
-        nom: 'PERFECT BUILD II',
-        desc: 'Auto Build no longer consumes materials when it builds Wood Cathouses.',
-        etat: 'locked', cout: { cannedCatFood: 3 } },
-      // Yellow branch: cost scaling and synergies
-      { id: 'builder-cost', x: 200, y: 300, r: 30, couleur: '#ffbf00',
-        nom: 'EXPO REDUCED I',
-        desc: 'Changes the Wood Houses cost exponent from 1.7 to 1.6.',
-        etat: 'unlocked', cout: { cannedCatFood: 2 } },
-      { id: 'builder-expo-2', x: 115, y: 300, r: 28, couleur: '#ffbf00',
-        nom: 'EXPO REDUCED II',
-        desc: 'Changes the Wood Houses cost exponent from 1.6 to 1.55.',
-        etat: 'locked', cout: { cannedCatFood: 3 } },
-      { id: 'builder-expo-3', x: 35, y: 300, r: 28, couleur: '#ffbf00',
-        nom: 'EXPO REDUCED III',
-        desc: 'Changes the Wood Houses cost exponent from 1.55 to 1.5.',
-        etat: 'locked', cout: { cannedCatFood: 4 } },
-      { id: 'builder-cost-half-1', x: 150, y: 205, r: 28, couleur: '#ffbf00',
-        nom: 'COST REDUCED I',
-        desc: 'Halves the cost of Wood Houses, rounded up.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'builder-cost-half-2', x: 90, y: 125, r: 28, couleur: '#ffbf00',
-        nom: 'COST REDUCED II',
-        desc: 'Halves the cost of Wood Houses again, rounded up.',
-        etat: 'locked', cout: { cannedCatFood: 3 } },
-      { id: 'builder-box-boost', x: 155, y: 405, r: 28, couleur: '#ffbf00',
-        nom: 'BOX GROUPS',
-        desc: 'Every 3 connected Cardboard Boxes add 1 extra Cat capacity.',
-        etat: 'locked', cout: { cannedCatFood: 5 } },
-      // Green branch: housing capacity
-      { id: 'builder-speed', x: 380, y: 300, r: 30, couleur: '#85d46e',
-        nom: 'CAPACITY I',
-        desc: "Increases the Wood Builder's housing-capacity bonus by 25%.",
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'builder-speed-2', x: 465, y: 300, r: 28, couleur: '#85d46e',
-        nom: 'CAPACITY II',
-        desc: "Increases the Wood Builder's housing-capacity bonus by another 25%.",
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'builder-speed-3', x: 545, y: 300, r: 28, couleur: '#85d46e',
-        nom: 'CAPACITY III',
-        desc: "Increases the Wood Builder's housing-capacity bonus by another 25%.",
-        etat: 'locked', cout: { cannedCatFood: 4 } },
-      { id: 'builder-box-speed', x: 420, y: 405, r: 28, couleur: '#85d46e',
-        nom: 'ROOMY BOXES',
-        desc: 'Each connected Cardboard Box adds 1 extra Cat capacity.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'builder-wood-speed', x: 500, y: 490, r: 28, couleur: '#85d46e',
-        nom: 'ROOMY HOUSES',
-        desc: 'Each Wood Cathouse adds 2 extra Cat capacity.',
-        etat: 'locked', cout: { cannedCatFood: 4 } },
-    ],
-    connections: [
-      ['builder-c', 'builder-auto'], ['builder-auto', 'builder-perfect-1'], ['builder-perfect-1', 'builder-perfect-2'],
-      ['builder-c', 'builder-cost'], ['builder-cost', 'builder-expo-2'], ['builder-expo-2', 'builder-expo-3'],
-      ['builder-cost', 'builder-cost-half-1'], ['builder-cost-half-1', 'builder-cost-half-2'],
-      ['builder-cost', 'builder-box-boost'],
-      ['builder-c', 'builder-speed'], ['builder-speed', 'builder-speed-2'], ['builder-speed-2', 'builder-speed-3'],
-      ['builder-speed', 'builder-box-speed'], ['builder-box-speed', 'builder-wood-speed'],
-    ]
-  };
-}
-
-const SPHERE_GRIDS = {
-  'gang-leader': {
-    spheres: [
-      // ── Center ──────────────────────────────────────────────────────────────
-      { id: 'gl-c',     x: 290, y: 290, r: 36, couleur: '#1e5f70',
-        nom: 'GLOBAL SPEED',
-        desc: "Bernardo's leadership bonus applies to all workers' production speed.",
-        etat: 'learned' },
-      // Blue branch: Food Management and Daily Quests
-      { id: 'gl-qol',   x: 290, y: 185, r: 30, couleur: '#3aaecf',
-        nom: 'QOL EXP',
-        desc: 'Bernardo can now manage Food for the gang. Unlocks quality-of-life options in Food Management.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'gl-daily-1', x: 290, y: 110, r: 28, couleur: '#3aaecf',
-        nom: 'DAILY BOOST I',
-        desc: 'Increases the Daily Quests reward from 1 Canned Cat Food to 2.',
-        etat: 'locked', cout: { cannedCatFood: 3 } },
-      { id: 'gl-daily-2', x: 290, y: 35, r: 28, couleur: '#3aaecf',
-        nom: 'DAILY BOOST II',
-        desc: 'Increases the Daily Quests reward from 2 Canned Cat Food to 3.',
-        etat: 'locked', cout: { cannedCatFood: 5 } },
-      // Yellow branch: recruitment
-      { id: 'gl-rec',   x: 185, y: 290, r: 30, couleur: '#d4a820',
-        nom: 'CAMP APPEAL I',
-        desc: "Legacy save-compatible perk. It does not modify the current Camp Appeal score.",
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'gl-rec-2', x: 75, y: 290, r: 30, couleur: '#d4a820',
-        nom: 'CAMP APPEAL II',
-        desc: "Legacy save-compatible perk. It does not modify the current Camp Appeal score.",
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      // Green branch: Manual Focus
-      { id: 'gl-mini',  x: 400, y: 290, r: 30, couleur: '#85d46e',
-        nom: 'MANUAL BOOST',
-        desc: 'Increases the Manual Focus production multiplier from ×2 to ×3.',
-        etat: 'unlocked', cout: { cannedCatFood: 2 } },
-      { id: 'gl-manual-power', x: 500, y: 205, r: 28, couleur: '#85d46e',
-        nom: 'BOOST POWER',
-        desc: 'Increases the Manual Focus production multiplier from ×3 to ×4.',
-        etat: 'locked', cout: { cannedCatFood: 4 } },
-      { id: 'gl-manual-capacity', x: 510, y: 290, r: 28, couleur: '#85d46e',
-        nom: 'CAPACITY',
-        desc: 'Increases Manual Focus capacity from 30 seconds to 60 seconds.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'gl-manual-click', x: 500, y: 375, r: 28, couleur: '#85d46e',
-        nom: 'CLICK POWER',
-        desc: 'Increases Manual Focus charge from 0.8 seconds to 2 seconds per click.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-    ],
-    connections: [
-      ['gl-c', 'gl-qol'], ['gl-c', 'gl-rec'], ['gl-c', 'gl-mini'],
-      ['gl-qol', 'gl-daily-1'], ['gl-daily-1', 'gl-daily-2'],
-      ['gl-rec', 'gl-rec-2'],
-      ['gl-mini', 'gl-manual-power'], ['gl-mini', 'gl-manual-capacity'], ['gl-mini', 'gl-manual-click'],
-    ]
-  },
-
-  'explorator': {
-    spheres: [
-      // ── Center ──────────────────────────────────────────────────────────────
-      { id: 'ex-c',     x: 290, y: 290, r: 36, couleur: '#1e5f70',
-        nom: 'EXPLO HALVES',
-        desc: 'Explorers halve the duration of all scouting, zone, and campaign missions they join.',
-        etat: 'learned' },
-      // ── Mid nodes ───────────────────────────────────────────────────────────
-      { id: 'ex-qol',   x: 290, y: 145, r: 30, couleur: '#3aaecf',
-        nom: 'QOL EXPLO',
-        desc: 'Unlocks Auto Assign for Exploration missions.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'ex-food',  x: 195, y: 290, r: 30, couleur: '#d4a820',
-        nom: 'CAT FOOD I',
-        desc: 'Increases the chance of receiving Canned Cat Food from scouting rewards by 50% if the Explorator is included.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'ex-food-2', x: 85, y: 290, r: 30, couleur: '#d4a820',
-        nom: 'CAT FOOD II',
-        desc: 'Increases the chance of receiving Canned Cat Food from scouting rewards by an additional 50% (double the base chance) if the Explorator is included.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'ex-food-lucky', x: 145, y: 390, r: 28, couleur: '#d4a820',
-        nom: 'LUCKY FOOD I',
-        desc: 'Gives a 15% chance not to consume the daily scouting Canned Cat Food stock when Canned Cat Food is found.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'ex-food-lucky-2', x: 65, y: 480, r: 28, couleur: '#d4a820',
-        nom: 'LUCKY FOOD II',
-        desc: 'Adds another 15% chance not to consume the daily scouting Canned Cat Food stock when Canned Cat Food is found (30% total).',
-        etat: 'locked', cout: { cannedCatFood: 3 } },
-      { id: 'ex-luck',  x: 395, y: 290, r: 30, couleur: '#4db84d',
-        nom: 'CHANCE DOUBLE I',
-        desc: 'Gives a 20% chance to double a scouting reward if the Explorator is included.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'ex-luck-2', x: 500, y: 290, r: 30, couleur: '#4db84d',
-        nom: 'CHANCE DOUBLE II',
-        desc: 'Gives an additional 20% chance to double a scouting reward (40% total) if the Explorator is included.',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      { id: 'ex-triple', x: 435, y: 390, r: 28, couleur: '#4db84d',
-        nom: 'CHANCE TRIPLE I',
-        desc: 'When CHANCE DOUBLE applies, gives a 15% chance to triple the scouting reward instead.',
-        etat: 'locked', cout: { cannedCatFood: 3 } },
-      { id: 'ex-triple-2', x: 515, y: 480, r: 28, couleur: '#4db84d',
-        nom: 'CHANCE TRIPLE II',
-        desc: 'When CHANCE DOUBLE applies, adds another 15% chance to triple the scouting reward instead (30% total).',
-        etat: 'locked', cout: { cannedCatFood: 4 } },
-      { id: 'ex-power', x: 290, y: 425, r: 30, couleur: '#b85dd4',
-        nom: 'EXPLO POWER I',
-        desc: 'Increases Exploration Power by 25%.',
-        etat: 'unlocked', cout: { cannedCatFood: 1 } },
-      { id: 'ex-power-2', x: 290, y: 530, r: 30, couleur: '#b85dd4',
-        nom: 'EXPLO POWER II',
-        desc: 'Increases Exploration Power by an additional 25% (total 50%).',
-        etat: 'locked', cout: { cannedCatFood: 2 } },
-      // ── Blue branch (top) ───────────────────────────────────────────────────
-      // ── Yellow branch (left) ────────────────────────────────────────────────
-      // ── Green branch (right) ────────────────────────────────────────────────
-      // ── Violet branch (bottom) ──────────────────────────────────────────────
-    ],
-    connections: [
-      ['ex-c', 'ex-qol'], ['ex-c', 'ex-food'], ['ex-c', 'ex-luck'], ['ex-c', 'ex-power'],
-      ['ex-food', 'ex-food-2'],
-      ['ex-food', 'ex-food-lucky'], ['ex-food-lucky', 'ex-food-lucky-2'],
-      ['ex-luck', 'ex-luck-2'],
-      ['ex-luck', 'ex-triple'], ['ex-triple', 'ex-triple-2'],
-      ['ex-power', 'ex-power-2'],
-    ]
-  },
-
-  'lumberjack': simpleResourceSphereGrid('lj', 'Wood'),
-  'farmer': simpleResourceSphereGrid('farmer', 'Food'),
-  'miner': simpleResourceSphereGrid('miner', 'Rock'),
-  'carpenter': complexResourceSphereGrid('carpenter', 'planks', 'wood'),
-  'chef': complexResourceSphereGrid('chef', 'prepared food', 'food'),
-  'stonemason': complexResourceSphereGrid('stonemason', 'bricks', 'rocks'),
-  'builder': builderSphereGrid()
 };
 
 const DESC_NEIGHBOR    = "Looks like our humans but nextdoor. They probably throw useful items as well.";
@@ -739,7 +460,6 @@ const CAT_FACES_ALEATOIRES = Object.freeze(LIVE_ALTERNATIVE_CAT_FACES.length
     RESOURCE_INFO: RESOURCE_INFO,
     ITEMS: ITEMS,
     METIERS: METIERS,
-    SPHERE_GRIDS: SPHERE_GRIDS,
     ZONES_CARTE: ZONES_CARTE,
     REGIONS: REGIONS,
     TIERS_KITTIES: TIERS_KITTIES,

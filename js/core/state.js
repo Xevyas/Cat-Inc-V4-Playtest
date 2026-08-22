@@ -80,7 +80,7 @@ function creerEtatInitial() {
   humanLeftovers:       0,
   humanWorkersFood:     0,
   cannedCatFood:        0,
-  spherePerks:          {},
+  perksV2:              { version: 2, learned: [] },
   workBoostFinTs:       0,
   manualFocusOnboardingCompletedTs: 0,
 
@@ -101,7 +101,6 @@ function creerEtatInitial() {
   avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
   volumeMusique:           0,
-  autoBuildWoodHouses:       false,
   hideCampCatIcons:          false,
   // Resources hidden from the compact top rail. An empty list means every
   // unlocked resource is displayed by default.
@@ -177,7 +176,7 @@ function creerEtatInitial() {
   resultatsCampaigns:  {},     // { campaignId: { success, kittyIndices, recompenses[] } }
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
   butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, tripled, rewards } }
-  managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null, houses: null },
+  managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null },
   managersDebloques:   false,
   managerRoleTutorialShown: false,
   objectifsComplis: [],

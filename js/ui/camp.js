@@ -55,7 +55,7 @@
     revision: Number(runtimeQueryValue("campAssetRevision"))
   } : null;
 
-  function runtimeRevision(typeId, preferredTier) {
+  function runtimeRevision(typeId, preferredTier, allowedFallbackTier) {
     const family = RUNTIME_MANIFEST.assets && RUNTIME_MANIFEST.assets[typeId];
     if (!family || !family.tiers) return null;
     let tierNumber = Number.isInteger(preferredTier) && preferredTier > 0
@@ -71,23 +71,31 @@
       tierNumber = runtimeTestSelection.tier;
       revisionNumber = runtimeTestSelection.revision;
     }
+    const reviewRevisionRequested = revisionNumber != null;
     let tier = family.tiers[String(tierNumber)];
-    if ((!tier || !Number.isInteger(tier.liveRevision)) && revisionNumber == null) {
+    const exactLiveRevision = tier && Number.isInteger(tier.liveRevision)
+      && tier.revisions && tier.revisions[String(tier.liveRevision)];
+    if ((!exactLiveRevision || exactLiveRevision.status !== "live") && !reviewRevisionRequested) {
       const fallbackTiers = Object.keys(family.tiers).map(Number).filter(function(candidate) {
         const candidateTier = family.tiers[String(candidate)];
+        const candidateRevision = candidateTier && Number.isInteger(candidateTier.liveRevision)
+          && candidateTier.revisions && candidateTier.revisions[String(candidateTier.liveRevision)];
         return Number.isInteger(candidate)
           && candidate <= tierNumber
+          && (!Number.isInteger(allowedFallbackTier) || candidate === allowedFallbackTier)
           && candidateTier
-          && Number.isInteger(candidateTier.liveRevision);
+          && candidateRevision && candidateRevision.status === "live";
       }).sort(function(a, b) { return b - a; });
       tierNumber = fallbackTiers.length > 0 ? fallbackTiers[0] : 1;
       tier = family.tiers[String(tierNumber)];
     }
     if (!tier) return null;
     if (revisionNumber == null) revisionNumber = tier.liveRevision;
-    return revisionNumber == null
-      ? null
-      : tier.revisions[String(revisionNumber)] || null;
+    if (revisionNumber == null) return null;
+    const revision = tier.revisions[String(revisionNumber)] || null;
+    return revision && (reviewRevisionRequested || revision.status === "live")
+      ? revision
+      : null;
   }
 
   function runtimeSpritePath(path, revision) {
@@ -323,7 +331,13 @@
   }
 
   function runtimeVisualForTier(typeId, functionalTier) {
-    const revision = runtimeRevision(typeId, functionalTier);
+    const definition = GAMEPLAY_MANIFEST.definitions && GAMEPLAY_MANIFEST.definitions[typeId];
+    const tierConfig = definition && definition.upgradeTiers
+      && definition.upgradeTiers[String(functionalTier)];
+    const allowedFallbackTier = tierConfig && Number.isInteger(tierConfig.visualFallbackTier)
+      ? tierConfig.visualFallbackTier
+      : null;
+    const revision = runtimeRevision(typeId, functionalTier, allowedFallbackTier);
     if (!revision || !revision.sprites) return null;
     const sprites = {};
     Object.keys(revision.sprites).forEach(function(direction) {

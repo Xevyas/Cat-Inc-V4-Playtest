@@ -14139,3 +14139,28 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   .market-stall-shop-grid { gap:6px; }
   .market-stall-shop-slot { min-height:118px; padding:8px; font-size:.82rem; overflow-wrap:anywhere; }
 }
+/* DEV-only QA Toolkit: its root is injected only after the hard DEV boundary passes. */
+#dev-tools-toggle{position:fixed;right:10px;bottom:10px;z-index:12000;border:1px solid #e2b84b;border-radius:999px;background:#33280d;color:#ffe39a;font:700 12px/1 sans-serif;padding:9px 11px;box-shadow:0 2px 10px #0006}
+#dev-tools-panel{position:fixed;z-index:12001;right:0;top:0;width:min(390px,94vw);height:100vh;overflow:auto;box-sizing:border-box;padding:16px;background:#191a1d;color:#f4f1e8;border-left:1px solid #4c4f56;box-shadow:-8px 0 28px #0008;font:14px/1.35 system-ui,sans-serif}
+#dev-tools-panel[aria-hidden="true"]{display:none}
+#dev-tools-panel header{display:flex;align-items:center;justify-content:space-between;font-size:18px}
+#dev-tools-panel header button{font-size:24px;padding:0 8px}
+#dev-tools-panel section{margin:14px 0;padding:12px;border:1px solid #3b3e44;border-radius:8px;background:#23252a}
+#dev-tools-panel h3{margin:0 0 9px;font-size:14px;color:#ffe39a}
+#dev-tools-panel label{display:block;margin:7px 0;color:#cfd2d8}
+#dev-tools-panel select,#dev-tools-panel input,#dev-tools-panel button{box-sizing:border-box;max-width:100%;margin:3px;padding:7px;border:1px solid #555b66;border-radius:5px;background:#30343b;color:#fff}
+#dev-tools-panel select,#dev-tools-panel input{width:100%}
+#dev-tools-panel button{cursor:pointer}
+#dev-tools-panel button:hover,#dev-tools-panel button:focus-visible{border-color:#ffe39a;outline:none}
+#dev-tools-panel .dev-row{display:flex;flex-wrap:wrap}
+#dev-tools-panel .dev-danger{border-color:#a85b5b}
+#dev-tools-panel .dev-state{color:#8ee3a0;font-weight:700}
+#dev-tools-panel output{display:block;position:sticky;bottom:0;padding:10px;background:#111;color:#fff;border:1px solid #555;border-radius:6px}
+#dev-support-mode-badge{position:fixed;z-index:12000;right:70px;bottom:10px;padding:8px 12px;border:1px solid #ff9f43;border-radius:999px;background:#4a2400;color:#ffd2a0;font:800 12px/1 system-ui,sans-serif;box-shadow:0 2px 10px #0006}
+#dev-support-mode-badge[hidden]{display:none}
+#dev-support-section .dev-support-warning{padding:9px;border-left:3px solid #ff9f43;background:#3c2918}
+#dev-support-section output{position:static;margin-top:8px;min-height:18px}
+#dev-support-section .dev-support-summary{margin:10px 0;padding:9px;border:1px solid #59606b;border-radius:6px;background:#191b1f}
+#dev-support-section dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 10px;margin:8px 0 0}
+#dev-support-section dt{color:#bfc4cc}
+#dev-support-section dd{margin:0;overflow-wrap:anywhere}

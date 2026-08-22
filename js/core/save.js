@@ -4,12 +4,18 @@
   const CatInc = root.CatInc = root.CatInc || {};
   const stateCore = CatInc.state;
   if (!stateCore) throw new Error("CatInc.state must be loaded before CatInc.save.");
+  const perksV2Api = CatInc.perksV2 || Object.freeze({
+    normalizeProgress: function() { return { version: 2, learned: [] }; }
+  });
 
   // V4 environments must never read or overwrite V3 browser data. The
   // Playtest deployment will use its own namespace when publication begins.
   const STORAGE_NAMESPACE = "catInc.v4.playtest";
   const SAVE_KEY = STORAGE_NAMESPACE + ".save";
   const SAVE_RECOVERY_KEY = STORAGE_NAMESPACE + ".saveRecovery";
+  function isRealDevEnvironment() {
+    return STORAGE_NAMESPACE.endsWith(".v4.dev");
+  }
   // Version 3 starts the redesigned Camp progression. Camp jobs now remain
   // pending at 100% until the player validates them, so older saves are reset.
   const SAVE_VERSION = 3;
@@ -232,9 +238,18 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workRecipeSlots", "spherePerks", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp"];
+  const champsObjets = ["workRecipeSlots", "perksV2", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
+  }
+  if (d.perksV2 !== undefined) {
+    if (d.perksV2.version !== 2 || !Array.isArray(d.perksV2.learned)) return "Invalid Perks V2 progress.";
+    if (Object.keys(d.perksV2).some(function(key) { return key !== "version" && key !== "learned"; })) {
+      return "Invalid Perks V2 progress fields.";
+    }
+    if (d.perksV2.learned.some(function(perkId) { return typeof perkId !== "string"; })) {
+      return "Invalid Perks V2 learned IDs.";
+    }
   }
 
   const champsObjetsOuNuls = ["learningEnCours", "formationEnCours", "formationIngenieurEnCours", "formationTermineeEnAttente", "formationIngenieurTermineeEnAttente", "exploZoneEnCours"];
@@ -301,7 +316,7 @@ function validerStructureSauvegarde(d) {
   }
 
   const champsBooleens = [
-    "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
+    "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
     "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
     "managersDebloques", "tutorialCompletionPopupSeen", "managerRoleTutorialShown", "hideCampCatIcons"
@@ -896,7 +911,7 @@ function analyserSauvegardeBrute(raw) {
     humanLeftovers:         etat.humanLeftovers,
     humanWorkersFood:       etat.humanWorkersFood,
     cannedCatFood:          etat.cannedCatFood,
-    spherePerks:            etat.spherePerks,
+    perksV2:                perksV2Api.normalizeProgress(etat.perksV2),
     workBoostFinTs:         etat.workBoostFinTs,
     manualFocusOnboardingCompletedTs: etat.manualFocusOnboardingCompletedTs,
     birdPremierSpawnTs:      etat.birdPremierSpawnTs,
@@ -916,7 +931,6 @@ function analyserSauvegardeBrute(raw) {
     avertirSurplusNourriture: etat.avertirSurplusNourriture,
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
-    autoBuildWoodHouses:       etat.autoBuildWoodHouses,
     hideCampCatIcons:          etat.hideCampCatIcons,
     resourceBarHidden:       etat.resourceBarHidden,
     scieriBloquee:              etat.scieriBloquee,
@@ -1033,7 +1047,7 @@ function analyserSauvegardeBrute(raw) {
   etat.humanLeftovers         = d.humanLeftovers         || 0;
   etat.humanWorkersFood       = d.humanWorkersFood       || 0;
   etat.cannedCatFood          = d.cannedCatFood          || 0;
-  etat.spherePerks            = d.spherePerks            || {};
+  etat.perksV2                = perksV2Api.normalizeProgress(d.perksV2);
   etat.workBoostFinTs         = d.workBoostFinTs         || 0;
   etat.manualFocusOnboardingCompletedTs = Number.isFinite(d.manualFocusOnboardingCompletedTs)
     ? d.manualFocusOnboardingCompletedTs
@@ -1075,7 +1089,6 @@ function analyserSauvegardeBrute(raw) {
   etat.avertirSurplusNourriture = d.avertirSurplusNourriture !== false;
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0;
-  etat.autoBuildWoodHouses       = d.autoBuildWoodHouses || false;
   etat.hideCampCatIcons          = d.hideCampCatIcons === true;
   etat.resourceBarHidden = Array.isArray(d.resourceBarHidden)
     ? Array.from(new Set(d.resourceBarHidden.filter(function(id) { return RESOURCE_BAR_KEYS.includes(id); })))
@@ -1241,7 +1254,10 @@ function analyserSauvegardeBrute(raw) {
       return rewards;
     }, {});
   });
-  etat.managers            = d.managers            || { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null };
+  etat.managers            = { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null };
+  Object.keys(etat.managers).forEach(function(familyId) {
+    if (d.managers && d.managers[familyId] !== undefined) etat.managers[familyId] = d.managers[familyId];
+  });
   etat.managersDebloques   = d.managersDebloques   || false;
   etat.managerRoleTutorialShown = d.managerRoleTutorialShown === true;
   etat.formationTermineeEnAttente = d.formationTermineeEnAttente || null;
@@ -1253,7 +1269,6 @@ function analyserSauvegardeBrute(raw) {
   if (etat.managers.catchen  === undefined) etat.managers.catchen  = null;
   if (etat.managers.rock     === undefined) etat.managers.rock     = null;
   if (etat.managers.pawsonry === undefined) etat.managers.pawsonry = null;
-  if (etat.managers.houses   === undefined) etat.managers.houses   = null;
   etat.objectifsComplis = d.objectifsComplis || [];
   etat.tutorialCompletionPopupSeen = d.tutorialCompletionPopupSeen === true;
   etat.logs            = d.logs            || [];
@@ -1418,6 +1433,7 @@ function analyserSauvegardeBrute(raw) {
 
   CatInc.save = Object.freeze({
     STORAGE_NAMESPACE: STORAGE_NAMESPACE,
+    isRealDevEnvironment: isRealDevEnvironment,
     SAVE_KEY: SAVE_KEY,
     SAVE_RECOVERY_KEY: SAVE_RECOVERY_KEY,
     SAVE_VERSION: SAVE_VERSION,
