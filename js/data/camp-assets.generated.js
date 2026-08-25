@@ -1227,7 +1227,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 3,
           "revisions": {
             "1": {
               "assetId": "junk-flower-bush",
@@ -1237,7 +1237,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
@@ -1285,6 +1285,120 @@
                 "minCatLevel": 2,
                 "requiredCats": 2
               }
+            },
+            "2": {
+              "assetId": "junk-flower-bush",
+              "runtimeId": "junkFlowerBush",
+              "name": "Flowering Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1800,
+                "minCatLevel": 2,
+                "requiredCats": 2
+              }
+            },
+            "3": {
+              "assetId": "junk-flower-bush",
+              "runtimeId": "junkFlowerBush",
+              "name": "Flowering Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1800,
+                "minCatLevel": 2,
+                "requiredCats": 2
+              }
             }
           }
         }
@@ -1298,7 +1412,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 5,
           "revisions": {
             "1": {
               "assetId": "junk-green-bush",
@@ -1308,7 +1422,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
@@ -1349,6 +1463,234 @@
                   "top": 21,
                   "right": 491,
                   "bottom": 235
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "2": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 78,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 78,
+                  "top": 21,
+                  "right": 256,
+                  "bottom": 492
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 21,
+                  "top": 0,
+                  "right": 492,
+                  "bottom": 178
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 0,
+                  "top": 20,
+                  "right": 178,
+                  "bottom": 491
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "3": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 62,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 62,
+                  "top": 21,
+                  "right": 256,
+                  "bottom": 492
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 21,
+                  "top": 0,
+                  "right": 492,
+                  "bottom": 194
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 0,
+                  "top": 20,
+                  "right": 194,
+                  "bottom": 491
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "4": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 72,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 36,
+                  "top": 41,
+                  "right": 220,
+                  "bottom": 512
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 72,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 36,
+                  "top": 41,
+                  "right": 220,
+                  "bottom": 512
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "5": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
                 }
               },
               "gameplay": {
@@ -2765,7 +3107,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 2,
           "revisions": {
             "1": {
               "assetId": "junk-stone-block-pile",
@@ -2775,7 +3117,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 2,
               "sprites": {
@@ -2820,8 +3162,65 @@
               },
               "gameplay": {
                 "clearDurationSeconds": 4800,
-                "minCatLevel": 5,
-                "requiredCats": 2
+                "minCatLevel": 8,
+                "requiredCats": 3
+              }
+            },
+            "2": {
+              "assetId": "junk-stone-block-pile",
+              "runtimeId": "junkStoneBlockPile",
+              "name": "Pile of Stone Blocks",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 4800,
+                "minCatLevel": 8,
+                "requiredCats": 3
               }
             }
           }
@@ -3480,6 +3879,72 @@
         }
       }
     },
+    "snowyGreenBush": {
+      "assetId": "snowy-green-bush",
+      "runtimeId": "snowyGreenBush",
+      "name": "Snowy Green Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "snowy-green-bush",
+              "runtimeId": "snowyGreenBush",
+              "name": "Snowy Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "junkTallGrass": {
       "assetId": "junk-tall-grass",
       "runtimeId": "junkTallGrass",
@@ -3488,7 +3953,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 7,
           "revisions": {
             "1": {
               "assetId": "junk-tall-grass",
@@ -3498,7 +3963,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 1,
               "height": 1,
               "sprites": {
@@ -3660,6 +4125,120 @@
                 "minCatLevel": 0,
                 "requiredCats": 1
               }
+            },
+            "4": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            },
+            "7": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 7,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
             }
           }
         }
@@ -3673,7 +4252,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 2,
           "revisions": {
             "1": {
               "assetId": "junk-thorn-bush",
@@ -3683,7 +4262,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
@@ -3728,8 +4307,65 @@
               },
               "gameplay": {
                 "clearDurationSeconds": 2400,
-                "minCatLevel": 4,
-                "requiredCats": 1
+                "minCatLevel": 5,
+                "requiredCats": 2
+              }
+            },
+            "2": {
+              "assetId": "junk-thorn-bush",
+              "runtimeId": "junkThornBush",
+              "name": "Thorny Bramble Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 2400,
+                "minCatLevel": 5,
+                "requiredCats": 2
               }
             }
           }
@@ -5913,7 +6549,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 3,
           "revisions": {
             "1": {
               "assetId": "junk-flower-bush",
@@ -5923,7 +6559,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
@@ -5964,6 +6600,120 @@
                   "top": 31,
                   "right": 491,
                   "bottom": 224
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1800,
+                "minCatLevel": 2,
+                "requiredCats": 2
+              }
+            },
+            "2": {
+              "assetId": "junk-flower-bush",
+              "runtimeId": "junkFlowerBush",
+              "name": "Flowering Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-flower-bush/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 40,
+                  "right": 491,
+                  "bottom": 217
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1800,
+                "minCatLevel": 2,
+                "requiredCats": 2
+              }
+            },
+            "3": {
+              "assetId": "junk-flower-bush",
+              "runtimeId": "junkFlowerBush",
+              "name": "Flowering Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/revision-3/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 219
                 }
               },
               "gameplay": {
@@ -6050,7 +6800,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 5,
           "revisions": {
             "1": {
               "assetId": "junk-green-bush",
@@ -6060,7 +6810,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
@@ -6101,6 +6851,234 @@
                   "top": 21,
                   "right": 491,
                   "bottom": 235
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "2": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 78,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 78,
+                  "top": 21,
+                  "right": 256,
+                  "bottom": 492
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 21,
+                  "top": 0,
+                  "right": 492,
+                  "bottom": 178
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 0,
+                  "top": 20,
+                  "right": 178,
+                  "bottom": 491
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "3": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 3,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-3/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 62,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 62,
+                  "top": 21,
+                  "right": 256,
+                  "bottom": 492
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 21,
+                  "top": 0,
+                  "right": 492,
+                  "bottom": 194
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 0,
+                  "top": 20,
+                  "right": 194,
+                  "bottom": 491
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "4": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-green-bush/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 72,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 36,
+                  "top": 41,
+                  "right": 220,
+                  "bottom": 512
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 72,
+                  "right": 491,
+                  "bottom": 256
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 512,
+                  "left": 36,
+                  "top": 41,
+                  "right": 220,
+                  "bottom": 512
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 1200,
+                "minCatLevel": 0,
+                "requiredCats": 2
+              }
+            },
+            "5": {
+              "assetId": "junk-green-bush",
+              "runtimeId": "junkGreenBush",
+              "name": "Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-green-bush/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 31,
+                  "right": 491,
+                  "bottom": 225
                 }
               },
               "gameplay": {
@@ -7517,7 +8495,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 2,
           "revisions": {
             "1": {
               "assetId": "junk-stone-block-pile",
@@ -7527,7 +8505,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 2,
               "sprites": {
@@ -7572,8 +8550,65 @@
               },
               "gameplay": {
                 "clearDurationSeconds": 4800,
-                "minCatLevel": 5,
-                "requiredCats": 2
+                "minCatLevel": 8,
+                "requiredCats": 3
+              }
+            },
+            "2": {
+              "assetId": "junk-stone-block-pile",
+              "runtimeId": "junkStoneBlockPile",
+              "name": "Pile of Stone Blocks",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-stone-block-pile/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 38,
+                  "right": 491,
+                  "bottom": 475
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 4800,
+                "minCatLevel": 8,
+                "requiredCats": 3
               }
             }
           }
@@ -8232,6 +9267,72 @@
         }
       }
     },
+    "snowyGreenBush": {
+      "assetId": "snowy-green-bush",
+      "runtimeId": "snowyGreenBush",
+      "name": "Snowy Green Bush",
+      "category": "junk",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "snowy-green-bush",
+              "runtimeId": "snowyGreenBush",
+              "name": "Snowy Green Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/snowy-green-bush/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 30,
+                  "right": 491,
+                  "bottom": 227
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "junkTallGrass": {
       "assetId": "junk-tall-grass",
       "runtimeId": "junkTallGrass",
@@ -8240,7 +9341,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 7,
           "revisions": {
             "1": {
               "assetId": "junk-tall-grass",
@@ -8250,7 +9351,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 1,
               "height": 1,
               "sprites": {
@@ -8412,6 +9513,120 @@
                 "minCatLevel": 0,
                 "requiredCats": 1
               }
+            },
+            "4": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/junk-tall-grass/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 10,
+                  "top": 14,
+                  "right": 246,
+                  "bottom": 241
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
+            },
+            "7": {
+              "assetId": "junk-tall-grass",
+              "runtimeId": "junkTallGrass",
+              "name": "Tall Green Grass",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 7,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-tall-grass/tier-1/revision-7/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                },
+                "right": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                },
+                "up": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                },
+                "left": {
+                  "canvasWidth": 256,
+                  "canvasHeight": 256,
+                  "left": 22,
+                  "top": 10,
+                  "right": 235,
+                  "bottom": 246
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 360,
+                "minCatLevel": 0,
+                "requiredCats": 1
+              }
             }
           }
         }
@@ -8425,7 +9640,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 2,
           "revisions": {
             "1": {
               "assetId": "junk-thorn-bush",
@@ -8435,7 +9650,7 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 2,
               "height": 1,
               "sprites": {
@@ -8480,8 +9695,65 @@
               },
               "gameplay": {
                 "clearDurationSeconds": 2400,
-                "minCatLevel": 4,
-                "requiredCats": 1
+                "minCatLevel": 5,
+                "requiredCats": 2
+              }
+            },
+            "2": {
+              "assetId": "junk-thorn-bush",
+              "runtimeId": "junkThornBush",
+              "name": "Thorny Bramble Bush",
+              "category": "junk",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/junk-thorn-bush/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                },
+                "right": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                },
+                "up": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                },
+                "left": {
+                  "canvasWidth": 512,
+                  "canvasHeight": 256,
+                  "left": 20,
+                  "top": 26,
+                  "right": 491,
+                  "bottom": 230
+                }
+              },
+              "gameplay": {
+                "clearDurationSeconds": 2400,
+                "minCatLevel": 5,
+                "requiredCats": 2
               }
             }
           }

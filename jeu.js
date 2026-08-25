@@ -15829,6 +15829,9 @@ function appliquerCadreTerrainCampPrototype(element, x, y, width, height) {
 
 function assetCampPrototypePourRotation(type, rotation, functionalTier) {
   if (!type || !type.asset) return "";
+  if (type.category === "junk" || type.canonicalOrientation === "down") {
+    return type.assets && type.assets.down ? type.assets.down : type.asset;
+  }
   const rotationNormalisee = campPrototypeApi.normaliserRotation(rotation);
   const direction = {
     0: "down",
@@ -20145,17 +20148,27 @@ function actualiserCommandesCampPrototype() {
       || Boolean(constructionBatimentCampPourItem(selection.uid));
   }
   const tourner = document.getElementById("camp-prototype-rotate");
+  let rotationDisponible = false;
   if (tourner) {
     const typeSelectionne = typeCampPrototype(
       campPrototypePlacementEnCours
         ? campPrototypePlacementEnCours.type
         : (selection ? selection.type : campPrototypeTypeAPlacer)
     );
-    tourner.disabled = !(typeSelectionne
+    rotationDisponible = Boolean(typeSelectionne
       && typeSelectionne.rotatable
       && typeCampPrototypeModifiable(typeSelectionne.id));
+    tourner.hidden = !rotationDisponible;
+    tourner.disabled = !rotationDisponible;
   }
   const actionsPlacement = document.getElementById("camp-prototype-placement-actions");
+  if (actionsPlacement) {
+    actionsPlacement.setAttribute(
+      "aria-label",
+      rotationDisponible ? "Rotate, confirm, cancel or remove placement"
+        : "Confirm, cancel or remove placement"
+    );
+  }
   const confirmerPlacement = document.getElementById("camp-prototype-placement-confirm");
   const annulerPlacement = document.getElementById("camp-prototype-placement-cancel");
   const placementActif = Boolean(

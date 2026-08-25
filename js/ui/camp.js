@@ -305,6 +305,7 @@
         : (fallback.requiredCats || 1),
       gameplay: revision.gameplay || fallback.gameplay,
       stickerSlot: normaliserStickerSlot(revision.stickerSlot || fallback.stickerSlot),
+      canonicalOrientation: family && family.category === "junk" ? "down" : "",
       runtimeTier: revision.tier,
       runtimeRevision: revision.revision,
       runtimeStatus: revision.status
@@ -791,7 +792,8 @@
           }),
           color: "dev-visual",
           category: "dev-library",
-          rotatable: Object.keys(sprites).length > 1,
+          rotatable: family.category !== "junk" && Object.keys(sprites).length > 1,
+          canonicalOrientation: family.category === "junk" ? "down" : "",
           blocksMovement: true,
           visualOnly: true,
           asset: sprites.down || "",
@@ -875,7 +877,34 @@
       asset: runtimeSpritePath(revision.sprites && revision.sprites.down, revision) || fallback.asset
     });
   }
-  const OBSTACLE_TYPES = Object.freeze([
+  const LEGACY_TERRAIN_RUNTIME_IDS = Object.freeze(new Set([
+    "junkGreenBush", "junkThornBush", "junkFlowerBush", "junkPebblePile",
+    "junkStoneBlockPile", "junkTallGrass"
+  ]));
+  function liveStudioJunkObstacleTypes() {
+    return Object.keys(RUNTIME_MANIFEST.assets || {}).sort().reduce(function(items, runtimeId) {
+      const family = RUNTIME_MANIFEST.assets[runtimeId];
+      if (!family || family.category !== "junk" || LEGACY_TERRAIN_RUNTIME_IDS.has(runtimeId)) return items;
+      const tier = family.tiers && family.tiers["1"];
+      const revision = tier && Number.isInteger(tier.liveRevision)
+        ? tier.revisions && tier.revisions[String(tier.liveRevision)]
+        : null;
+      if (!revision || revision.status !== "live" || !revision.sprites || !revision.sprites.down) return items;
+      const gameplay = revision.gameplay || {};
+      items.push(Object.freeze({
+        id: family.assetId || runtimeId,
+        label: revision.name || family.name || family.assetId || runtimeId,
+        width: revision.width,
+        height: revision.height,
+        minCatLevel: Number.isInteger(gameplay.minCatLevel) ? gameplay.minCatLevel : 0,
+        durationSeconds: Number.isInteger(gameplay.clearDurationSeconds) ? gameplay.clearDurationSeconds : 10 * 60,
+        requiredCats: Number.isInteger(gameplay.requiredCats) ? gameplay.requiredCats : 1,
+        asset: runtimeSpritePath(revision.sprites.down, revision)
+      }));
+      return items;
+    }, []);
+  }
+  const LEGACY_OBSTACLE_TYPES = Object.freeze([
     runtimeObstacle("junkGreenBush", {
       id: "greenBush",
       label: "Green bush",
@@ -931,6 +960,7 @@
       asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     })
   ]);
+  const OBSTACLE_TYPES = Object.freeze(LEGACY_OBSTACLE_TYPES.concat(liveStudioJunkObstacleTypes()));
   const HOME_OBSTACLE_BLUEPRINT = Object.freeze(ACTIVE_CAMP_TEMPLATE.terrainPlacements
     .filter(function(placement) { return placement.zoneId === INITIAL_ZONE_ID; })
     .map(function(placement) {
