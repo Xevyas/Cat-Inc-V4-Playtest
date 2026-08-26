@@ -321,15 +321,40 @@
       : fail("No compatible active Camp action is waiting.");
   });
 
+  register("time.readyPerkLearning", function() {
+    const ready = runtime.markPerkLearningReady ? runtime.markPerkLearningReady() : false;
+    return ready ? pass("Marked the active Perk learning timer ready through the DEV time seam.")
+      : fail("No active Perk learning timer is waiting.");
+  });
+
   register("job.grant", function(input) {
     return runtime.grantJob ? runtime.grantJob(input) : fail("Canonical Job Center grant seam is unavailable.");
   });
 
   register("scenario.perks", function() {
+    if (!supportSessionActive()) {
+      return fail("Start a Fresh Support Save session before preparing the Perks QA fixture.");
+    }
+    const building = runtime.prepareCanonicalCampBuilding
+      ? runtime.prepareCanonicalCampBuilding({ typeId: "jobCenter", tier: 2 })
+      : fail("Canonical Camp building fixture seam is unavailable.");
+    if (!building || !building.ok) return building || fail("Canonical Job Center Tier 2 preparation failed.");
+    const cat = runtime.preparePerksCat ? runtime.preparePerksCat({ jobId: "explorator" })
+      : fail("Perks Cat fixture seam is unavailable.");
+    if (!cat || !cat.ok) return cat || fail("Perks Cat preparation failed.");
     const grant = execute("resource.add", { resourceId: "cannedCatFood", amount: 100 }, { composed: true });
     if (!grant.ok) return grant;
-    const availability = runtime.trainingCenterStatus ? runtime.trainingCenterStatus() : "Training Center placement remains unchanged.";
-    return pass("Perks QA: granted 100 Canned Cat Food; canonical granted roots remain derived and ready. " + availability + " No perk was auto-learned.");
+    const availability = runtime.advancedTrainingStatus ? runtime.advancedTrainingStatus() : "Job Center Tier 2 upgrade remains required.";
+    if (!runtime.advancedTrainingAvailable || !runtime.advancedTrainingAvailable()) {
+      return fail("The prepared canonical Job Center Tier 2 is not functional through the runtime authority.");
+    }
+    return pass("Perks QA: prepared canonical " + building.details.typeId + " Tier " + building.details.tier
+      + " at a dynamic valid placement (" + building.details.dimensions.width + " × " + building.details.dimensions.height
+      + "), prepared " + cat.details.name + " as " + cat.details.jobId
+      + ", and granted 100 Canned Cat Food. " + availability + " No perk was auto-learned.", {
+        building: building.details,
+        cat: cat.details
+      });
   });
 
   register("scenario.houseT3", function() {
@@ -463,7 +488,7 @@
       + '<section><h3>Resources</h3><select id="dev-resource-id" aria-label="Resource">' + optionsHtml(resourceCatalog()) + '</select><input id="dev-resource-amount" type="number" min="0" step="1" value="100" aria-label="Resource amount"><div class="dev-row"><button data-dev-resource-add="10">+10</button><button data-dev-resource-add="100">+100</button><button id="dev-resource-set">Set amount</button></div></section>'
       + '<section><h3>Cats / Jobs / Perks</h3><label>Job tree<select id="dev-perk-job">' + optionsHtml(jobs) + '</select></label><label>Perk<select id="dev-perk-id"></select></label><button data-dev-perk="perk.learn">Learn selected perk DEV</button><button data-dev-perk="perk.learnClosure">Learn + prerequisite closure</button><button id="dev-perk-reset" class="dev-danger">Reset purchased perks for tree</button><div class="dev-row"><button data-dev-tier-perk="builderReinforcedCardboardBox">Grant Reinforced Cardboard Box</button><button data-dev-tier-perk="builderMasterWoodCathouse">Grant Master Wood Cathouse</button></div><label>Cat<select id="dev-cat-id"></select></label><label>Normal job<select id="dev-job-id">' + optionsHtml(normalJobs) + '</select></label><button id="dev-job-grant">Grant available job DEV</button></section>'
       + '<section><h3>World</h3><select id="dev-zone-id" aria-label="Current-region zone"></select><button id="dev-zone-reveal">Reveal / mark explored</button><button data-dev-action="world.revealAll">Reveal all zones in current region</button></section>'
-      + '<section><h3>Camp / Time</h3><button data-dev-action="camp.ready">Make active Camp actions ready to claim</button><p>Construction, repair, Tier Upgrade, and compatible junk clearing. Results are never auto-claimed. Other timer families are deferred from 001A.</p></section>'
+      + '<section><h3>Camp / Time</h3><button data-dev-action="camp.ready">Make active Camp actions ready to claim</button><button data-dev-action="time.readyPerkLearning">Make active Perk learning ready</button><p>Construction, repair, Tier Upgrade, compatible junk clearing, and Perk learning use their existing DEV completion seams. Results are never fabricated.</p></section>'
       + '<section id="dev-support-section"></section>'
       + '<output id="dev-tools-summary" aria-live="polite"></output></aside>';
     root.document.body.appendChild(wrap);

@@ -104,6 +104,16 @@
     return String(path) + separator + "camp-runtime=" + revision.tier + "." + revision.revision;
   }
 
+  function runtimeReviewRevision(typeId, preferredTier) {
+    const family = RUNTIME_MANIFEST.reviewAssets
+      && RUNTIME_MANIFEST.reviewAssets[typeId];
+    const tier = family && family.tiers
+      && family.tiers[String(preferredTier || 1)];
+    if (!tier || !Number.isInteger(tier.liveRevision)) return null;
+    const revision = tier.revisions && tier.revisions[String(tier.liveRevision)];
+    return revision && revision.status === "live" ? revision : null;
+  }
+
   function normaliserStickerSlot(value) {
     if (!value || typeof value !== "object") return null;
     if (value.enabled === false) return null;
@@ -312,6 +322,24 @@
     });
   }
 
+  function runtimePathType(typeId, fallback) {
+    const revision = runtimeReviewRevision(typeId, 1);
+    if (!revision || !revision.buildingJoin) return Object.freeze(fallback);
+    return Object.freeze({
+      ...fallback,
+      label: revision.name || fallback.label,
+      roadMaterial: typeId,
+      buildingJoin: Object.freeze({
+        ...revision.buildingJoin,
+        merged: Object.freeze({...revision.buildingJoin.merged})
+      }),
+      asset: runtimeSpritePath(
+        revision.sprites && revision.sprites.down,
+        revision
+      ) || fallback.asset
+    });
+  }
+
   function gameplayItem(typeId, fallback) {
     const definition = GAMEPLAY_MANIFEST.definitions && GAMEPLAY_MANIFEST.definitions[typeId];
     if (!definition) return fallback;
@@ -417,13 +445,7 @@
         approachCells: Object.freeze([
           Object.freeze({ x: 0, y: 1 })
         ]),
-        minimumReachableCells: 1,
-        visualConnector: Object.freeze({
-          material: "inherit",
-          anchor: 0.5,
-          width: 0.32,
-          length: 0.34
-        })
+        minimumReachableCells: 1
       })
     ])
   });
@@ -438,16 +460,7 @@
           Object.freeze({ x: 0, y: 2 }),
           Object.freeze({ x: 1, y: 2 })
         ]),
-        minimumReachableCells: 2,
-        visualConnector: Object.freeze({
-          material: "inherit",
-          width: 0.32,
-          length: 0.68,
-          mergeContiguous: true,
-          mergedWidth: 1.82,
-          mergedInnerWidth: 0.62,
-          mergedLength: 0.8
-        })
+        minimumReachableCells: 2
       })
     ])
   });
@@ -485,7 +498,6 @@
     ])
   });
   const PAWSONRY_ACCESS = singleEntranceAccess(2, 2);
-  const TRAINING_CENTER_ACCESS = singleEntranceAccess(3, 4);
   const OPERATIONS_TABLE_ACCESS = singleEntranceAccess(2, 1);
   const LABORATORY_ACCESS = singleEntranceAccess(3, 1);
   const STORAGE_ACCESS = singleEntranceAccess(1, 1);
@@ -581,24 +593,6 @@
       blocksMovement: true,
       access: PAWSONRY_ACCESS,
       asset: "img/Buildings/Camp%20Runtime/pawsonry/tier-1/revision-4/down.png?v=0.0001"
-    }),
-    trainingCenter: runtimeItem("trainingCenter", {
-      id: "trainingCenter",
-      label: "Training Center",
-      width: 3,
-      height: 4,
-      color: "training",
-      category: "building",
-      rotatable: true,
-      blocksMovement: true,
-      access: TRAINING_CENTER_ACCESS,
-      asset: "img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/down.png?v=0.0001",
-      assets: Object.freeze({
-        down: "img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/down.png?v=0.0001",
-        right: "img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/right.png?v=0.0001",
-        up: "img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/up.png?v=0.0001",
-        left: "img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/left.png?v=0.0001"
-      })
     }),
     operationsTable: gameplayItem("operationsTable", gameplayRuntimeItem("operationsTable", {
       id: "operationsTable",
@@ -739,7 +733,7 @@
       minCatLevel: 0,
       durationSeconds: 10 * 60
     }),
-    road: Object.freeze({
+    road: runtimePathType("basicTrail", {
       id: "road",
       label: "Basic Trail",
       width: 1,
@@ -1359,6 +1353,54 @@
     return { valide: true, raison: "" };
   }
 
+  // Deterministic fixture/search seam built on the same placement and access
+  // authorities as player placement. It never mutates the supplied layout.
+  function trouverPlacementFonctionnel(layout, typeId, tier, terrain, options) {
+    const type = ITEM_TYPES[typeId];
+    const targetTier = Number(tier);
+    const config = options && typeof options === "object" ? options : {};
+    if (!type || !Number.isInteger(targetTier) || targetTier < 1) return null;
+    const elements = Array.isArray(layout) ? layout : [];
+    const uid = typeof config.uid === "string" && config.uid
+      ? config.uid : "dev-canonical-" + typeId + "-t" + targetTier;
+    if (elements.some(function(item) { return item && item.uid === uid; })) return null;
+    const rotations = type.rotatable ? [0, 90, 180, 270] : [0];
+    const before = evaluerConnexionsLayout(elements, terrain);
+    const activeUids = Object.keys(before.byItem || {}).filter(function(itemUid) {
+      return before.byItem[itemUid] && before.byItem[itemUid].active;
+    });
+    for (let rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 1) {
+      const rotation = rotations[rotationIndex];
+      for (let y = 0; y < GRID_HEIGHT; y += 1) {
+        for (let x = 0; x < GRID_WIDTH; x += 1) {
+          const placement = testerPlacement(
+            elements, typeId, x, y, null, rotation, terrain, targetTier
+          );
+          if (!placement.valide) continue;
+          const candidate = {
+            uid: uid, type: typeId, x: x, y: y,
+            tier: targetTier, construit: true
+          };
+          if (type.rotatable) candidate.rotation = rotation;
+          const evaluation = evaluerConnexionsLayout(elements.concat([candidate]), terrain);
+          if (!(evaluation.byItem[uid] && evaluation.byItem[uid].active)) continue;
+          if (!activeUids.every(function(itemUid) {
+            return evaluation.byItem[itemUid] && evaluation.byItem[itemUid].active;
+          })) continue;
+          return Object.freeze({
+            item: Object.freeze(candidate),
+            dimensions: Object.freeze(dimensionsType(type, rotation, targetTier)),
+            occupiedCells: Object.freeze(cellulesOccupeesItem(candidate).map(function(cell) {
+              return Object.freeze({x: cell.x, y: cell.y});
+            })),
+            access: campConnectivity.resoudreAccesType(type, targetTier)
+          });
+        }
+      }
+    }
+    return null;
+  }
+
   function normaliserLayout(value, terrain) {
     if (!Array.isArray(value)) return [];
     const layout = [];
@@ -1449,55 +1491,94 @@
     const portsCalcules = campConnectivity.portsItem(item, type);
     const rectangle = rectangleItem(item);
     if (!rectangle) return [];
-    const portsParId = new Map(access.ports.map(function(port) {
-      return [port.id || "entrance", port];
-    }));
-    const raccords = [];
+    const cellulesCandidates = [];
     portsCalcules.forEach(function(portCalcule) {
-      const port = portsParId.get(portCalcule.id);
-      const visuel = port && port.visualConnector;
-      if (!visuel) return;
-      const cellulesRaccordees = portCalcule.cells.map(function(cellule) {
+      portCalcule.cells.forEach(function(cellule) {
         const routeType = routesParCellule.get(cleCellule(cellule.x, cellule.y));
-        if (!routeType) return null;
+        const visuel = routeType && routeType.buildingJoin;
+        if (!routeType || !visuel) return;
         const direction = cellule.side || directionAccesItem(cellule, item);
         const axeVertical = direction === "north" || direction === "south";
         const ancrageAutomatique = axeVertical
           ? (cellule.x - rectangle.x + 0.5) / rectangle.width
           : (cellule.y - rectangle.y + 0.5) / rectangle.height;
-        return {
+        cellulesCandidates.push({
+          portId: portCalcule.id,
           cell: { x: cellule.x, y: cellule.y },
           direction: direction,
-          material: visuel.material === "inherit"
-            ? (routeType.roadMaterial || routeType.id)
-            : visuel.material,
+          material: routeType.roadMaterial || routeType.id,
+          sprite: routeType.asset || "",
+          visual: visuel,
+          sourceCellCount: portCalcule.cells.length,
           automaticAnchor: ancrageAutomatique
-        };
-      }).filter(Boolean);
-      const directions = new Set(cellulesRaccordees.map(function(raccord) {
-        return raccord.direction;
-      }));
-      const materials = new Set(cellulesRaccordees.map(function(raccord) {
-        return raccord.material;
-      }));
-      const fusionner = visuel.mergeContiguous === true
-        && cellulesRaccordees.length > 1
-        && cellulesRaccordees.length === portCalcule.cells.length
-        && directions.size === 1
-        && materials.size === 1;
-      if (fusionner) {
-        const premier = cellulesRaccordees[0];
+      });
+      });
+    });
+    const candidatesUniques = new Map();
+    cellulesCandidates.forEach(function(candidate) {
+      const key = [
+        candidate.direction, candidate.material,
+        candidate.cell.x, candidate.cell.y
+      ].join(":");
+      const existant = candidatesUniques.get(key);
+      if (!existant) {
+        candidatesUniques.set(key, candidate);
+        return;
+      }
+      existant.sourceCellCount = Math.max(
+        existant.sourceCellCount,
+        candidate.sourceCellCount
+      );
+    });
+    const groupesParVisuel = new Map();
+    candidatesUniques.forEach(function(candidate) {
+      const key = JSON.stringify([
+        candidate.direction, candidate.material, candidate.sprite
+      ]);
+      if (!groupesParVisuel.has(key)) groupesParVisuel.set(key, []);
+      groupesParVisuel.get(key).push(candidate);
+    });
+    const groupesContigus = [];
+    groupesParVisuel.forEach(function(candidates) {
+      const axeVertical = candidates[0].direction === "north"
+        || candidates[0].direction === "south";
+      candidates.sort(function(a, b) {
+        return axeVertical
+          ? a.cell.x - b.cell.x || a.cell.y - b.cell.y
+          : a.cell.y - b.cell.y || a.cell.x - b.cell.x;
+      });
+      let groupe = [];
+      candidates.forEach(function(candidate) {
+        const precedente = groupe[groupe.length - 1];
+        const adjacent = precedente && (axeVertical
+          ? candidate.cell.y === precedente.cell.y
+            && candidate.cell.x === precedente.cell.x + 1
+          : candidate.cell.x === precedente.cell.x
+            && candidate.cell.y === precedente.cell.y + 1);
+        if (precedente && !adjacent) {
+          groupesContigus.push(groupe);
+          groupe = [];
+        }
+        groupe.push(candidate);
+      });
+      if (groupe.length) groupesContigus.push(groupe);
+    });
+    const raccords = [];
+    groupesContigus.forEach(function(cellulesRaccordees) {
+      const premier = cellulesRaccordees[0];
+      const visuel = premier.visual;
+      if (cellulesRaccordees.length > 1 && visuel.merged) {
         const axeVertical = premier.direction === "north"
           || premier.direction === "south";
-        const largeurCellules = Number(visuel.mergedWidth)
-          || cellulesRaccordees.length * 0.82;
+        const largeurCellules = Math.min(
+          Number(visuel.maxWidth),
+          cellulesRaccordees.length - 2 * Number(visuel.merged.outerInset)
+        );
         const largeurInterieureCellules = Math.min(
           largeurCellules,
-          Number(visuel.mergedInnerWidth) || 0.62
+          Number(visuel.merged.innerWidth)
         );
-        const longueurCellules = Number(visuel.mergedLength)
-          || Number(visuel.length)
-          || 0.34;
+        const longueurCellules = Number(visuel.merged.length);
         const tailleAxeTransversal = axeVertical
           ? rectangle.width
           : rectangle.height;
@@ -1509,11 +1590,12 @@
         }, 0) / cellulesRaccordees.length;
         const referenceTextureCellules = Number(visuel.textureScaleCells) || 1.394;
         raccords.push({
-          portId: portCalcule.id,
+          portId: premier.portId,
           cell: premier.cell,
           cells: cellulesRaccordees.map(function(raccord) { return raccord.cell; }),
           direction: premier.direction,
           material: premier.material,
+          sprite: premier.sprite,
           shape: "merged-cone",
           anchor: Math.max(0, Math.min(1, ancrage)),
           width: Math.max(0.02, Math.min(
@@ -1536,29 +1618,27 @@
         return;
       }
       cellulesRaccordees.forEach(function(raccordCellule) {
+        const visuelCellule = raccordCellule.visual;
         const direction = raccordCellule.direction;
         const axeVertical = direction === "north" || direction === "south";
-        const ancrageConfigure = Number(visuel.anchor);
-        const largeurCellules = Number(visuel.width) || 0.32;
-        const longueurCellules = Number(visuel.length) || 0.34;
+        const largeurCellules = Number(visuelCellule.width);
+        const longueurCellules = raccordCellule.sourceCellCount > 1
+          ? Number(visuelCellule.multiCellLength)
+          : Number(visuelCellule.length);
         const tailleAxeTransversal = axeVertical
           ? rectangle.width
           : rectangle.height;
         const tailleAxeLongitudinal = axeVertical
           ? rectangle.height
           : rectangle.width;
-        const referenceTextureCellules = Number(visuel.textureScaleCells) || 1.394;
+        const referenceTextureCellules = Number(visuelCellule.textureScaleCells);
         raccords.push({
-          portId: portCalcule.id,
+          portId: raccordCellule.portId,
           cell: raccordCellule.cell,
           direction: direction,
           material: raccordCellule.material,
-          anchor: Math.max(0, Math.min(
-            1,
-            Number.isFinite(ancrageConfigure)
-              ? ancrageConfigure
-              : raccordCellule.automaticAnchor
-          )),
+          sprite: raccordCellule.sprite,
+          anchor: Math.max(0, Math.min(1, raccordCellule.automaticAnchor)),
           width: Math.max(0.02, Math.min(
             1,
             largeurCellules / tailleAxeTransversal
@@ -1841,6 +1921,7 @@
     rectangleItem: rectangleItem,
     rectanglesSeChevauchent: rectanglesSeChevauchent,
     testerPlacement: testerPlacement,
+    trouverPlacementFonctionnel: trouverPlacementFonctionnel,
     normaliserLayout: normaliserLayout,
     evaluerConnexionsLayout: evaluerConnexionsLayout,
     accesExterieurDisponible: accesExterieurDisponible,

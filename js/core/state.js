@@ -81,6 +81,7 @@ function creerEtatInitial() {
   humanWorkersFood:     0,
   cannedCatFood:        0,
   perksV2:              { version: 2, learned: [] },
+  perkLearningEnCours:  null,   // { perkId, kittyIndex, jobId, startTs, duree, costs } in ms
   workBoostFinTs:       0,
   manualFocusOnboardingCompletedTs: 0,
 
@@ -142,8 +143,6 @@ function creerEtatInitial() {
   itemsEtudies:        [],
   jobCenterDebloque:        false,
   jobCenterConstruit:       false,
-  trainingCenterDebloque:   false,
-  trainingCenterConstruit:  false,
   laboratoryDebloque:       false,
   laboratoryConstruit:      false,
   engineerRankUpgradesDebloques: false,
@@ -180,7 +179,6 @@ function creerEtatInitial() {
   managersDebloques:   false,
   managerRoleTutorialShown: false,
   objectifsComplis: [],
-  tutorialCompletionPopupSeen: false,
   logs:          [],
   storiesVues:  [],
   releaseNotesSeenVersion: "",

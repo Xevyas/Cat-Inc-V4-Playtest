@@ -180,7 +180,7 @@
     },
     {
       "id": "firstBox",
-      "text": "We’ll run out of room quickly. I can see another structure farther into the garden that could be useful. Let’s clear a path to it first. We can deal with the rest of the junk later."
+      "text": "We’ll run out of room quickly. I can see another structure farther into the garden that could be useful. Let’s clear a path to it first. We can deal with the rest of the junk later.\nI can also boost workers on camp construction now."
     },
     {
       "id": "firstGroundReward",
@@ -1788,7 +1788,7 @@
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernardPresetHappy",
-          "html": "Probably not, but training together is a good idea. We should build a Training Center."
+          "html": "Probably not, but training together is a good idea. We should upgrade the Job Center."
         },
         {
           "classes": [],
@@ -1837,7 +1837,7 @@
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernard",
-          "html": "Training Center first. Scarves and falling exercises can wait."
+          "html": "Job Center upgrade first. Scarves and falling exercises can wait."
         }
       ],
       "asset": {

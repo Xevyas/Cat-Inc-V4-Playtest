@@ -72,6 +72,220 @@ function effetGameplayCampPourTier(typeId, tier, effectId, fallback) {
   return Number.isFinite(valeur) ? valeur : fallback;
 }
 
+// Presentation metadata stays keyed by effect, while all gameplay values remain
+// authoritative in camp-gameplay.generated.js. The direction flag lets future
+// lower-is-better effects use the same delta renderer without relying on sign.
+const CAMP_GAMEPLAY_EFFECT_PRESENTATION = Object.freeze({
+  housingCapacity: Object.freeze({ label: "Housing capacity", beneficialDirection: 1, format: "number" }),
+  storageCapacity: Object.freeze({ label: "Storage capacity", beneficialDirection: 1, format: "number" }),
+  appeal: Object.freeze({ label: "Appeal", beneficialDirection: 1, format: "number" }),
+  residentLevelBonusMultiplier: Object.freeze({
+    label: "Resident Level Bonus",
+    beneficialDirection: 1,
+    format: "multiplier",
+    defaultValue: 1
+  })
+});
+
+function effetsGameplayCampPourTier(typeId, tier) {
+  const definition = definitionGameplayCamp(typeId);
+  const tierNumber = Math.max(1, Number(tier) || 1);
+  const effects = tierNumber === 1 ? definition && definition.effects
+    : definition && definition.upgradeTiers && definition.upgradeTiers[String(tierNumber)]
+      && definition.upgradeTiers[String(tierNumber)].effects;
+  return effects && typeof effects === "object" ? effects : {};
+}
+
+function libelleEffetGameplayCamp(effectId) {
+  const presentation = CAMP_GAMEPLAY_EFFECT_PRESENTATION[effectId];
+  if (presentation) return presentation.label;
+  return String(effectId || "Effect")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/^./, function(letter) { return letter.toUpperCase(); });
+}
+
+function campGameplayEffectEntries(typeId, currentTier, targetTier) {
+  const currentEffects = effetsGameplayCampPourTier(typeId, currentTier);
+  const targetEffects = targetTier == null
+    ? currentEffects
+    : effetsGameplayCampPourTier(typeId, targetTier);
+  const effectIds = Array.from(new Set(
+    Object.keys(currentEffects).concat(Object.keys(targetEffects))
+  ));
+  return effectIds.map(function(effectId) {
+    const presentation = CAMP_GAMEPLAY_EFFECT_PRESENTATION[effectId] || {};
+    const defaultValue = Number.isFinite(Number(presentation.defaultValue))
+      ? Number(presentation.defaultValue) : 0;
+    const currentValue = Object.prototype.hasOwnProperty.call(currentEffects, effectId)
+      ? Number(currentEffects[effectId]) : defaultValue;
+    const targetValue = Object.prototype.hasOwnProperty.call(targetEffects, effectId)
+      ? Number(targetEffects[effectId]) : defaultValue;
+    const delta = targetTier == null ? null : targetValue - currentValue;
+    const direction = Number(presentation.beneficialDirection) || 0;
+    return {
+      effectId: effectId,
+      label: libelleEffetGameplayCamp(effectId),
+      value: targetTier == null ? targetValue : currentValue,
+      delta: delta,
+      improved: delta !== null && delta !== 0 && delta * direction > 0,
+      format: presentation.format || "number"
+    };
+  });
+}
+
+function formaterValeurEffetCamp(value, format) {
+  const nombre = Number(value);
+  const valeur = Number.isFinite(nombre) ? nombre : 0;
+  if (format === "multiplier") {
+    const pourcentage = (valeur - 1) * 100;
+    const signe = pourcentage > 0 ? "+" : pourcentage < 0 ? "−" : "+";
+    return signe + Math.abs(pourcentage).toLocaleString("en-US", {
+      maximumFractionDigits: 2
+    }) + "%";
+  }
+  return valeur.toLocaleString("en-US", {
+    maximumFractionDigits: 2
+  });
+}
+
+function formaterDeltaEffetCamp(entry) {
+  const delta = Number(entry && entry.delta) || 0;
+  const signe = delta > 0 ? "+" : delta < 0 ? "−" : "+";
+  const facteur = entry && entry.format === "multiplier" ? 100 : 1;
+  const suffixe = entry && entry.format === "multiplier" ? "%" : "";
+  return "(" + signe + (Math.abs(delta) * facteur).toLocaleString("en-US", {
+    maximumFractionDigits: 2
+  }) + suffixe + ")";
+}
+
+function creerAffichageEffetsCamp(effectEntries, options) {
+  if (!Array.isArray(effectEntries) || !effectEntries.length) return null;
+  const config = options || {};
+  const effects = document.createElement(config.tagName || "span");
+  effects.className = "camp-gameplay-effects" + (config.className ? " " + config.className : "");
+  effects.setAttribute("aria-label", config.ariaLabel || "Gameplay effects");
+  effectEntries.forEach(function(entry) {
+    const effect = document.createElement("span");
+    effect.className = "camp-gameplay-effect";
+    const label = document.createElement("span");
+    label.className = "camp-gameplay-effect-label";
+    label.textContent = entry.label + ":";
+    const value = document.createElement("strong");
+    value.textContent = formaterValeurEffetCamp(entry.value, entry.format);
+    effect.appendChild(label);
+    effect.appendChild(value);
+    if (entry.delta !== null) {
+      const delta = document.createElement("span");
+      delta.className = "camp-gameplay-effect-delta"
+        + (entry.improved ? " camp-gameplay-effect-delta-improved" : "");
+      delta.textContent = formaterDeltaEffetCamp(entry);
+      effect.appendChild(delta);
+    }
+    effects.appendChild(effect);
+  });
+  return effects;
+}
+
+let declencheurPopoverEffetsBatimentCamp = null;
+
+function obtenirPopoverEffetsBatimentCamp() {
+  let popover = document.getElementById("camp-building-effects-popover");
+  if (popover) return popover;
+  popover = document.createElement("div");
+  popover.id = "camp-building-effects-popover";
+  popover.className = "camp-building-effects-popover";
+  popover.setAttribute("role", "region");
+  popover.hidden = true;
+  document.body.appendChild(popover);
+  return popover;
+}
+
+function fermerPopoverEffetsBatimentCamp(restaurerFocus) {
+  const declencheur = declencheurPopoverEffetsBatimentCamp;
+  const popover = typeof document !== "undefined"
+    ? document.getElementById("camp-building-effects-popover") : null;
+  if (declencheur) {
+    declencheur.setAttribute("aria-expanded", "false");
+    declencheur.setAttribute("aria-label", declencheur.dataset.closedLabel || "Show Tier 1 effects");
+  }
+  declencheurPopoverEffetsBatimentCamp = null;
+  if (popover) popover.hidden = true;
+  if (restaurerFocus && declencheur && declencheur.isConnected !== false
+      && typeof declencheur.focus === "function") declencheur.focus();
+}
+
+function viewportVisibleEffetsBatimentCamp() {
+  const visual = typeof window !== "undefined" && window.visualViewport;
+  const left = visual ? Number(visual.offsetLeft) || 0 : 0;
+  const top = visual ? Number(visual.offsetTop) || 0 : 0;
+  const width = visual ? Number(visual.width) || window.innerWidth : window.innerWidth;
+  const height = visual ? Number(visual.height) || window.innerHeight : window.innerHeight;
+  return { left: left, top: top, right: left + width, bottom: top + height };
+}
+
+function positionnerPopoverEffetsBatimentCamp() {
+  const popover = typeof document !== "undefined"
+    ? document.getElementById("camp-building-effects-popover") : null;
+  const trigger = declencheurPopoverEffetsBatimentCamp;
+  if (!popover || popover.hidden || !trigger || !trigger.getBoundingClientRect) return false;
+  const position = calculerAncrageUiFlottanteCampPrototype(
+    { left: 0, top: 0 },
+    viewportVisibleEffetsBatimentCamp(),
+    trigger.getBoundingClientRect(),
+    { width: popover.offsetWidth, height: popover.offsetHeight },
+    8
+  );
+  popover.style.left = position.viewportLeft + "px";
+  popover.style.top = position.viewportTop + "px";
+  popover.classList.toggle("camp-building-effects-popover-below", position.below);
+  return true;
+}
+
+function ouvrirPopoverEffetsBatimentCamp(trigger, type, effectEntries) {
+  if (!trigger || !type || !Array.isArray(effectEntries) || !effectEntries.length) return false;
+  const popover = obtenirPopoverEffetsBatimentCamp();
+  if (declencheurPopoverEffetsBatimentCamp === trigger && !popover.hidden) {
+    fermerPopoverEffetsBatimentCamp(false);
+    return false;
+  }
+  fermerPopoverEffetsBatimentCamp(false);
+  popover.innerHTML = "";
+  const title = document.createElement("strong");
+  title.className = "camp-building-effects-popover-title";
+  title.textContent = "Tier 1 Effects";
+  const building = document.createElement("span");
+  building.className = "camp-building-effects-popover-building";
+  building.textContent = type.label + ":";
+  const effects = creerAffichageEffetsCamp(effectEntries, {
+    tagName: "div",
+    className: "camp-building-effects-popover-list",
+    ariaLabel: type.label + " Tier 1 effects"
+  });
+  popover.appendChild(title);
+  popover.appendChild(building);
+  popover.appendChild(effects);
+  popover.setAttribute("aria-label", type.label + " Tier 1 effects");
+  popover.hidden = false;
+  declencheurPopoverEffetsBatimentCamp = trigger;
+  trigger.setAttribute("aria-expanded", "true");
+  trigger.setAttribute("aria-label", "Hide Tier 1 effects for " + type.label);
+  positionnerPopoverEffetsBatimentCamp();
+  return true;
+}
+
+function gererClicExterieurPopoverEffetsBatimentCamp(event) {
+  if (!declencheurPopoverEffetsBatimentCamp || !event || !event.target) return;
+  if (event.target.closest
+      && event.target.closest(".camp-prototype-palette-effects-toggle, #camp-building-effects-popover")) return;
+  fermerPopoverEffetsBatimentCamp(false);
+}
+
+function gererClavierPopoverEffetsBatimentCamp(event) {
+  if (!declencheurPopoverEffetsBatimentCamp || !event || event.key !== "Escape") return;
+  event.preventDefault();
+  fermerPopoverEffetsBatimentCamp(true);
+}
+
 // Prevent mobile browsers from opening the native context menu when a player
 // holds a game icon or other interactive sprite. Text and controls remain
 // usable through the game's normal click/touch handlers.
@@ -81,6 +295,16 @@ if (typeof document !== "undefined") {
       event.preventDefault();
     }
   }, { passive: false });
+  document.addEventListener("click", gererClicExterieurPopoverEffetsBatimentCamp);
+  document.addEventListener("keydown", gererClavierPopoverEffetsBatimentCamp);
+  document.addEventListener("scroll", positionnerPopoverEffetsBatimentCamp, { passive: true, capture: true });
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", positionnerPopoverEffetsBatimentCamp, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", positionnerPopoverEffetsBatimentCamp, { passive: true });
+      window.visualViewport.addEventListener("scroll", positionnerPopoverEffetsBatimentCamp, { passive: true });
+    }
+  }
 }
 
 // Keep navigation and log copy text-only. Resource and item cards retain their
@@ -490,6 +714,10 @@ function kittyIsInTraining(kittyIdx) {
     || (etat.formationIngenieurEnCours && etat.formationIngenieurEnCours.kittyIndex === kittyIdx));
 }
 
+function kittyIsLearningPerk(kittyIdx) {
+  return !!(etat.perkLearningEnCours && etat.perkLearningEnCours.kittyIndex === kittyIdx);
+}
+
 function kittyIsLearningBook(kittyIdx) {
   return !!(etat.learningEnCours && etat.learningEnCours.kittyIndex === kittyIdx);
 }
@@ -581,7 +809,7 @@ function kittyIsBusy(kittyIdx) {
     && kittyIsDemolishingCamp(kittyIdx);
   const ameliorationCamp = typeof kittyIsUpgradingCamp === "function"
     && kittyIsUpgradingCamp(kittyIdx);
-  return estIngenieur(kitty) || estSpecialistePermanentNonAssignable(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx) || constructionMaisonCamp || constructionBatimentCamp || reparationCamp || demolitionCamp || ameliorationCamp;
+  return estIngenieur(kitty) || estSpecialistePermanentNonAssignable(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx) || kittyIsLearningPerk(kittyIdx) || constructionMaisonCamp || constructionBatimentCamp || reparationCamp || demolitionCamp || ameliorationCamp;
 }
 
 function isAvailableForAutoAssign(ki, currentSlots) {
@@ -704,6 +932,7 @@ function totalAlloue() {
   if (etat.formationEnCours) total++;
   if (etat.formationIngenieurEnCours) total++;
   if (etat.learningEnCours && Number.isInteger(etat.learningEnCours.kittyIndex)) total++;
+  if (etat.perkLearningEnCours && Number.isInteger(etat.perkLearningEnCours.kittyIndex)) total++;
   if (typeof campPrototypeDemolitionsActives === "function") {
     total += campPrototypeDemolitionsActives().length;
   }
@@ -773,6 +1002,7 @@ function kittyHasNonReplaceableAction(kittyIdx) {
     || kittyIsInScoutingStaging(kittyIdx)
     || kittyIsInTraining(kittyIdx)
     || kittyIsLearningBook(kittyIdx)
+    || kittyIsLearningPerk(kittyIdx)
     || (typeof kittyIsBuildingCampHouse === "function" && kittyIsBuildingCampHouse(kittyIdx))
     || (typeof kittyIsBuildingCampBuilding === "function" && kittyIsBuildingCampBuilding(kittyIdx))
     || (typeof kittyIsRepairingCamp === "function" && kittyIsRepairingCamp(kittyIdx))
@@ -838,6 +1068,10 @@ function normaliserOccupationsChatons() {
       changed = true;
     }
   });
+  if (etat.perkLearningEnCours && !claim(etat.perkLearningEnCours.kittyIndex)) {
+    etat.perkLearningEnCours = null;
+    changed = true;
+  }
   if (etat.learningEnCours && !claim(etat.learningEnCours.kittyIndex, true)) {
     etat.learningEnCours = null;
     changed = true;
@@ -909,6 +1143,10 @@ function kittyAllocationLabel(kittyIdx) {
   if (kittyIsLearningBook(kittyIdx)) {
     const book = etat.learningEnCours && ITEMS[etat.learningEnCours.itemId];
     return { text: "Studying: " + (book ? book.nom : "a book"), cls: "kitty-statut-training" };
+  }
+  if (kittyIsLearningPerk(kittyIdx)) {
+    const perk = noeudPerkV2(etat.perkLearningEnCours.perkId);
+    return { text: "Learning perk: " + (perk ? perk.name : "specialization"), cls: "kitty-statut-training" };
   }
   if (etat.formationIngenieurEnCours && etat.formationIngenieurEnCours.kittyIndex === kittyIdx) {
     return { text: "In training: Camp Engineer", cls: "kitty-statut-training" };
@@ -1051,13 +1289,18 @@ function obtenirButinScouting(scoutingId) {
   return butin;
 }
 
+function butinScoutingReclamable(butin) {
+  return !!butin && Object.values(butin.rewards || {}).some(function(qty) {
+    return Number(qty) > 0;
+  });
+}
+
 function scoutingIdsAvecButinZone(zoneId) {
   if (!zoneId || !etat.butinsScouting) return [];
   return Object.keys(etat.butinsScouting).filter(function(scoutingId) {
     const scouting = CONFIG.scoutings[scoutingId];
     const butin = etat.butinsScouting[scoutingId];
-    return scouting && scouting.zone === zoneId && butin
-      && Object.values(butin.rewards || {}).some(function(qty) { return Number(qty) > 0; });
+    return scouting && scouting.zone === zoneId && butinScoutingReclamable(butin);
   });
 }
 
@@ -1172,7 +1415,9 @@ function terminerScouting(scoutingId) {
     }
   }
   if (dailySuccesses > 0 && typeof enregistrerSuccesScoutingQuotidien === "function") enregistrerSuccesScoutingQuotidien(dailySuccesses);
-  ajouterLog("event", runCount + " scouting run" + (runCount === 1 ? "" : "s") + " completed for " + def.nom + ". Rewards are waiting on the map.");
+  ajouterLog("event", runCount + " scouting run" + (runCount === 1 ? "" : "s")
+    + " completed for " + def.nom + ". "
+    + (butinScoutingReclamable(butin) ? "Rewards are waiting on the map." : "No rewards were collected."));
   // Auto-restart with the same kitty while preserving any elapsed remainder.
   var restartDuree = scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree;
   etat.scoutingsEnCours[scoutingId] = {
@@ -1263,6 +1508,38 @@ function capaciteLogementCamp() {
     + Math.max(0, Number(etat.stoneCathouseCount) || 0) * CAMP_HOUSING_CAPACITY.stoneCathouse
     + Math.max(0, Number(etat.solidStoneCathouseCount) || 0) * CAMP_HOUSING_CAPACITY.solidStoneCathouse;
   return CAMP_BASE_HOUSING_CAPACITY + capaciteMaisons;
+}
+
+function sourcesCapaciteLogementCamp() {
+  const total = capaciteLogementCamp();
+  const groupes = new Map();
+  maisonsCampActivesPourHousing().forEach(function(item) {
+    const type = typeCampPrototype(item.type);
+    const tier = Math.max(1, Number(item.tier) || 1);
+    const capacite = Math.max(0, Number(capaciteMaisonCampHousing(item)) || 0);
+    if (!capacite) return;
+    const id = (type && type.id ? type.id : item.type) + ":" + tier;
+    const label = (type && type.label ? type.label : item.type) + " T" + tier;
+    const groupe = groupes.get(id) || { label: label, count: 0, value: 0 };
+    groupe.count += 1;
+    groupe.value += capacite;
+    groupes.set(id, groupe);
+  });
+  const sources = Array.from(groupes.values());
+  const capacitePlacee = sources.reduce(function(sum, source) { return sum + source.value; }, 0);
+  const capaciteGenerique = Math.max(0, total - capacitePlacee);
+  if (capaciteGenerique > 0) {
+    sources.unshift({
+      label: sources.length ? "Base Camp and legacy housing" : "Base Camp",
+      count: 1,
+      value: capaciteGenerique
+    });
+  }
+  return {
+    total: total,
+    sources: sources,
+    reconciledTotal: sources.reduce(function(sum, source) { return sum + source.value; }, 0)
+  };
 }
 
 function placesLogementLibresCamp() {
@@ -1396,7 +1673,7 @@ function afficherMessageCapaciteRecrutementCamp() {
   const message = document.getElementById("camp-recruit-capacity-message");
   if (!message) return false;
   message.textContent = "Camp full: " + etat.chatons + " / " + capaciteLogementCamp()
-    + ". Build and connect a Cardboard Box to welcome this Cat.";
+    + ". Build and connect a House to welcome this Cat.";
   message.hidden = false;
   const plot = message.closest(".camp-prototype-house-plot")
     || document.querySelector(".camp-recruitment-house-plot");
@@ -1915,6 +2192,48 @@ function renduDetailsAttractiviteCamp() {
   positionnerDetailsAttractiviteCamp();
 }
 
+function renduDetailsHousingCamp() {
+  const panneau = document.getElementById("camp-housing-details");
+  if (!panneau || panneau.hidden) return;
+  const capacite = sourcesCapaciteLogementCamp();
+  panneau.innerHTML = '<strong>Housing Capacity</strong>'
+    + '<span class="camp-housing-total"><b>Cats</b><em>'
+    + formaterNombre(Math.max(0, Number(etat.chatons) || 0)) + ' / '
+    + formaterNombre(capacite.total) + '</em></span>'
+    + '<span class="camp-appeal-detail-section"><b>Capacity sources</b><span>'
+    + capacite.sources.map(function(source) {
+        return '<i>' + echapperAttributHtml(source.label)
+          + (source.count > 1 ? ' ×' + source.count : '')
+          + '<em>+' + formaterNombre(source.value) + '</em></i>';
+      }).join("")
+    + '</span></span>';
+  positionnerDetailsHousingCamp();
+}
+
+function modeleHousingBandeau() {
+  const current = Math.max(0, Number(etat.chatons) || 0);
+  const capacity = Math.max(0, Number(capaciteLogementCamp()) || 0);
+  return {
+    current: current,
+    capacity: capacity,
+    full: current >= capacity
+  };
+}
+
+function actualiserAffichageHousingCamp() {
+  const summary = document.getElementById("camp-housing-summary");
+  if (!summary) return;
+  const modele = modeleHousingBandeau();
+  const valeur = document.getElementById("val-chatons");
+  if (valeur) {
+    valeur.classList.toggle("camp-housing-value", true);
+    valeur.classList.toggle("camp-housing-value-full", modele.full);
+  }
+  summary.setAttribute("aria-label", "Cats: " + modele.current + " / " + modele.capacity
+    + ". Show Housing Capacity details");
+  renduDetailsHousingCamp();
+}
+
 function actualiserAffichageAppealCamp() {
   const summary = document.getElementById("camp-appeal-summary");
   if (summary) {
@@ -1925,9 +2244,7 @@ function actualiserAffichageAppealCamp() {
   renduDetailsAttractiviteCamp();
 }
 
-function positionnerDetailsAttractiviteCamp() {
-  const bouton = document.getElementById("camp-appeal-summary");
-  const panneau = document.getElementById("camp-appeal-details");
+function positionnerPopoverTopBar(bouton, panneau) {
   if (!bouton || !panneau || panneau.hidden || typeof window === "undefined") return;
   if (panneau.parentElement !== document.body) document.body.appendChild(panneau);
   const marge = 8;
@@ -1939,8 +2256,41 @@ function positionnerDetailsAttractiviteCamp() {
   );
   panneau.style.width = largeur + "px";
   panneau.style.left = gauche + "px";
-  panneau.style.top = Math.min(window.innerHeight - marge, rect.bottom + 8) + "px";
+  panneau.style.maxHeight = Math.max(120, window.innerHeight - marge * 2) + "px";
+  const hauteur = Math.min(panneau.offsetHeight, window.innerHeight - marge * 2);
+  const dessous = rect.bottom + 8;
+  const dessus = rect.top - hauteur - 8;
+  const top = dessous + hauteur <= window.innerHeight - marge ? dessous : Math.max(marge, dessus);
+  panneau.style.top = Math.min(window.innerHeight - hauteur - marge, Math.max(marge, top)) + "px";
   panneau.style.transform = "none";
+}
+
+function positionnerDetailsAttractiviteCamp() {
+  positionnerPopoverTopBar(
+    document.getElementById("camp-appeal-summary"),
+    document.getElementById("camp-appeal-details")
+  );
+}
+
+function positionnerDetailsHousingCamp() {
+  positionnerPopoverTopBar(
+    document.getElementById("camp-housing-summary"),
+    document.getElementById("camp-housing-details")
+  );
+}
+
+function fermerPopoverTopBar(idPanneau) {
+  const panneau = document.getElementById(idPanneau);
+  if (!panneau || panneau.hidden) return;
+  panneau.hidden = true;
+  const bouton = document.querySelector('[aria-controls="' + idPanneau + '"]');
+  if (bouton) bouton.setAttribute("aria-expanded", "false");
+}
+
+function fermerPopoversTopBar(saufId) {
+  ["camp-appeal-details", "camp-housing-details"].forEach(function(id) {
+    if (id !== saufId) fermerPopoverTopBar(id);
+  });
 }
 
 function toggleDetailsAttractiviteCamp(event) {
@@ -1951,21 +2301,42 @@ function toggleDetailsAttractiviteCamp(event) {
   const bouton = document.getElementById("camp-appeal-summary");
   const panneau = document.getElementById("camp-appeal-details");
   if (!bouton || !panneau) return;
-  panneau.hidden = !panneau.hidden;
+  const ouvrir = panneau.hidden;
+  fermerPopoversTopBar(ouvrir ? "camp-appeal-details" : null);
+  if (typeof fermerTooltipRessource === "function") fermerTooltipRessource();
+  panneau.hidden = !ouvrir;
   bouton.setAttribute("aria-expanded", panneau.hidden ? "false" : "true");
   renduDetailsAttractiviteCamp();
 }
 
+function toggleDetailsHousingCamp(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const bouton = document.getElementById("camp-housing-summary");
+  const panneau = document.getElementById("camp-housing-details");
+  if (!bouton || !panneau) return;
+  const ouvrir = panneau.hidden;
+  fermerPopoversTopBar(ouvrir ? "camp-housing-details" : null);
+  if (typeof fermerTooltipRessource === "function") fermerTooltipRessource();
+  panneau.hidden = !ouvrir;
+  bouton.setAttribute("aria-expanded", panneau.hidden ? "false" : "true");
+  renduDetailsHousingCamp();
+}
+
 if (typeof document !== "undefined") {
   document.addEventListener("click", function(event) {
-    const panneau = document.getElementById("camp-appeal-details");
-    if (!panneau || panneau.hidden
-        || event.target.closest(".camp-appeal-wrap, #camp-appeal-details")) return;
-    panneau.hidden = true;
-    const bouton = document.getElementById("camp-appeal-summary");
-    if (bouton) bouton.setAttribute("aria-expanded", "false");
+    if (event.target.closest(".camp-appeal-wrap, .camp-housing-wrap, #camp-appeal-details, #camp-housing-details")) return;
+    fermerPopoversTopBar();
   });
-  window.addEventListener("resize", positionnerDetailsAttractiviteCamp);
+  document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape") fermerPopoversTopBar();
+  });
+  window.addEventListener("resize", function() {
+    positionnerDetailsAttractiviteCamp();
+    positionnerDetailsHousingCamp();
+  });
 }
 
 function niveauDifficulteRecrutement() {
@@ -2004,7 +2375,7 @@ function calculRecrutementCamp() {
     attractivite: attractivite,
     tempsReference: tempsReference,
     multiplicateurAppeal: multiplicateurAppeal,
-    dureeArrivee: tempsReference
+    dureeArrivee: tempsReference / multiplicateurAppeal
   };
 }
 
@@ -2085,7 +2456,7 @@ function progressionSequence() {
 
 function recupererButinScouting(scoutingId) {
   const butin = etat.butinsScouting[scoutingId];
-  if (!butin) return;
+  if (!butinScoutingReclamable(butin)) return false;
   if (!autoriserActionTableOperationsCamp()) return false;
   const recompenses = Object.keys(butin.rewards || {}).map(function(recompenseId) {
     return { recompense: recompenseId, qty: Number(butin.rewards[recompenseId]) || 0 };
@@ -2351,7 +2722,6 @@ function autoriserActionTableOperationsCamp() {
 function explorateurPresent()       { return etat.kittiesData.some(function(k) { return k.metier === "explorator"; }); }
 function inventaireDebloque()       { return etat.cardboardPiecesTotalRecolte >= 1; }
 function jobCenterDebloquee()        { return etat.jobCenterDebloque; }
-function trainingCenterDebloquee()   { return etat.trainingCenterDebloque; }
 function laboratoryDebloquee()       { return etat.laboratoryDebloque; }
 
 
@@ -2540,6 +2910,9 @@ const analyserSauvegardeBrute = saveCore.analyserSauvegardeBrute;
 let sauvegardeVerrouillee = false; // set right before a reload we must not let a stale autosave clobber
 let redemarrageMajeurRequis = false;
 let preferencesAncienneSauvegarde = null;
+let rattrapageAfkEnCours = false;
+let suspensionAfkConfirmee = false;
+let suspensionAfkDebutTs = null;
 
 function jouerSonAffectation() {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
@@ -2635,7 +3008,11 @@ function sauvegarder() {
   if (typeof synchroniserEtatCampDepuisPrototype === "function") {
     synchroniserEtatCampDepuisPrototype();
   }
-  etat.dernierTimestamp = Date.now();
+  // Autosaves may still fire before a browser freezes a hidden page. Keep the
+  // first suspension timestamp authoritative so they cannot erase the AFK gap.
+  etat.dernierTimestamp = Number.isFinite(suspensionAfkDebutTs)
+    ? suspensionAfkDebutTs
+    : Date.now();
   localStorage.setItem(SAVE_KEY, saveCore.serialiserEtat(etat));
 }
 
@@ -3070,30 +3447,6 @@ function reclamerRecompenseQuotidienne() {
 // 8. OBJECTIVES
 // ════════════════════════════════════════════════════════════
 
-let tutorielCompletionEnAttente = false;
-
-function ouvrirCompletionTutorielSiNecessaire() {
-  if (!tutorielCompletionEnAttente || etat.tutorialCompletionPopupSeen) return;
-  // Release notes, story screens and the save-upgrade dialog take priority.
-  // Keep the acknowledgement queued instead of marking it seen behind one of
-  // those overlays, so it cannot disappear during the initial launch flow.
-  const autreModalOuvert = Array.from(document.querySelectorAll('.explo-modal, .ecran-intro')).some(function(el) {
-    return el.id !== "tutorial-complete-modal"
-      && el.style.display !== "none"
-      && el.getAttribute("aria-hidden") !== "true";
-  });
-  if (autreModalOuvert) {
-    setTimeout(ouvrirCompletionTutorielSiNecessaire, 250);
-    return;
-  }
-  tutorielCompletionEnAttente = false;
-  etat.tutorialCompletionPopupSeen = true;
-  sauvegarder();
-  ouvrirDialogueModal("tutorial-complete-modal", {
-    focusSelector: "#tutorial-complete-confirm"
-  });
-}
-
 function verifierObjectifs() {
   let changed = false;
   if (verifierDeblocageSmallStorageShed()) changed = true;
@@ -3110,23 +3463,9 @@ function verifierObjectifs() {
       changed = true;
     }
   });
-  // Tutorial completion is independent from Daily Quests. Daily Purpose may
-  // be learned later, so tying this check to dailyQuetesDebloquees() could
-  // silently skip the completion acknowledgement altogether.
-  const tutorielTermine = objectifsActifsTries().filter(function(obj) { return !obj.mainStory; }).length === 0;
-  const afficherFinTutoriel = tutorielTermine && !etat.tutorialCompletionPopupSeen && !tutorielCompletionEnAttente;
-  if (afficherFinTutoriel) tutorielCompletionEnAttente = true;
-  const structureModifiee = changed || afficherFinTutoriel;
-  if (structureModifiee) { rendu(); sauvegarder(); }
+  if (changed) { rendu(); sauvegarder(); }
   renduObjectifs();
-  if (afficherFinTutoriel) {
-    setTimeout(ouvrirCompletionTutorielSiNecessaire, 0);
-  }
-  return structureModifiee;
-}
-
-function fermerTutorialComplete() {
-  fermerDialogueModal("tutorial-complete-modal");
+  return changed;
 }
 
 let objectifPrincipalId = null;
@@ -3506,7 +3845,7 @@ function unlocks() {
     explorateurPresent: explorateurPresent(),
     inventaire:   inventaireDebloque(),
     jobCenter:       structuresJobs.includes("jobCenter"),
-    trainingCenter:  structuresJobs.includes("trainingCenter"),
+    advancedTraining: batimentFonctionnelCamp("jobCenter", 2).available,
     laboratory:      structuresJobs.includes("laboratory"),
     anchovy:         anchovyDebloquee(),
     grilledAnchovy: grilledAnchovyDebloquee()
@@ -3644,9 +3983,23 @@ function afficherRessourcesTierDeuxPlus() {
   sauvegarder();
 }
 
+function modeleStockageRessourceBandeau(stockage, label) {
+  const stock = formaterNombre(Math.floor(Number(stockage && stockage.stock) || 0));
+  const capacite = formaterNombre(Math.max(0, Number(stockage && stockage.capacite) || 0));
+  const plein = Boolean(stockage && stockage.plein);
+  const quantiteAccessible = stock + " / " + capacite;
+  return {
+    amountText: stock,
+    capacityText: capacite,
+    full: plein,
+    accessibleText: label + ": " + quantiteAccessible
+      + (plein ? ". Storage full. Build more storage capacity." : "")
+  };
+}
+
 function renduRessources(u) {
   dernierEtatDeblocageRessources = u;
-  ecrireTexte(domParId("val-chatons"), etat.chatons + " / " + capaciteLogementCamp());
+  ecrireTexte(domParId("val-chatons"), etat.chatons);
   [
     ["val-cardboard-planks", etat.cardboardPlanks, "cardboardPlanks", "Cardboard Planks"],
     ["val-basic-wood-planks", etat.basicWoodPlanks, "basicWoodPlanks", "Basic Wood Planks"],
@@ -3663,16 +4016,19 @@ function renduRessources(u) {
       ? etatStockageRessource(entry[2])
       : null;
     if (stockage) {
-      const quantite = formaterNombre(Math.floor(stockage.stock))
-        + " / " + formaterNombre(stockage.capacite);
-      ecrireHTML(valeur, quantite + (stockage.plein
-        ? ' <span class="ressource-full-label" aria-hidden="true">FULL</span>'
-        : ""));
+      const modele = modeleStockageRessourceBandeau(stockage, entry[3]);
+      ecrireTexte(valeur, modele.amountText);
       if (valeur) {
         valeur.classList.toggle("ressource-valeur-stockage", true);
-        valeur.classList.toggle("ressource-valeur-stockage-full", stockage.plein);
-        valeur.setAttribute("aria-label", entry[3] + ": " + quantite
-          + (stockage.plein ? ". FULL." : ""));
+        valeur.classList.toggle("ressource-valeur-stockage-full", modele.full);
+        valeur.setAttribute("aria-label", modele.accessibleText);
+        const ligne = valeur.closest(".ressource[data-tooltip]");
+        if (ligne) {
+          ligne.dataset.storageFull = modele.full ? "true" : "false";
+          ligne.dataset.storageStock = modele.amountText;
+          ligne.dataset.storageCapacity = modele.capacityText;
+          ligne.setAttribute("aria-label", modele.accessibleText);
+        }
       }
     } else {
       ecrireTexte(valeur, formaterNombre(entry[1]));
@@ -3682,6 +4038,7 @@ function renduRessources(u) {
       }
     }
   });
+  actualiserAffichageHousingCamp();
   actualiserAffichageAppealCamp();
 
   [
@@ -4998,8 +5355,8 @@ function actualiserSousOngletsFacilities(u) {
   const contenu = domParId("contenu-facilities");
   if (!nav || !contenu) return;
 
-  const sousOngletsVisibles = !!u.trainingCenter;
-  if (facilitiesMobileVue === "training" && !u.trainingCenter) facilitiesMobileVue = "jobs";
+  const sousOngletsVisibles = !!u.advancedTraining;
+  if (facilitiesMobileVue === "training" && !u.advancedTraining) facilitiesMobileVue = "jobs";
   if (facilitiesMobileVue === "lab" && !u.laboratory) facilitiesMobileVue = "jobs";
 
   nav.dataset.hasTabs = sousOngletsVisibles ? "true" : "false";
@@ -5025,7 +5382,7 @@ function actualiserSousOngletsFacilities(u) {
 function selectionnerVueFacilitiesMobile(view) {
   const u = unlocks();
   if (view !== "jobs" && view !== "training" && view !== "lab") return;
-  if (view === "training" && !u.trainingCenter) return;
+  if (view === "training" && !u.advancedTraining) return;
   if (view === "lab" && !u.laboratory) return;
   facilitiesMobileVue = view;
   jcDirty = true;
@@ -5033,7 +5390,7 @@ function selectionnerVueFacilitiesMobile(view) {
   _tcKey = null;
   rendu();
   requestAnimationFrame(function() {
-    const cibleId = view === "training" ? "section-training-center" : (view === "lab" ? "section-laboratory" : "section-job-center");
+    const cibleId = view === "training" ? "section-advanced-training" : (view === "lab" ? "section-laboratory" : "section-job-center");
     const section = domParId(cibleId);
     if (section) section.scrollIntoView({ block: "start" });
   });
@@ -5048,21 +5405,22 @@ function renduFacilities(u) {
   ecrireStyle(jcIface, "display", jcCapacity.available ? "block" : "none");
   if (jcCapacity.available) renduJobCenter(u);
 
-  const secTC = domParId("section-training-center");
+  const secTC = domParId("section-advanced-training");
   const facilities = domParId("contenu-facilities");
-  if (facilities) facilities.classList.toggle("training-center-available", !!u.trainingCenter);
+  if (facilities) facilities.classList.toggle("advanced-training-available", !!u.advancedTraining);
   if (secTC) {
-    if (u.trainingCenter) {
-      const tcCapacity = batimentFonctionnelCamp("trainingCenter");
+    ecrireStyle(secTC, "display", u.advancedTraining ? "" : "none");
+    if (u.advancedTraining) {
+      const tcCapacity = batimentFonctionnelCamp("jobCenter", 2);
       const tcOverview = domParId("tc-overview");
       const tcIface = domParId("tc-interface");
-      const tcIntro = domParId("training-center-intro-copy");
+      const tcIntro = domParId("advanced-training-intro-copy");
       ecrireStyle(tcOverview, "display", "block");
       ecrireTexte(tcIntro, tcCapacity.available
         ? "Select a cat to review its specialization sphere."
-        : "A place where cats sharpen their skills. Unlock specializations to make every job more powerful.");
+        : "Upgrade the Job Center to Tier 2 to unlock advanced specializations.");
       ecrireStyle(tcIface, "display", tcCapacity.available ? "block" : "none");
-      if (tcCapacity.available) renduTrainingCenter();
+      if (tcCapacity.available) renduAdvancedTraining();
     }
   }
 
@@ -5254,8 +5612,15 @@ function validerFormationIngenieur() {
   return true;
 }
 
-// ── 9f-ii. Training Center specialization
-function trainingCenterKitties() {
+// ── 9f-ii. Job Center Tier 2 specialization
+const PERK_LEARNING_MS_PER_CAT_FOOD = 60 * 60 * 1000;
+
+function dureeApprentissagePerkMs(node) {
+  const cout = node && Number(node.costs && node.costs.cannedCatFood);
+  return Number.isInteger(cout) && cout > 0 ? cout * PERK_LEARNING_MS_PER_CAT_FOOD : 0;
+}
+
+function advancedTrainingKitties() {
   const metierOrder = Object.keys(METIERS);
   const roster = etat.kittiesData.reduce(function(acc, k, i) {
     if (k && k.metier && METIERS[k.metier] && k.metier !== "camp-engineer") acc.push({ k: k, i: i });
@@ -5276,6 +5641,7 @@ function trainingCenterKitties() {
 function etatPerkV2(node) {
   if (!node || !node.available) return "unavailable";
   if (perkV2Effectif(node.id)) return node.granted ? "granted" : "learned";
+  if (etat.perkLearningEnCours && etat.perkLearningEnCours.perkId === node.id) return "learning";
   const prerequisitesOk = node.prerequisites.every(perkV2Effectif);
   if (!prerequisitesOk) return "locked";
   const canAfford = Object.keys(node.costs).every(function(resourceId) {
@@ -5290,11 +5656,11 @@ function noeudPerkV2(perkId) {
   }) || null;
 }
 
-function renduTrainingCenter() {
+function renduAdvancedTraining() {
   const el = document.getElementById("tc-interface");
-  if (!el || !etat.trainingCenterConstruit) return;
+  if (!el || !batimentFonctionnelCamp("jobCenter", 2).available) return;
 
-  const roster = trainingCenterKitties();
+  const roster = advancedTrainingKitties();
   const rosterKey = roster.map(function(entry) {
     return entry.i + ":" + entry.k.metier + ":" + (entry.k.jobNiveau || 0);
   }).join(",");
@@ -5305,7 +5671,10 @@ function renduTrainingCenter() {
   const sphereKey = selectedGrid.map(function(node) {
     return node.id + ":" + etatPerkV2(node);
   }).join(",");
-  const key = rosterKey + '|' + (tcSpecKittySelectionne ?? '') + '|' + (k ? k.metier + '|' + k.jobNiveau : '') + '|' + sphereKey + '|' + etat.cannedCatFood;
+  const perkActionKey = etat.perkLearningEnCours
+    ? [etat.perkLearningEnCours.perkId, etat.perkLearningEnCours.kittyIndex, etat.perkLearningEnCours.startTs].join(":")
+    : "";
+  const key = rosterKey + '|' + (tcSpecKittySelectionne ?? '') + '|' + (k ? k.metier + '|' + k.jobNiveau : '') + '|' + sphereKey + '|' + etat.cannedCatFood + '|' + perkActionKey;
   if (key === _tcKey) return;
   _tcKey = key;
 
@@ -5517,16 +5886,29 @@ function clickerSphere(sphereId) {
   if (nomEl) nomEl.textContent = sphere ? String(sphere.name).toUpperCase() : '';
   if (descEl) {
     var learnHtml = '';
-    if ((actualEtat === 'available' || actualEtat === 'unaffordable') && sphere) {
+    if (actualEtat === 'learning' && sphere) {
+      var action = etat.perkLearningEnCours;
+      var remainingMs = Math.max(0, action.duree - (Date.now() - action.startTs));
+      var pct = Math.min(100, Math.floor((action.duree - remainingMs) / action.duree * 100));
+      learnHtml = '<div class="sphere-cout"><span id="perk-learning-label" class="sphere-cout-label">Learning… ' + formaterTemps(Math.ceil(remainingMs / 1000)) + ' remaining</span></div>'
+        + '<div class="inv-learning-barre"><div id="perk-learning-progress" class="inv-learning-progres" style="width:' + pct + '%"></div></div>';
+    } else if ((actualEtat === 'available' || actualEtat === 'unaffordable') && sphere) {
       var cout = sphere.costs;
       var canAfford = Object.keys(cout).every(function(res) { return (etat[res] || 0) >= cout[res]; });
       var coutLabel = Object.keys(cout).map(function(res) {
         var noms = { cannedCatFood: 'Canned Cat Food' };
         return cout[res] + ' ' + (noms[res] || res);
       }).join(', ');
+      var busy = !!etat.perkLearningEnCours;
+      var selectedBusy = tcSpecKittySelectionne !== null
+        && kittyIsUnavailableForNewAssignment(tcSpecKittySelectionne);
       learnHtml = '<div class="sphere-cout">'
         + '<span class="sphere-cout-label">Cost: ' + coutLabel + '</span>'
-        + (canAfford
+        + (busy
+            ? '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Advanced Training is busy</button>'
+            : selectedBusy
+            ? '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Selected Cat is busy</button>'
+            : canAfford
             ? '<button class="sphere-learn-btn" onclick="apprendrePerkV2(\'' + sphereId + '\')">Learn</button>'
             : '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Not enough resources</button>')
         + '</div>';
@@ -5542,10 +5924,21 @@ function clickerSphere(sphereId) {
 }
 
 function apprendrePerkV2(perkId) {
-  if (!perksV2Api || !_sphereGridJob || !batimentFonctionnelCamp("trainingCenter").available) return false;
+  if (!perksV2Api || !_sphereGridJob || !batimentFonctionnelCamp("jobCenter", 2).available) return false;
+  if (etat.perkLearningEnCours) {
+    afficherNotification("Advanced Training is already busy.");
+    return false;
+  }
   const kitty = tcSpecKittySelectionne !== null ? etat.kittiesData[tcSpecKittySelectionne] : null;
   if (!kitty || kitty.metier !== _sphereGridJob) return false;
-  const result = perksV2Api.learn(
+  if (kittyIsUnavailableForNewAssignment(tcSpecKittySelectionne)) {
+    afficherNotification(kitty.nom + " is already busy.");
+    return false;
+  }
+  const node = noeudPerkV2(perkId);
+  const duree = dureeApprentissagePerkMs(node);
+  if (!node || duree <= 0) return false;
+  const result = perksV2Api.beginLearn(
     progressionPerksV2(),
     perkId,
     { cannedCatFood: etat.cannedCatFood },
@@ -5561,13 +5954,62 @@ function apprendrePerkV2(perkId) {
     afficherNotification(messages[result.reason] || "This perk cannot be learned.");
     return false;
   }
-  etat.perksV2 = result.progress;
   etat.cannedCatFood = result.resources.cannedCatFood;
-  if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
-  if (perkId === "exploratorAutoAssign") exploTabDirty = true;
+  etat.perkLearningEnCours = {
+    perkId: perkId,
+    kittyIndex: tcSpecKittySelectionne,
+    jobId: kitty.metier,
+    startTs: Date.now(),
+    duree: duree,
+    costs: { cannedCatFood: Number(node.costs.cannedCatFood) }
+  };
+  jouerSonAffectation();
+  afficherNotification(kitty.nom + " started learning " + node.name + ". " + formaterTemps(duree / 1000) + " remaining.");
+  ajouterLog("event", kitty.nom + " started learning " + node.name + ".");
   sauvegarder();
   _tcKey = null;
   rendu();
+  return true;
+}
+
+function actualiserProgressionApprentissagePerk() {
+  const action = etat.perkLearningEnCours;
+  if (!action) return;
+  const elapsed = Math.max(0, Date.now() - action.startTs);
+  const pct = Math.min(100, Math.floor(elapsed / action.duree * 100));
+  const remaining = Math.max(0, Math.ceil((action.duree - elapsed) / 1000));
+  const label = document.getElementById("perk-learning-label");
+  const progress = document.getElementById("perk-learning-progress");
+  if (label) label.textContent = "Learning… " + formaterTemps(remaining) + " remaining";
+  if (progress) progress.style.width = pct + "%";
+}
+
+function terminerApprentissagePerk() {
+  const action = etat.perkLearningEnCours;
+  if (!action || !perksV2Api) return false;
+  if (Date.now() - action.startTs < action.duree) return false;
+  const result = perksV2Api.completeLearn(
+    progressionPerksV2(), action.perkId, { jobId: action.jobId }
+  );
+  etat.perkLearningEnCours = null;
+  if (!result.ok && result.reason !== "learned") {
+    sauvegarder();
+    _tcKey = null;
+    jcDirty = true;
+    return false;
+  }
+  if (result.ok) {
+    etat.perksV2 = result.progress;
+    if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
+    if (action.perkId === "exploratorAutoAssign") exploTabDirty = true;
+    const kitty = etat.kittiesData[action.kittyIndex];
+    const node = noeudPerkV2(action.perkId);
+    afficherNotification((kitty ? kitty.nom : "Your Cat") + " learned " + (node ? node.name : "a perk") + "!");
+    ajouterLog("event", (kitty ? kitty.nom : "A Cat") + " learned " + (node ? node.name : action.perkId) + ".");
+  }
+  sauvegarder();
+  _tcKey = null;
+  jcDirty = true;
   return true;
 }
 
@@ -5578,7 +6020,7 @@ function specialiserJobKitty(index) {
   const jobNom = METIERS[kitty.metier] ? METIERS[kitty.metier].nom : kitty.metier;
   afficherNotification(kitty.nom + "'s " + jobNom + " reached level " + kitty.jobNiveau + "!");
   ajouterLog("event", kitty.nom + " specialized in " + jobNom + " — now Lv. " + kitty.jobNiveau + ".");
-  renduTrainingCenter();
+  renduAdvancedTraining();
   sauvegarder();
 }
 
@@ -6254,7 +6696,7 @@ function renduManagement() {
             : (METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2) + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" + managerPerksHtml(METIERS[k.metier].famille, "detail-job-perk") : "")
       ) : "";
       const _jlvl = jobLevelInfo(k.metier);
-      const tcJobLvl = etat.trainingCenterConstruit && k.metier && !estIngenieur(k)
+      const tcJobLvl = batimentFonctionnelCamp("jobCenter", 2).available && k.metier && !estIngenieur(k)
         ? "<div class='detail-level-row'><span class='detail-level-num'>Level " + _jlvl.cur + " / " + _jlvl.max + "</span></div>"
         : "";
       gauche.innerHTML +=
@@ -6444,6 +6886,7 @@ function renduDynamique() {
   if (ongletActif === "camp")         renduCampPrototypeDynamique();
   if (ongletActif === "buildings")    renduBuildings(u);
   if (ongletActif === "facilities")   renduFacilities(u);
+  if (ongletActif === "facilities")   actualiserProgressionApprentissagePerk();
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
   if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif });
@@ -6599,7 +7042,7 @@ let carteDirty            = true;
 let carteZoneSelectionnee = "D1"; // Home is always accessible — show its missions right away
 let carteExploSlots       = {};  // { zoneId: Array<kittyIndex|null> }
 let _zoneInfoKey          = null; // cache key to skip innerHTML rebuild when nothing changed
-let _tcKey                = null; // same pattern for Training Center
+let _tcKey                = null; // same pattern for Job Center Tier 2 training
 let explorationMobileVue  = "map";
 let explorationMobileTypeMission = "campaigns";
 
@@ -7090,7 +7533,9 @@ function renderCampaignCards() {
         }
         var butin = etat.butinsScouting[sc.id];
         if (butin && butin.successful + butin.failed > 0) {
-          var rewardsText = Object.keys(butin.rewards).map(function(recompenseId) {
+          var rewardsText = Object.keys(butin.rewards || {}).filter(function(recompenseId) {
+            return Number(butin.rewards[recompenseId]) > 0;
+          }).map(function(recompenseId) {
             return echapperAttributHtml(RESOURCE_DISPLAY_NAMES[recompenseId] || recompenseId) + ' ×' + formaterNombre(butin.rewards[recompenseId]);
           }).join(' · ');
           var doubledVisible = false;
@@ -7104,7 +7549,9 @@ function renderCampaignCards() {
           scoutHtml += '<div class="scouting-runs"><span class="scouting-metric-label">Scouting Runs:</span><strong class="scouting-successful">Successful ' + butin.successful + '</strong><span class="scouting-failed">Failed ' + butin.failed + '</span></div>';
           scoutHtml += '<div class="scouting-luck"><span class="scouting-metric-label">Rewards Luck:</span><span>Regular ' + butin.regular + '</span><span class="scouting-lucky">Lucky ' + butin.lucky + '</span><strong class="scouting-super-lucky">Super Lucky ' + butin.superLucky + '</strong>' + (doubledVisible ? '<strong class="scouting-doubled">Doubled ' + butin.doubled + '</strong>' : '') + (tripledVisible ? '<strong class="scouting-tripled">Tripled ' + (butin.tripled || 0) + '</strong>' : '') + '</div>';
           scoutHtml += '<div class="scouting-rewards">' + (rewardsText || 'No rewards collected yet') + '</div>';
-          scoutHtml += '<button class="explo-result-action explo-result-reward" onclick="recupererButinScouting(\'' + sc.id + '\')">🎁 Claim scouting rewards</button>';
+          if (butinScoutingReclamable(butin)) {
+            scoutHtml += '<button class="explo-result-action explo-result-reward" onclick="recupererButinScouting(\'' + sc.id + '\')">🎁 Claim scouting rewards</button>';
+          }
           scoutHtml += '</div>';
         }
         scoutHtml += '</div>';
@@ -8329,6 +8776,7 @@ function workResourceDetails(pair, slot, phase, familyId, slotIdx) {
     speedMultiplier *= devWorkSpeed;
   }
   if (kitty && slot && familyId !== undefined && slotIdx !== undefined
+      && workManualFocus && workManualFocus.kind !== "camp"
       && manualFocusRecetteActif(familyId, slotIdx)) {
     speedBonuses.push({ label: "Manual Focus", value: manualFocusMultiplier() });
     speedMultiplier *= manualFocusMultiplier();
@@ -8701,9 +9149,8 @@ function apprendreLivre(itemId) {
     ajouterLog("unlock", "Stone Craft Guide learned — Miner and Stonemason jobs are now available in the Job Center.");
   }
   if (itemId === "seminarGuide") {
-    etat.trainingCenterDebloque = true;
-    afficherNotification("🏋️ Seminar Booklet mastered! Training Center unlocked — build it in Jobs.");
-    ajouterLog("unlock", "Corporate Seminar Booklet studied — Training Center is now available in the Jobs tab.");
+    afficherNotification("🏋️ Seminar Booklet mastered! Job Center Tier 2 upgrade unlocked.");
+    ajouterLog("unlock", "Corporate Seminar Booklet studied — Job Center Tier 2 upgrade unlocked in Camp.");
     if (!storyEstVue("storySeminarVue")) {
       marquerStoryVue("storySeminarVue");
       afficherModal("ecran-story-seminar");
@@ -9504,7 +9951,7 @@ function selectionnerTrainingCat(kittyIndex) {
   if (!kitty || !kitty.metier || !METIERS[kitty.metier]) return;
   tcSpecKittySelectionne = kittyIndex;
   _tcKey = null;
-  renduTrainingCenter();
+  renduAdvancedTraining();
 }
 
 function selectionnerKittySpec(kittyIndex) {
@@ -10510,10 +10957,6 @@ function acheterJobCenter() {
   return preparerPlacementBatimentCamp("jobCenter");
 }
 
-function acheterTrainingCenter() {
-  return preparerPlacementBatimentCamp("trainingCenter");
-}
-
 function acheterLaboratoire() {
   return preparerPlacementBatimentCamp("laboratory");
 }
@@ -10656,7 +11099,6 @@ function tickWorkRecipes(dt, manualFocusAutorise) {
         slot.birdCardboardPieces = Math.max(0, Number(slot.birdCardboardPieces) || 0) + result.gathered;
       }
       if (manualFocusAutorise && workManualFocus
-          && workManualFocus.kind !== "camp"
           && workManualFocus.familyId === family
           && workManualFocus.slotIdx === slotIdx
           && (phaseActiveRecette(slot) !== phaseAvant || result.completedCycles > 0)) {
@@ -10703,6 +11145,13 @@ function verifierDeblocageWoodCathouseApresFabrication(resultatsRecettes, option
 function tick() {
   const diagnosticStart = typeof mobileInputDiagnostic !== "undefined" && mobileInputDiagnostic.enabled
     ? mobileInputDiagnostic.startTiming("tick") : null;
+  // The AFK catch-up owns the entire hidden interval. Browsers can leave
+  // intervals alive for a while after backgrounding, so live simulation must
+  // stop immediately instead of waiting for timer throttling/freezing.
+  if (suspensionAfkConfirmee) {
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("tick", diagnosticStart, { suspended: true });
+    return;
+  }
   // Cathouse reduction accumulation (speed-aware)
   if (etat.cathouses.length > 0) {
   }
@@ -10729,6 +11178,9 @@ function tick() {
     }
     if (etat.learningEnCours) {
       etat.learningEnCours.startTs -= avance;
+    }
+    if (etat.perkLearningEnCours) {
+      etat.perkLearningEnCours.startTs -= avance;
     }
     Object.values(etat.camp.repairs || {}).forEach(function(reparation) {
       if (reparation) reparation.startTs -= avance;
@@ -10766,6 +11218,10 @@ function tick() {
       if (progEl)  progEl.style.width  = pct + "%";
       if (markerEl) markerEl.style.left = pct + "%";
     }
+  }
+  if (etat.perkLearningEnCours
+      && Date.now() - etat.perkLearningEnCours.startTs >= etat.perkLearningEnCours.duree) {
+    terminerApprentissagePerk();
   }
 
   // A completed cooldown stays ready until the player actively catches/recruits.
@@ -10918,6 +11374,7 @@ function appliquerDecalageTimersHorsLigne(decalageMs) {
   if (etat.formationEnCours) etat.formationEnCours.startTs += decalageMs;
   if (etat.formationIngenieurEnCours) etat.formationIngenieurEnCours.startTs += decalageMs;
   if (etat.learningEnCours) etat.learningEnCours.startTs += decalageMs;
+  if (etat.perkLearningEnCours) etat.perkLearningEnCours.startTs += decalageMs;
   Object.values(etat.camp.repairs || {}).forEach(function(reparation) {
     if (reparation) reparation.startTs += decalageMs;
   });
@@ -11030,6 +11487,10 @@ function appliquerProgressionHorsLigne() {
   if (etat.learningEnCours
       && maintenantApresDecalage - etat.learningEnCours.startTs >= etat.learningEnCours.duree) {
     terminerApprentissage(etat.learningEnCours.itemId);
+  }
+  if (etat.perkLearningEnCours
+      && maintenantApresDecalage - etat.perkLearningEnCours.startTs >= etat.perkLearningEnCours.duree) {
+    terminerApprentissagePerk();
   }
   if (etat.formationEnCours
       && (maintenantApresDecalage - etat.formationEnCours.startTs) / 1000 >= etat.formationEnCours.duree) {
@@ -12987,7 +13448,6 @@ function estBatimentPermanentCamp(typeOrId, item) {
 const CAMP_PROTOTYPE_FUNCTION_BY_TYPE = Object.freeze({
   operationsTable: "explorations",
   jobCenter: "jobs",
-  trainingCenter: "training",
   laboratory: "lab",
   storage: "inventory",
   marketStall: "shop"
@@ -13029,7 +13489,7 @@ const CAMP_BUILDING_REPAIR_COSTS = Object.freeze({
 });
 const CAMP_CANONICAL_REPAIR_IDS = Object.freeze([
   "cardboardBox", "storage", "operationsTable", "jobCenter",
-  "trainingCenter", "laboratory", "marketStall", "smallFountain"
+  "laboratory", "marketStall", "smallFountain"
 ]);
 function definitionReparationCanoniqueCampEligible(buildingId, definition) {
   if (
@@ -13113,7 +13573,6 @@ function constructionBalanceCampPrototype(typeId, stateField) {
 const CAMP_BUILDING_CONSTRUCTION_CONFIG = Object.freeze({
   operationsTable: constructionBalanceCampPrototype("operationsTable", null),
   jobCenter: constructionBalanceCampPrototype("jobCenter", "jobCenterConstruit"),
-  trainingCenter: constructionBalanceCampPrototype("trainingCenter", "trainingCenterConstruit"),
   laboratory: constructionBalanceCampPrototype("laboratory", "laboratoryConstruit"),
   storage: constructionBalanceCampPrototype("storage", null),
   marketStall: constructionBalanceCampPrototype("marketStall", null),
@@ -13368,6 +13827,9 @@ function conditionGameplayUnlockCamp(unlock) {
   }
   if (unlock.kind === "runtime-rule" && unlock.id === "smallFountainBlueprintLearned") {
     return etat.itemsAppris.includes("smallFountainBlueprint");
+  }
+  if (unlock.kind === "runtime-rule" && unlock.id === "seminarGuideLearned") {
+    return etat.itemsAppris.includes("seminarGuide");
   }
   if (unlock.kind === "runtime-rule" && unlock.id === "operationsTableUnlocked") {
     return operationsTableDebloquee();
@@ -13799,7 +14261,6 @@ function devisConstructionBatimentCamp(typeId) {
 function contenuBatimentCampDebloque(typeId) {
   if (typeId === "operationsTable") return operationsTableDebloquee();
   if (typeId === "jobCenter") return jobCenterDebloquee();
-  if (typeId === "trainingCenter") return trainingCenterDebloquee();
   if (typeId === "laboratory") return laboratoryDebloquee();
   if (typeId === "storage") return Boolean(DEV_MODE || conditionGameplayCampDebloquee(typeId));
   if (typeId === "marketStall" || typeId === "smallFountain") {
@@ -13813,9 +14274,9 @@ function batimentCampDejaPossede(typeId) {
   return Boolean(config && config.stateField && etat[config.stateField]);
 }
 
-function batimentFonctionnelCamp(typeId) {
+function batimentFonctionnelCamp(typeId, requiredTier) {
   const item = itemCampPrototypeParType(typeId);
-  return capaciteBatimentCamp(typeId, 1, {
+  return capaciteBatimentCamp(typeId, requiredTier || 1, {
     item: item,
     contentUnlocked: contenuBatimentCampDebloque(typeId)
   });
@@ -15642,6 +16103,7 @@ function appliquerZoomCampPrototype(conserverCentre, ancrageClient) {
   map.style.width = (largeurBase / 3 * colonnesVisibles * campPrototypeZoom) + "px";
   board.style.setProperty("--camp-prototype-obstacle-size", (16 * campPrototypeZoom) + "px");
   board.dataset.campZoom = String(campPrototypeZoom);
+  synchroniserPositionsUiTachesCamp();
   positionnerBirdCampPrototype();
   actualiserCommandesZoomCampPrototype();
   const nouveauBoardRect = board.getBoundingClientRect();
@@ -16026,6 +16488,9 @@ function ajouterRaccordsRouteBatimentCampPrototype(element, layout, item, type) 
     connecteur.dataset.roadMaterial = raccord.material;
     connecteur.dataset.campAccessPort = raccord.portId;
     connecteur.setAttribute("aria-hidden", "true");
+    if (raccord.sprite) {
+      connecteur.style.backgroundImage = "url(" + JSON.stringify(raccord.sprite) + ")";
+    }
     connecteur.style.setProperty(
       "--camp-road-connector-anchor",
       (raccord.anchor * 100) + "%"
@@ -16325,7 +16790,6 @@ function executerActionMenuCampPrototype(action, event) {
     return ouvrirModalAllocationMaisonCamp(null, Number.isInteger(occupantIndex) ? occupantIndex : null);
   }
   if (action === "claim") return validerTacheCampDepuisMenu();
-  if (action === "manual-focus") return activerManualFocusCampDepuisMenu();
   if (action === "customize-sticker") {
     const menu = document.getElementById("camp-prototype-interaction-menu");
     return ouvrirStickerCustomizerCampPrototype(menu && menu.dataset.campUid);
@@ -16795,65 +17259,14 @@ function actualiserFocusVisuelTacheCamp(worker, reserveSeconds) {
   const reserve = Math.max(0, Number(reserveSeconds) || 0);
   const actif = reserve > 0;
   worker.classList.toggle("camp-task-manual-focus-active", actif);
-  const bubble = worker.querySelector("[data-camp-task-focus]");
-  if (!bubble) return;
-  bubble.hidden = !actif;
-  if (actif) bubble.textContent = libelleFocusCamp(reserve);
-}
-
-function actualiserFeedbackOverlayCamp(source, texte) {
-  const overlay = document.getElementById("camp-feedback-overlay");
-  const viewport = document.querySelector(".camp-prototype-viewport");
-  if (!overlay || !viewport) return false;
-  let feedback = overlay.querySelector("[data-camp-feedback-overlay-item]");
-  if (!texte || !source || typeof source.getBoundingClientRect !== "function") {
-    if (feedback) feedback.hidden = true;
-    return false;
-  }
-  if (!feedback) {
-    feedback = document.createElement("small");
-    feedback.className = "camp-feedback-overlay-item";
-    feedback.dataset.campFeedbackOverlayItem = "true";
-    overlay.appendChild(feedback);
-  }
-  feedback.textContent = texte;
-  feedback.hidden = false;
-  const sourceRect = source.getBoundingClientRect();
-  const overlayRect = overlay.getBoundingClientRect();
-  const viewportRect = viewport.getBoundingClientRect();
-  const visual = typeof window !== "undefined" && window.visualViewport;
-  const visualLeft = visual ? Number(visual.offsetLeft) || 0 : 0;
-  const visualTop = visual ? Number(visual.offsetTop) || 0 : 0;
-  const visualRight = visualLeft + (visual && Number(visual.width) > 0
-    ? Number(visual.width) : window.innerWidth);
-  const visualBottom = visualTop + (visual && Number(visual.height) > 0
-    ? Number(visual.height) : window.innerHeight);
-  const left = Math.max(viewportRect.left, visualLeft);
-  const right = Math.min(viewportRect.right, visualRight);
-  const top = Math.max(viewportRect.top, visualTop);
-  const bottom = Math.min(viewportRect.bottom, visualBottom);
-  const halfWidth = Math.max(28, feedback.offsetWidth / 2);
-  const height = Math.max(18, feedback.offsetHeight);
-  const x = Math.max(left + halfWidth + 6,
-    Math.min(right - halfWidth - 6, sourceRect.left + sourceRect.width / 2));
-  const preferredY = sourceRect.top - height - 6;
-  const y = Math.max(top + 6, Math.min(bottom - height - 6, preferredY));
-  feedback.style.left = (x - overlayRect.left) + "px";
-  feedback.style.top = (y - overlayRect.top) + "px";
-  return true;
-}
-
-function actualiserFeedbackManualFocusOverlayCamp() {
-  const menu = document.getElementById("camp-prototype-interaction-menu");
-  if (menu && !menu.hidden && menu.querySelector("[data-camp-production-panel]")) {
-    return actualiserFeedbackOverlayCamp(null, "");
-  }
-  const worker = document.querySelector(".camp-task-worker.camp-task-manual-focus-active");
-  const bubble = worker && worker.querySelector("[data-camp-task-focus]");
-  return actualiserFeedbackOverlayCamp(
-    worker,
-    bubble && !bubble.hidden ? bubble.textContent : ""
-  );
+  const uiKey = worker.dataset.campTaskUiKey;
+  const status = worker.querySelector("[data-camp-task-focus-status]")
+    || Array.from(document.querySelectorAll("[data-camp-task-focus-status]")).find(function(element) {
+      return element.dataset.campTaskUiKey === uiKey;
+    });
+  if (!status) return;
+  status.hidden = !actif;
+  if (actif) status.textContent = libelleFocusCamp(reserve);
 }
 
 function cibleManualFocusCampPourTache(tache) {
@@ -16886,7 +17299,7 @@ function memeCibleManualFocusCamp(a, b) {
     && a.targetKind === b.targetKind;
 }
 
-function activerManualFocusCampPourTache(tache, feedbackElement) {
+function activerManualFocusCampPourTache(tache) {
   if (!manualFocusDebloque() || !tache || !tache.job || tache.job.readyToClaim) return false;
   const cible = cibleManualFocusCampPourTache(tache);
   if (!cible) return false;
@@ -16903,54 +17316,23 @@ function activerManualFocusCampPourTache(tache, feedbackElement) {
     lastDrainTs: now
   }, cible);
   actualiserFocusManuelWork();
-   const focusReserve = workManualFocus && workManualFocus.kind === "camp"
-     ? workManualFocus.reserveSeconds
-     : 0;
-   document.querySelectorAll("[data-camp-task-kitty-index]").forEach(function(worker) {
-     const workerTache = tacheTemporeeCampPourKitty(Number(worker.dataset.campTaskKittyIndex));
-     actualiserFocusVisuelTacheCamp(
-       worker,
-       manualFocusTacheCampActif(workerTache) ? focusReserve : 0
-     );
-     const workerState = etatTacheTemporeeCamp(workerTache, now);
-     const workerTimer = worker.querySelector("[data-camp-task-timer]");
-     if (workerTimer && workerState) {
-       workerTimer.textContent = formaterTemps(
-         tempsRestantTacheCampAffiche(workerTache, workerState)
-       );
-     }
-   });
-  actualiserFeedbackManualFocusOverlayCamp();
-  return true;
-}
-
-function activerManualFocusCampDepuisMenu() {
-  if (!manualFocusDebloque()) return false;
-  const menu = document.getElementById("camp-prototype-interaction-menu");
-  if (!menu) return false;
-  let tache = null;
-  let cible = null;
-  if (menu.dataset.interactionKind === "demolition") {
-    const job = demolitionCampPrototypePourCible(
-      menu.dataset.obstacleUid,
-      menu.dataset.demolitionTargetKind
+  const focusReserve = workManualFocus && workManualFocus.kind === "camp"
+    ? workManualFocus.reserveSeconds
+    : 0;
+  document.querySelectorAll("[data-camp-task-kitty-index]").forEach(function(worker) {
+    const workerTache = tacheTemporeeCampPourKitty(Number(worker.dataset.campTaskKittyIndex));
+    actualiserFocusVisuelTacheCamp(
+      worker,
+      manualFocusTacheCampActif(workerTache) ? focusReserve : 0
     );
-    if (job) {
-      tache = { kind: "demolition", job: job };
-      cible = {
-        campTaskKind: "demolition",
-        obstacleUid: menu.dataset.obstacleUid,
-        targetKind: menu.dataset.demolitionTargetKind
-      };
+    const workerState = etatTacheTemporeeCamp(workerTache, now);
+    const workerTimer = worker.querySelector("[data-camp-task-timer]");
+    if (workerTimer && workerState) {
+      workerTimer.textContent = formaterTemps(
+        tempsRestantTacheCampAffiche(workerTache, workerState)
+      );
     }
-  } else {
-    const item = itemCampPrototype(menu.dataset.campUid);
-    tache = tacheCampPourItem(item);
-    if (tache) cible = { campTaskKind: tache.kind, campUid: item.uid };
-  }
-  if (!tache || !tache.job || tache.job.readyToClaim || !cible) return false;
-  activerManualFocusCampPourTache(tache);
-  rafraichirMenuInteractionCampPrototype();
+  });
   return true;
 }
 
@@ -16972,19 +17354,9 @@ function libelleTacheCamp(tache, type) {
 
 function htmlMenuTacheCamp(tache, type) {
   const label = libelleTacheCamp(tache, type);
-  if (tache.job.readyToClaim) {
-    return '<button type="button" class="camp-task-claim-action" role="menuitem"'
-      + ' data-camp-menu-action="claim" aria-label="Validate ' + echapperAttributHtml(label)
-      + '"><span aria-hidden="true">✓</span><strong>Validate</strong></button>';
-  }
-  const state = etatTacheTemporeeCamp(tache, Date.now());
-  return '<span class="camp-prototype-demolition-menu-status"><span aria-hidden="true">⏱</span> '
-    + '<span data-camp-task-menu-timer>' + formaterTemps(state ? state.remaining : 0) + '</span></span>'
-    + (manualFocusDebloque()
-      ? '<button type="button" class="camp-task-manual-focus-action" role="menuitem"'
-        + ' data-camp-menu-action="manual-focus" aria-label="Manual Focus on '
-        + echapperAttributHtml(label) + '">Focus</button>'
-      : '');
+  return '<button type="button" class="camp-task-claim-action" role="menuitem"'
+    + ' data-camp-menu-action="claim" aria-label="Validate ' + echapperAttributHtml(label)
+    + '"><span aria-hidden="true">✓</span><strong>Validate</strong></button>';
 }
 
 function validerTacheCampDepuisMenu() {
@@ -17240,6 +17612,10 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
+  if (tache && tache.job && !tache.job.readyToClaim) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
   const conserverOuvert = Boolean(options && options.conserverOuvert);
   if (campPrototypeInteractionUid === uid && !menu.hidden && !conserverOuvert) {
     fermerMenuInteractionCampPrototype();
@@ -17361,11 +17737,8 @@ function activerItemCampPrototype(uid) {
   const upgradeDisponible = item && prochaineAmeliorationCamp(item);
   if (tache) {
     if (tache.job && !tache.job.readyToClaim) {
-      // A worker's work cell is itself the Manual Focus target. Keep the
-      // interaction one-tap: the floating action menu is only useful once a
-      // task is ready to validate.
       fermerMenuInteractionCampPrototype();
-      activerManualFocusCampPourTache(tache, item);
+      activerManualFocusCampPourTache(tache);
     } else {
       ouvrirMenuInteractionCampPrototype(item.uid);
     }
@@ -17376,7 +17749,7 @@ function activerItemCampPrototype(uid) {
     if (demolition) {
       if (!demolition.readyToClaim) {
         fermerMenuInteractionCampPrototype();
-        activerManualFocusCampPourTache({ kind: "demolition", job: demolition }, item);
+        activerManualFocusCampPourTache({ kind: "demolition", job: demolition });
       } else {
         ouvrirMenuDemolitionCampPrototype(item.uid, "layout");
       }
@@ -17435,6 +17808,11 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
     definirMessageCampPrototype(resultat.raison);
     return false;
   }
+  const demolition = demolitionCampPrototypePourCible(cible.uid, cible.kind);
+  if (demolition && !demolition.readyToClaim) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
   const interactionUid = cleCibleDemolitionCampPrototype(cible.uid, cible.kind);
   const conserverOuvert = Boolean(options && options.conserverOuvert);
   if (campPrototypeInteractionUid === interactionUid && !menu.hidden && !conserverOuvert) {
@@ -17447,31 +17825,17 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
   if (cible.kind === "layout") menu.dataset.campUid = cible.uid;
   menu.dataset.interactionKind = "demolition";
   menu.setAttribute("aria-label", cible.label + " actions");
-  const demolition = demolitionCampPrototypePourCible(cible.uid, cible.kind);
   if (demolition) {
-    if (demolition.readyToClaim) {
-      const reward = cible.reward;
-      const rewardHtml = reward
-        ? '<span class="camp-junk-reward"><img src="'
-          + echapperAttributHtml(iconeRessourceCamp(reward.resourceId)) + '" alt="">×'
-          + Math.max(0, Number(reward.quantity) || 0) + '</span>'
-        : '';
-      menu.innerHTML = '<button type="button" class="camp-task-claim-action" role="menuitem"'
-        + ' data-camp-menu-action="claim" aria-label="Validate cleanup of '
-        + echapperAttributHtml(cible.label) + '">' + rewardHtml
-        + '<span aria-hidden="true">✓</span><strong>Validate</strong></button>';
-    } else {
-      menu.innerHTML = '<span class="camp-prototype-demolition-menu-status">'
-        + '<span aria-hidden="true">⏱</span> '
-        + '<span data-camp-demolition-menu-timer>'
-        + formaterTemps(Math.max(0, demolition.duree - (Date.now() - demolition.startTs) / 1000))
-        + '</span></span>'
-        + (manualFocusDebloque()
-          ? '<button type="button" class="camp-task-manual-focus-action" role="menuitem"'
-            + ' data-camp-menu-action="manual-focus" aria-label="Manual Focus on clearing '
-            + echapperAttributHtml(cible.label) + '">Focus</button>'
-          : '');
-    }
+    const reward = cible.reward;
+    const rewardHtml = reward
+      ? '<span class="camp-junk-reward"><img src="'
+        + echapperAttributHtml(iconeRessourceCamp(reward.resourceId)) + '" alt="">×'
+        + Math.max(0, Number(reward.quantity) || 0) + '</span>'
+      : '';
+    menu.innerHTML = '<button type="button" class="camp-task-claim-action" role="menuitem"'
+      + ' data-camp-menu-action="claim" aria-label="Validate cleanup of '
+      + echapperAttributHtml(cible.label) + '">' + rewardHtml
+      + '<span aria-hidden="true">✓</span><strong>Validate</strong></button>';
   } else {
     menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action" role="menuitem"'
       + ' data-camp-menu-action="demolition"'
@@ -17818,6 +18182,7 @@ function campTaskPanelDefinition() {
       minLevel: 0,
       requiredCats: 1,
       costs: Object.assign({}, devis.costs),
+      effects: campGameplayEffectEntries(state.typeId, 1, null),
       typeId: state.typeId,
       devis: devis
     };
@@ -17836,6 +18201,7 @@ function campTaskPanelDefinition() {
       minLevel: 0,
       requiredCats: 1,
       costs: Object.assign({}, devis.costs),
+      effects: campGameplayEffectEntries(state.typeId, 1, null),
       typeId: state.typeId,
       devis: devis
     };
@@ -17845,17 +18211,19 @@ function campTaskPanelDefinition() {
     const type = item && typeCampPrototype(item.type);
     const upgrade = item && prochaineAmeliorationCamp(item);
     if (!item || !type || !upgrade || item.type !== state.typeId) return null;
+    const currentTier = Number.isInteger(item.tier) && item.tier > 0 ? item.tier : 1;
     return {
       kind: state.kind,
       label: type.label,
       actionLabel: "Upgrade " + type.label + " to Tier " + upgrade.targetTier,
       startLabel: "Start",
-      icon: "img/interface/Building_Tier1_Final.png",
-      iconAlt: "Upgrade building",
+      icon: assetCampPrototypePourRotation(type, item.rotation, currentTier),
+      iconAlt: type.label + " Tier " + currentTier,
       duration: upgrade.duration,
       minLevel: Math.max(0, Number(upgrade.minLevel) || 0),
       requiredCats: Math.max(1, Number(upgrade.requiredCats) || 1),
       costs: Object.assign({}, upgrade.costs),
+      effects: campGameplayEffectEntries(state.typeId, currentTier, upgrade.targetTier),
       uid: state.uid,
       typeId: state.typeId,
       upgrade: upgrade
@@ -18088,6 +18456,10 @@ function rendreCampTaskPanel(options) {
   level.textContent = "Level : " + definition.minLevel + "+";
   meta.appendChild(level);
   details.appendChild(meta);
+  const effects = creerAffichageEffetsCamp(definition.effects, {
+    className: "camp-task-panel-effects"
+  });
+  if (effects) details.appendChild(effects);
   const costEntries = campTaskPanelCostEntries(definition);
   if (costEntries.length) {
     const costs = document.createElement("span");
@@ -19467,23 +19839,22 @@ function renduCampPrototypeDynamique(maintenant) {
   if ((!DEV_MODE && !campDebloque()) || (document.body.dataset.ongletActif || "gang") !== "camp") return;
   const timestamp = Number.isFinite(maintenant) ? maintenant : Date.now();
   renduCampProductionPanelDynamique(timestamp);
-  // Keep the worker timer and its Manual Focus multiplier live between full
-  // structural renders. This is intentionally cheap direct-DOM work and must
-  // not be throttled to the demolition menu's once-per-second cadence.
+  // Keep the canonical worker timer live between full structural renders.
+  // This is intentionally cheap direct-DOM work and must not be throttled to
+  // the demolition menu's once-per-second cadence.
   campPrototypeDerniereSecondeDemolition = Math.floor(timestamp / 1000);
   document.querySelectorAll("[data-camp-task-kitty-index]").forEach(function(worker) {
     const kittyIndex = Number(worker.dataset.campTaskKittyIndex);
     const tache = Number.isInteger(kittyIndex) ? tacheTemporeeCampPourKitty(kittyIndex) : null;
     const state = etatTacheTemporeeCamp(tache, timestamp);
     if (!state) return;
-     const focusActive = manualFocusTacheCampActif(tache);
-     const focusReserve = focusActive ? synchroniserReserveManualFocus() : 0;
-     actualiserFocusVisuelTacheCamp(worker, focusReserve);
+    const focusActive = manualFocusTacheCampActif(tache);
+    const focusReserve = focusActive ? synchroniserReserveManualFocus() : 0;
+    actualiserFocusVisuelTacheCamp(worker, focusReserve);
     worker.style.setProperty("--camp-task-progress", (state.progress * 100).toFixed(2) + "%");
     const timer = worker.querySelector("[data-camp-task-timer]");
     if (timer) timer.textContent = formaterTemps(tempsRestantTacheCampAffiche(tache, state));
   });
-  actualiserFeedbackManualFocusOverlayCamp();
   document.querySelectorAll("[data-camp-repair-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
     const reparation = reparationCampPourBatiment(element.dataset.campRepairTimer);
@@ -19940,7 +20311,6 @@ function rendreTerrainCampPrototype(presencesCamp) {
     element.className = "camp-garden-access-site"
       + (zone.x < campPrototypeApi.TERRITORY_ZONES.home.x
         ? " camp-garden-access-site-west" : " camp-garden-access-site-east")
-      + (demolition ? " camp-prototype-obstacle-demolition-active" : "")
       + (preteAValider ? " camp-task-ready-to-claim" : "");
     element.dataset.campAccessUid = definition.uid;
     element.dataset.campZoneId = zoneId;
@@ -19952,11 +20322,13 @@ function rendreTerrainCampPrototype(presencesCamp) {
         ? ", ready to validate"
         : (demolition ? ", access work in progress" : ", access locked")));
     const copy = document.createElement("span");
-    copy.innerHTML = '<strong>Access</strong><small>'
-      + (demolition ? (preteAValider ? "Ready" : "Working") : "Build")
-      + '</small>';
+    copy.innerHTML = demolition
+      ? '<strong>Creating access</strong>'
+      : '<strong>Access</strong><small>Build</small>';
     element.appendChild(copy);
-    ajouterPortraitsChatsCamp(element, presences.byTerrain[definition.uid] || []);
+    ajouterPortraitsChatsCamp(element, presences.byTerrain[definition.uid] || [], {
+      taskHost: copy
+    });
     element.dataset.campFenceEdge = cleAreteClotureCampPrototype(geometry.edge);
     element.style.left = (geometry.edge.x / campPrototypeApi.GRID_WIDTH * 100) + "%";
     element.style.top = (geometry.edge.y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
@@ -20272,6 +20644,7 @@ function statistiquesPaletteJunkCamp(type) {
 function rendrePaletteCampPrototype() {
   const palette = document.getElementById("camp-prototype-palette");
   if (!palette) return;
+  fermerPopoverEffetsBatimentCamp(false);
   palette.innerHTML = "";
   const categorie = campPrototypeCategorieOuverte;
   if (!categorie) {
@@ -20377,28 +20750,26 @@ function rendrePaletteCampPrototype() {
         + '<span aria-hidden="true">·</span><span># Cats ' + junkGameplay.requiredCats + '</span>'
         + '</span>'
       : '';
-    const requirementsHtml = junkRequirementsHtml || (cout && Object.keys(cout).length > 0
+    const costEntries = campTaskPanelCostEntries({ costs: cout || {} });
+    const requirementsHtml = junkRequirementsHtml || (costEntries.length > 0
       ? '<span class="camp-prototype-palette-requirements">'
-        // Legacy house signature: cout.cardboardPlanks <img src="img/resources/Cardboard%20Plank_Final.png" alt="Cardboard Plank"> camp-prototype-tier-badge work-tier-badge-tier-1 · 1 Cat · mins.
-        // Cardboard%20Plank_Final.png is the canonical encoded palette path.
-        + Object.keys(cout).map(function(resourceId, index) {
-            const quantity = Number(cout[resourceId]) || 0;
-            const icon = iconeRessourceCamp(resourceId);
-            const nom = libelleRessourceCamp(resourceId);
+        + costEntries.map(function(entry, index) {
+            const quantity = entry.quantity;
+            const icon = entry.icon;
+            const nom = entry.label;
             const quantiteHtml = categorie === "house"
               && devis && devis.rank === 2
-              && resourceId === "cardboardPlanks" && quantity === 2
+              && entry.resourceId === "cardboardPlanks" && quantity === 2
               ? '<span class="camp-incrementor-cost-surprise">…2 ?</span>'
               : String(quantity);
             return (index ? '<span aria-hidden="true">·</span>' : '')
               + '<span class="camp-prototype-palette-cost" title="'
-              // Legacy incrementor marker order: camp-incrementor-cost-surprise … cout.cardboardPlanks.
-              // Cardboard%20Plank_Final.png remains the encoded T1 house icon path.
               + echapperAttributHtml(nom) + '">' + quantiteHtml
               + (icon ? ' <img src="' + echapperAttributHtml(icon) + '" alt="'
                 + echapperAttributHtml(nom) + '">' : '')
-              + (categorie === "house"
-                ? '<span class="camp-prototype-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span>'
+              + (entry.tier
+                ? '<span class="camp-prototype-tier-badge work-tier-badge-tier-' + entry.tier
+                  + '" aria-label="Tier ' + entry.tier + '">T' + entry.tier + '</span>'
                 : '')
               + '</span>';
           }).join('')
@@ -20415,7 +20786,6 @@ function rendrePaletteCampPrototype() {
       + '<span class="camp-prototype-palette-copy"><strong>'
       + type.label
       + ' <span class="camp-prototype-palette-dimensions">'
-      // Compatibility marker for the canonical house card order: camp-prototype-palette-requirements cout.cardboardPlanks <img src="img/resources/Cardboard%20Plank_Final.png" alt="Cardboard Plank"> camp-prototype-tier-badge work-tier-badge-tier-1 · 1 Cat · mins.
       + (type.edgePlacement ? '(grid edge · ' + type.motifLength + '-cell motif)' : '(' + type.width + " × " + type.height + ")")
       + "</span></strong>"
       + requirementsHtml
@@ -20464,7 +20834,31 @@ function rendrePaletteCampPrototype() {
         : "Tap the grid to preview " + type.label
           + ", then confirm or cancel its placement.");
     });
-    palette.appendChild(bouton);
+    const buildEffects = ["house", "building", "decoration"].includes(categorie)
+      ? campGameplayEffectEntries(typeId, 1, null)
+      : [];
+    const carte = document.createElement("div");
+    carte.className = "camp-prototype-palette-card"
+      + (buildEffects.length ? " camp-prototype-palette-card-has-effects" : "");
+    carte.appendChild(bouton);
+    if (buildEffects.length) {
+      obtenirPopoverEffetsBatimentCamp();
+      const aide = document.createElement("button");
+      aide.type = "button";
+      aide.className = "camp-prototype-palette-effects-toggle";
+      aide.textContent = "?";
+      aide.dataset.closedLabel = "Show Tier 1 effects for " + type.label;
+      aide.setAttribute("aria-label", aide.dataset.closedLabel);
+      aide.setAttribute("aria-controls", "camp-building-effects-popover");
+      aide.setAttribute("aria-expanded", "false");
+      aide.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        ouvrirPopoverEffetsBatimentCamp(aide, type, buildEffects);
+      });
+      carte.appendChild(aide);
+    }
+    palette.appendChild(carte);
   });
   if (categorie === "house" && palette.children.length === 0) {
     const vide = document.createElement("p");
@@ -21124,14 +21518,19 @@ function renduCampPrototype() {
   if (firstBoxPathDialogueReconciliation()) sauvegarder();
   if (normaliserHousingAssignmentsCamp()) sauvegarderCampPrototype();
   document.body.classList.toggle("camp-cat-icons-hidden", etat.hideCampCatIcons === true);
-  ecrireTexte(domParId("val-chatons"), etat.chatons + " / " + capaciteLogementCamp());
+  ecrireTexte(domParId("val-chatons"), etat.chatons);
+  actualiserAffichageHousingCamp();
   actualiserAffichageAppealCamp();
   const presencesCamp = indexerPresencesChatsCamp();
+  const taskUiLayer = typeof document.getElementById === "function"
+    ? document.getElementById("camp-task-ui-layer") : null;
+  if (taskUiLayer) taskUiLayer.innerHTML = "";
   renduVisiteurCampRecrutement();
   renduPresenceGangCamp(presencesCamp);
   rendrePaletteCampPrototype();
   rendreTerrainCampPrototype(presencesCamp);
   rendreItemsCampPrototype(presencesCamp);
+  synchroniserPositionsUiTachesCamp();
   campTutorialFinaliserSiSawmillRendu(presencesCamp, false);
   actualiserIndicateursPremierOiseau();
   rafraichirMenuInteractionCampPrototype();
@@ -21389,34 +21788,70 @@ function configurerTimerTacheCamp(timer, tache) {
   }
 }
 
-function ajouterTacheTemporeeChatCamp(element, presence, position, total) {
-  if (!element || !presence || !presence.timedTask) return;
-  const state = etatTacheTemporeeCamp(presence.timedTask, Date.now());
+function grouperPresencesTacheTemporeeCamp(presences) {
+  const groupes = [];
+  const parTache = new Map();
+  (presences || []).forEach(function(presence) {
+    if (!presence || !presence.timedTask || !presence.timedTask.job) return;
+    const identite = presence.timedTask.job;
+    let groupe = parTache.get(identite);
+    if (!groupe) {
+      groupe = [];
+      parTache.set(identite, groupe);
+      groupes.push(groupe);
+    }
+    groupe.push(presence);
+  });
+  return groupes;
+}
+
+function ajouterMarqueurChatCamp(groupe, presence, options) {
+  if (!groupe || !presence || !presence.kitty) return null;
+  const reglages = options || {};
+  const portrait = document.createElement("span");
+  portrait.className = "camp-location-cat";
+  portrait.title = presence.kitty.nom + " · " + presence.activity;
+  portrait.dataset.campKittyIndex = String(presence.kittyIndex);
+  const image = document.createElement("img");
+  image.src = presence.kitty.visage;
+  image.alt = "";
+  portrait.appendChild(image);
+  normaliserImageVisageCamp(image);
+  ajouterIndicateurSommeilCamp(portrait, presence, Boolean(reglages.afficherSommeil));
+  groupe.appendChild(portrait);
+  return portrait;
+}
+
+function ajouterTacheTemporeeChatsCamp(element, presences) {
+  if (!element || !Array.isArray(presences) || !presences.length) return;
+  const presence = presences[0];
+  const tache = presence.timedTask;
+  const state = etatTacheTemporeeCamp(tache, Date.now());
   if (!state) return;
   const worker = document.createElement(state.readyToClaim ? "button" : "span");
   worker.className = "camp-task-worker";
-  const nombreWorkers = Math.max(1, Number(total) || 1);
-  const positionWorker = Math.max(0, Number(position) || 0);
-  if (nombreWorkers > 1) {
-    worker.style.setProperty(
-      "--camp-task-worker-offset",
-      ((positionWorker - (nombreWorkers - 1) / 2) * 34) + "px"
-    );
-  }
+  const nombreWorkers = presences.length;
+  const kittyIndices = presences.map(function(entree) { return entree.kittyIndex; });
+  const taskUiKey = String(presence.kittyIndex);
+  const noms = presences.map(function(entree) { return entree.kitty.nom; });
+  const focusReserve = manualFocusTacheCampActif(tache)
+    ? synchroniserReserveManualFocus()
+    : 0;
+  worker.style.setProperty("--camp-task-worker-count", String(nombreWorkers));
+  element.classList.add("camp-task-target-host");
   if (state.readyToClaim) worker.classList.add("camp-task-worker-ready");
-   const focusActive = manualFocusTacheCampActif(presence.timedTask);
-   const focusReserve = focusActive ? synchroniserReserveManualFocus() : 0;
-   if (focusActive) {
-     worker.classList.add("camp-task-manual-focus-active");
-   }
+  if (focusReserve > 0) worker.classList.add("camp-task-manual-focus-active");
+  worker.dataset.campTaskKittyIndices = kittyIndices.join(",");
   worker.dataset.campTaskKittyIndex = String(presence.kittyIndex);
+  worker.dataset.campTaskUiKey = taskUiKey;
+  worker.dataset.campTaskWorkerCount = String(nombreWorkers);
   worker.style.setProperty("--camp-task-progress", (state.progress * 100).toFixed(2) + "%");
-  worker.title = presence.kitty.nom + " · " + presence.activity
+  worker.title = noms.join(", ") + " · " + presence.activity
     + (state.readyToClaim ? " · Ready to validate" : "");
   if (state.readyToClaim) {
     worker.type = "button";
     worker.dataset.touchActivationRoot = "true";
-    worker.setAttribute("aria-label", "Validate " + presence.activity + " with " + presence.kitty.nom);
+    worker.setAttribute("aria-label", "Validate " + presence.activity + " with " + noms.join(", "));
     worker.addEventListener("pointerdown", function(event) { event.stopPropagation(); });
     worker.addEventListener("click", function(event) {
       event.preventDefault();
@@ -21424,71 +21859,91 @@ function ajouterTacheTemporeeChatCamp(element, presence, position, total) {
       validerTacheCampDepuisChat(presence.kittyIndex);
     });
   } else {
-    // A running repair/demolition task is itself the Manual Focus target.
-    // Keep the interaction on the Cat portrait so the player never has to
-    // open the Camp action menu first.
-    const focusable = manualFocusDebloque() && Boolean(cibleManualFocusCampPourTache(presence.timedTask));
+    const focusable = manualFocusDebloque() && Boolean(cibleManualFocusCampPourTache(tache));
     if (focusable) {
       worker.setAttribute("role", "button");
       worker.dataset.touchActivationRoot = "true";
       worker.tabIndex = 0;
-      worker.setAttribute("aria-label", "Manual Focus on " + presence.activity + " with " + presence.kitty.nom);
-      worker.title = presence.kitty.nom + " · " + presence.activity + " · Tap to Manual Focus";
+      worker.setAttribute("aria-label", "Manual Focus on " + presence.activity + " with " + noms.join(", "));
+      worker.title = noms.join(", ") + " · " + presence.activity + " · Tap to Manual Focus";
       worker.addEventListener("pointerdown", function(event) { event.stopPropagation(); });
       worker.addEventListener("click", function(event) {
         event.preventDefault();
         event.stopPropagation();
-        activerManualFocusCampPourTache(presence.timedTask, worker);
+        activerManualFocusCampPourTache(tache);
       });
       worker.addEventListener("keydown", function(event) {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
         event.stopPropagation();
-        activerManualFocusCampPourTache(presence.timedTask, worker);
+        activerManualFocusCampPourTache(tache);
       });
     } else {
       worker.setAttribute("aria-hidden", "true");
     }
   }
 
-  const ring = document.createElement("span");
-  ring.className = "camp-task-progress-ring";
-  const portrait = document.createElement("span");
-  portrait.className = "camp-location-cat camp-task-worker-portrait";
-  const image = document.createElement("img");
-  image.src = presence.kitty.visage;
-  image.alt = "";
-  portrait.appendChild(image);
-  normaliserImageVisageCamp(image);
-   ring.appendChild(portrait);
-   worker.appendChild(ring);
+  const frame = document.createElement("span");
+  frame.className = "camp-task-progress-frame";
+  const marqueurs = document.createElement("span");
+  marqueurs.className = "camp-location-cats camp-task-worker-markers";
+  marqueurs.setAttribute("aria-hidden", "true");
+  presences.forEach(function(entree) {
+    ajouterMarqueurChatCamp(marqueurs, entree);
+  });
+  frame.appendChild(marqueurs);
+  worker.appendChild(frame);
 
-   const focusBubble = document.createElement("small");
-   focusBubble.className = "camp-task-focus-bubble";
-   focusBubble.dataset.campTaskFocus = "true";
-   focusBubble.setAttribute("aria-hidden", "true");
-   focusBubble.hidden = !(focusReserve > 0);
-   if (focusReserve > 0) focusBubble.textContent = libelleFocusCamp(focusReserve);
-   worker.appendChild(focusBubble);
+  const focusStatus = document.createElement("small");
+  focusStatus.className = "camp-task-focus-status";
+  focusStatus.dataset.campTaskFocusStatus = "true";
+  focusStatus.dataset.campTaskUiKey = taskUiKey;
+  focusStatus.setAttribute("aria-hidden", "true");
+  focusStatus.hidden = !(focusReserve > 0);
+  if (focusReserve > 0) focusStatus.textContent = libelleFocusCamp(focusReserve);
+  const taskUiLayer = typeof document.getElementById === "function"
+    ? document.getElementById("camp-task-ui-layer") : null;
+  (taskUiLayer || worker).appendChild(focusStatus);
 
   if (!state.readyToClaim) {
     const timer = document.createElement("small");
     timer.className = "camp-task-worker-timer";
     timer.dataset.campTaskTimer = "true";
-    timer.textContent = formaterTemps(tempsRestantTacheCampAffiche(presence.timedTask, state));
-    configurerTimerTacheCamp(timer, presence.timedTask);
-    worker.appendChild(timer);
+    timer.textContent = formaterTemps(tempsRestantTacheCampAffiche(tache, state));
+    configurerTimerTacheCamp(timer, tache);
+    frame.appendChild(timer);
   }
   element.appendChild(worker);
 }
 
-function ajouterPortraitsChatsCamp(element, presences) {
+function synchroniserPositionsUiTachesCamp() {
+  const board = document.getElementById("camp-prototype-board");
+  const layer = document.getElementById("camp-task-ui-layer");
+  if (!board || !layer || !board.getBoundingClientRect) return;
+  const boardRect = board.getBoundingClientRect();
+  if (!(boardRect.width > 0) || !(boardRect.height > 0)) return;
+  const workers = Array.from(document.querySelectorAll("[data-camp-task-ui-key]"))
+    .filter(function(element) { return element.classList.contains("camp-task-worker"); });
+  layer.querySelectorAll("[data-camp-task-focus-status]").forEach(function(status) {
+    const worker = workers.find(function(element) {
+      return element.dataset.campTaskUiKey === status.dataset.campTaskUiKey;
+    });
+    if (!worker || !worker.getBoundingClientRect) return;
+    const workerRect = worker.getBoundingClientRect();
+    status.style.left = ((workerRect.left + workerRect.width / 2 - boardRect.left)
+      / boardRect.width * 100) + "%";
+    status.style.top = ((workerRect.top - boardRect.top) / boardRect.height * 100) + "%";
+  });
+}
+
+function ajouterPortraitsChatsCamp(element, presences, options) {
   if (!element || !Array.isArray(presences) || presences.length === 0) return;
   const presencesTemporees = presences.filter(function(presence) {
     return Boolean(presence.timedTask);
   });
-  presencesTemporees.forEach(function(presence, position) {
-    ajouterTacheTemporeeChatCamp(element, presence, position, presencesTemporees.length);
+  const taskHost = options && options.taskHost ? options.taskHost : element;
+  grouperPresencesTacheTemporeeCamp(presencesTemporees).forEach(function(groupe) {
+    ajouterTacheTemporeeChatsCamp(taskHost, groupe);
   });
   const kittyIndicesTemporaires = new Set(presencesTemporees.map(function(presence) {
     return presence.kittyIndex;
@@ -21511,17 +21966,7 @@ function ajouterPortraitsChatsCamp(element, presences) {
   groupe.className = "camp-location-cats";
   groupe.setAttribute("aria-hidden", "true");
   presencesOrdinaires.slice(0, 5).forEach(function(presence) {
-    const portrait = document.createElement("span");
-    portrait.className = "camp-location-cat";
-    portrait.title = presence.kitty.nom + " · " + presence.activity;
-    portrait.dataset.campKittyIndex = String(presence.kittyIndex);
-    const image = document.createElement("img");
-    image.src = presence.kitty.visage;
-    image.alt = "";
-    portrait.appendChild(image);
-    normaliserImageVisageCamp(image);
-    ajouterIndicateurSommeilCamp(portrait, presence, afficherSommeil);
-    groupe.appendChild(portrait);
+    ajouterMarqueurChatCamp(groupe, presence, { afficherSommeil: afficherSommeil });
   });
   if (presencesOrdinaires.length > 5) {
     const surplus = document.createElement("strong");
@@ -22872,7 +23317,13 @@ function gererClicBoardCampPrototype(event) {
     event.preventDefault();
     event.stopPropagation();
     const accessUid = cibleAcces.dataset.campAccessUid;
-    ouvrirMenuDemolitionCampPrototype(accessUid, "access");
+    const demolition = demolitionCampPrototypePourCible(accessUid, "access");
+    if (demolition && !demolition.readyToClaim) {
+      fermerMenuInteractionCampPrototype();
+      activerManualFocusCampPourTache({ kind: "demolition", job: demolition });
+    } else {
+      ouvrirMenuDemolitionCampPrototype(accessUid, "access");
+    }
     return;
   }
   const recompenseSol = event.target.closest("[data-camp-ground-reward-uid]");
@@ -22896,7 +23347,7 @@ function gererClicBoardCampPrototype(event) {
       const demolition = demolitionCampPrototypePourCible(obstacleUid, "terrain");
       if (demolition && !demolition.readyToClaim) {
         fermerMenuInteractionCampPrototype();
-        activerManualFocusCampPourTache({ kind: "demolition", job: demolition }, cibleObstacle);
+        activerManualFocusCampPourTache({ kind: "demolition", job: demolition });
       } else {
         ouvrirMenuDemolitionCampPrototype(obstacleUid, "terrain");
       }
@@ -23323,12 +23774,26 @@ function ouvrirTooltipRessource(ressource) {
     return;
   }
   fermerTooltipRessource();
+  if (typeof fermerPopoversTopBar === "function") fermerPopoversTopBar();
 
   const tooltip = document.createElement("div");
   tooltip.id = "ressource-tooltip";
   tooltip.className = "ressource-tooltip-flottant";
   tooltip.setAttribute("role", "tooltip");
-  tooltip.textContent = ressource.dataset.tooltip;
+  if (ressource.dataset.storageFull === "true") {
+    tooltip.classList.add("ressource-tooltip-stockage-full");
+    const titre = document.createElement("strong");
+    titre.textContent = "Storage full";
+    const valeur = document.createElement("span");
+    valeur.textContent = ressource.dataset.storageStock + " / " + ressource.dataset.storageCapacity;
+    const conseil = document.createElement("small");
+    conseil.textContent = "Build more storage capacity.";
+    tooltip.appendChild(titre);
+    tooltip.appendChild(valeur);
+    tooltip.appendChild(conseil);
+  } else {
+    tooltip.textContent = ressource.dataset.tooltip;
+  }
   document.body.appendChild(tooltip);
 
   const rect = ressource.getBoundingClientRect();
@@ -23653,8 +24118,7 @@ var _recruitTrackWidth = 0;
 
 function multiplicateurVitesseMiniJeuRecruit() {
   const difficultyMultiplier = 1 + (Math.max(1, _recruitDifficulty) - 1) * 0.1;
-  return difficultyMultiplier * multiplicateurVitesseAppealCamp(scoreAttractiviteCamp().total)
-    * multiplicateurRecruitPerksV2();
+  return difficultyMultiplier * multiplicateurRecruitPerksV2();
 }
 
 function choisirDialogueRecruit() {
@@ -24285,10 +24749,142 @@ if (globalThis.CatInc.devTools) {
       exploTabDirty = true;
       _zoneInfoKey = null;
     },
-    trainingCenterStatus: function() {
-      return batimentFonctionnelCamp("trainingCenter").available
-        ? "The existing Training Center is functional."
-        : "Training Center physical placement/repair is still required through normal Camp gameplay.";
+    advancedTrainingStatus: function() {
+      return batimentFonctionnelCamp("jobCenter", 2).available
+        ? "Job Center Tier 2 advanced training is functional."
+        : "Upgrade the canonical Job Center to Tier 2 through normal Camp gameplay.";
+    },
+    advancedTrainingAvailable: function() {
+      return batimentFonctionnelCamp("jobCenter", 2).available;
+    },
+    prepareCanonicalCampBuilding: function(input) {
+      const typeId = String(input && input.typeId || "");
+      const tier = Number(input && input.tier);
+      const definition = definitionGameplayCamp(typeId);
+      const type = typeCampPrototype(typeId);
+      const tierExists = tier === 1 || Boolean(definition && definition.upgradeTiers
+        && definition.upgradeTiers[String(tier)]);
+      if (!definition || !type || definition.category !== "building"
+          || !Number.isInteger(tier) || tier < 1 || !tierExists) {
+        return { ok: false, reason: "Select a canonical Camp building and authored functional tier." };
+      }
+      const existing = itemCampPrototypeParType(typeId);
+      if (existing) {
+        const capacity = batimentFonctionnelCamp(typeId, tier);
+        return capacity.available
+          ? { ok: true, details: {
+              typeId: typeId, tier: existing.tier || 1, uid: existing.uid,
+              dimensions: campPrototypeApi.dimensionsType(typeId, existing.rotation || 0, existing.tier || 1),
+              reused: true
+            } }
+          : { ok: false, reason: "The disposable Camp already contains a non-functional " + type.label + "; no content was moved or replaced." };
+      }
+
+      // Fixture terrain is expanded without deleting or moving layout content.
+      // Every coordinate comes from the active Camp template/grid authority.
+      const claimedZoneIds = Object.keys(campPrototypeApi.TERRITORY_ZONES);
+      const clearedCells = [];
+      for (let y = 0; y < campPrototypeApi.GRID_HEIGHT; y += 1) {
+        for (let x = 0; x < campPrototypeApi.GRID_WIDTH; x += 1) {
+          if (campPrototypeApi.zoneTerrainPourCellule(x, y)) {
+            clearedCells.push(campPrototypeApi.cleCellule(x, y));
+          }
+        }
+      }
+      const previousTerrain = campPrototypeTerrain;
+      campPrototypeTerrain = campPrototypeApi.normaliserTerrain({
+        claimedZoneIds: claimedZoneIds,
+        clearedCells: clearedCells
+      });
+      const found = campPrototypeApi.trouverPlacementFonctionnel(
+        campPrototypeLayout, typeId, tier, campPrototypeTerrain,
+        { uid: "dev-canonical-" + typeId + "-t" + tier }
+      );
+      if (!found) {
+        campPrototypeTerrain = previousTerrain;
+        return { ok: false, reason: "No valid canonical placement exists in the disposable QA Camp; no layout content was moved or deleted." };
+      }
+      campPrototypeLayout.push(Object.assign({}, found.item));
+      const config = CAMP_BUILDING_CONSTRUCTION_CONFIG[typeId];
+      if (config && config.stateField) etat[config.stateField] = true;
+      if (typeId === "jobCenter") etat.jobCenterDebloque = true;
+      synchroniserEtatCampDepuisPrototype();
+      const capacity = batimentFonctionnelCamp(typeId, tier);
+      if (!capacity.available) {
+        campPrototypeLayout.pop();
+        campPrototypeTerrain = previousTerrain;
+        synchroniserEtatCampDepuisPrototype();
+        return { ok: false, reason: "Canonical placement did not produce a functional " + type.label + "; fixture was rolled back." };
+      }
+      return { ok: true, details: {
+        typeId: typeId,
+        tier: tier,
+        uid: found.item.uid,
+        x: found.item.x,
+        y: found.item.y,
+        rotation: found.item.rotation || 0,
+        dimensions: { width: found.dimensions.width, height: found.dimensions.height },
+        occupiedCellCount: found.occupiedCells.length,
+        accessPortCount: found.access && Array.isArray(found.access.ports) ? found.access.ports.length : 0,
+        reused: false
+      } };
+    },
+    preparePerksCat: function(input) {
+      const jobId = String(input && input.jobId || "");
+      if (!METIERS[jobId] || ["gang-leader", "camp-engineer"].includes(jobId)) {
+        return { ok: false, reason: "Select a canonical normal Perks job." };
+      }
+      let kittyIndex = etat.kittiesData.findIndex(function(kitty) {
+        return kitty && kitty.metier === jobId;
+      });
+      if (kittyIndex >= 0 && kittyIsUnavailableForNewAssignment(kittyIndex)
+          && !(etat.perkLearningEnCours && etat.perkLearningEnCours.kittyIndex === kittyIndex)) {
+        return { ok: false, reason: "The existing " + METIERS[jobId].nom + " is occupied by another action." };
+      }
+      if (kittyIndex < 0) {
+        if (!etat.kittiesData.some(function(kitty) { return kitty && kitty.nom === "Bernardo"; })) {
+          etat.kittiesData.push({
+            nom: "Bernardo", metier: "gang-leader", niveau: 1, tier: 1, xp: 0,
+            visage: CAT_FACES.bernardo, jobNiveau: 1
+          });
+        }
+        kittyIndex = etat.kittiesData.length;
+        etat.kittiesData.push({
+          nom: "Perks QA Cat", metier: jobId, niveau: 1, tier: 1, xp: 0,
+          visage: CAT_FACES_ALEATOIRES[0], jobNiveau: 1
+        });
+      }
+      while (etat.kittiesData.length < 3) {
+        const faceIndex = Math.min(CAT_FACES_ALEATOIRES.length - 1, etat.kittiesData.length - 1);
+        etat.kittiesData.push({
+          nom: "QA Helper " + etat.kittiesData.length,
+          metier: null, niveau: 1, tier: 1, xp: 0,
+          visage: CAT_FACES_ALEATOIRES[Math.max(0, faceIndex)], jobNiveau: 0
+        });
+      }
+      etat.chatons = etat.kittiesData.length;
+      etat.perksV2 = perksV2Api.normalizeProgress({ version: 2, learned: [] });
+      ["introVue", "story3Vue", "story3TransitionVue", "storyCampIntroVue", "storyExploratorVue"].forEach(function(storyId) {
+        if (!etat.storiesVues.includes(storyId)) etat.storiesVues.push(storyId);
+      });
+      progressionCamp().introCompleted = true;
+      definirModePrologue(false);
+      masquerCiblePrologue();
+      let top = dialogueOuvertAuPremierPlan();
+      while (top) {
+        fermerDialogueModal(top);
+        top = dialogueOuvertAuPremierPlan();
+      }
+      return { ok: true, details: {
+        kittyIndex: kittyIndex,
+        name: etat.kittiesData[kittyIndex].nom,
+        jobId: jobId
+      } };
+    },
+    markPerkLearningReady: function() {
+      if (!etat.perkLearningEnCours) return false;
+      etat.perkLearningEnCours.startTs = Date.now() - etat.perkLearningEnCours.duree;
+      return true;
     },
     catEligibleForJob: function(kittyIndex) {
       const kitty = etat.kittiesData[kittyIndex];
@@ -24408,9 +25004,6 @@ if (window.matchMedia("(max-width: 768px)").matches) {
 // durable before suspension and run the catch-up on every reliable return
 // signal. The guard makes visibility + pageshow/focus events harmless when
 // they arrive together.
-let rattrapageAfkEnCours = false;
-let suspensionAfkConfirmee = false;
-
 function rattraperProgressionAfk() {
   if (rattrapageAfkEnCours || sauvegardeVerrouillee || redemarrageMajeurRequis) return null;
   rattrapageAfkEnCours = true;
@@ -24432,7 +25025,10 @@ function sauvegarderAvantSuspension() {
 }
 
 function marquerSuspensionAfk() {
-  suspensionAfkConfirmee = true;
+  if (!suspensionAfkConfirmee) {
+    suspensionAfkDebutTs = Date.now();
+    suspensionAfkConfirmee = true;
+  }
   sauvegarderAvantSuspension();
 }
 
@@ -24443,7 +25039,10 @@ function rattraperApresSuspensionAfk() {
     || sauvegardeVerrouillee
     || redemarrageMajeurRequis
   ) return null;
+  const debutSuspension = suspensionAfkDebutTs;
   suspensionAfkConfirmee = false;
+  suspensionAfkDebutTs = null;
+  if (Number.isFinite(debutSuspension)) etat.dernierTimestamp = debutSuspension;
   return rattraperProgressionAfk();
 }
 

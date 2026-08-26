@@ -761,11 +761,55 @@
     })
   ]);
 
+  const release0075Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Job Center Tier 2 now replaces the former Training Center, with a larger upgrade footprint and advanced job training on the same building.",
+        "Learning a Perk is now a timed Cat action whose duration follows its Cat Food cost.",
+        "Camp Trails now form automatic visual joins with building entrances."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Camp upgrade tasks now show the real current building visual instead of a generic icon.",
+        "Camp build and upgrade panels now preview gameplay effects before resources are committed.",
+        "Camp timed work now groups Cats around one clear target-owned progress display.",
+        "Access work now uses one clean task panel without a detached obstacle frame.",
+        "Manual Focus on Camp work now uses compact inline feedback without the old popup.",
+        "The mobile top bar now keeps Cats, Appeal and storage summaries compact and readable.",
+        "Bernardo now teaches that Manual Focus can accelerate supported Camp construction work."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Backgrounded production, Scouting and timers now obey the reduced AFK progression law exactly once instead of advancing at full speed.",
+        "Recruit Speed from Appeal and Recruiter perks now shortens visitor arrival time without changing the Purrsuasion cursor.",
+        "Scouting no longer offers an empty reward claim after a failed run.",
+        "Camp costs now show resource Tier badges from the resource itself.",
+        "Recruitment paw trails now stay unclipped on narrow screens and use a consistent final footprint.",
+        "Camp-full guidance now recommends any connected House instead of only a Cardboard Box.",
+        "The obsolete Tutorial Complete popup and its orphaned saved state have been removed.",
+        "The Wood Cathouse now renders without roof clipping and retains its approved warm color treatment."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0074",
+    baseVersion: "0.0075",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -778,6 +822,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0075",
+      date: "2026-08-26",
+      categories: release0075Categories
+    }),
     Object.freeze({
       version: "0.0074",
       date: "2026-08-25",

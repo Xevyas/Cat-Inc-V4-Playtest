@@ -30,7 +30,7 @@
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
   const CAMP_CANONICAL_REPAIR_IDS = [
     "cardboardBox", "storage", "operationsTable", "jobCenter",
-    "trainingCenter", "laboratory", "marketStall", "smallFountain"
+    "laboratory", "marketStall", "smallFountain"
   ];
   function canonicalCampUpgradeEligible(typeId, startTier, targetTier) {
     const definition = CatInc.data && CatInc.data.campGameplay
@@ -252,7 +252,7 @@ function validerStructureSauvegarde(d) {
     }
   }
 
-  const champsObjetsOuNuls = ["learningEnCours", "formationEnCours", "formationIngenieurEnCours", "formationTermineeEnAttente", "formationIngenieurTermineeEnAttente", "exploZoneEnCours"];
+  const champsObjetsOuNuls = ["learningEnCours", "perkLearningEnCours", "formationEnCours", "formationIngenieurEnCours", "formationTermineeEnAttente", "formationIngenieurTermineeEnAttente", "exploZoneEnCours"];
   for (const cle of champsObjetsOuNuls) {
     if (d[cle] !== undefined && d[cle] !== null && !estObjetSauvegarde(d[cle])) {
       return "Invalid field: " + cle + " must be an object or null.";
@@ -318,10 +318,12 @@ function validerStructureSauvegarde(d) {
   const champsBooleens = [
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
-    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
-    "managersDebloques", "tutorialCompletionPopupSeen", "managerRoleTutorialShown", "hideCampCatIcons"
+    "jobCenterDebloque", "jobCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
+    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons"
   ];
-  for (const cle of champsBooleens) {
+  // Accepted only so pre-removal saves remain valid; migration intentionally ignores it.
+  const champsBooleensLegacy = ["tutorialCompletionPopupSeen"];
+  for (const cle of champsBooleens.concat(champsBooleensLegacy)) {
     if (d[cle] !== undefined && typeof d[cle] !== "boolean") return "Invalid boolean field: " + cle + ".";
   }
 
@@ -587,7 +589,7 @@ function validerStructureSauvegarde(d) {
       });
     if (!groundRewardsValides) return "Invalid Camp ground reward data.";
     const buildingConstructionIds = [
-      "operationsTable", "jobCenter", "trainingCenter", "laboratory", "storage",
+      "operationsTable", "jobCenter", "laboratory", "storage",
       "marketStall", "smallFountain"
     ];
     const constructionsBatimentsValides = Object.keys(camp.constructions).length <= 128
@@ -825,6 +827,28 @@ function validerStructureSauvegarde(d) {
     if (!learningValide) return "Invalid learning data.";
   }
 
+  if (d.perkLearningEnCours) {
+    const learning = d.perkLearningEnCours;
+    const node = CatInc.data && CatInc.data.perksV2
+      && Array.isArray(CatInc.data.perksV2.nodes)
+      ? CatInc.data.perksV2.nodes.find(function(candidate) {
+          return candidate && candidate.id === learning.perkId && candidate.available && !candidate.granted;
+        })
+      : null;
+    const canonicalCost = node && Number(node.costs && node.costs.cannedCatFood);
+    const costKeys = estObjetSauvegarde(learning.costs) ? Object.keys(learning.costs) : [];
+    const learningValide = indexKittyValide(learning.kittyIndex, false)
+      && typeof learning.perkId === "string"
+      && typeof learning.jobId === "string"
+      && node && learning.jobId === node.jobId
+      && Number.isFinite(canonicalCost) && canonicalCost > 0
+      && typeof learning.startTs === "number" && Number.isFinite(learning.startTs)
+      && learning.duree === canonicalCost * 60 * 60 * 1000
+      && costKeys.length === 1 && costKeys[0] === "cannedCatFood"
+      && learning.costs.cannedCatFood === canonicalCost;
+    if (!learningValide) return "Invalid Perk learning data.";
+  }
+
   if (d.formationEnCours) {
     const formationValide = indexKittyValide(d.formationEnCours.kittyIndex, false)
       && typeof d.formationEnCours.metier === "string"
@@ -912,6 +936,7 @@ function analyserSauvegardeBrute(raw) {
     humanWorkersFood:       etat.humanWorkersFood,
     cannedCatFood:          etat.cannedCatFood,
     perksV2:                perksV2Api.normalizeProgress(etat.perksV2),
+    perkLearningEnCours:    etat.perkLearningEnCours,
     workBoostFinTs:         etat.workBoostFinTs,
     manualFocusOnboardingCompletedTs: etat.manualFocusOnboardingCompletedTs,
     birdPremierSpawnTs:      etat.birdPremierSpawnTs,
@@ -959,8 +984,6 @@ function analyserSauvegardeBrute(raw) {
     learningEnCours:     etat.learningEnCours,
     jobCenterDebloque:        etat.jobCenterDebloque,
     jobCenterConstruit:       etat.jobCenterConstruit,
-    trainingCenterDebloque:   etat.trainingCenterDebloque,
-    trainingCenterConstruit:  etat.trainingCenterConstruit,
     laboratoryDebloque:       etat.laboratoryDebloque,
     laboratoryConstruit:      etat.laboratoryConstruit,
     engineerRankUpgradesDebloques: etat.engineerRankUpgradesDebloques,
@@ -981,7 +1004,6 @@ function analyserSauvegardeBrute(raw) {
     managersDebloques:   etat.managersDebloques,
     managerRoleTutorialShown: etat.managerRoleTutorialShown,
     objectifsComplis: etat.objectifsComplis,
-    tutorialCompletionPopupSeen: etat.tutorialCompletionPopupSeen,
     logs:          etat.logs,
     storiesVues:   etat.storiesVues,
     releaseNotesSeenVersion: etat.releaseNotesSeenVersion,
@@ -1048,6 +1070,7 @@ function analyserSauvegardeBrute(raw) {
   etat.humanWorkersFood       = d.humanWorkersFood       || 0;
   etat.cannedCatFood          = d.cannedCatFood          || 0;
   etat.perksV2                = perksV2Api.normalizeProgress(d.perksV2);
+  etat.perkLearningEnCours    = d.perkLearningEnCours    || null;
   etat.workBoostFinTs         = d.workBoostFinTs         || 0;
   etat.manualFocusOnboardingCompletedTs = Number.isFinite(d.manualFocusOnboardingCompletedTs)
     ? d.manualFocusOnboardingCompletedTs
@@ -1198,8 +1221,6 @@ function analyserSauvegardeBrute(raw) {
   etat.learningEnCours     = d.learningEnCours     || null;
   etat.jobCenterDebloque        = d.jobCenterDebloque        || false;
   etat.jobCenterConstruit       = d.jobCenterConstruit       || false;
-  etat.trainingCenterDebloque   = d.trainingCenterDebloque   || false;
-  etat.trainingCenterConstruit  = d.trainingCenterConstruit  || false;
   etat.laboratoryDebloque       = d.laboratoryDebloque       || etat.itemsAppris.includes("engineerGuide");
   etat.laboratoryConstruit      = d.laboratoryConstruit      || false;
   etat.engineerRankUpgradesDebloques = d.engineerRankUpgradesDebloques || etat.itemsAppris.includes("teamworkGuide");
@@ -1250,7 +1271,9 @@ function analyserSauvegardeBrute(raw) {
   Object.values(etat.butinsScouting).forEach(function(butin) {
     if (!Number.isInteger(butin.tripled) || butin.tripled < 0) butin.tripled = 0;
     butin.rewards = Object.keys(butin.rewards || {}).reduce(function(rewards, rewardId) {
-      if (SCOUTING_REWARD_IDS.includes(rewardId)) rewards[rewardId] = butin.rewards[rewardId];
+      if (SCOUTING_REWARD_IDS.includes(rewardId) && Number(butin.rewards[rewardId]) > 0) {
+        rewards[rewardId] = butin.rewards[rewardId];
+      }
       return rewards;
     }, {});
   });
@@ -1270,7 +1293,6 @@ function analyserSauvegardeBrute(raw) {
   if (etat.managers.rock     === undefined) etat.managers.rock     = null;
   if (etat.managers.pawsonry === undefined) etat.managers.pawsonry = null;
   etat.objectifsComplis = d.objectifsComplis || [];
-  etat.tutorialCompletionPopupSeen = d.tutorialCompletionPopupSeen === true;
   etat.logs            = d.logs            || [];
   etat.releaseNotesSeenVersion = typeof d.releaseNotesSeenVersion === "string" ? d.releaseNotesSeenVersion : "";
   if (Array.isArray(d.storiesVues)) {
@@ -1298,7 +1320,7 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
     ajouterStory("story6bVue", itemsAppris.includes("schoolGuide") || !!d.jobCenterDebloque || !!d.jobCenterConstruit);
     ajouterStory("storySaladVue", !!d.premiereSaladeFaite);
-    ajouterStory("storySeminarVue", itemsAppris.includes("seminarGuide") || !!d.trainingCenterDebloque || !!d.trainingCenterConstruit);
+    ajouterStory("storySeminarVue", itemsAppris.includes("seminarGuide"));
     etat.storiesVues = storiesInferees;
   }
   if (Array.isArray(d.ongletsVisites)) {
@@ -1325,6 +1347,17 @@ function analyserSauvegardeBrute(raw) {
   // and legacy IDs, and turn every unknown value into the existing Stray Cat
   // fallback instead of rejecting the complete save.
   etat.kittiesData.forEach(function(k) { k.metier = normaliserJobId(k.metier); });
+  if (etat.perkLearningEnCours) {
+    const learning = etat.perkLearningEnCours;
+    const kitty = Number.isInteger(learning.kittyIndex) ? etat.kittiesData[learning.kittyIndex] : null;
+    const node = CatInc.data && CatInc.data.perksV2 && Array.isArray(CatInc.data.perksV2.nodes)
+      ? CatInc.data.perksV2.nodes.find(function(candidate) { return candidate.id === learning.perkId; })
+      : null;
+    if (!kitty || !node || kitty.metier !== learning.jobId || node.jobId !== learning.jobId
+        || (perksV2Api.isEffective && perksV2Api.isEffective(etat.perksV2, learning.perkId))) {
+      etat.perkLearningEnCours = null;
+    }
+  }
   if (etat.formationEnCours) {
     etat.formationEnCours.metier = normaliserJobId(etat.formationEnCours.metier);
     if (!etat.formationEnCours.metier || etat.formationEnCours.metier === "shop-owner") etat.formationEnCours = null;
@@ -1357,7 +1390,7 @@ function analyserSauvegardeBrute(raw) {
   });
   // Permanent specialists cannot occupy a training station in any lifecycle
   // state. Resolve reservations after specialist roles have been rebound.
-  ["formationEnCours", "formationTermineeEnAttente",
+  ["perkLearningEnCours", "formationEnCours", "formationTermineeEnAttente",
     "formationIngenieurEnCours", "formationIngenieurTermineeEnAttente"].forEach(function(field) {
     const reservation = etat[field];
     const kitty = reservation && Number.isInteger(reservation.kittyIndex)

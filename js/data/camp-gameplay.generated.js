@@ -203,7 +203,20 @@
         "id": "jobCenterUnlocked"
       },
       "effects": {},
-      "upgradeTiers": {},
+      "upgradeTiers": {
+        "2": {
+          "durationSeconds": 1800,
+          "costs": {
+            "rockBricks": 10,
+            "basicWoodPlanks": 20
+          },
+          "effects": {},
+          "unlock": {
+            "kind": "runtime-rule",
+            "id": "seminarGuideLearned"
+          }
+        }
+      },
       "simulation": {},
       "build": {
         "entryMode": "build",
@@ -211,31 +224,6 @@
         "costs": {
           "pebbleBricks": 10,
           "basicWoodPlanks": 2
-        }
-      }
-    },
-    "trainingCenter": {
-      "assetId": "training-center",
-      "name": "Training Center",
-      "category": "building",
-      "repeatable": false,
-      "footprint": {
-        "width": 3,
-        "height": 4
-      },
-      "unlock": {
-        "kind": "runtime-rule",
-        "id": "trainingCenterUnlocked"
-      },
-      "effects": {},
-      "upgradeTiers": {},
-      "simulation": {},
-      "build": {
-        "entryMode": "build",
-        "durationSeconds": 1800,
-        "costs": {
-          "rockBricks": 10,
-          "basicWoodPlanks": 20
         }
       }
     },

@@ -2128,6 +2128,125 @@
               }
             }
           }
+        },
+        "2": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "job-center",
+              "runtimeId": "jobCenter",
+              "name": "Job Center",
+              "category": "building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 1,
+              "status": "live",
+              "width": 3,
+              "height": 4,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/left.png"
+              },
+              "stickerCategory": "jobs",
+              "stickerSlot": {
+                "id": "jobs-emblem",
+                "enabled": true,
+                "mode": "surface",
+                "category": "jobs",
+                "anchors": {
+                  "down": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.43
+                    }
+                  },
+                  "right": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.6,
+                      "y": 0.5
+                    }
+                  },
+                  "up": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.57
+                    }
+                  },
+                  "left": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.4,
+                      "y": 0.5
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": true,
+                "baseSticker": true,
+                "defaultScale": 0.8,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "jobs-briefcase-paw",
+                "defaultColorId": "sky-blue"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 450,
+                  "canvasHeight": 600,
+                  "left": 60,
+                  "top": 38,
+                  "right": 390,
+                  "bottom": 536
+                },
+                "right": {
+                  "canvasWidth": 600,
+                  "canvasHeight": 450,
+                  "left": 64,
+                  "top": 60,
+                  "right": 562,
+                  "bottom": 390
+                },
+                "up": {
+                  "canvasWidth": 450,
+                  "canvasHeight": 600,
+                  "left": 60,
+                  "top": 64,
+                  "right": 390,
+                  "bottom": 562
+                },
+                "left": {
+                  "canvasWidth": 600,
+                  "canvasHeight": 450,
+                  "left": 38,
+                  "top": 60,
+                  "right": 536,
+                  "bottom": 390
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "main-access",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 4,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
@@ -3448,72 +3567,6 @@
         }
       }
     },
-    "smallCatStatue": {
-      "assetId": "small-cat-statue",
-      "runtimeId": "smallCatStatue",
-      "name": "Small cat statue",
-      "category": "decoration",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": null,
-          "revisions": {
-            "1": {
-              "assetId": "small-cat-statue",
-              "runtimeId": "smallCatStatue",
-              "name": "Small cat statue",
-              "category": "decoration",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "retired",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "tools/camp_asset_studio/library/assets/small-cat-statue/tier-1/revision-1/down.png",
-                "right": "tools/camp_asset_studio/library/assets/small-cat-statue/tier-1/revision-1/right.png",
-                "up": "tools/camp_asset_studio/library/assets/small-cat-statue/tier-1/revision-1/up.png",
-                "left": "tools/camp_asset_studio/library/assets/small-cat-statue/tier-1/revision-1/left.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 102,
-                  "top": 70,
-                  "right": 334,
-                  "bottom": 395
-                },
-                "right": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 96,
-                  "top": 19,
-                  "right": 348,
-                  "bottom": 395
-                },
-                "up": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 88,
-                  "top": 28,
-                  "right": 325,
-                  "bottom": 395
-                },
-                "left": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 71,
-                  "top": 51,
-                  "right": 319,
-                  "bottom": 395
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "smallFountain": {
       "assetId": "small-fountain",
       "runtimeId": "smallFountain",
@@ -4372,116 +4425,6 @@
         }
       }
     },
-    "trainingCenter": {
-      "assetId": "training-center",
-      "runtimeId": "trainingCenter",
-      "name": "Training Center",
-      "category": "building",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "training-center",
-              "runtimeId": "trainingCenter",
-              "name": "Training Center",
-              "category": "building",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 3,
-              "height": 4,
-              "sprites": {
-                "down": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/left.png"
-              },
-              "stickerCategory": "jobs",
-              "stickerSlot": {
-                "id": "jobs-emblem",
-                "enabled": true,
-                "mode": "surface",
-                "category": "jobs",
-                "anchors": {
-                  "down": {
-                    "auto": "surface",
-                    "surface": {
-                      "x": 0.5,
-                      "y": 0.43
-                    }
-                  },
-                  "right": {
-                    "auto": "surface",
-                    "surface": {
-                      "x": 0.6,
-                      "y": 0.5
-                    }
-                  },
-                  "up": {
-                    "auto": "surface",
-                    "surface": {
-                      "x": 0.5,
-                      "y": 0.57
-                    }
-                  },
-                  "left": {
-                    "auto": "surface",
-                    "surface": {
-                      "x": 0.4,
-                      "y": 0.5
-                    }
-                  }
-                },
-                "anchorReview": true,
-                "required": true,
-                "baseSticker": true,
-                "defaultScale": 0.8,
-                "defaultAnchorChoice": "auto",
-                "defaultStickerId": "jobs-briefcase-paw",
-                "defaultColorId": "sky-blue"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 450,
-                  "canvasHeight": 600,
-                  "left": 60,
-                  "top": 38,
-                  "right": 390,
-                  "bottom": 536
-                },
-                "right": {
-                  "canvasWidth": 600,
-                  "canvasHeight": 450,
-                  "left": 64,
-                  "top": 60,
-                  "right": 562,
-                  "bottom": 390
-                },
-                "up": {
-                  "canvasWidth": 450,
-                  "canvasHeight": 600,
-                  "left": 60,
-                  "top": 64,
-                  "right": 390,
-                  "bottom": 562
-                },
-                "left": {
-                  "canvasWidth": 600,
-                  "canvasHeight": 450,
-                  "left": 38,
-                  "top": 60,
-                  "right": 536,
-                  "bottom": 390
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "woodCathouse": {
       "assetId": "wood-cathouse",
       "runtimeId": "woodCathouse",
@@ -4490,7 +4433,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 3,
+          "liveRevision": 5,
           "revisions": {
             "1": {
               "assetId": "wood-cathouse",
@@ -4640,14 +4583,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 3,
-              "status": "live",
+              "status": "retired",
               "width": 1,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/down.png",
-                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/right.png",
-                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/up.png",
-                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/left.png"
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -4681,6 +4624,146 @@
                   "top": 0,
                   "right": 312,
                   "bottom": 322
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "4": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 319
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 318
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "5": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/down.png",
+                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/right.png",
+                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/up.png",
+                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 319
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 318
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
                 }
               },
               "access": {
@@ -5121,6 +5204,18 @@
                   "top": 0,
                   "right": 256,
                   "bottom": 256
+                }
+              },
+              "buildingJoin": {
+                "width": 0.32,
+                "maxWidth": 0.8,
+                "length": 0.34,
+                "multiCellLength": 0.68,
+                "textureScaleCells": 1.394,
+                "merged": {
+                  "outerInset": 0.09,
+                  "innerWidth": 0.62,
+                  "length": 0.8
                 }
               }
             }
@@ -7516,6 +7611,125 @@
               }
             }
           }
+        },
+        "2": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "job-center",
+              "runtimeId": "jobCenter",
+              "name": "Job Center",
+              "category": "building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 1,
+              "status": "live",
+              "width": 3,
+              "height": 4,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/left.png"
+              },
+              "stickerCategory": "jobs",
+              "stickerSlot": {
+                "id": "jobs-emblem",
+                "enabled": true,
+                "mode": "surface",
+                "category": "jobs",
+                "anchors": {
+                  "down": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.43
+                    }
+                  },
+                  "right": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.6,
+                      "y": 0.5
+                    }
+                  },
+                  "up": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.5,
+                      "y": 0.57
+                    }
+                  },
+                  "left": {
+                    "auto": "surface",
+                    "surface": {
+                      "x": 0.4,
+                      "y": 0.5
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": true,
+                "baseSticker": true,
+                "defaultScale": 0.8,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "jobs-briefcase-paw",
+                "defaultColorId": "sky-blue"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 450,
+                  "canvasHeight": 600,
+                  "left": 60,
+                  "top": 38,
+                  "right": 390,
+                  "bottom": 536
+                },
+                "right": {
+                  "canvasWidth": 600,
+                  "canvasHeight": 450,
+                  "left": 64,
+                  "top": 60,
+                  "right": 562,
+                  "bottom": 390
+                },
+                "up": {
+                  "canvasWidth": 450,
+                  "canvasHeight": 600,
+                  "left": 60,
+                  "top": 64,
+                  "right": 390,
+                  "bottom": 562
+                },
+                "left": {
+                  "canvasWidth": 600,
+                  "canvasHeight": 450,
+                  "left": 38,
+                  "top": 60,
+                  "right": 536,
+                  "bottom": 390
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "main-access",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 4,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
@@ -9768,7 +9982,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": null,
           "revisions": {
             "1": {
               "assetId": "training-center",
@@ -9778,14 +9992,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 3,
               "height": 4,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -9878,7 +10092,7 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 3,
+          "liveRevision": 5,
           "revisions": {
             "1": {
               "assetId": "wood-cathouse",
@@ -10028,14 +10242,14 @@
               "placeable": true,
               "tier": 1,
               "revision": 3,
-              "status": "live",
+              "status": "retired",
               "width": 1,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/down.png",
-                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/right.png",
-                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/up.png",
-                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-3/left.png"
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-3/left.png"
               },
               "spriteBounds": {
                 "down": {
@@ -10069,6 +10283,146 @@
                   "top": 0,
                   "right": 312,
                   "bottom": 322
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "4": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "retired",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/wood-cathouse/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 319
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 318
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "5": {
+              "assetId": "wood-cathouse",
+              "runtimeId": "woodCathouse",
+              "name": "Wood Cathouse",
+              "category": "house",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/down.png",
+                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/right.png",
+                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/up.png",
+                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 48,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 319
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 39,
+                  "right": 312,
+                  "bottom": 318
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 7,
+                  "right": 310,
+                  "bottom": 355
                 }
               },
               "access": {

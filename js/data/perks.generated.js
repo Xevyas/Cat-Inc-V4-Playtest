@@ -2263,7 +2263,7 @@
     });
   }
 
-  function canLearn(progress, perkId, resources, access) {
+  function validateLearn(progress, perkId, access) {
     const node = nodesById[perkId];
     if (!node) return {ok: false, reason: "unknown"};
     if (!node.available) return {ok: false, reason: "unavailable"};
@@ -2273,6 +2273,13 @@
     if (!node.starting && !node.prerequisites.every(function(item) { return active.has(item); })) {
       return {ok: false, reason: "prerequisites"};
     }
+    return {ok: true, reason: null};
+  }
+
+  function canLearn(progress, perkId, resources, access) {
+    const result = validateLearn(progress, perkId, access);
+    if (!result.ok) return result;
+    const node = nodesById[perkId];
     const wallet = resources && typeof resources === "object" ? resources : {};
     const affordable = Object.keys(node.costs).every(function(resourceId) {
       return Number.isFinite(wallet[resourceId]) && wallet[resourceId] >= node.costs[resourceId];
@@ -2280,15 +2287,34 @@
     return affordable ? {ok: true, reason: null} : {ok: false, reason: "cost"};
   }
 
-  function learn(progress, perkId, resources, access) {
+  function beginLearn(progress, perkId, resources, access) {
     const result = canLearn(progress, perkId, resources, access);
     const currentProgress = normalizeProgress(progress);
     const currentResources = Object.assign({}, resources || {});
     if (!result.ok) return {ok: false, reason: result.reason, progress: currentProgress, resources: currentResources};
     const node = nodesById[perkId];
     Object.keys(node.costs).forEach(function(resourceId) { currentResources[resourceId] -= node.costs[resourceId]; });
-    currentProgress.learned.push(perkId);
     return {ok: true, reason: null, progress: currentProgress, resources: currentResources};
+  }
+
+  function completeLearn(progress, perkId, access) {
+    const result = validateLearn(progress, perkId, access);
+    const currentProgress = normalizeProgress(progress);
+    if (!result.ok) return {ok: false, reason: result.reason, progress: currentProgress};
+    currentProgress.learned.push(perkId);
+    return {ok: true, reason: null, progress: currentProgress};
+  }
+
+  function learn(progress, perkId, resources, access) {
+    const started = beginLearn(progress, perkId, resources, access);
+    if (!started.ok) return started;
+    const completed = completeLearn(started.progress, perkId, access);
+    return {
+      ok: completed.ok,
+      reason: completed.reason,
+      progress: completed.progress,
+      resources: started.resources
+    };
   }
 
   CatInc.data.perksV2 = catalog;
@@ -2299,6 +2325,8 @@
     isEffective: isEffective,
     nodesForJob: nodesForJob,
     canLearn: canLearn,
+    beginLearn: beginLearn,
+    completeLearn: completeLearn,
     learn: learn,
     recruitSpeedMultiplier: function(progress) { return multiplier(progress, "gangLeaderRecruitSpeed", null); },
     hasFoodManagement: function(progress) { return hasCapability(progress, "gangLeaderFoodManagement"); },
