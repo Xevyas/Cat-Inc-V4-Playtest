@@ -4620,7 +4620,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: minmax(0, 1fr);
-  border-bottom: 1px dashed rgba(87, 105, 49, .24);
 }
 .camp-prototype-house-plot {
   position: relative;
@@ -4874,12 +4873,12 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-prototype-shrub {
   position: absolute;
-  bottom: 3%;
-  z-index: 2;
+  bottom: 9%;
+  z-index: 0;
   display: block;
   width: 32%;
   height: 42%;
-  background: url("img/Maps/Camp%20Runtime/Environment/Camp_Garden_Shrub_Watercolor_HighAngle_v2.webp?v=0.0001") center bottom / contain no-repeat;
+  background: url("img/Buildings/Camp%20Runtime/junk-flower-bush/tier-1/revision-3/down.png") center bottom / contain no-repeat;
 }
 .camp-prototype-shrub-left {
   left: 8%;
@@ -4888,14 +4887,25 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   right: 8%;
   transform: scaleX(-1);
 }
+.camp-prototype-house-window-tints {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: color;
+  pointer-events: none;
+  transform: scale(1.04, 1.16);
+  transform-origin: center bottom;
+}
+.camp-prototype-house-plot-red .camp-prototype-house-window-tints { fill: rgba(191, 72, 62, .84); }
+.camp-prototype-house-plot-green .camp-prototype-house-window-tints { fill: rgba(91, 157, 69, .84); }
 .camp-prototype-gardens {
   top: 33.333333%;
   bottom: 0;
   width: 33.333333%;
-  background-color: #b9d86a;
-  background-image: url("img/Maps/Camp%20Runtime/Environment/Camp_Grass_Texture_Game_v1.webp?v=0.0001");
-  background-repeat: repeat;
-  background-size: 114% auto;
+  background: transparent;
 }
 .camp-prototype-garden-red { left: 0; }
 .camp-prototype-garden-home { left: 33.333333%; }
@@ -4921,21 +4931,21 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 .camp-prototype-river-band {
   position: relative;
   width: 100%;
+  margin-top: 0;
   overflow: hidden;
   border: 2px solid #705a3d;
   border-top: 0;
   border-radius: 0 0 12px 12px;
   box-sizing: border-box;
-  background-color: #b9d86a;
-  background-image: url("img/Maps/Camp%20Runtime/Environment/Camp_Grass_Texture_Game_v1.webp?v=0.0001");
-  background-repeat: repeat;
-  background-size: 38% auto;
+  background: transparent;
 }
 .camp-prototype-river-segments {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-.camp-prototype-river-segments > span { overflow: hidden; }
+.camp-prototype-river-segments > span {
+  overflow: hidden;
+}
 .camp-prototype-river {
   display: block;
   width: 300%;
@@ -14314,27 +14324,95 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   border: 0;
   box-shadow: none;
 }
-/* Cannelle's shop reuses the shared modal owner and stays compact on phones. */
-.market-stall-shop-panel { width:min(620px,calc(100vw - 24px)); max-height:min(760px,calc(100vh - 24px)); overflow:auto; }
+/* Cannelle's shop overrides the managed overlay's narrow default panel width. */
+#overlay-root > .market-stall-shop-modal .market-stall-shop-panel { width:min(960px,100%); max-width:960px; box-sizing:border-box; overflow:auto; }
 .market-stall-shop-header { display:grid; grid-template-columns:72px 1fr auto; align-items:center; gap:12px; }
 .market-stall-shop-header > span { display:grid; gap:3px; }
 .market-stall-shop-header strong { font-size:1.35rem; }
 .market-stall-shop-header small { color:var(--texte-secondaire,#685b50); }
 .market-stall-shop-portrait { width:68px; height:68px; object-fit:contain; border-radius:50%; background:#fff8e8; }
 .market-stall-shop-tier-hint,.market-stall-shop-status { margin:10px 0; }
-.market-stall-shop-tabs { display:flex; gap:8px; margin-bottom:10px; }
+.market-stall-shop-action-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.market-stall-shop-tabs { display:flex; gap:8px; }
 .market-stall-shop-tab { min-height:40px; padding:8px 14px; border-radius:999px; }
+.market-stall-shop-mini-game { min-height:44px; min-width:172px; display:grid; grid-template-columns:minmax(0,1fr) 38px; overflow:hidden; border:1px solid rgba(105,71,35,.38); border-radius:12px; background:#fff8e8; box-shadow:0 2px 8px rgba(72,47,26,.12); }
+.market-stall-shop-mini-game[hidden] { display:none; }
+.market-stall-shop-mini-game > button { border:0; border-radius:0; background:transparent; color:inherit; }
+.market-stall-shop-mini-game > button:focus-visible { outline:3px solid #8b5d28; outline-offset:-3px; position:relative; z-index:1; }
+#market-stall-shop-mini-game-launch { min-height:44px; padding:6px 10px; display:grid; gap:1px; text-align:center; }
+#market-stall-shop-mini-game-help { min-width:38px; border-left:1px solid rgba(105,71,35,.26); font-size:1.05rem; font-weight:900; }
+.market-stall-shop-mini-game small { font-size:.68rem; font-weight:600; opacity:.72; }
 .market-stall-shop-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-.market-stall-shop-slot { min-height:132px; padding:12px; border:1px solid rgba(90,65,45,.22); border-radius:14px; background:rgba(255,250,238,.92); display:flex; flex-direction:column; gap:7px; }
+.market-stall-shop-slot { height:220px; min-width:0; padding:12px; border:1px solid rgba(90,65,45,.22); border-radius:14px; background:rgba(255,250,238,.92); display:flex; flex-direction:column; gap:7px; box-sizing:border-box; text-align:center; }
+.market-stall-shop-slot > strong { min-height:2.5em; display:flex; align-items:flex-start; justify-content:center; }
+.market-stall-shop-preview { min-height:0; flex:1; display:flex; align-items:center; justify-content:center; }
+.market-stall-shop-preview img { display:block; width:min(132px,82%); height:min(132px,100%); object-fit:contain; }
 .market-stall-shop-slot-empty { opacity:.34; }
-.market-stall-shop-slot button { margin-top:auto; min-height:40px; }
+.market-stall-shop-slot button { margin-top:auto; min-height:40px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.market-stall-shop-buy-price { display:inline-flex; align-items:center; gap:4px; }
+.market-stall-shop-buy-price img { width:24px; height:24px; object-fit:contain; }
 .market-stall-shop-owned { color:#39733c; font-weight:700; }
 @media (max-width:600px) {
   .market-stall-shop-panel { width:calc(100vw - 12px); max-height:calc(100dvh - 12px); padding:12px; }
   .market-stall-shop-header { grid-template-columns:56px 1fr auto; gap:8px; }
   .market-stall-shop-portrait { width:52px; height:52px; }
-  .market-stall-shop-grid { gap:6px; }
-  .market-stall-shop-slot { min-height:118px; padding:8px; font-size:.82rem; overflow-wrap:anywhere; }
+  .market-stall-shop-action-row { gap:8px; }
+  .market-stall-shop-mini-game { min-width:112px; padding-inline:8px; }
+  .market-stall-shop-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .market-stall-shop-slot { height:240px; padding:8px; font-size:.82rem; overflow-wrap:anywhere; }
+  .market-stall-shop-preview img { width:min(104px,88%); height:min(104px,100%); }
+}
+
+/* Cannelle's Bargain */
+#overlay-root > .cannelle-bargain-modal .cannelle-bargain-panel { width:min(760px,100%); max-width:760px; box-sizing:border-box; }
+.cannelle-bargain-rules-copy { color:#594536; line-height:1.45; }
+.cannelle-bargain-rules-copy ul { margin:8px 0 16px; padding-left:22px; display:grid; gap:8px; }
+.cannelle-bargain-token-balance { display:flex; align-items:center; justify-content:center; gap:7px; }
+.cannelle-bargain-token-balance img,.cannelle-bargain-result-reward img { width:30px; height:30px; object-fit:contain; }
+.cannelle-bargain-difficulties { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+.cannelle-bargain-difficulties button { min-height:78px; display:grid; place-content:center; gap:5px; border-radius:13px; }
+.cannelle-bargain-difficulties button span { font-size:.78rem; }
+.cannelle-bargain-scoreboard { display:grid; grid-template-columns:1fr minmax(120px,1fr) 1fr; align-items:center; gap:10px; margin:8px 0 15px; }
+.cannelle-bargain-scoreboard > span { display:grid; justify-items:center; gap:4px; text-align:center; }
+.cannelle-bargain-scoreboard > span:first-child,.cannelle-bargain-scoreboard > span:last-child { grid-template-columns:52px auto; align-items:center; justify-content:center; }
+.cannelle-bargain-scoreboard img { width:50px; height:50px; object-fit:contain; border-radius:50%; background:#fff8e8; }
+.cannelle-bargain-scoreboard strong { min-width:36px; font-size:1.7rem; }
+.cannelle-bargain-scoreboard small { color:#796656; }
+.cannelle-bargain-offers { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.cannelle-bargain-offer { position:relative; min-height:190px; padding:13px 8px; display:grid; align-content:center; justify-items:center; gap:12px; border:2px solid rgba(100,73,45,.25); border-radius:16px; background:#fffaf0; color:#4f3b2c; }
+.cannelle-bargain-offer:not(:disabled):hover { transform:translateY(-2px); border-color:#9a672e; }
+.cannelle-bargain-offer:focus-visible { outline:3px solid #8b5d28; outline-offset:2px; }
+.cannelle-bargain-offer.is-correct { border-color:#3e7c46; box-shadow:inset 0 0 0 2px rgba(62,124,70,.2); }
+.cannelle-bargain-offer.is-correct small { color:#2f6937; font-weight:900; }
+.cannelle-bargain-food,.cannelle-bargain-price { display:flex; align-items:center; justify-content:center; gap:7px; }
+.cannelle-bargain-food img { width:66px; height:66px; object-fit:contain; }
+.cannelle-bargain-food strong { font-size:1.45rem; }
+.cannelle-bargain-price img { width:36px; height:36px; object-fit:contain; }
+.cannelle-bargain-price strong { font-size:1.25rem; }
+.cannelle-bargain-choices { min-height:36px; display:flex; justify-content:center; gap:4px; }
+.cannelle-bargain-pastille { width:34px; height:34px; object-fit:contain; border:2px solid #fff; border-radius:50%; background:#f5ead7; box-shadow:0 1px 5px rgba(55,37,22,.35); }
+.cannelle-bargain-timer,.cannelle-bargain-feedback { margin:10px 0; text-align:center; }
+.cannelle-bargain-timer { font-weight:900; font-variant-numeric:tabular-nums; }
+.cannelle-bargain-feedback { min-height:2.8em; }
+.cannelle-bargain-result-reward { display:inline-flex; align-items:center; gap:5px; margin-left:8px; font-weight:900; }
+#cannelle-bargain-next { display:block; margin:8px auto 0; }
+#cannelle-bargain-next[hidden] { display:none; }
+
+@media (max-width:600px) {
+  .market-stall-shop-mini-game { min-width:142px; padding:0; }
+  #overlay-root > .cannelle-bargain-modal .cannelle-bargain-panel { width:calc(100vw - 12px); max-height:calc(100dvh - 12px); padding:12px; overflow:auto; }
+  .cannelle-bargain-scoreboard { grid-template-columns:1fr 1.2fr 1fr; gap:4px; }
+  .cannelle-bargain-scoreboard > span:first-child,.cannelle-bargain-scoreboard > span:last-child { grid-template-columns:38px auto; }
+  .cannelle-bargain-scoreboard img { width:38px; height:38px; }
+  .cannelle-bargain-scoreboard strong { min-width:24px; font-size:1.35rem; }
+  .cannelle-bargain-scoreboard b { font-size:.82rem; }
+  .cannelle-bargain-offers { gap:5px; }
+  .cannelle-bargain-offer { min-height:180px; padding:8px 3px; gap:8px; font-size:.78rem; }
+  .cannelle-bargain-food { display:grid; justify-items:center; gap:2px; }
+  .cannelle-bargain-food img { width:48px; height:48px; }
+  .cannelle-bargain-price { gap:3px; }
+  .cannelle-bargain-price img { width:29px; height:29px; }
+  .cannelle-bargain-pastille { width:29px; height:29px; }
 }
 /* DEV-only QA Toolkit: its root is injected only after the hard DEV boundary passes. */
 #dev-tools-toggle{position:fixed;right:10px;bottom:10px;z-index:12000;border:1px solid #e2b84b;border-radius:999px;background:#33280d;color:#ffe39a;font:700 12px/1 sans-serif;padding:9px 11px;box-shadow:0 2px 10px #0006}

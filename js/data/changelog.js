@@ -838,11 +838,42 @@
     })
   ]);
 
+  const release0077Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Cannelle's Level 10 shop now offers the Cardboard Litterbox Blueprint through the normal purchase and study flow.",
+        "Cannelle's Bargain now challenges Bernardo to five-round supplier duels with persistent silver Tokens and a shared three-hour cooldown.",
+        "Settings now includes a persistent Cat portrait size control for the Camp."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Camp Level thresholds now follow the current Studio-authored balance, starting at 3 Camp XP."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Opening Camp Profile no longer focuses the Camp name field or summons the mobile keyboard."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Camp houses now use matching window colors, refreshed facade bushes and one continuous grass-to-shoreline transition.",
+        "Camp Cat portraits now use a smaller mobile baseline while preserving proportional zoom and desktop sizing."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0076",
+    baseVersion: "0.0077",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -855,6 +886,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0077",
+      date: "2026-08-28",
+      categories: release0077Categories
+    }),
     Object.freeze({
       version: "0.0076",
       date: "2026-08-28",

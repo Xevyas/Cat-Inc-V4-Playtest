@@ -650,6 +650,16 @@
       rotatable: true,
       blocksMovement: true
     })),
+    cardboardLitterbox: gameplayItem("cardboardLitterbox", gameplayRuntimeItem("cardboardLitterbox", {
+      id: "cardboardLitterbox",
+      label: "Cardboard Litterbox",
+      width: 1,
+      height: 1,
+      color: "cardboard",
+      category: "decoration",
+      rotatable: true,
+      blocksMovement: true
+    })),
     tree: runtimeItem("tree", {
       id: "tree",
       label: "Tree",

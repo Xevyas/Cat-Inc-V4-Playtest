@@ -291,8 +291,9 @@ function validerStructureSauvegarde(d) {
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
     "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "basicWoodPlanksTotalProduit", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
+    "cannelleTokens", "cannelleBargainNextAt",
     "workBoostFinTs", "manualFocusOnboardingCompletedTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
-    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
+    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique", "campCatPortraitScale"
   ];
   for (const cle of champsNumeriques) {
     if (d[cle] !== undefined && (typeof d[cle] !== "number" || !Number.isFinite(d[cle]) || d[cle] < 0)) {
@@ -340,12 +341,16 @@ function validerStructureSauvegarde(d) {
   for (const cle of ["volumeEffetsSonores", "volumeMusique"]) {
     if (d[cle] !== undefined && d[cle] > 1) return "Invalid audio volume: " + cle + ".";
   }
+  if (d.campCatPortraitScale !== undefined
+      && (d.campCatPortraitScale < 0.7 || d.campCatPortraitScale > 1.3)) {
+    return "Invalid Camp Cat portrait scale.";
+  }
 
   const champsBooleens = [
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
     "jobCenterDebloque", "jobCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
-    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons"
+    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons", "cannelleBargainRulesSeen"
   ];
   // Accepted only so pre-removal saves remain valid; migration intentionally ignores it.
   const champsBooleensLegacy = ["tutorialCompletionPopupSeen"];
@@ -630,7 +635,7 @@ function validerStructureSauvegarde(d) {
     if (!groundRewardsValides) return "Invalid Camp ground reward data.";
     const buildingConstructionIds = [
       "operationsTable", "jobCenter", "laboratory", "storage",
-      "marketStall", "smallFountain"
+      "marketStall", "smallFountain", "cardboardLitterbox"
     ];
     const constructionsBatimentsValides = Object.keys(camp.constructions).length <= 128
       && Object.keys(camp.constructions).every(function(uid) {
@@ -978,6 +983,9 @@ function analyserSauvegardeBrute(raw) {
     humanLeftovers:         etat.humanLeftovers,
     humanWorkersFood:       etat.humanWorkersFood,
     cannedCatFood:          etat.cannedCatFood,
+    cannelleTokens:         etat.cannelleTokens,
+    cannelleBargainNextAt:  etat.cannelleBargainNextAt,
+    cannelleBargainRulesSeen: etat.cannelleBargainRulesSeen,
     perksV2:                perksV2Api.normalizeProgress(etat.perksV2),
     perkLearningEnCours:    etat.perkLearningEnCours,
     workBoostFinTs:         etat.workBoostFinTs,
@@ -999,6 +1007,7 @@ function analyserSauvegardeBrute(raw) {
     avertirSurplusNourriture: etat.avertirSurplusNourriture,
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
+    campCatPortraitScale:    etat.campCatPortraitScale,
     hideCampCatIcons:          etat.hideCampCatIcons,
     resourceBarHidden:       etat.resourceBarHidden,
     campProfile:             normaliserProfilCampSauvegarde(etat.campProfile),
@@ -1113,6 +1122,9 @@ function analyserSauvegardeBrute(raw) {
   etat.humanLeftovers         = d.humanLeftovers         || 0;
   etat.humanWorkersFood       = d.humanWorkersFood       || 0;
   etat.cannedCatFood          = d.cannedCatFood          || 0;
+  etat.cannelleTokens         = Number.isFinite(d.cannelleTokens) ? Math.max(0, Math.floor(d.cannelleTokens)) : 0;
+  etat.cannelleBargainNextAt  = Number.isFinite(d.cannelleBargainNextAt) ? Math.max(0, d.cannelleBargainNextAt) : 0;
+  etat.cannelleBargainRulesSeen = d.cannelleBargainRulesSeen === true;
   etat.perksV2                = perksV2Api.normalizeProgress(d.perksV2);
   etat.perkLearningEnCours    = d.perkLearningEnCours    || null;
   etat.workBoostFinTs         = d.workBoostFinTs         || 0;
@@ -1157,6 +1169,9 @@ function analyserSauvegardeBrute(raw) {
   etat.avertirSurplusNourriture = d.avertirSurplusNourriture !== false;
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0;
+  etat.campCatPortraitScale = d.campCatPortraitScale !== undefined
+    ? Math.max(0.7, Math.min(1.3, d.campCatPortraitScale))
+    : 1;
   etat.hideCampCatIcons          = d.hideCampCatIcons === true;
   etat.resourceBarHidden = Array.isArray(d.resourceBarHidden)
     ? Array.from(new Set(d.resourceBarHidden.filter(function(id) { return RESOURCE_BAR_KEYS.includes(id); })))

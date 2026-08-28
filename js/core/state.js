@@ -80,6 +80,9 @@ function creerEtatInitial() {
   humanLeftovers:       0,
   humanWorkersFood:     0,
   cannedCatFood:        0,
+  cannelleTokens:       0,
+  cannelleBargainNextAt: 0,
+  cannelleBargainRulesSeen: false,
   perksV2:              { version: 2, learned: [] },
   perkLearningEnCours:  null,   // { perkId, kittyIndex, jobId, startTs, duree, costs } in ms
   workBoostFinTs:       0,
@@ -102,6 +105,7 @@ function creerEtatInitial() {
   avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
   volumeMusique:           0,
+  campCatPortraitScale:    1,
   hideCampCatIcons:          false,
   // Resources hidden from the compact top rail. An empty list means every
   // unlocked resource is displayed by default.

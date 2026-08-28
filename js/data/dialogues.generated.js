@@ -1933,6 +1933,105 @@
       }
     },
     {
+      "id": "ecran-story-cannelle-bargain-intro",
+      "name": "Cannelle's Bargain",
+      "flag": "storyCannelleBargainIntroVue",
+      "trigger": "This scene currently has no documented automatic trigger.",
+      "closeButton": {
+        "label": "See the rules",
+        "handler": "terminerIntroCannelleBargain()",
+        "actionSummary": "Close the dialogue and return to the current screen."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "All that Food you shared with me has put me in a generous mood. How about a little game?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "A game?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "I’ll show us three deals. Pick the best bargain before I do. Quick thinking makes a good shopkeeper."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "And if I beat you?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "Then maybe I’ll make it worth your while."
+        }
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/interface/gold-coin.png",
+        "alt": "A gold coin used in Cannelle's supplier offers."
+      }
+    },
+    {
+      "id": "ecran-story-cannelle-bargain-victory",
+      "name": "A Silver Prize",
+      "flag": "storyCannelleBargainVictoryVue",
+      "trigger": "This scene currently has no documented automatic trigger.",
+      "closeButton": {
+        "label": "Take the Token",
+        "handler": "terminerDialoguePremiereVictoireCannelleBargain()",
+        "actionSummary": "Close the dialogue and return to the current screen."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "All right, all right. You won. Here — your prize."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Wait... this is silver. We were playing with gold coins."
+        },
+        {
+          "classes": [],
+          "speakerClass": "cannelle",
+          "speakerName": "Cannelle",
+          "portraitClass": "cannelle",
+          "html": "You didn’t seriously think I was going to give you my gold coins, did you?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Right... thanks, I guess."
+        }
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/resources/silver-coin.png",
+        "alt": "Cannelle's silver Token."
+      }
+    },
+    {
       "id": "ecran-story-bird",
       "name": "The bird",
       "flag": "storyBirdVue",

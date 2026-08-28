@@ -979,6 +979,90 @@
         }
       }
     },
+    "catTreeV2": {
+      "assetId": "cat-tree-v2",
+      "runtimeId": "catTreeV2",
+      "name": "Cat Tree V2",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "cat-tree-v2",
+              "runtimeId": "catTreeV2",
+              "name": "Cat Tree V2",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 74,
+                  "top": 32,
+                  "right": 346,
+                  "bottom": 390
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 123,
+                  "top": 19,
+                  "right": 298,
+                  "bottom": 402
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 66,
+                  "top": 18,
+                  "right": 353,
+                  "bottom": 390
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 113,
+                  "top": 17,
+                  "right": 306,
+                  "bottom": 403
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "catchen": {
       "assetId": "catchen",
       "runtimeId": "catchen",
@@ -1464,6 +1548,72 @@
                 "clearDurationSeconds": 1800,
                 "minCatLevel": 2,
                 "requiredCats": 2
+              }
+            }
+          }
+        }
+      }
+    },
+    "tree": {
+      "assetId": "garden-tree",
+      "runtimeId": "tree",
+      "name": "Garden Tree",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": null,
+          "revisions": {
+            "1": {
+              "assetId": "garden-tree",
+              "runtimeId": "tree",
+              "name": "Garden Tree",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/garden-tree/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/garden-tree/tier-1/revision-1/down.png",
+                "up": "tools/camp_asset_studio/library/assets/garden-tree/tier-1/revision-1/down.png",
+                "left": "tools/camp_asset_studio/library/assets/garden-tree/tier-1/revision-1/down.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                },
+                "right": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                },
+                "up": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                },
+                "left": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                }
               }
             }
           }
@@ -6678,6 +6828,90 @@
                   "right": 319,
                   "bottom": 420
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "catTreeV2": {
+      "assetId": "cat-tree-v2",
+      "runtimeId": "catTreeV2",
+      "name": "Cat Tree V2",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "cat-tree-v2",
+              "runtimeId": "catTreeV2",
+              "name": "Cat Tree V2",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 74,
+                  "top": 32,
+                  "right": 346,
+                  "bottom": 390
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 123,
+                  "top": 19,
+                  "right": 298,
+                  "bottom": 402
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 66,
+                  "top": 18,
+                  "right": 353,
+                  "bottom": 390
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 113,
+                  "top": 17,
+                  "right": 306,
+                  "bottom": 403
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }

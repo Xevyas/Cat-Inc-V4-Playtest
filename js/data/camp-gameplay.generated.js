@@ -29,8 +29,8 @@
     ]
   },
   "campLevelRules": {
-    "baseXp": 10,
-    "growth": 1.7,
+    "baseXp": 3,
+    "growth": 1.5,
     "appealPerLevel": 1
   },
   "definitions": {
@@ -389,6 +389,32 @@
         "durationSeconds": 1800,
         "costs": {
           "pebbleBricks": 1
+        }
+      }
+    },
+    "cardboardLitterbox": {
+      "assetId": "cardboard-litterbox",
+      "name": "Cardboard Litterbox",
+      "category": "decoration",
+      "repeatable": true,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "unlock": {
+        "kind": "runtime-rule",
+        "id": "cardboardLitterboxBlueprintLearned"
+      },
+      "effects": {},
+      "upgradeTiers": {},
+      "simulation": {
+        "ranks": 12
+      },
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 1800,
+        "costs": {
+          "cardboardPlanks": 1
         }
       }
     },

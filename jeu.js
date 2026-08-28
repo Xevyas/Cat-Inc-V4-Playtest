@@ -2594,7 +2594,7 @@ function ouvrirProfilCamp() {
   ouvrirDialogueModal("camp-profile-modal", {
     dismissible: true,
     fermer: fermerProfilCamp,
-    focusSelector: "#camp-profile-name-input",
+    focusSelector: ".camp-profile-panel",
     returnFocusSelector: "#camp-profile-summary"
   });
 }
@@ -3439,6 +3439,7 @@ function ouvrirModalSettings() {
   if (overfoodToggle) overfoodToggle.checked = etat.avertirSurplusNourriture !== false;
   const campCatIconsToggle = document.getElementById("toggle-camp-cat-icons");
   if (campCatIconsToggle) campCatIconsToggle.checked = etat.hideCampCatIcons === true;
+  const campCatPortraitSizeInput = document.getElementById("settings-camp-cat-portrait-size");
   const sfxInput = document.getElementById("settings-sfx-volume");
   const musicInput = document.getElementById("settings-music-volume");
   if (sfxInput) {
@@ -3448,6 +3449,10 @@ function ouvrirModalSettings() {
   if (musicInput) {
     musicInput.value = Math.round(etat.volumeMusique * 100);
     actualiserVolumeAudioUI("music", musicInput.value);
+  }
+  if (campCatPortraitSizeInput) {
+    campCatPortraitSizeInput.value = Math.round(coefficientTaillePortraitsChatsCamp() * 100);
+    actualiserTaillePortraitsChatsCampUI(campCatPortraitSizeInput.value);
   }
   ouvrirDialogueModal("settings-modal", {
     dismissible: true,
@@ -3484,6 +3489,18 @@ function basculerAffichageTempsAjuste(checked) {
 }
 function basculerAvertissementSurplusNourriture(checked) {
   etat.avertirSurplusNourriture = checked !== false;
+  sauvegarder();
+}
+function actualiserTaillePortraitsChatsCampUI(rawValue) {
+  const value = Math.max(70, Math.min(130, Number(rawValue) || 100));
+  const output = document.getElementById("settings-camp-cat-portrait-size-value");
+  if (output) output.value = Math.round(value) + "%";
+  if (output) output.textContent = Math.round(value) + "%";
+}
+function gererTaillePortraitsChatsCamp(rawValue) {
+  etat.campCatPortraitScale = Math.max(70, Math.min(130, Number(rawValue) || 100)) / 100;
+  actualiserTaillePortraitsChatsCampUI(etat.campCatPortraitScale * 100);
+  appliquerZoomCampPrototype(false);
   sauvegarder();
 }
 function basculerIconesChatsCamp(checked) {
@@ -9457,6 +9474,10 @@ function apprendreLivre(itemId) {
     afficherNotification("Small Fountain Blueprint learned! Small Fountain is now available in Camp Decorations.");
     ajouterLog("unlock", "Small Fountain Blueprint learned — Small Fountain unlocked in Camp Decorations.");
   }
+  if (itemId === "cardboardLitterboxBlueprint") {
+    afficherNotification("Cardboard Litterbox Blueprint learned! Cardboard Litterbox is now available in Camp Decorations.");
+    ajouterLog("unlock", "Cardboard Litterbox Blueprint learned — Cardboard Litterbox unlocked in Camp Decorations.");
+  }
   if (itemId === "schoolGuide") {
     etat.jobCenterDebloque = true;
     assignerGangLeader();
@@ -11641,6 +11662,7 @@ function tick() {
   }
 
   verifierObjectifs();
+  actualiserCooldownCannelleBargain();
   renduDynamique();
   if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("tick", diagnosticStart, null);
 }
@@ -13762,6 +13784,7 @@ const CAMP_PROTOTYPE_ZOOM_STEP = 0.25;
 const CAMP_PROTOTYPE_AUTO_ZOOM_MIN = 0.5;
 const CAMP_PROTOTYPE_AUTO_ZOOM_MAX = 2;
 const CAMP_CAT_PORTRAIT_REFERENCE_SCALE = 0.7;
+const CAMP_CAT_PORTRAIT_MOBILE_LAYOUT_SCALE = 0.585;
 const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object.freeze({
   sawmill: "wood",
   catchen: "food",
@@ -13911,7 +13934,8 @@ const CAMP_BUILDING_CONSTRUCTION_CONFIG = Object.freeze({
   laboratory: constructionBalanceCampPrototype("laboratory", "laboratoryConstruit"),
   storage: constructionBalanceCampPrototype("storage", null),
   marketStall: constructionBalanceCampPrototype("marketStall", null),
-  smallFountain: constructionBalanceCampPrototype("smallFountain", null)
+  smallFountain: constructionBalanceCampPrototype("smallFountain", null),
+  cardboardLitterbox: constructionBalanceCampPrototype("cardboardLitterbox", null)
 });
 const CAMP_HOUSE_CONSTRUCTION_DURATIONS = Object.freeze({
   cardboardBox: definitionGameplayCamp("cardboardBox").build.durationSeconds
@@ -14158,6 +14182,9 @@ function conditionGameplayUnlockCamp(unlock) {
   }
   if (unlock.kind === "runtime-rule" && unlock.id === "smallFountainBlueprintLearned") {
     return etat.itemsAppris.includes("smallFountainBlueprint");
+  }
+  if (unlock.kind === "runtime-rule" && unlock.id === "cardboardLitterboxBlueprintLearned") {
+    return etat.itemsAppris.includes("cardboardLitterboxBlueprint");
   }
   if (unlock.kind === "runtime-rule" && unlock.id === "seminarGuideLearned") {
     return etat.itemsAppris.includes("seminarGuide");
@@ -14594,7 +14621,7 @@ function contenuBatimentCampDebloque(typeId) {
   if (typeId === "jobCenter") return jobCenterDebloquee();
   if (typeId === "laboratory") return laboratoryDebloquee();
   if (typeId === "storage") return Boolean(DEV_MODE || conditionGameplayCampDebloquee(typeId));
-  if (typeId === "marketStall" || typeId === "smallFountain") {
+  if (typeId === "marketStall" || typeId === "smallFountain" || typeId === "cardboardLitterbox") {
     return Boolean(DEV_MODE || conditionGameplayCampDebloquee(typeId));
   }
   return false;
@@ -15011,7 +15038,10 @@ function accesCampPrototype(type, tier) {
 function categorieCampPrototypeAccessible(categorie) {
   return categorie === "house"
     || (categorie === "building" && batimentCampDisponiblePlacement())
-    || (categorie === "decoration" && batimentCampDisponiblePlacement("smallFountain"))
+    || (categorie === "decoration" && Object.keys(CAMP_BUILDING_CONSTRUCTION_CONFIG).some(function(typeId) {
+      const type = typeCampPrototype(typeId);
+      return type && type.category === "decoration" && batimentCampDisponiblePlacement(typeId);
+    }))
     || (categorie === "road" && appealCampDebloque())
     || (DEV_MODE && ["building", "decoration", "road", "fence", "junk", "terrain", "dev-library"].includes(categorie));
 }
@@ -16230,6 +16260,19 @@ function jardinsVoisinsVisiblesCampPrototype() {
   };
 }
 
+function coefficientLayoutPortraitsCamp() {
+  return typeof window !== "undefined" && window.innerWidth <= 768
+    ? CAMP_CAT_PORTRAIT_MOBILE_LAYOUT_SCALE
+    : 1;
+}
+
+function coefficientTaillePortraitsChatsCamp() {
+  const coefficient = Number(etat && etat.campCatPortraitScale);
+  return Number.isFinite(coefficient)
+    ? Math.max(0.7, Math.min(1.3, coefficient))
+    : 1;
+}
+
 function cadrageJardinCentralMobileCampPrototype() {
   if (typeof window === "undefined" || window.innerWidth > 768) return null;
   const viewport = document.querySelector(".camp-prototype-viewport");
@@ -16446,7 +16489,8 @@ function appliquerZoomCampPrototype(conserverCentre, ancrageClient) {
   board.style.setProperty("--camp-prototype-obstacle-size", (16 * campPrototypeZoom) + "px");
   board.style.setProperty(
     "--camp-cat-world-scale",
-    String(campPrototypeZoom * CAMP_CAT_PORTRAIT_REFERENCE_SCALE)
+    String(campPrototypeZoom * CAMP_CAT_PORTRAIT_REFERENCE_SCALE
+      * coefficientLayoutPortraitsCamp() * coefficientTaillePortraitsChatsCamp())
   );
   board.dataset.campZoom = String(campPrototypeZoom);
   synchroniserPositionsUiTachesCamp();
@@ -18324,6 +18368,18 @@ function ouvrirFonctionDepuisCamp(event) {
   return true;
 }
 
+const CANNELLE_BARGAIN = globalThis.CatInc.data.cannelleBargain;
+const CANNELLE_BARGAIN_RULES_HTML = '<ul>'
+  + '<li>Each round shows 3 offers. Pick the most Canned Cat Food for the gold-coin cost.</li>'
+  + '<li>Bernardo and Cannelle both choose: correct and fastest scores 2; correct but second scores 1; wrong or no answer scores 0.</li>'
+  + '<li>There are 5 rounds, followed by sudden-death rounds while the score is tied.</li>'
+  + '<li>Winning Difficulty N rewards N Cannelle’s Tokens.</li>'
+  + '<li>One duel is available every 3 hours of real time.</li>'
+  + '</ul>';
+let cannelleBargainRulesMandatory = false;
+let cannelleBargainRulesGateTimer = null;
+let cannelleBargainSession = null;
+
 function cannelleShopOwner() {
   return etat.kittiesData.find(function(kitty) {
     return kitty && kitty.nom === "Cannelle" && SHOP_DATA.isShopOwner(kitty);
@@ -18346,6 +18402,325 @@ function disponibiliteBoutiqueMarketStall() {
 function libellePrixMarchandise(product) {
   const resource = libelleRessourceCamp(product.priceResource);
   return product.priceAmount + " " + resource;
+}
+
+function spriteApercuMarchandiseCannelle(product) {
+  const assetId = product && product.previewAssetId;
+  const assets = globalThis.CatInc && globalThis.CatInc.data
+    && globalThis.CatInc.data.campAssets && globalThis.CatInc.data.campAssets.assets || {};
+  const family = Object.keys(assets).map(function(runtimeId) { return assets[runtimeId]; })
+    .find(function(candidate) { return candidate && candidate.assetId === assetId; });
+  const tier = family && family.tiers && family.tiers["1"];
+  const revision = tier && Number.isInteger(tier.liveRevision)
+    && tier.revisions && tier.revisions[String(tier.liveRevision)];
+  const sprite = revision && revision.status === "live" && revision.sprites
+    && revision.sprites.down;
+  return sprite ? sprite + (sprite.includes("?") ? "&" : "?")
+    + "camp-runtime=" + revision.tier + "." + revision.revision : "";
+}
+
+function niveauCannelleShopOwner() {
+  const cannelle = cannelleShopOwner();
+  return cannelle ? Math.max(0, Math.floor(Number(cannelle.niveau) || 0)) : 0;
+}
+
+function formaterCooldownCannelleBargain(milliseconds) {
+  const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  return (hours ? hours + "h " : "") + String(minutes).padStart(2, "0") + "m "
+    + String(remainingSeconds).padStart(2, "0") + "s";
+}
+
+function cooldownRestantCannelleBargain(now) {
+  return CANNELLE_BARGAIN.remainingCooldown(etat.cannelleBargainNextAt, now);
+}
+
+function actualiserCooldownCannelleBargain() {
+  const container = document.getElementById("market-stall-shop-mini-game");
+  const state = document.getElementById("market-stall-shop-mini-game-state");
+  const launch = document.getElementById("market-stall-shop-mini-game-launch");
+  if (!container || container.hidden || !state || !launch) return;
+  const remaining = cooldownRestantCannelleBargain(Date.now());
+  ecrireTexte(state, remaining > 0 ? "Ready in " + formaterCooldownCannelleBargain(remaining) : "Play · " + (etat.cannelleTokens || 0) + " Tokens");
+  launch.disabled = remaining > 0;
+  launch.setAttribute("aria-label", remaining > 0
+    ? "Cannelle's Bargain available in " + formaterCooldownCannelleBargain(remaining)
+    : "Play Cannelle's Bargain");
+}
+
+function arreterGateReglesCannelleBargain() {
+  if (cannelleBargainRulesGateTimer !== null) clearInterval(cannelleBargainRulesGateTimer);
+  cannelleBargainRulesGateTimer = null;
+}
+
+function ouvrirReglesCannelleBargain(event, mandatory) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  cannelleBargainRulesMandatory = mandatory === true;
+  const copy = document.getElementById("cannelle-bargain-rules-copy");
+  const confirm = document.getElementById("cannelle-bargain-rules-confirm");
+  if (!copy || !confirm) return false;
+  ecrireHTML(copy, CANNELLE_BARGAIN_RULES_HTML);
+  arreterGateReglesCannelleBargain();
+  const openedAt = Date.now();
+  function updateGate() {
+    const seconds = Math.max(0, Math.ceil((5000 - (Date.now() - openedAt)) / 1000));
+    confirm.disabled = cannelleBargainRulesMandatory && seconds > 0;
+    ecrireTexte(confirm, cannelleBargainRulesMandatory && seconds > 0 ? "Got it! (" + seconds + "s)" : (cannelleBargainRulesMandatory ? "Got it!" : "Close"));
+    if (!confirm.disabled) arreterGateReglesCannelleBargain();
+  }
+  updateGate();
+  if (confirm.disabled) cannelleBargainRulesGateTimer = setInterval(updateGate, 250);
+  ouvrirDialogueModal("cannelle-bargain-rules-modal", {
+    dismissible: !cannelleBargainRulesMandatory,
+    fermer: function() {
+      arreterGateReglesCannelleBargain();
+      fermerDialogueModal("cannelle-bargain-rules-modal");
+    },
+    focusSelector: "#cannelle-bargain-rules-confirm",
+    returnFocusSelector: "#market-stall-shop-mini-game-help"
+  });
+  return true;
+}
+
+function confirmerReglesCannelleBargain() {
+  const confirm = document.getElementById("cannelle-bargain-rules-confirm");
+  if (confirm && confirm.disabled) return false;
+  const mandatory = cannelleBargainRulesMandatory;
+  arreterGateReglesCannelleBargain();
+  fermerDialogueModal("cannelle-bargain-rules-modal");
+  if (mandatory) {
+    etat.cannelleBargainRulesSeen = true;
+    sauvegarder();
+    ouvrirPickerCannelleBargain();
+  }
+  return true;
+}
+
+function terminerIntroCannelleBargain() {
+  fermerModal("ecran-story-cannelle-bargain-intro");
+  ouvrirReglesCannelleBargain(null, true);
+}
+
+function terminerDialoguePremiereVictoireCannelleBargain() {
+  fermerModal("ecran-story-cannelle-bargain-victory");
+  const next = document.getElementById("cannelle-bargain-next");
+  if (next) next.focus();
+}
+
+function ouvrirCannelleBargain() {
+  if (niveauCannelleShopOwner() < 10) return false;
+  const remaining = cooldownRestantCannelleBargain(Date.now());
+  if (remaining > 0) {
+    afficherNotification("Cannelle's Bargain is ready in " + formaterCooldownCannelleBargain(remaining) + ".");
+    actualiserCooldownCannelleBargain();
+    return false;
+  }
+  if (!storyEstVue("storyCannelleBargainIntroVue")) {
+    marquerStoryVue("storyCannelleBargainIntroVue");
+    afficherModal("ecran-story-cannelle-bargain-intro");
+    return true;
+  }
+  if (etat.cannelleBargainRulesSeen !== true) return ouvrirReglesCannelleBargain(null, true);
+  return ouvrirPickerCannelleBargain();
+}
+
+function ouvrirPickerCannelleBargain() {
+  if (cooldownRestantCannelleBargain(Date.now()) > 0) return false;
+  const difficulties = CANNELLE_BARGAIN.unlockedDifficulties(niveauCannelleShopOwner());
+  const list = document.getElementById("cannelle-bargain-difficulties");
+  ecrireTexte(document.getElementById("cannelle-bargain-token-balance"), etat.cannelleTokens || 0);
+  if (list) list.innerHTML = difficulties.map(function(difficulty) {
+    return '<button type="button" onclick="demarrerCannelleBargain(' + difficulty + ')"><strong>Difficulty ' + difficulty
+      + '</strong><span>Win: ' + difficulty + ' Cannelle’s Token' + (difficulty === 1 ? '' : 's') + '</span></button>';
+  }).join("");
+  ouvrirDialogueModal("cannelle-bargain-picker-modal", {
+    dismissible: true,
+    fermer: fermerPickerCannelleBargain,
+    focusSelector: ".cannelle-bargain-difficulties button",
+    returnFocusSelector: "#market-stall-shop-mini-game-launch"
+  });
+  return true;
+}
+
+function fermerPickerCannelleBargain() {
+  fermerDialogueModal("cannelle-bargain-picker-modal");
+}
+
+function demarrerCannelleBargain(difficulty) {
+  const unlocked = CANNELLE_BARGAIN.unlockedDifficulties(niveauCannelleShopOwner());
+  if (!unlocked.includes(difficulty) || cooldownRestantCannelleBargain(Date.now()) > 0) return false;
+  if (!ouvrirSessionMiniJeu("cannelle-bargain")) return false;
+  CANNELLE_BARGAIN.commitCooldown(etat, Date.now());
+  sauvegarder();
+  fermerPickerCannelleBargain();
+  cannelleBargainSession = {
+    difficulty: difficulty, round: 1, suddenDeath: false,
+    bernardoScore: 0, cannelleScore: 0, result: null, rewardCredited: false, roundState: null
+  };
+  ouvrirDialogueModal("cannelle-bargain-game-modal", {
+    dismissible: true,
+    fermer: abandonnerCannelleBargain,
+    focusSelector: ".cannelle-bargain-offer",
+    returnFocusSelector: "#market-stall-shop-mini-game-launch"
+  });
+  preparerRoundCannelleBargain();
+  return true;
+}
+
+function htmlPastillesCannelleBargain(index, roundState) {
+  let html = '';
+  if (roundState.bernardoChoice === index) html += '<img class="cannelle-bargain-pastille" src="img/Cat faces/Bernardo.png" alt="Bernardo chose this offer">';
+  if (roundState.cannelleChoice === index) html += '<img class="cannelle-bargain-pastille" src="img/Cat faces/cannelle-3.png" alt="Cannelle chose this offer">';
+  return html;
+}
+
+function rendreRoundCannelleBargain() {
+  const session = cannelleBargainSession;
+  if (!session || !session.roundState) return;
+  const roundState = session.roundState;
+  ecrireTexte(document.getElementById("cannelle-bargain-score-bernardo"), session.bernardoScore);
+  ecrireTexte(document.getElementById("cannelle-bargain-score-cannelle"), session.cannelleScore);
+  ecrireTexte(document.getElementById("cannelle-bargain-round"), session.suddenDeath ? "Sudden death" : "Round " + session.round + " / " + CANNELLE_BARGAIN.NORMAL_ROUNDS);
+  ecrireTexte(document.getElementById("cannelle-bargain-difficulty"), "Difficulty " + session.difficulty);
+  const offers = document.getElementById("cannelle-bargain-offers");
+  if (offers) offers.innerHTML = roundState.offers.map(function(offer, index) {
+    const correct = roundState.resolved && index === roundState.bestIndex;
+    return '<button type="button" class="cannelle-bargain-offer' + (correct ? ' is-correct' : '')
+      + '" onclick="choisirOffreCannelleBargain(' + index + ')"' + (roundState.bernardoChoice !== null || roundState.resolved ? ' disabled' : '')
+      + ' aria-label="Offer ' + (index + 1) + ': ' + offer.food + ' Canned Cat Food for ' + offer.price + ' gold coins' + (correct ? ', best bargain' : '') + '">'
+      + '<span class="cannelle-bargain-food"><img src="img/resources/Canned Cat Food_Final.png" alt=""><strong>×' + offer.food + '</strong></span>'
+      + '<span class="cannelle-bargain-price"><span>for</span><strong>' + offer.price + '</strong><img src="img/interface/gold-coin.png" alt="gold coins"></span>'
+      + '<span class="cannelle-bargain-choices">' + htmlPastillesCannelleBargain(index, roundState) + '</span>'
+      + (correct ? '<small>Best bargain</small>' : '') + '</button>';
+  }).join("");
+}
+
+function preparerRoundCannelleBargain() {
+  const session = cannelleBargainSession;
+  if (!session) return;
+  const offers = CANNELLE_BARGAIN.generateOffers(session.difficulty);
+  const start = performance.now();
+  session.roundState = {
+    offers: offers,
+    bestIndex: CANNELLE_BARGAIN.bestOfferIndex(offers),
+    startedAt: start,
+    aiAt: start + CANNELLE_BARGAIN.cannelleDelayMs(session.difficulty),
+    bernardoChoice: null, bernardoAt: Infinity,
+    cannelleChoice: null, cannelleAt: Infinity,
+    resolved: false
+  };
+  const next = document.getElementById("cannelle-bargain-next");
+  if (next) next.hidden = true;
+  ecrireTexte(document.getElementById("cannelle-bargain-feedback"), "Choose the best Cat Food per gold coin.");
+  rendreRoundCannelleBargain();
+  demarrerAnimationMiniJeu("cannelle-bargain", function(_, frame) {
+    const current = cannelleBargainSession && cannelleBargainSession.roundState;
+    if (!current || current !== session.roundState || current.resolved) return false;
+    if (current.cannelleChoice === null && frame.timestamp >= current.aiAt) {
+      current.cannelleChoice = CANNELLE_BARGAIN.chooseCannelleOffer(current.offers, session.difficulty);
+      current.cannelleAt = frame.timestamp;
+      rendreRoundCannelleBargain();
+    }
+    const remaining = Math.max(0, CANNELLE_BARGAIN.ROUND_DURATION_MS - (frame.timestamp - current.startedAt));
+    ecrireTexte(document.getElementById("cannelle-bargain-timer"), (remaining / 1000).toFixed(1) + "s");
+    if ((current.bernardoChoice !== null && current.cannelleChoice !== null) || remaining <= 0) {
+      resoudreRoundCannelleBargain(frame.timestamp);
+      return false;
+    }
+    return true;
+  });
+}
+
+function choisirOffreCannelleBargain(index) {
+  const roundState = cannelleBargainSession && cannelleBargainSession.roundState;
+  if (!roundState || roundState.resolved || roundState.bernardoChoice !== null || index < 0 || index > 2) return false;
+  roundState.bernardoChoice = index;
+  roundState.bernardoAt = performance.now();
+  rendreRoundCannelleBargain();
+  if (roundState.cannelleChoice !== null) resoudreRoundCannelleBargain(roundState.bernardoAt);
+  return true;
+}
+
+function resoudreRoundCannelleBargain(now) {
+  const session = cannelleBargainSession;
+  const roundState = session && session.roundState;
+  if (!roundState || roundState.resolved) return false;
+  if (roundState.cannelleChoice === null) {
+    roundState.cannelleChoice = CANNELLE_BARGAIN.chooseCannelleOffer(roundState.offers, session.difficulty);
+    roundState.cannelleAt = now;
+  }
+  roundState.resolved = true;
+  const points = CANNELLE_BARGAIN.scoreRound(
+    roundState.bestIndex, roundState.bernardoChoice, roundState.bernardoAt,
+    roundState.cannelleChoice, roundState.cannelleAt
+  );
+  session.bernardoScore += points.bernardo;
+  session.cannelleScore += points.cannelle;
+  rendreRoundCannelleBargain();
+  ecrireTexte(document.getElementById("cannelle-bargain-timer"), "Round complete");
+  ecrireTexte(document.getElementById("cannelle-bargain-feedback"), "Bernardo +" + points.bernardo + " · Cannelle +" + points.cannelle);
+  const finalNormalRound = !session.suddenDeath && session.round >= CANNELLE_BARGAIN.NORMAL_ROUNDS;
+  const finalSuddenRound = session.suddenDeath && session.bernardoScore !== session.cannelleScore;
+  if (finalNormalRound && session.bernardoScore === session.cannelleScore) session.suddenDeath = true;
+  if ((finalNormalRound && session.bernardoScore !== session.cannelleScore) || finalSuddenRound) {
+    terminerResultatCannelleBargain();
+  } else {
+    const next = document.getElementById("cannelle-bargain-next");
+    if (next) { next.hidden = false; ecrireTexte(next, session.suddenDeath ? "Sudden death" : "Next round"); next.focus(); }
+  }
+  return true;
+}
+
+function terminerResultatCannelleBargain() {
+  const session = cannelleBargainSession;
+  if (!session || session.result) return false;
+  session.result = session.bernardoScore > session.cannelleScore ? "win" : "loss";
+  const reward = session.result === "win" ? session.difficulty : 0;
+  if (reward > 0 && !session.rewardCredited) {
+    const credited = CANNELLE_BARGAIN.creditReward(etat, session, session.difficulty, true);
+    ajouterLog("reward", "Cannelle's Bargain won. " + reward + " Cannelle's Token" + (reward === 1 ? "" : "s") + " received.");
+    if (credited > 0) sauvegarder();
+  }
+  const feedback = document.getElementById("cannelle-bargain-feedback");
+  if (feedback) ecrireHTML(feedback, session.result === "win"
+    ? '<strong>Bernardo wins!</strong> <span class="cannelle-bargain-result-reward"><img src="img/resources/silver-coin.png" alt="">Cannelle’s Token ×' + reward + '</span>'
+    : '<strong>Cannelle wins.</strong> No Token reward this time.');
+  const next = document.getElementById("cannelle-bargain-next");
+  if (next) { next.hidden = false; ecrireTexte(next, "Close"); }
+  if (session.result === "win" && !storyEstVue("storyCannelleBargainVictoryVue")) {
+    afficherModal("ecran-story-cannelle-bargain-victory");
+    marquerStoryVue("storyCannelleBargainVictoryVue");
+  }
+  actualiserCooldownCannelleBargain();
+  return true;
+}
+
+function continuerCannelleBargain() {
+  const session = cannelleBargainSession;
+  if (!session) return false;
+  if (session.result) return fermerCannelleBargain();
+  if (!session.suddenDeath) session.round += 1;
+  preparerRoundCannelleBargain();
+  return true;
+}
+
+function fermerCannelleBargain() {
+  fermerDialogueModal("cannelle-bargain-game-modal");
+  fermerSessionMiniJeu("cannelle-bargain");
+  cannelleBargainSession = null;
+  renduBoutiqueMarketStall();
+  return true;
+}
+
+function abandonnerCannelleBargain() {
+  if (!cannelleBargainSession) return false;
+  if (!cannelleBargainSession.result) afficherNotification("Duel abandoned. Cannelle keeps this round's prize.");
+  return fermerCannelleBargain();
 }
 
 let marketStallShopCategoryId = null;
@@ -18395,6 +18770,9 @@ function renduBoutiqueMarketStall() {
   ecrireTexte(document.getElementById("market-stall-shop-tier-hint"),
     "New items at Level " + SHOP_DATA.nextMerchandiseLevel(level));
   ecrireTexte(document.getElementById("market-stall-shop-status"), availability.reason);
+  const miniGame = document.getElementById("market-stall-shop-mini-game");
+  if (miniGame) miniGame.hidden = level < 10;
+  actualiserCooldownCannelleBargain();
   const activeCategoryId = categorieBoutiqueMarketStallActive();
   const tabs = document.getElementById("market-stall-shop-tabs");
   if (tabs) tabs.innerHTML = SHOP_DATA.categories.map(function(category) {
@@ -18409,7 +18787,7 @@ function renduBoutiqueMarketStall() {
   const grid = document.getElementById("market-stall-shop-grid");
   if (!grid) return;
   const products = SHOP_DATA.merchandise.filter(function(product) {
-    return product.category === activeCategoryId;
+    return product.category === activeCategoryId && level >= product.requiredLevel;
   });
   let html = "";
   for (let slot = 0; slot < 9; slot += 1) {
@@ -18423,19 +18801,32 @@ function renduBoutiqueMarketStall() {
     const levelLocked = level < product.requiredLevel;
     const affordable = (Number(etat[product.priceResource]) || 0) >= product.priceAmount;
     const disabled = !availability.available || owned || levelLocked || !affordable;
+    const preview = spriteApercuMarchandiseCannelle(product);
     const stateLabel = productState === "learned" ? "Learned"
       : productState === "learning" ? "Learning"
       : productState === "studied" ? "Studied"
       : productState === "owned" ? "Owned"
       : (levelLocked
       ? "Requires Level " + product.requiredLevel
-      : libellePrixMarchandise(product));
+      : "Buy");
+    const priceLabel = libellePrixMarchandise(product);
+    const priceIcon = iconeRessourceCamp(product.priceResource);
+    const buyContent = '<span>Buy</span><span class="market-stall-shop-buy-price" aria-hidden="true"><strong>'
+      + echapperAttributHtml(product.priceAmount) + '</strong>'
+      + (priceIcon ? '<img src="' + echapperAttributHtml(priceIcon) + '" alt="">'
+        : '<span>' + echapperAttributHtml(libelleRessourceCamp(product.priceResource)) + '</span>')
+      + '</span>';
+    const buttonLabel = owned || levelLocked ? stateLabel
+      : "Buy " + product.name + " for " + priceLabel;
     html += '<article class="market-stall-shop-slot" data-market-product="' + product.id + '">'
       + '<strong>' + echapperAttributHtml(product.name) + '</strong>'
-      + '<span class="' + (owned ? "market-stall-shop-owned" : "") + '">'
-      + echapperAttributHtml(stateLabel) + '</span>'
-      + '<button type="button" onclick="acheterMarchandiseCannelle(\'' + product.id + '\')"'
-      + (disabled ? ' disabled' : '') + '>' + (owned ? stateLabel : "Buy") + '</button></article>';
+      + '<span class="market-stall-shop-preview">'
+      + (preview ? '<img src="' + echapperAttributHtml(preview) + '" alt="' + echapperAttributHtml(product.name) + '">' : '')
+      + '</span>'
+      + '<button type="button"' + (owned ? ' class="market-stall-shop-owned"' : '')
+      + ' aria-label="' + echapperAttributHtml(buttonLabel) + '"'
+      + ' onclick="acheterMarchandiseCannelle(\'' + product.id + '\')"'
+      + (disabled ? ' disabled' : '') + '>' + (owned || levelLocked ? stateLabel : buyContent) + '</button></article>';
   }
   grid.innerHTML = html;
 }
@@ -25351,6 +25742,42 @@ function lancerDemarrageApplication() {
 }
 
 lancerDemarrageApplication();
+
+// Browser QA fixture: transient, debug-only and deliberately save-locked.
+// It exercises the real shop and mini-game surfaces without contaminating the
+// player's DEV save or fabricating a production unlock.
+if (DEV_MODE && new URLSearchParams(location.search).get("cannelleBargainQa") === "1") {
+  setTimeout(function() {
+    sauvegardeVerrouillee = true;
+    let cannelle = cannelleShopOwner();
+    if (!cannelle) {
+      cannelle = {
+        nom: "Cannelle", metier: "shop-owner", niveau: 10, tier: 1, xp: 0,
+        visage: CAT_FACES.cannelle, jobNiveau: 10
+      };
+      etat.kittiesData.push(cannelle);
+    }
+    const requestedLevel = Number(new URLSearchParams(location.search).get("cannelleLevel"));
+    cannelle.niveau = Number.isFinite(requestedLevel) && requestedLevel >= 10
+      ? Math.floor(requestedLevel) : 10;
+    etat.cannelleTokens = 0;
+    etat.cannelleBargainNextAt = 0;
+    etat.cannelleBargainRulesSeen = false;
+    etat.storiesVues = (etat.storiesVues || []).filter(function(flag) {
+      return flag !== "storyCannelleBargainIntroVue" && flag !== "storyCannelleBargainVictoryVue";
+    });
+    if (new URLSearchParams(location.search).get("cannelleOnboarded") === "1") {
+      etat.cannelleBargainRulesSeen = true;
+      etat.storiesVues.push("storyCannelleBargainIntroVue");
+    }
+    let top = dialogueOuvertAuPremierPlan();
+    while (top) {
+      fermerDialogueModal(top);
+      top = dialogueOuvertAuPremierPlan();
+    }
+    ouvrirBoutiqueMarketStall();
+  }, 0);
+}
 
 if (window.matchMedia("(max-width: 768px)").matches) {
   definirObjectifsReduits(true);

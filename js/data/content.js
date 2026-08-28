@@ -139,6 +139,19 @@ const ITEMS = {
       { id: "study", label: "Study (1h)" }
     ]
   },
+  cardboardLitterboxBlueprint: {
+    id:           "cardboardLitterboxBlueprint",
+    category:     "blueprint",
+    nom:          "Cardboard Litterbox Blueprint",
+    emoji:        LIVRE_ICONE,
+    description:  "Cannelle's practical plan for a compact cardboard litterbox at the Camp.",
+    unlocksLabel: "Cardboard Litterbox in Camp Decorations",
+    studyDuration: 3600000,
+    learningMode: "timer-only",
+    actions: [
+      { id: "study", label: "Study (1h)" }
+    ]
+  },
   compass: {
     id:           "compass",
     type:         "unique",

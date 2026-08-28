@@ -9,10 +9,23 @@
       category: "blueprints",
       name: "Small Fountain Blueprint",
       requiredLevel: 0,
+      previewAssetId: "small-fountain",
       priceResource: "cannedCatFood",
       priceAmount: 1,
       rewardType: "inventory-item",
       rewardId: "smallFountainBlueprint",
+      repeatable: false
+    }),
+    Object.freeze({
+      id: "cardboard-litterbox-blueprint",
+      category: "blueprints",
+      name: "Cardboard Litterbox Blueprint",
+      requiredLevel: 10,
+      previewAssetId: "cardboard-litterbox",
+      priceResource: "cannedCatFood",
+      priceAmount: 1,
+      rewardType: "inventory-item",
+      rewardId: "cardboardLitterboxBlueprint",
       repeatable: false
     })
   ]);

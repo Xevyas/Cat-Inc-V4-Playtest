@@ -293,7 +293,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0076 · August 28, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0077 · August 28, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -503,6 +503,18 @@
       </div>
     </div>
   </div>
+  <div id="ecran-story-cannelle-bargain-intro" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cannelle's Bargain" style="display:none">
+    <div class="intro-boite" tabindex="-1">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="terminerIntroCannelleBargain()">See the rules</button>
+    </div>
+  </div>
+  <div id="ecran-story-cannelle-bargain-victory" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="A Silver Prize" style="display:none">
+    <div class="intro-boite" tabindex="-1">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="terminerDialoguePremiereVictoireCannelleBargain()">Take the Token</button>
+    </div>
+  </div>
 
   <!-- RESOURCE BAR CUSTOMIZATION -->
   <div id="resource-bar-modal" class="explo-modal resource-bar-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="resource-bar-modal-title" style="display:none">
@@ -588,8 +600,16 @@
           <div id="camp-prototype-board" class="camp-prototype-board" tabindex="0" role="application" aria-label="Base Camp map, with three fixed rear-house facades above three equal 6 by 8 gardens">
           <div class="camp-prototype-environment" aria-hidden="true">
             <div class="camp-prototype-houses">
-              <div class="camp-prototype-house-plot" data-camp-garden-zone="redGarden" aria-hidden="true">
+              <div class="camp-prototype-house-plot camp-prototype-house-plot-red" data-camp-garden-zone="redGarden" aria-hidden="true">
                 <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Red_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
+                <svg class="camp-prototype-house-window-tints" viewBox="0 0 768 512" aria-hidden="true">
+                  <rect x="195" y="304" width="23" height="15"></rect><rect x="227" y="303" width="22" height="16"></rect>
+                  <rect x="198" y="326" width="22" height="13"></rect><rect x="230" y="326" width="21" height="14"></rect>
+                  <rect x="534" y="303" width="22" height="15"></rect><rect x="565" y="304" width="23" height="15"></rect>
+                  <rect x="532" y="326" width="22" height="13"></rect><rect x="563" y="326" width="22" height="13"></rect>
+                  <rect x="367" y="309" width="15" height="10"></rect><rect x="390" y="309" width="15" height="10"></rect>
+                  <rect x="368" y="326" width="14" height="10"></rect><rect x="390" y="326" width="15" height="10"></rect>
+                </svg>
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
               </div>
@@ -619,8 +639,18 @@
                   <span class="camp-recruit-visitor-question" aria-hidden="true">?</span>
                 </button>
                </div>
-              <div class="camp-prototype-house-plot" data-camp-garden-zone="greenGarden" aria-hidden="true">
+              <div class="camp-prototype-house-plot camp-prototype-house-plot-green" data-camp-garden-zone="greenGarden" aria-hidden="true">
                 <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Green_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
+                <svg class="camp-prototype-house-window-tints" viewBox="0 0 768 512" aria-hidden="true">
+                  <rect x="363" y="184" width="13" height="11"></rect><rect x="385" y="184" width="14" height="11"></rect>
+                  <rect x="363" y="204" width="13" height="16"></rect><rect x="385" y="204" width="14" height="16"></rect>
+                  <rect x="195" y="304" width="23" height="15"></rect><rect x="227" y="305" width="22" height="14"></rect>
+                  <rect x="198" y="326" width="22" height="14"></rect><rect x="230" y="327" width="21" height="13"></rect>
+                  <rect x="534" y="304" width="22" height="15"></rect><rect x="565" y="304" width="22" height="15"></rect>
+                  <rect x="532" y="326" width="22" height="14"></rect><rect x="563" y="327" width="22" height="13"></rect>
+                  <rect x="368" y="311" width="14" height="9"></rect><rect x="391" y="311" width="15" height="9"></rect>
+                  <rect x="368" y="328" width="14" height="9"></rect><rect x="391" y="328" width="14" height="9"></rect>
+                </svg>
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
               </div>
@@ -665,9 +695,9 @@
          </div>
            <div class="camp-prototype-river-band" aria-hidden="true">
              <div class="camp-prototype-river-segments">
-               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v3.webp?v=0.0001" alt=""></span>
-               <span><img class="camp-prototype-river camp-prototype-river-home" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v3.webp?v=0.0001" alt=""></span>
-               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v3.webp?v=0.0001" alt=""></span>
+               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.png?v=0.0001" alt=""></span>
+               <span><img class="camp-prototype-river camp-prototype-river-home" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.png?v=0.0001" alt=""></span>
+               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.png?v=0.0001" alt=""></span>
              </div>
              <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
            </div>
@@ -980,6 +1010,12 @@
           <output id="settings-music-volume-value" for="settings-music-volume">0%</output>
         </label>
         <div class="settings-separateur"></div>
+        <div class="settings-audio-title">Camp</div>
+        <label class="settings-volume-row">
+          <span>Cat portrait size</span>
+          <input type="range" id="settings-camp-cat-portrait-size" min="70" max="130" step="1" value="100" aria-label="Cat portrait size" oninput="gererTaillePortraitsChatsCamp(this.value)">
+          <output id="settings-camp-cat-portrait-size-value" for="settings-camp-cat-portrait-size">100%</output>
+        </label>
         <label class="settings-toggle-row">
           <span>Show adjusted time on recruit button</span>
           <input type="checkbox" id="toggle-adjusted-time" onchange="basculerAffichageTempsAjuste(this.checked)">
@@ -997,7 +1033,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0076</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0077</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1103,9 +1139,46 @@
         <button class="explo-modal-close" aria-label="Close Cannelle's shop"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="market-stall-shop-tier-hint" class="market-stall-shop-tier-hint">New items at Level 10</p>
-      <div id="market-stall-shop-tabs" class="market-stall-shop-tabs" role="tablist" aria-label="Shop categories" onkeydown="gererClavierCategoriesBoutiqueMarketStall(event)"></div>
+      <div class="market-stall-shop-action-row">
+        <div id="market-stall-shop-tabs" class="market-stall-shop-tabs" role="tablist" aria-label="Shop categories" onkeydown="gererClavierCategoriesBoutiqueMarketStall(event)"></div>
+        <div id="market-stall-shop-mini-game" class="market-stall-shop-mini-game" hidden>
+          <button id="market-stall-shop-mini-game-launch" type="button" onclick="ouvrirCannelleBargain()"><span>Cannelle's Bargain</span><small id="market-stall-shop-mini-game-state">Play</small></button>
+          <button id="market-stall-shop-mini-game-help" type="button" aria-label="Cannelle's Bargain rules" title="Rules" onclick="ouvrirReglesCannelleBargain(event)">?</button>
+        </div>
+      </div>
       <p id="market-stall-shop-status" class="market-stall-shop-status" role="status" aria-live="polite"></p>
       <div id="market-stall-shop-grid" class="market-stall-shop-grid" role="tabpanel" aria-label="Cannelle merchandise"></div>
+    </div>
+  </div>
+
+  <div id="cannelle-bargain-rules-modal" class="explo-modal cannelle-bargain-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cannelle-bargain-rules-title" style="display:none">
+    <div class="explo-modal-panneau cannelle-bargain-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-rules-title">Cannelle's Bargain — Rules</span></div>
+      <div id="cannelle-bargain-rules-copy" class="cannelle-bargain-rules-copy"></div>
+      <button id="cannelle-bargain-rules-confirm" class="btn-inv-action" type="button" onclick="confirmerReglesCannelleBargain()">Got it!</button>
+    </div>
+  </div>
+
+  <div id="cannelle-bargain-picker-modal" class="explo-modal cannelle-bargain-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cannelle-bargain-picker-title" style="display:none">
+    <div class="explo-modal-panneau cannelle-bargain-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-picker-title">Choose difficulty</span><button class="explo-modal-close" type="button" aria-label="Close difficulty picker" onclick="fermerPickerCannelleBargain()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>
+      <p class="cannelle-bargain-token-balance"><img src="img/resources/silver-coin.png" alt=""> Cannelle's Tokens: <strong id="cannelle-bargain-token-balance">0</strong></p>
+      <div id="cannelle-bargain-difficulties" class="cannelle-bargain-difficulties"></div>
+    </div>
+  </div>
+
+  <div id="cannelle-bargain-game-modal" class="explo-modal cannelle-bargain-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cannelle-bargain-game-title" style="display:none">
+    <div class="explo-modal-panneau cannelle-bargain-panel cannelle-bargain-game-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-game-title">Cannelle's Bargain</span><button class="explo-modal-close" type="button" aria-label="Give up duel" onclick="abandonnerCannelleBargain()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>
+      <div class="cannelle-bargain-scoreboard">
+        <span><img src="img/Cat faces/Bernardo.png" alt="Bernardo"><strong id="cannelle-bargain-score-bernardo">0</strong></span>
+        <span><b id="cannelle-bargain-round">Round 1 / 5</b><small id="cannelle-bargain-difficulty">Difficulty 1</small></span>
+        <span><img src="img/Cat faces/cannelle-3.png" alt="Cannelle"><strong id="cannelle-bargain-score-cannelle">0</strong></span>
+      </div>
+      <div id="cannelle-bargain-offers" class="cannelle-bargain-offers"></div>
+      <p id="cannelle-bargain-timer" class="cannelle-bargain-timer" role="timer">5.0s</p>
+      <p id="cannelle-bargain-feedback" class="cannelle-bargain-feedback" role="status" aria-live="polite">Choose the best Cat Food per gold coin.</p>
+      <button id="cannelle-bargain-next" class="btn-inv-action" type="button" hidden onclick="continuerCannelleBargain()">Next round</button>
     </div>
   </div>
 
@@ -1289,8 +1362,9 @@
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
   <script src="js/data/content.js?v=0.0058"></script>
   <script src="js/data/perks.generated.js?v=0.0001"></script>
-  <script src="js/data/changelog.js?v=0.0076"></script>
+  <script src="js/data/changelog.js?v=0.0077"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
+  <script src="js/data/cannelle-bargain.js?v=0.0001"></script>
   <script src="js/data/dialogues.js?v=0.0007"></script>
   <script src="js/data/shop.js?v=0.0001"></script>
   <script src="js/core/state.js?v=0.0047"></script>
