@@ -761,6 +761,39 @@
     })
   ]);
 
+  const release0076Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Camp Level is now derived from functional buildings, shown in the Camp profile and added to Appeal.",
+        "The new Camp Profile combines the Camp name, recruited-Cat avatar, Level, Cats and Appeal in one compact HUD capsule."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "The East garden passage now costs 20 Tier 2 Rock Bricks, requires two Level 10 Cats and takes five hours."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Camp Access Build now opens its Cat assignment panel directly without an intermediate menu.",
+        "Camp Cat portraits now scale with world zoom and use a smaller reference size while keeping status markers aligned."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Recruitment paw trails now use complete single-image footprints and end without a residual halo."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([])
+    })
+  ]);
+
   const release0075Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -809,7 +842,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0075",
+    baseVersion: "0.0076",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -822,6 +855,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0076",
+      date: "2026-08-28",
+      categories: release0076Categories
+    }),
     Object.freeze({
       version: "0.0075",
       date: "2026-08-26",

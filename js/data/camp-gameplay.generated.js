@@ -28,6 +28,11 @@
       "humanWorkersFood"
     ]
   },
+  "campLevelRules": {
+    "baseXp": 10,
+    "growth": 1.7,
+    "appealPerLevel": 1
+  },
   "definitions": {
     "cardboardBox": {
       "assetId": "cardboard-box",
@@ -43,7 +48,8 @@
         "id": "buildingsUnlocked"
       },
       "effects": {
-        "housingCapacity": 1
+        "housingCapacity": 1,
+        "campXp": 1
       },
       "upgradeTiers": {
         "2": {
@@ -53,7 +59,8 @@
           },
           "effects": {
             "housingCapacity": 1,
-            "appeal": 1
+            "appeal": 1,
+            "campXp": 2
           },
           "unlock": {
             "kind": "runtime-rule",
@@ -69,7 +76,8 @@
           },
           "effects": {
             "housingCapacity": 2,
-            "appeal": 3
+            "appeal": 3,
+            "campXp": 5
           },
           "unlock": {
             "kind": "perk-tier-unlock",
@@ -77,7 +85,9 @@
             "targetTier": 3
           },
           "maxInstancesAtTier": 1,
-          "visualFallbackTier": 2
+          "visualFallbackTier": 2,
+          "costGrowth": 1,
+          "durationGrowth": 1
         }
       },
       "simulation": {
@@ -120,7 +130,8 @@
         "scope": "regular-storage"
       },
       "effects": {
-        "storageCapacity": 10
+        "storageCapacity": 10,
+        "campXp": 1
       },
       "upgradeTiers": {
         "2": {
@@ -131,7 +142,8 @@
           },
           "effects": {
             "storageCapacity": 15,
-            "appeal": 0.5
+            "appeal": 0.5,
+            "campXp": 2
           },
           "unlock": {
             "kind": "runtime-rule",
@@ -395,7 +407,8 @@
       },
       "effects": {
         "housingCapacity": 1,
-        "residentLevelBonusMultiplier": 1.05
+        "residentLevelBonusMultiplier": 1.05,
+        "campXp": 2
       },
       "upgradeTiers": {
         "2": {
@@ -406,7 +419,8 @@
           "effects": {
             "residentLevelBonusMultiplier": 1.05,
             "housingCapacity": 1,
-            "appeal": 1
+            "appeal": 1,
+            "campXp": 3
           },
           "costGrowth": 1.7,
           "durationGrowth": 1.4
@@ -419,7 +433,8 @@
           "effects": {
             "housingCapacity": 2,
             "appeal": 5,
-            "residentLevelBonusMultiplier": 1.15
+            "residentLevelBonusMultiplier": 1.15,
+            "campXp": 7
           },
           "unlock": {
             "kind": "perk-tier-unlock",
@@ -427,7 +442,9 @@
             "targetTier": 3
           },
           "maxInstancesAtTier": 1,
-          "visualFallbackTier": 2
+          "visualFallbackTier": 2,
+          "costGrowth": 1,
+          "durationGrowth": 1
         }
       },
       "simulation": {

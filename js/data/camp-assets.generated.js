@@ -847,6 +847,72 @@
         }
       }
     },
+    "cardboardLitterbox": {
+      "assetId": "cardboard-litterbox",
+      "runtimeId": "cardboardLitterbox",
+      "name": "Cardboard Litterbox",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "cardboard-litterbox",
+              "runtimeId": "cardboardLitterbox",
+              "name": "Cardboard Litterbox",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 28,
+                  "top": 48,
+                  "right": 331,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 46,
+                  "top": 36,
+                  "right": 311,
+                  "bottom": 319
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 26,
+                  "top": 57,
+                  "right": 333,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 36,
+                  "right": 314,
+                  "bottom": 319
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "catStatueV2": {
       "assetId": "cat-statue-v2",
       "runtimeId": "catStatueV2",
@@ -2372,6 +2438,228 @@
                     "minimumReachableCells": 1
                   }
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "lanternOnPole": {
+      "assetId": "lantern-on-pole",
+      "runtimeId": "lanternOnPole",
+      "name": "Lantern on pole",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 5,
+          "revisions": {
+            "1": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 140,
+                  "top": 1,
+                  "right": 282,
+                  "bottom": 330
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 144,
+                  "top": 16,
+                  "right": 337,
+                  "bottom": 359
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 0,
+                  "right": 278,
+                  "bottom": 388
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 85,
+                  "top": 16,
+                  "right": 276,
+                  "bottom": 358
+                }
+              }
+            },
+            "2": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 140,
+                  "top": 1,
+                  "right": 282,
+                  "bottom": 330
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 144,
+                  "top": 16,
+                  "right": 337,
+                  "bottom": 359
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 0,
+                  "right": 278,
+                  "bottom": 388
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 85,
+                  "top": 16,
+                  "right": 276,
+                  "bottom": 358
+                }
+              }
+            },
+            "4": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 25,
+                  "right": 278,
+                  "bottom": 349
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 44,
+                  "right": 333,
+                  "bottom": 377
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 9,
+                  "right": 276,
+                  "bottom": 406
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 89,
+                  "top": 44,
+                  "right": 275,
+                  "bottom": 376
+                }
+              }
+            },
+            "5": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/down.png",
+                "right": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/right.png",
+                "up": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/up.png",
+                "left": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 18,
+                  "right": 278,
+                  "bottom": 349
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 45,
+                  "right": 333,
+                  "bottom": 377
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 9,
+                  "right": 276,
+                  "bottom": 406
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 89,
+                  "top": 45,
+                  "right": 275,
+                  "bottom": 376
+                }
               }
             }
           }
@@ -6264,6 +6552,72 @@
         }
       }
     },
+    "cardboardLitterbox": {
+      "assetId": "cardboard-litterbox",
+      "runtimeId": "cardboardLitterbox",
+      "name": "Cardboard Litterbox",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "cardboard-litterbox",
+              "runtimeId": "cardboardLitterbox",
+              "name": "Cardboard Litterbox",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/cardboard-litterbox/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 28,
+                  "top": 48,
+                  "right": 331,
+                  "bottom": 306
+                },
+                "right": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 46,
+                  "top": 36,
+                  "right": 311,
+                  "bottom": 319
+                },
+                "up": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 26,
+                  "top": 57,
+                  "right": 333,
+                  "bottom": 306
+                },
+                "left": {
+                  "canvasWidth": 360,
+                  "canvasHeight": 360,
+                  "left": 49,
+                  "top": 36,
+                  "right": 314,
+                  "bottom": 319
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "catStatueV2": {
       "assetId": "cat-statue-v2",
       "runtimeId": "catStatueV2",
@@ -7855,6 +8209,228 @@
                     "minimumReachableCells": 1
                   }
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "lanternOnPole": {
+      "assetId": "lantern-on-pole",
+      "runtimeId": "lanternOnPole",
+      "name": "Lantern on pole",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 5,
+          "revisions": {
+            "1": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 140,
+                  "top": 1,
+                  "right": 282,
+                  "bottom": 330
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 144,
+                  "top": 16,
+                  "right": 337,
+                  "bottom": 359
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 0,
+                  "right": 278,
+                  "bottom": 388
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 85,
+                  "top": 16,
+                  "right": 276,
+                  "bottom": 358
+                }
+              }
+            },
+            "2": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 2,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/down.png",
+                "right": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/right.png",
+                "up": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/up.png",
+                "left": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-2/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 140,
+                  "top": 1,
+                  "right": 282,
+                  "bottom": 330
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 144,
+                  "top": 16,
+                  "right": 337,
+                  "bottom": 359
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 0,
+                  "right": 278,
+                  "bottom": 388
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 85,
+                  "top": 16,
+                  "right": 276,
+                  "bottom": 358
+                }
+              }
+            },
+            "4": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 4,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/down.png",
+                "right": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/right.png",
+                "up": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/up.png",
+                "left": "tools/camp_asset_studio/library/assets/lantern-on-pole/tier-1/revision-4/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 25,
+                  "right": 278,
+                  "bottom": 349
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 44,
+                  "right": 333,
+                  "bottom": 377
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 9,
+                  "right": 276,
+                  "bottom": 406
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 89,
+                  "top": 44,
+                  "right": 275,
+                  "bottom": 376
+                }
+              }
+            },
+            "5": {
+              "assetId": "lantern-on-pole",
+              "runtimeId": "lanternOnPole",
+              "name": "Lantern on pole",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 5,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/down.png",
+                "right": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/right.png",
+                "up": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/up.png",
+                "left": "img/Buildings/Camp Runtime/lantern-on-pole/tier-1/revision-5/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 143,
+                  "top": 18,
+                  "right": 278,
+                  "bottom": 349
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 45,
+                  "right": 333,
+                  "bottom": 377
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 146,
+                  "top": 9,
+                  "right": 276,
+                  "bottom": 406
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 89,
+                  "top": 45,
+                  "right": 275,
+                  "bottom": 376
+                }
               }
             }
           }

@@ -79,6 +79,7 @@ const CAMP_GAMEPLAY_EFFECT_PRESENTATION = Object.freeze({
   housingCapacity: Object.freeze({ label: "Housing capacity", beneficialDirection: 1, format: "number" }),
   storageCapacity: Object.freeze({ label: "Storage capacity", beneficialDirection: 1, format: "number" }),
   appeal: Object.freeze({ label: "Appeal", beneficialDirection: 1, format: "number" }),
+  campXp: Object.freeze({ label: "Camp XP", beneficialDirection: 1, format: "number" }),
   residentLevelBonusMultiplier: Object.freeze({
     label: "Resident Level Bonus",
     beneficialDirection: 1,
@@ -2044,6 +2045,82 @@ function multiplicateurCoutFamille(action) {
 }
 
 const RECRUITMENT_FORMULA_VERSION = 3;
+const CAMP_LEVEL_RULES_FALLBACK = Object.freeze({ baseXp: 10, growth: 1.7, appealPerLevel: 1 });
+
+function reglesNiveauCamp() {
+  const authored = typeof campGameplayData !== "undefined" && campGameplayData
+    ? campGameplayData.campLevelRules || {} : {};
+  const baseXp = Number(authored.baseXp);
+  const growth = Number(authored.growth);
+  const appealPerLevel = Number(authored.appealPerLevel);
+  return {
+    baseXp: Number.isInteger(baseXp) && baseXp > 0 ? baseXp : CAMP_LEVEL_RULES_FALLBACK.baseXp,
+    growth: Number.isFinite(growth) && growth >= 1 ? growth : CAMP_LEVEL_RULES_FALLBACK.growth,
+    appealPerLevel: Number.isFinite(appealPerLevel) && appealPerLevel >= 0
+      ? appealPerLevel : CAMP_LEVEL_RULES_FALLBACK.appealPerLevel
+  };
+}
+
+function coutEtapeNiveauCamp(level) {
+  const niveau = Math.max(0, Math.floor(Number(level) || 0));
+  const rules = reglesNiveauCamp();
+  let cost = rules.baseXp;
+  for (let current = 0; current < niveau; current += 1) cost = Math.ceil(cost * rules.growth);
+  return cost;
+}
+
+function progressionNiveauCampPourXp(totalXp) {
+  const xp = Math.max(0, Math.floor(Number(totalXp) || 0));
+  let level = 0;
+  let currentThreshold = 0;
+  let stepCost = coutEtapeNiveauCamp(0);
+  while (xp >= currentThreshold + stepCost) {
+    currentThreshold += stepCost;
+    level += 1;
+    stepCost = coutEtapeNiveauCamp(level);
+  }
+  const nextThreshold = currentThreshold + stepCost;
+  const appeal = normaliserValeurAppeal(level * reglesNiveauCamp().appealPerLevel);
+  return {
+    xp: xp,
+    level: level,
+    currentThreshold: currentThreshold,
+    nextThreshold: nextThreshold,
+    stepCost: stepCost,
+    stepProgress: xp - currentThreshold,
+    stepProgressRatio: stepCost > 0 ? (xp - currentThreshold) / stepCost : 0,
+    appeal: appeal
+  };
+}
+
+function xpItemNiveauCamp(item) {
+  if (!item || typeof definitionGameplayCamp !== "function" || !definitionGameplayCamp(item.type)) return 0;
+  const capability = capaciteBatimentCamp(item.type, item.tier || 1, { item: item });
+  if (!capability.available) return 0;
+  const amount = effetGameplayCampPourTier(item.type, item.tier || 1, "campXp", 0);
+  return Number.isInteger(amount) && amount > 0 ? amount : 0;
+}
+
+function xpActuelNiveauCamp(layout) {
+  return (Array.isArray(layout) ? layout : []).reduce(function(total, item) {
+    return total + xpItemNiveauCamp(item);
+  }, 0);
+}
+
+function progressionNiveauCamp() {
+  return progressionNiveauCampPourXp(xpActuelNiveauCamp(campPrototypeLayout));
+}
+
+globalThis.CatInc = globalThis.CatInc || {};
+globalThis.CatInc.campLevel = Object.freeze({
+  stepCost: coutEtapeNiveauCamp,
+  fromXp: progressionNiveauCampPourXp,
+  current: progressionNiveauCamp,
+  currentXp: function() { return progressionNiveauCamp().xp; },
+  currentLevel: function() { return progressionNiveauCamp().level; },
+  currentAppeal: function() { return progressionNiveauCamp().appeal; }
+});
+
 const CAMP_APPEAL_RULES = Object.freeze({
   recruitmentSpeedBase: 1.10,
   trailType: "road",
@@ -2100,7 +2177,7 @@ function itemCampAdjacentBasicTrail(item, layout) {
 }
 
 function scoreAttractiviteCamp() {
-  if (!appealCampDebloque()) return { items: [], base: 0, trailBonus: 0, total: 0 };
+  if (!appealCampDebloque()) return { items: [], base: 0, trailBonus: 0, campLevelAppeal: 0, total: 0 };
   const items = (Array.isArray(campPrototypeLayout) ? campPrototypeLayout : []).map(function(item) {
     const rule = regleAppealItemCamp(item);
     if (!rule) return null;
@@ -2120,16 +2197,18 @@ function scoreAttractiviteCamp() {
       value: value
     };
   }).filter(Boolean);
+  const campLevelAppeal = progressionNiveauCamp().appeal;
   const base = normaliserValeurAppeal(
-    items.reduce(function(total, item) { return total + item.base; }, 0)
+    items.reduce(function(total, item) { return total + item.base; }, 0) + campLevelAppeal
   );
   const total = normaliserValeurAppeal(
-    items.reduce(function(sum, item) { return sum + item.value; }, 0)
+    items.reduce(function(sum, item) { return sum + item.value; }, 0) + campLevelAppeal
   );
   return {
     items: items,
     base: base,
     trailBonus: normaliserValeurAppeal(total - base),
+    campLevelAppeal: campLevelAppeal,
     total: total
   };
 }
@@ -2161,6 +2240,7 @@ function sourcesAppealCamp(score) {
     groupes.set(label, groupe);
   });
   const sources = Array.from(groupes.values());
+  sources.push({ label: "Camp Level", count: 1, value: normaliserValeurAppeal(score && score.campLevelAppeal) });
   if (score && score.trailBonus > 0) {
     sources.push({ label: "Basic Trail bonus", count: 1, value: score.trailBonus });
   }
@@ -2210,6 +2290,24 @@ function renduDetailsHousingCamp() {
   positionnerDetailsHousingCamp();
 }
 
+function renduDetailsNiveauCamp() {
+  const panneau = document.getElementById("camp-level-details");
+  if (!panneau || panneau.hidden) return;
+  const progression = progressionNiveauCamp();
+  const progressPercent = Math.max(0, Math.min(100, progression.stepProgressRatio * 100));
+  panneau.innerHTML = '<strong>Camp Level ' + progression.level + '</strong>'
+    + '<span class="camp-level-xp"><b>Camp XP</b><em>' + progression.xp + ' / '
+    + progression.nextThreshold + '</em></span>'
+    + '<span class="camp-level-progress" role="progressbar" aria-label="Camp XP toward Level '
+    + (progression.level + 1) + '" aria-valuemin="0" aria-valuemax="' + progression.stepCost
+    + '" aria-valuenow="' + progression.stepProgress + '"><i style="width:' + progressPercent + '%"></i></span>'
+    + '<span class="camp-appeal-detail-section"><b>Current bonuses</b><span><i>Appeal<em>+'
+    + formaterNombreAppealUi(progression.appeal, 6) + '</em></i></span></span>'
+    + '<span class="camp-appeal-rule">Each Camp Level grants +'
+    + formaterNombreAppealUi(reglesNiveauCamp().appealPerLevel, 6) + ' Appeal.</span>';
+  positionnerDetailsNiveauCamp();
+}
+
 function modeleHousingBandeau() {
   const current = Math.max(0, Number(etat.chatons) || 0);
   const capacity = Math.max(0, Number(capaciteLogementCamp()) || 0);
@@ -2237,7 +2335,9 @@ function actualiserAffichageHousingCamp() {
 function actualiserAffichageAppealCamp() {
   const summary = document.getElementById("camp-appeal-summary");
   if (summary) {
-    summary.textContent = "Appeal " + formaterNombreAppealUi(scoreAttractiviteCamp().total, 6);
+    const appeal = formaterNombreAppealUi(scoreAttractiviteCamp().total, 6);
+    if (!summary.classList.contains("camp-profile-stat-action")) summary.textContent = "Appeal " + appeal;
+    summary.setAttribute("aria-label", "Appeal " + appeal + ". Show Appeal details");
     const wrap = summary.closest(".camp-appeal-wrap");
     if (wrap) wrap.hidden = !appealCampDebloque();
   }
@@ -2246,7 +2346,7 @@ function actualiserAffichageAppealCamp() {
 
 function positionnerPopoverTopBar(bouton, panneau) {
   if (!bouton || !panneau || panneau.hidden || typeof window === "undefined") return;
-  if (panneau.parentElement !== document.body) document.body.appendChild(panneau);
+  if (!bouton.closest("#camp-profile-modal") && panneau.parentElement !== document.body) document.body.appendChild(panneau);
   const marge = 8;
   const rect = bouton.getBoundingClientRect();
   const largeur = Math.min(330, Math.max(220, window.innerWidth - marge * 2));
@@ -2265,10 +2365,26 @@ function positionnerPopoverTopBar(bouton, panneau) {
   panneau.style.transform = "none";
 }
 
+function actualiserAffichageNiveauCamp() {
+  const summary = document.getElementById("camp-level-summary");
+  if (!summary) return;
+  const progression = progressionNiveauCamp();
+  summary.textContent = "Camp Lv. " + progression.level;
+  summary.setAttribute("aria-label", "Camp Level " + progression.level + ". Show Camp Level details");
+  renduDetailsNiveauCamp();
+}
+
 function positionnerDetailsAttractiviteCamp() {
   positionnerPopoverTopBar(
     document.getElementById("camp-appeal-summary"),
     document.getElementById("camp-appeal-details")
+  );
+}
+
+function positionnerDetailsNiveauCamp() {
+  positionnerPopoverTopBar(
+    document.getElementById("camp-level-summary"),
+    document.getElementById("camp-level-details")
   );
 }
 
@@ -2288,9 +2404,25 @@ function fermerPopoverTopBar(idPanneau) {
 }
 
 function fermerPopoversTopBar(saufId) {
-  ["camp-appeal-details", "camp-housing-details"].forEach(function(id) {
+  ["camp-level-details", "camp-appeal-details", "camp-housing-details"].forEach(function(id) {
     if (id !== saufId) fermerPopoverTopBar(id);
   });
+}
+
+function toggleDetailsNiveauCamp(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const bouton = document.getElementById("camp-level-summary");
+  const panneau = document.getElementById("camp-level-details");
+  if (!bouton || !panneau) return;
+  const ouvrir = panneau.hidden;
+  fermerPopoversTopBar(ouvrir ? "camp-level-details" : null);
+  if (typeof fermerTooltipRessource === "function") fermerTooltipRessource();
+  panneau.hidden = !ouvrir;
+  bouton.setAttribute("aria-expanded", panneau.hidden ? "false" : "true");
+  renduDetailsNiveauCamp();
 }
 
 function toggleDetailsAttractiviteCamp(event) {
@@ -2325,15 +2457,218 @@ function toggleDetailsHousingCamp(event) {
   renduDetailsHousingCamp();
 }
 
+const CAMP_PROFILE_NEUTRAL_AVATAR = "img/interface/Gang_Final.png?v=0.0029";
+
+function catalogueVisagesChatsLive() {
+  return globalThis.CatInc && CatInc.data && CatInc.data.liveCatFaces
+    && Array.isArray(CatInc.data.liveCatFaces.items)
+    ? CatInc.data.liveCatFaces.items : [];
+}
+
+function cheminVisageCanonique(value) {
+  return String(value || "").split("?")[0].replace(/\\/g, "/");
+}
+
+function visageCanoniquePourChatProfil(kitty) {
+  if (!kitty || !kitty.visage) return null;
+  const path = cheminVisageCanonique(kitty.visage);
+  return catalogueVisagesChatsLive().find(function(face) {
+    return face && typeof face.id === "string" && cheminVisageCanonique(face.runtimePath) === path;
+  }) || null;
+}
+
+function avatarsEligiblesProfilCamp() {
+  const recruitedCount = Math.max(0, Math.floor(Number(etat.chatons) || 0));
+  const seenFaceIds = new Set();
+  return (Array.isArray(etat.kittiesData) ? etat.kittiesData : [])
+    .slice(0, recruitedCount)
+    .map(function(kitty, kittyIndex) {
+      const face = visageCanoniquePourChatProfil(kitty);
+      return face ? { kitty: kitty, kittyIndex: kittyIndex, face: face } : null;
+    })
+    .filter(function(entry) {
+      if (!entry || seenFaceIds.has(entry.face.id)) return false;
+      seenFaceIds.add(entry.face.id);
+      return true;
+    });
+}
+
+function profilCampNormalise() {
+  const profile = saveCore.normaliserProfilCampSauvegarde(etat.campProfile);
+  if (!etat.campProfile || etat.campProfile.name !== profile.name
+      || etat.campProfile.avatarCatFaceId !== profile.avatarCatFaceId) {
+    etat.campProfile = profile;
+  }
+  return etat.campProfile;
+}
+
+function avatarSelectionneProfilCamp() {
+  const selectedId = profilCampNormalise().avatarCatFaceId;
+  if (!selectedId) return null;
+  return avatarsEligiblesProfilCamp().find(function(entry) { return entry.face.id === selectedId; }) || null;
+}
+
+function appliquerImageProfilCamp(image, selected) {
+  if (!image) return;
+  const src = selected
+    ? selected.face.runtimePath + "?v=live-r" + selected.face.revision
+    : CAMP_PROFILE_NEUTRAL_AVATAR;
+  if (image.getAttribute("src") !== src) image.setAttribute("src", src);
+  image.alt = selected ? selected.kitty.nom : "";
+}
+
+function renduPickerAvatarProfilCamp(entries, selectedId) {
+  const picker = document.getElementById("camp-profile-avatar-picker");
+  if (!picker) return;
+  const stateKey = entries.map(function(entry) {
+    return entry.kittyIndex + ":" + entry.face.id;
+  }).join("|") + "::" + (selectedId || "neutral");
+  if (picker.dataset.profileState === stateKey) return;
+  picker.dataset.profileState = stateKey;
+  picker.innerHTML = entries.length ? entries.map(function(entry) {
+    const selected = entry.face.id === selectedId;
+    const faceSrc = entry.face.runtimePath + "?v=live-r" + entry.face.revision;
+    return '<button type="button" class="camp-profile-avatar-choice' + (selected ? ' is-selected' : '')
+      + '" aria-label="' + echapperAttributHtml(entry.kitty.nom) + '" title="' + echapperAttributHtml(entry.kitty.nom)
+      + '" aria-pressed="' + (selected ? 'true' : 'false') + '" onclick="choisirAvatarProfilCamp(\''
+      + echapperAttributHtml(entry.face.id) + '\')"><img src="' + echapperAttributHtml(faceSrc)
+      + '" alt=""></button>';
+  }).join("") : '<p class="camp-profile-avatar-empty">Recruit a Cat with a canonical Cat Face to choose an avatar.</p>';
+}
+
+function actualiserAffichageProfilCamp() {
+  const summary = document.getElementById("camp-profile-summary");
+  if (!summary) return;
+  const profile = profilCampNormalise();
+  const selected = avatarSelectionneProfilCamp();
+  const progression = progressionNiveauCamp();
+  const appealUnlocked = appealCampDebloque();
+  const appeal = scoreAttractiviteCamp().total;
+  const recruited = Math.max(0, Math.floor(Number(etat.chatons) || 0));
+  const housing = modeleHousingBandeau();
+  const progressPercent = Math.max(0, Math.min(100, progression.stepProgressRatio * 100));
+
+  ecrireTexte(document.getElementById("camp-profile-summary-name"), profile.name);
+  ecrireTexte(document.getElementById("camp-profile-summary-level"), "Lv. " + progression.level);
+  const summaryCats = document.getElementById("camp-profile-summary-cats");
+  ecrireTexte(summaryCats, "Cats " + recruited);
+  if (summaryCats) summaryCats.classList.toggle("is-full", housing.full);
+  ecrireTexte(document.getElementById("camp-profile-summary-appeal"), "Appeal " + formaterNombreAppealUi(appeal, 6));
+  const summaryAppeal = document.getElementById("camp-profile-summary-appeal");
+  if (summaryAppeal) summaryAppeal.hidden = !appealUnlocked;
+  summary.setAttribute("aria-label", "Open Camp Profile. " + profile.name + ", Level "
+    + progression.level + ", " + recruited + " of " + housing.capacity + " Cats housed"
+    + (appealUnlocked ? ", Appeal " + formaterNombreAppealUi(appeal, 6) : ""));
+  appliquerImageProfilCamp(document.getElementById("camp-profile-summary-avatar"), selected);
+  appliquerImageProfilCamp(document.getElementById("camp-profile-panel-avatar"), selected);
+
+  ecrireTexte(document.getElementById("camp-profile-panel-level"), progression.level);
+  ecrireTexte(document.getElementById("camp-profile-panel-cats"), recruited + " / " + housing.capacity);
+  ecrireTexte(document.getElementById("camp-profile-panel-appeal"), formaterNombreAppealUi(appeal, 6));
+  const panelAppeal = document.getElementById("camp-profile-panel-appeal-wrap");
+  if (panelAppeal) panelAppeal.hidden = !appealUnlocked;
+  ecrireTexte(document.getElementById("camp-profile-panel-xp"), progression.xp + " / " + progression.nextThreshold);
+  ecrireTexte(document.getElementById("camp-profile-panel-bonus"), "Appeal +" + formaterNombreAppealUi(progression.appeal, 6));
+  const progress = document.getElementById("camp-profile-panel-progress");
+  if (progress) {
+    progress.setAttribute("aria-label", "Camp XP toward Level " + (progression.level + 1));
+    progress.setAttribute("aria-valuemax", progression.stepCost);
+    progress.setAttribute("aria-valuenow", progression.stepProgress);
+    const fill = progress.querySelector("i");
+    if (fill) fill.style.width = progressPercent + "%";
+  }
+  const input = document.getElementById("camp-profile-name-input");
+  const profileModal = document.getElementById("camp-profile-modal");
+  const profileOpen = profileModal && profileModal.getAttribute("aria-hidden") === "false";
+  if (input && !profileOpen) input.value = profile.name;
+  const catsWrap = document.getElementById("camp-profile-panel-cats-wrap");
+  if (catsWrap) catsWrap.classList.toggle("is-full", housing.full);
+  actualiserAffichageHousingCamp();
+  actualiserAffichageAppealCamp();
+  renduPickerAvatarProfilCamp(avatarsEligiblesProfilCamp(), profile.avatarCatFaceId);
+}
+
+function ouvrirProfilCamp() {
+  fermerPopoversTopBar();
+  actualiserAffichageProfilCamp();
+  ouvrirDialogueModal("camp-profile-modal", {
+    dismissible: true,
+    fermer: fermerProfilCamp,
+    focusSelector: "#camp-profile-name-input",
+    returnFocusSelector: "#camp-profile-summary"
+  });
+}
+
+function fermerProfilCamp() {
+  fermerPopoversTopBar();
+  fermerDialogueModal("camp-profile-modal");
+}
+
+function enregistrerNomProfilCamp(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById("camp-profile-name-input");
+  if (!input) return false;
+  const previousName = profilCampNormalise().name;
+  const normalized = saveCore.normaliserProfilCampSauvegarde({
+    name: input.value,
+    avatarCatFaceId: profilCampNormalise().avatarCatFaceId
+  });
+  etat.campProfile.name = normalized.name;
+  try {
+    sauvegarder();
+  } catch (error) {
+    // The normal save path owns persistence failures; the profile must not
+    // report success merely because its in-memory value changed.
+  }
+  let savedProfile = null;
+  try {
+    const savedAnalysis = saveCore.analyserSauvegardeBrute(localStorage.getItem(SAVE_KEY));
+    savedProfile = savedAnalysis.ok
+      ? saveCore.normaliserProfilCampSauvegarde(savedAnalysis.data.campProfile) : null;
+  } catch (error) {
+    savedProfile = null;
+  }
+  if (!savedProfile || savedProfile.name !== normalized.name) {
+    etat.campProfile.name = previousName;
+    actualiserAffichageProfilCamp();
+    ecrireTexte(document.getElementById("camp-profile-name-status"), "Camp name could not be saved.");
+    return false;
+  }
+  input.value = savedProfile.name;
+  actualiserAffichageProfilCamp();
+  ecrireTexte(document.getElementById("camp-profile-name-status"), "Camp name saved.");
+  return false;
+}
+
+function choisirAvatarProfilCamp(faceId) {
+  const eligible = avatarsEligiblesProfilCamp().find(function(entry) { return entry.face.id === faceId; });
+  if (!eligible) return false;
+  etat.campProfile = {
+    name: profilCampNormalise().name,
+    avatarCatFaceId: eligible.face.id
+  };
+  sauvegarder();
+  actualiserAffichageProfilCamp();
+  return true;
+}
+
+globalThis.CatInc = globalThis.CatInc || {};
+globalThis.CatInc.campProfile = Object.freeze({
+  eligibleAvatars: avatarsEligiblesProfilCamp,
+  selectedAvatar: avatarSelectionneProfilCamp,
+  refresh: actualiserAffichageProfilCamp
+});
+
 if (typeof document !== "undefined") {
   document.addEventListener("click", function(event) {
-    if (event.target.closest(".camp-appeal-wrap, .camp-housing-wrap, #camp-appeal-details, #camp-housing-details")) return;
+    if (event.target.closest(".camp-level-wrap, .camp-appeal-wrap, .camp-housing-wrap, #camp-level-details, #camp-appeal-details, #camp-housing-details")) return;
     fermerPopoversTopBar();
   });
   document.addEventListener("keydown", function(event) {
     if (event.key === "Escape") fermerPopoversTopBar();
   });
   window.addEventListener("resize", function() {
+    positionnerDetailsNiveauCamp();
     positionnerDetailsAttractiviteCamp();
     positionnerDetailsHousingCamp();
   });
@@ -4038,8 +4373,7 @@ function renduRessources(u) {
       }
     }
   });
-  actualiserAffichageHousingCamp();
-  actualiserAffichageAppealCamp();
+  actualiserAffichageProfilCamp();
 
   [
     ["work", u.cathering],
@@ -13427,6 +13761,7 @@ const CAMP_PROTOTYPE_ZOOM_MAX = 4;
 const CAMP_PROTOTYPE_ZOOM_STEP = 0.25;
 const CAMP_PROTOTYPE_AUTO_ZOOM_MIN = 0.5;
 const CAMP_PROTOTYPE_AUTO_ZOOM_MAX = 2;
+const CAMP_CAT_PORTRAIT_REFERENCE_SCALE = 0.7;
 const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object.freeze({
   sawmill: "wood",
   catchen: "food",
@@ -13678,30 +14013,24 @@ let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
 let campPrototypeConnexionsCache = null;
 const campPrototypeAssetsRotationPrecharges = new Map();
-const CAMP_GARDEN_ACCESS_DEFINITIONS = Object.freeze({
-  redGarden: Object.freeze({
-    zoneId: "redGarden",
-    explorationId: "C1",
-    uid: "garden-access-redGarden",
-    label: "West garden passage",
-    actionLabel: "Open the west garden passage",
-    durationSeconds: 60 * 60,
-    minCatLevel: 1,
-    requiredCats: 2,
-    costs: Object.freeze({ basicWoodPlanks: 10, pebbleBricks: 5 })
-  }),
-  greenGarden: Object.freeze({
-    zoneId: "greenGarden",
-    explorationId: "E1",
-    uid: "garden-access-greenGarden",
-    label: "East garden passage",
-    actionLabel: "Open the east garden passage",
-    durationSeconds: 60 * 60,
-    minCatLevel: 8,
-    requiredCats: 1,
-    costs: Object.freeze({ basicWoodPlanks: 30, pebbleBricks: 30 })
-  })
-});
+const CAMP_GARDEN_ACCESS_DEFINITIONS = Object.freeze(
+  (templateCampActif().territoryAccessSites || []).reduce(function(definitions, authored) {
+    definitions[authored.toZoneId] = Object.freeze({
+      zoneId: authored.toZoneId,
+      fromZoneId: authored.fromZoneId,
+      explorationId: authored.explorationId,
+      uid: authored.id,
+      label: authored.label,
+      actionLabel: authored.actionLabel,
+      durationSeconds: authored.durationSeconds,
+      minCatLevel: authored.minCatLevel,
+      requiredCats: authored.requiredCats,
+      costs: Object.freeze({...authored.costs}),
+      position: Object.freeze({...authored.position})
+    });
+    return definitions;
+  }, {})
+);
 
 function definitionAccesJardinCampPrototype(identifier) {
   return Object.keys(CAMP_GARDEN_ACCESS_DEFINITIONS).map(function(zoneId) {
@@ -13712,25 +14041,27 @@ function definitionAccesJardinCampPrototype(identifier) {
 }
 
 function geometrieAccesJardinCampPrototype(definition) {
-  const zone = definition && campPrototypeApi.TERRITORY_ZONES[definition.zoneId];
-  const home = campPrototypeApi.TERRITORY_ZONES.home;
-  if (!zone || !home) return null;
-  const boundaryX = zone.x + zone.width === home.x
-    ? home.x
-    : (home.x + home.width === zone.x ? zone.x : null);
-  if (!Number.isInteger(boundaryX)) return null;
+  const position = definition && definition.position;
+  if (!position) return null;
+  const offsets = {
+    north: {x: 0, y: -1}, east: {x: 1, y: 0},
+    south: {x: 0, y: 1}, west: {x: -1, y: 0}
+  };
+  const offset = offsets[position.side];
+  if (!offset) return null;
+  const vertical = offset.x !== 0;
   return Object.freeze({
     edge: Object.freeze({
       type: "campBoundaryFence",
-      x: boundaryX,
-      y: zone.y + Math.floor((zone.height - 1) / 2),
-      orientation: "vertical",
+      x: position.x + (offset.x > 0 ? 1 : 0),
+      y: position.y + (offset.y > 0 ? 1 : 0),
+      orientation: vertical ? "vertical" : "horizontal",
       system: true,
-      zoneId: zone.id
+      zoneId: definition.zoneId
     }),
     cell: Object.freeze({
-      x: boundaryX === zone.x ? boundaryX - 1 : boundaryX,
-      y: zone.y + Math.floor((zone.height - 1) / 2),
+      x: position.x,
+      y: position.y,
       width: 1,
       height: 1
     })
@@ -15385,22 +15716,33 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       : 0;
     const savedRequiredCats = demolition && Number(demolition.requiredCats);
     const paidCosts = demolition && demolition.paidCosts;
-    const legacyRightAccessPaid = Boolean(
+    const grandfatheredRightAccessPaid = Boolean(
       cible
       && cible.uid === "garden-access-greenGarden"
       && targetKind === "access"
       && modernAssignment
-      && savedRequiredCats === 2
-      && kittyIndices.length === 2
       && paidCosts
       && typeof paidCosts === "object"
       && !Array.isArray(paidCosts)
-      && Object.keys(paidCosts).length === 2
-      && Number(paidCosts.basicWoodPlanks) === 10
-      && Number(paidCosts.pebbleBricks) === 5
+      && (
+        (
+          savedRequiredCats === 2
+          && kittyIndices.length === 2
+          && Object.keys(paidCosts).length === 2
+          && Number(paidCosts.basicWoodPlanks) === 10
+          && Number(paidCosts.pebbleBricks) === 5
+        )
+        || (
+          savedRequiredCats === 1
+          && kittyIndices.length === 1
+          && Object.keys(paidCosts).length === 2
+          && Number(paidCosts.basicWoodPlanks) === 30
+          && Number(paidCosts.pebbleBricks) === 30
+        )
+      )
     );
     const assignmentCountValide = modernAssignment
-      ? legacyRightAccessPaid || (
+      ? grandfatheredRightAccessPaid || (
         kittyIndices.length === requiredCats
         && (!Number.isInteger(savedRequiredCats) || savedRequiredCats === requiredCats)
       )
@@ -15413,7 +15755,7 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
     const dureeActuelle = cible && typeof campPrototypeApi.dureeDemolitionObstacle === "function"
       ? Number(campPrototypeApi.dureeDemolitionObstacle(cible))
       : 0;
-    const duree = legacyRightAccessPaid
+    const duree = grandfatheredRightAccessPaid
       ? dureeStockee
       : Number.isFinite(dureeActuelle) && dureeActuelle > 0
       ? dureeEffectiveActionCamp(dureeActuelle, kittyIndices, "junk")
@@ -15448,7 +15790,7 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       readyToClaim: demolition.readyToClaim === true
     };
     if (modernAssignment) {
-      entree.requiredCats = legacyRightAccessPaid ? savedRequiredCats : requiredCats;
+      entree.requiredCats = grandfatheredRightAccessPaid ? savedRequiredCats : requiredCats;
       entree.kittyIndices = kittyIndices;
       if (paidCosts && typeof paidCosts === "object" && !Array.isArray(paidCosts)) {
         entree.paidCosts = Object.assign({}, paidCosts);
@@ -16102,6 +16444,10 @@ function appliquerZoomCampPrototype(conserverCentre, ancrageClient) {
   const colonnesVisibles = Math.max(1, Math.min(3, Number(map.dataset.campVisibleColumns) || 1));
   map.style.width = (largeurBase / 3 * colonnesVisibles * campPrototypeZoom) + "px";
   board.style.setProperty("--camp-prototype-obstacle-size", (16 * campPrototypeZoom) + "px");
+  board.style.setProperty(
+    "--camp-cat-world-scale",
+    String(campPrototypeZoom * CAMP_CAT_PORTRAIT_REFERENCE_SCALE)
+  );
   board.dataset.campZoom = String(campPrototypeZoom);
   synchroniserPositionsUiTachesCamp();
   positionnerBirdCampPrototype();
@@ -17787,8 +18133,7 @@ function activerItemCampPrototype(uid) {
 function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
   if ((!DEV_MODE && !campDebloque()) || campPrototypeModeEdition) return false;
   const cible = cibleDemolitionCampPrototype(targetUid, targetKind);
-  const menu = document.getElementById("camp-prototype-interaction-menu");
-  if (!cible || !menu) {
+  if (!cible) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
@@ -17810,6 +18155,15 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
   }
   const demolition = demolitionCampPrototypePourCible(cible.uid, cible.kind);
   if (demolition && !demolition.readyToClaim) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  if (cible.kind === "access" && !demolition) {
+    fermerMenuInteractionCampPrototype();
+    return ouvrirModalDemolitionCamp(null, cible.uid, cible.kind);
+  }
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (!menu) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
@@ -17839,13 +18193,8 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
   } else {
     menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action" role="menuitem"'
       + ' data-camp-menu-action="demolition"'
-      + ' aria-label="' + (cible.kind === "access" ? "Build " : "Demolish ")
-      + echapperAttributHtml(cible.label)
-      + '"><img src="'
-      + (cible.kind === "access"
-          ? "img/interface/Building_Tier1_Final.png"
-          : "img/interface/Trash_Final.png?v=0.0001")
-      + '" alt=""></button>';
+      + ' aria-label="Demolish ' + echapperAttributHtml(cible.label)
+      + '"><img src="img/interface/Trash_Final.png?v=0.0001" alt=""></button>';
   }
   const declencheur = document.querySelector(
     cible.kind === "layout"
@@ -18138,10 +18487,8 @@ function campTaskPanelDefinition() {
       kind: state.kind,
       label: obstacle.label,
       actionLabel: obstacle.kind === "access" ? obstacle.actionLabel : "Clear " + obstacle.label,
-      icon: obstacle.kind === "access"
-        ? "img/interface/Building_Tier1_Final.png"
-        : "img/interface/Trash_Final.png",
-      iconAlt: obstacle.kind === "access" ? "Build access" : "Clear junk",
+      icon: obstacle.kind === "access" ? null : "img/interface/Trash_Final.png",
+      iconAlt: obstacle.kind === "access" ? "" : "Clear junk",
       duration: campPrototypeApi.dureeDemolitionObstacle(obstacle),
       minLevel: niveauMinimumCibleDemolition(obstacle),
       requiredCats: Math.max(1, Number(obstacle.requiredCats) || 1),
@@ -18439,10 +18786,17 @@ function rendreCampTaskPanel(options) {
   ecrireTexte(title, definition.actionLabel);
   summary.innerHTML = "";
   summary.classList.add("camp-task-panel-summary");
-  const icon = document.createElement("img");
-  icon.className = "camp-task-panel-action-icon";
-  icon.src = definition.icon;
-  icon.alt = definition.iconAlt;
+  summary.className = String(summary.className || "").split(/\s+/).filter(function(className) {
+    return className && className !== "camp-task-panel-summary-no-icon";
+  }).join(" ");
+  if (!definition.icon) summary.classList.add("camp-task-panel-summary-no-icon");
+  if (definition.icon) {
+    const icon = document.createElement("img");
+    icon.className = "camp-task-panel-action-icon";
+    icon.src = definition.icon;
+    icon.alt = definition.iconAlt;
+    summary.appendChild(icon);
+  }
   const details = document.createElement("span");
   details.className = "camp-task-panel-summary-copy";
   const meta = document.createElement("span");
@@ -18488,7 +18842,6 @@ function rendreCampTaskPanel(options) {
     });
     details.appendChild(costs);
   }
-  summary.appendChild(icon);
   summary.appendChild(details);
 
   contenu.innerHTML = "";
@@ -19549,14 +19902,14 @@ function selectionnerKittyReparationCamp(kittyIndex) {
   return true;
 }
 
-function ouvrirModalDemolitionCamp(event) {
+function ouvrirModalDemolitionCamp(event, explicitTargetUid, explicitTargetKind) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
   }
   const menu = document.getElementById("camp-prototype-interaction-menu");
-  const targetUid = menu && menu.dataset.obstacleUid;
-  const targetKind = menu && menu.dataset.demolitionTargetKind;
+  const targetUid = explicitTargetUid || (menu && menu.dataset.obstacleUid);
+  const targetKind = explicitTargetKind || (menu && menu.dataset.demolitionTargetKind);
   const cible = cibleDemolitionCampPrototype(
     targetUid,
     targetKind
@@ -20314,9 +20667,14 @@ function rendreTerrainCampPrototype(presencesCamp) {
       + (preteAValider ? " camp-task-ready-to-claim" : "");
     element.dataset.campAccessUid = definition.uid;
     element.dataset.campZoneId = zoneId;
-    element.setAttribute("aria-haspopup", "menu");
-    element.setAttribute("aria-expanded", "false");
-    element.setAttribute("aria-controls", "camp-prototype-interaction-menu");
+    if (preteAValider) {
+      element.setAttribute("aria-haspopup", "menu");
+      element.setAttribute("aria-expanded", "false");
+      element.setAttribute("aria-controls", "camp-prototype-interaction-menu");
+    } else if (!demolition) {
+      element.setAttribute("aria-haspopup", "dialog");
+      element.setAttribute("aria-controls", "camp-demolition-modal");
+    }
     element.setAttribute("aria-label", definition.actionLabel
       + (preteAValider
         ? ", ready to validate"
@@ -21519,8 +21877,7 @@ function renduCampPrototype() {
   if (normaliserHousingAssignmentsCamp()) sauvegarderCampPrototype();
   document.body.classList.toggle("camp-cat-icons-hidden", etat.hideCampCatIcons === true);
   ecrireTexte(domParId("val-chatons"), etat.chatons);
-  actualiserAffichageHousingCamp();
-  actualiserAffichageAppealCamp();
+  actualiserAffichageProfilCamp();
   const presencesCamp = indexerPresencesChatsCamp();
   const taskUiLayer = typeof document.getElementById === "function"
     ? document.getElementById("camp-task-ui-layer") : null;
@@ -22306,7 +22663,7 @@ function modifierRoutesCampPrototype(cellules, effacer) {
   campPrototypeSelectionUid = null;
   sauvegarderCampPrototype();
   rendreItemsCampPrototype();
-  actualiserAffichageAppealCamp();
+  actualiserAffichageProfilCamp();
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(effacer
     ? "Basic Trail tile" + (modifications === 1 ? "" : "s") + " removed."
@@ -25396,7 +25753,7 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
       preparerSurfaceInputOverlayTest();
       return Object.freeze({
         prologueActive: document.body.classList.contains("prologue-actif"),
-        settingsVisible: cibleInputOverlayTestVisible(".bouton-settings")
+        profileVisible: cibleInputOverlayTestVisible("#camp-profile-summary")
       });
     },
     prepareRepair: function(surface) {

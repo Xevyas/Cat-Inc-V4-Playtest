@@ -55,6 +55,47 @@
           "initial": false
         }
       ],
+      "territoryAccessSites": [
+        {
+          "id": "garden-access-redGarden",
+          "label": "West garden passage",
+          "actionLabel": "Open the west garden passage",
+          "explorationId": "C1",
+          "fromZoneId": "home",
+          "toZoneId": "redGarden",
+          "costs": {
+            "basicWoodPlanks": 10,
+            "pebbleBricks": 5
+          },
+          "durationSeconds": 3600,
+          "requiredCats": 2,
+          "minCatLevel": 1,
+          "position": {
+            "x": 6,
+            "y": 7,
+            "side": "west"
+          }
+        },
+        {
+          "id": "garden-access-greenGarden",
+          "label": "East garden passage",
+          "actionLabel": "Open the east garden passage",
+          "explorationId": "E1",
+          "fromZoneId": "home",
+          "toZoneId": "greenGarden",
+          "costs": {
+            "rockBricks": 20
+          },
+          "durationSeconds": 18000,
+          "requiredCats": 2,
+          "minCatLevel": 10,
+          "position": {
+            "x": 11,
+            "y": 7,
+            "side": "east"
+          }
+        }
+      ],
       "connectionOriginCells": [
         {
           "x": 6,

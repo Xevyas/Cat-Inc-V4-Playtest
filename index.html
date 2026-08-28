@@ -293,7 +293,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0075 · August 26, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0076 · August 28, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -317,10 +317,15 @@
   <div id="top-bar">
   <!-- HEADER -->
   <header class="header">
-    <div class="titre-zone">
-      <h1 class="titre"><img class="titre-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc"></h1>
-      <button class="bouton-settings" data-input-action="settings.open" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""></button>
-    </div>
+    <span class="camp-profile-wrap">
+      <button id="camp-profile-summary" class="camp-profile-summary" type="button" aria-label="Open Camp Profile" aria-haspopup="dialog" aria-controls="camp-profile-modal" onclick="ouvrirProfilCamp()">
+        <span class="camp-profile-avatar"><img id="camp-profile-summary-avatar" src="img/interface/Gang_Final.png?v=0.0029" alt=""></span>
+        <span class="camp-profile-copy">
+          <span class="camp-profile-heading"><strong id="camp-profile-summary-name">My Camp</strong><b id="camp-profile-summary-level">Lv. 0</b></span>
+          <span class="camp-profile-metrics"><span id="camp-profile-summary-cats">Cats 0</span><span id="camp-profile-summary-appeal">Appeal 0</span></span>
+        </span>
+      </button>
+    </span>
     <div class="zone-sequence">
       <button id="bouton-vitesse" onclick="cyclerVitesse()">1×</button>
       <div class="stats-attrapage-wrapper" id="stats-attrapage-wrapper">
@@ -384,19 +389,6 @@
   <section class="ressources" aria-label="Resources">
     <div class="ressources-fixes">
       <button id="bird-debug-btn" onclick="montrerOiseau()" title="[DEV] Force bird spawn" aria-label="Force a bird spawn for testing" class="bird-debug-btn"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
-      <span class="camp-housing-wrap">
-        <button id="camp-housing-summary" class="ressource ressource-cats camp-housing-summary" type="button" aria-label="Show Housing Capacity details" aria-expanded="false" aria-controls="camp-housing-details" onclick="toggleDetailsHousingCamp(event)">
-          <img class="ressource-icone" src="img/interface/Gang_Final.png?v=0.0029" alt="">
-          <span class="ressource-chiffres">
-            <span class="ressource-valeur" id="val-chatons">0</span>
-          </span>
-        </button>
-        <span id="camp-housing-details" class="camp-appeal-details camp-housing-details" role="region" aria-label="Housing Capacity details" hidden></span>
-      </span>
-      <span class="camp-appeal-wrap camp-appeal-wrap-topbar" hidden>
-        <button id="camp-appeal-summary" class="camp-appeal-summary" type="button" aria-label="Show Camp Appeal details" aria-expanded="false" aria-controls="camp-appeal-details" onclick="toggleDetailsAttractiviteCamp(event)">Appeal 0</button>
-        <span id="camp-appeal-details" class="camp-appeal-details" role="region" aria-label="Camp Appeal details" hidden></span>
-      </span>
     </div>
     <div class="ressources-liste" id="ressources-liste">
     <div class="ressource" id="row-cardboard-planks" data-resource-key="cardboardPlanks" data-family="wood" data-tooltip="Cardboard Planks" data-tier="T1" style="display:none">
@@ -466,6 +458,51 @@
     </button>
   </section>
   </div> <!-- /top-bar -->
+
+  <!-- LOCAL CAMP PROFILE -->
+  <div id="camp-profile-modal" class="explo-modal camp-profile-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-profile-modal-title" style="display:none">
+    <div class="explo-modal-panneau camp-profile-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="camp-profile-modal-title">Camp Profile</span>
+        <span class="camp-profile-header-actions">
+          <button class="bouton-settings camp-profile-settings-button" data-input-action="settings.open" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""></button>
+          <button class="explo-modal-close" aria-label="Close Camp Profile"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+        </span>
+      </div>
+      <div class="overlay-manager-content camp-profile-content">
+        <div class="camp-profile-identity">
+          <span class="camp-profile-avatar camp-profile-avatar-large"><img id="camp-profile-panel-avatar" src="img/interface/Gang_Final.png?v=0.0029" alt=""></span>
+          <form class="camp-profile-name-form" onsubmit="enregistrerNomProfilCamp(event)">
+            <label for="camp-profile-name-input">Camp name</label>
+            <span><input id="camp-profile-name-input" name="campName" type="text" maxlength="32" autocomplete="off" required><button type="submit">Save</button></span>
+            <small id="camp-profile-name-status" role="status" aria-live="polite"></small>
+          </form>
+        </div>
+        <div class="camp-profile-stats" aria-label="Current Camp statistics">
+          <span><small>Camp Level</small><strong id="camp-profile-panel-level">0</strong></span>
+          <span id="camp-profile-panel-cats-wrap">
+            <button id="camp-housing-summary" class="camp-profile-stat-action" type="button" aria-label="Show Housing Capacity details" aria-expanded="false" aria-controls="camp-housing-details" onclick="toggleDetailsHousingCamp(event)">?</button>
+            <small>Cats / Capacity</small><strong id="camp-profile-panel-cats">0 / 4</strong>
+            <span id="camp-housing-details" class="camp-appeal-details" role="region" aria-label="Housing Capacity details" hidden></span>
+          </span>
+          <span id="camp-profile-panel-appeal-wrap">
+            <button id="camp-appeal-summary" class="camp-profile-stat-action" type="button" aria-label="Show Appeal details" aria-expanded="false" aria-controls="camp-appeal-details" onclick="toggleDetailsAttractiviteCamp(event)">?</button>
+            <small>Appeal</small><strong id="camp-profile-panel-appeal">0</strong>
+            <span id="camp-appeal-details" class="camp-appeal-details" role="region" aria-label="Appeal details" hidden></span>
+          </span>
+        </div>
+        <div class="camp-profile-progress">
+          <span class="camp-level-xp"><b>Camp XP</b><em id="camp-profile-panel-xp">0 / 10</em></span>
+          <span id="camp-profile-panel-progress" class="camp-level-progress" role="progressbar" aria-label="Camp XP toward the next level" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><i></i></span>
+          <span class="camp-profile-bonus">Current Level bonus <strong id="camp-profile-panel-bonus">Appeal +0</strong></span>
+        </div>
+        <section class="camp-profile-avatar-section" aria-labelledby="camp-profile-avatar-title">
+          <h3 id="camp-profile-avatar-title">Camp Icon selection</h3>
+          <div id="camp-profile-avatar-picker" class="camp-profile-avatar-picker"></div>
+        </section>
+      </div>
+    </div>
+  </div>
 
   <!-- RESOURCE BAR CUSTOMIZATION -->
   <div id="resource-bar-modal" class="explo-modal resource-bar-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="resource-bar-modal-title" style="display:none">
@@ -561,27 +598,16 @@
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
                 <span id="camp-recruit-route" class="camp-recruit-route" hidden aria-hidden="true">
-                  <svg class="camp-recruit-paw-symbols" aria-hidden="true">
-                    <defs>
-                      <symbol id="camp-recruit-cat-paw" viewBox="0 0 100 100">
-                        <ellipse cx="17" cy="33" rx="11" ry="16" transform="rotate(-24 17 33)"></ellipse>
-                        <ellipse cx="39" cy="19" rx="11" ry="16" transform="rotate(-8 39 19)"></ellipse>
-                        <ellipse cx="61" cy="19" rx="11" ry="16" transform="rotate(8 61 19)"></ellipse>
-                        <ellipse cx="83" cy="33" rx="11" ry="16" transform="rotate(24 83 33)"></ellipse>
-                        <path d="M50 39C35 39 23 51 21 67C19 83 31 93 50 93C69 93 81 83 79 67C77 51 65 39 50 39Z"></path>
-                      </symbol>
-                    </defs>
-                  </svg>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.08" style="--camp-paw-left:4.8%;--camp-paw-top:10%;--camp-paw-turn:-15deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.17" style="--camp-paw-left:7.9%;--camp-paw-top:18%;--camp-paw-turn:14deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.26" style="--camp-paw-left:4.6%;--camp-paw-top:26%;--camp-paw-turn:-17deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.35" style="--camp-paw-left:7.7%;--camp-paw-top:34%;--camp-paw-turn:13deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.44" style="--camp-paw-left:4.5%;--camp-paw-top:42%;--camp-paw-turn:-14deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.53" style="--camp-paw-left:7.6%;--camp-paw-top:50%;--camp-paw-turn:16deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.62" style="--camp-paw-left:4.6%;--camp-paw-top:58%;--camp-paw-turn:-12deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.71" style="--camp-paw-left:7.7%;--camp-paw-top:66%;--camp-paw-turn:15deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.80" style="--camp-paw-left:4.7%;--camp-paw-top:74%;--camp-paw-turn:-16deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
-                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.89" style="--camp-paw-left:7.9%;--camp-paw-top:82%;--camp-paw-turn:13deg"><svg viewBox="0 0 100 100"><use href="#camp-recruit-cat-paw"></use></svg></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.08" style="--camp-paw-left:4.8%;--camp-paw-top:10%;--camp-paw-turn:-15deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.17" style="--camp-paw-left:7.9%;--camp-paw-top:18%;--camp-paw-turn:14deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.26" style="--camp-paw-left:4.6%;--camp-paw-top:26%;--camp-paw-turn:-17deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.35" style="--camp-paw-left:7.7%;--camp-paw-top:34%;--camp-paw-turn:13deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.44" style="--camp-paw-left:4.5%;--camp-paw-top:42%;--camp-paw-turn:-14deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.53" style="--camp-paw-left:7.6%;--camp-paw-top:50%;--camp-paw-turn:16deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.62" style="--camp-paw-left:4.6%;--camp-paw-top:58%;--camp-paw-turn:-12deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.71" style="--camp-paw-left:7.7%;--camp-paw-top:66%;--camp-paw-turn:15deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.80" style="--camp-paw-left:4.7%;--camp-paw-top:74%;--camp-paw-turn:-16deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
+                  <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.89" style="--camp-paw-left:7.9%;--camp-paw-top:82%;--camp-paw-turn:13deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
                   <span class="camp-recruit-arrival-target">
                     <small id="camp-recruit-arrival-status" class="camp-recruit-arrival-status" hidden></small>
                   </span>
@@ -971,7 +997,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0075</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0076</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1263,7 +1289,7 @@
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
   <script src="js/data/content.js?v=0.0058"></script>
   <script src="js/data/perks.generated.js?v=0.0001"></script>
-  <script src="js/data/changelog.js?v=0.0075"></script>
+  <script src="js/data/changelog.js?v=0.0076"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
   <script src="js/data/dialogues.js?v=0.0007"></script>
   <script src="js/data/shop.js?v=0.0001"></script>

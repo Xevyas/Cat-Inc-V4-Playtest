@@ -158,6 +158,20 @@ function normaliserLayoutStickersSauvegarde(layout) {
   });
 }
 
+function normaliserProfilCampSauvegarde(value) {
+  const source = estObjetSauvegarde(value) ? value : {};
+  const name = typeof source.name === "string"
+    ? source.name.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 32)
+    : "";
+  const avatar = typeof source.avatarCatFaceId === "string"
+    ? source.avatarCatFaceId.trim()
+    : "";
+  return {
+    name: name || "My Camp",
+    avatarCatFaceId: /^[a-z0-9][a-z0-9-]{0,79}$/.test(avatar) ? avatar : null
+  };
+}
+
 function donneesSauvegardeReconnaissables(d) {
   if (!estObjetSauvegarde(d)) return false;
   const champsConnus = ["chatons", "wood", "cardboard", "cardboardPieces", "kittiesData", "workRecipeSlots"];
@@ -238,7 +252,7 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workRecipeSlots", "perksV2", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp"];
+  const champsObjets = ["workRecipeSlots", "perksV2", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp", "campProfile"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
@@ -249,6 +263,18 @@ function validerStructureSauvegarde(d) {
     }
     if (d.perksV2.learned.some(function(perkId) { return typeof perkId !== "string"; })) {
       return "Invalid Perks V2 learned IDs.";
+    }
+  }
+  if (d.campProfile !== undefined) {
+    if (Object.keys(d.campProfile).some(function(key) {
+      return key !== "name" && key !== "avatarCatFaceId";
+    })) return "Invalid Camp Profile fields.";
+    if (d.campProfile.name !== undefined && typeof d.campProfile.name !== "string") {
+      return "Invalid Camp Profile name.";
+    }
+    if (d.campProfile.avatarCatFaceId !== undefined && d.campProfile.avatarCatFaceId !== null
+        && typeof d.campProfile.avatarCatFaceId !== "string") {
+      return "Invalid Camp Profile avatar.";
     }
   }
 
@@ -492,7 +518,21 @@ function validerStructureSauvegarde(d) {
           && demolition.requiredCats >= 1
           && demolition.requiredCats <= 8
           && kittyIndices.length === demolition.requiredCats;
+      const paidCosts = demolition && demolition.paidCosts;
+      const grandfatheredRightOneCatAccess = Boolean(
+        demolition
+        && demolition.targetKind === "access"
+        && demolition.obstacleUid === "garden-access-greenGarden"
+        && modernAssignment
+        && demolition.requiredCats === 1
+        && kittyIndices.length === 1
+        && estObjetSauvegarde(paidCosts)
+        && Object.keys(paidCosts).length === 2
+        && Number(paidCosts.basicWoodPlanks) === 30
+        && Number(paidCosts.pebbleBricks) === 30
+      );
       const accessAssignmentValide = (demolition && demolition.targetKind !== "access")
+        || grandfatheredRightOneCatAccess
         || (modernAssignment
           && demolition.requiredCats === 2
           && kittyIndices.length === 2);
@@ -909,6 +949,9 @@ function analyserSauvegardeBrute(raw) {
       }
     };
   }
+  if (estObjetSauvegarde(data)) {
+    data = { ...data, campProfile: normaliserProfilCampSauvegarde(data.campProfile) };
+  }
   const erreur = validerStructureSauvegarde(data);
   return erreur ? { ok: false, erreur: erreur } : { ok: true, data: data };
 }
@@ -958,6 +1001,7 @@ function analyserSauvegardeBrute(raw) {
     volumeMusique:           etat.volumeMusique,
     hideCampCatIcons:          etat.hideCampCatIcons,
     resourceBarHidden:       etat.resourceBarHidden,
+    campProfile:             normaliserProfilCampSauvegarde(etat.campProfile),
     scieriBloquee:              etat.scieriBloquee,
     basicSawmillBloquee:        etat.basicSawmillBloquee,
     brickBloquee:               etat.brickBloquee,
@@ -1075,6 +1119,7 @@ function analyserSauvegardeBrute(raw) {
   etat.manualFocusOnboardingCompletedTs = Number.isFinite(d.manualFocusOnboardingCompletedTs)
     ? d.manualFocusOnboardingCompletedTs
     : 0;
+  etat.campProfile = normaliserProfilCampSauvegarde(d.campProfile);
   etat.birdPremierSpawnTs     = Number.isFinite(d.birdPremierSpawnTs)
     ? d.birdPremierSpawnTs
     : maintenant + 5 * 60 * 1000;
@@ -1477,6 +1522,7 @@ function analyserSauvegardeBrute(raw) {
     serialiserEtat: serialiserEtat,
     normaliserStickerSelectionSauvegarde: normaliserStickerSelectionSauvegarde,
     normaliserLayoutStickersSauvegarde: normaliserLayoutStickersSauvegarde,
+    normaliserProfilCampSauvegarde: normaliserProfilCampSauvegarde,
     migrerDonneesSauvegarde: migrerDonneesSauvegarde,
     deriverEtapeTutorielSawmill: deriverEtapeTutorielSawmill
   });
