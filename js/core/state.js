@@ -105,6 +105,7 @@ function creerEtatInitial() {
   avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
   volumeMusique:           0,
+  uiTheme:                 "basic",
   campCatPortraitScale:    1,
   hideCampCatIcons:          false,
   // Resources hidden from the compact top rail. An empty list means every

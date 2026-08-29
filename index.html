@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
   <link rel="stylesheet" href="style.css?v=0.0170" />
+  <link rel="stylesheet" href="style-stylish.css?v=0.0001" />
   <style>
     /* First-paint guard: only the gardens are fogged. Houses and river remain
        visible while game state is loading. */
@@ -22,7 +23,7 @@
     }
   </style>
 </head>
-<body>
+<body data-ui-theme="basic">
 
   <!-- INTRO -->
   <div id="ecran-intro" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
@@ -39,7 +40,7 @@
     <span class="prologue-paw-trail prologue-paw-trail-b" aria-hidden="true">🐾</span>
     <button id="prologue-cat-target" class="prologue-cat-target" type="button" onclick="cliquerCiblePrologue()" aria-label="Catch Bernardo">
       <span class="prologue-cat-pulse" aria-hidden="true"></span>
-      <span class="prologue-cat-portrait"><img id="prologue-cat-face" src="img/Cat faces/Bernardo.png?v=0.0026" alt=""></span>
+      <span class="prologue-cat-portrait"><img id="prologue-cat-face" alt=""></span>
     </button>
   </div>
 
@@ -293,7 +294,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0077 · August 28, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0078 · August 29, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -343,7 +344,7 @@
       <button id="bouton-sequence" disabled>Cat status</button>
       <div class="conteneur-barre" id="conteneur-barre-sequence" style="display:none">
         <div id="barre-sequence" class="barre barre-verte">
-          <img id="sequence-chat-marker" class="sequence-chat-marker" src="img/Cat faces/Bernardo.png?v=0.0026" alt="Bernardo">
+          <img id="sequence-chat-marker" class="sequence-chat-marker" alt="Bernardo">
         </div>
       </div>
       <div id="info-sequence" class="info-subtile" aria-live="polite">
@@ -372,7 +373,7 @@
         <div id="bird-cursor" class="bird-cursor"></div>
       </div>
       <div class="reflex-zone-labels" aria-hidden="true"><span>TOO EARLY</span><span>CATCH!</span><span>TOO LATE</span></div>
-      <button class="bird-catch-btn" onclick="clickerBird()">CATCH! 🐾</button>
+      <button class="bird-catch-btn" data-touch-activation="reflex-release" onclick="clickerBird()">CATCH! 🐾</button>
       <button class="bird-skip-btn" onclick="skipBird()">Let it fly away</button>
     </div>
   </div>
@@ -452,6 +453,10 @@
       </div>
     </div>
     </div>
+    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="basic" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Stylish (Basic is active)" title="Switch to Stylish (Basic is active)">
+      <span class="ressources-theme-toggle-icone" aria-hidden="true">Aa</span>
+      <span id="ui-theme-quick-label" class="ressources-theme-toggle-label">Stylish</span>
+    </button>
     <button class="ressources-gerer" type="button" onclick="ouvrirGestionRessources()" aria-label="Choose resources shown in the top bar" aria-haspopup="dialog" aria-controls="resource-bar-modal">
       <span class="ressources-gerer-icone" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       <span class="ressources-gerer-label">Manage</span>
@@ -465,6 +470,7 @@
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="camp-profile-modal-title">Camp Profile</span>
         <span class="camp-profile-header-actions">
+          <a class="camp-profile-discord-button" href="https://discord.gg/qtvHJxM2f" target="_blank" rel="noopener noreferrer" title="Join the Cat Inc Discord server" aria-label="Join the Cat Inc Discord server">Discord</a>
           <button class="bouton-settings camp-profile-settings-button" data-input-action="settings.open" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""></button>
           <button class="explo-modal-close" aria-label="Close Camp Profile"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
         </span>
@@ -536,7 +542,7 @@
 
   <!-- ONGLETS: moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
-    <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0029" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
+    <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" data-bernardo-cat-face alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
     <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><img class="onglet-icone" src="img/interface/Camp.png" alt=""> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/Jobs.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Jobs</span></button>
@@ -550,7 +556,7 @@
   </div>
 
   <aside id="camp-quick-dialogue" class="camp-quick-dialogue" role="status" aria-live="polite" data-touch-activation-root="true" onclick="continuerDialogueRapideCamp(event)" hidden>
-    <img src="img/Cat faces/Bernardo.png?v=0.0026" alt="">
+    <img data-bernardo-cat-face alt="">
     <div>
       <strong>Bernardo</strong>
       <p id="camp-quick-dialogue-copy"></p>
@@ -629,7 +635,6 @@
                   <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.80" style="--camp-paw-left:4.7%;--camp-paw-top:74%;--camp-paw-turn:-16deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
                   <span class="camp-recruit-paw" data-camp-recruit-paw-step="0.89" style="--camp-paw-left:7.9%;--camp-paw-top:82%;--camp-paw-turn:13deg"><img src="img/Maps/Camp%20Runtime/Environment/Camp_Recruit_Paw.png?v=0.0001" alt="" aria-hidden="true"></span>
                   <span class="camp-recruit-arrival-target">
-                    <small id="camp-recruit-arrival-status" class="camp-recruit-arrival-status" hidden></small>
                   </span>
                 </span>
                 <button id="camp-recruit-visitor" class="camp-recruit-visitor" type="button" hidden onclick="activerRecrutementDepuisCamp(event)">
@@ -673,6 +678,16 @@
              <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"></span>
            </div>
            <div id="camp-prototype-fences" class="camp-prototype-fences" aria-hidden="true"></div>
+           <span class="camp-recruit-arrival-control">
+             <button id="camp-recruit-arrival-status" class="camp-recruit-arrival-status" type="button" aria-expanded="false" aria-controls="camp-recruit-arrival-details" aria-label="Show visitor arrival timing details" onclick="toggleDetailsDureeArriveeCamp(event)" hidden></button>
+             <div id="camp-recruit-arrival-details" class="camp-recruit-arrival-details" role="region" aria-label="Visitor arrival timing details" hidden>
+               <strong class="camp-recruit-arrival-details-title">Visitor arrival</strong>
+               <div class="camp-recruit-arrival-details-row"><span>Raw time</span><strong id="camp-recruit-arrival-raw">0s</strong></div>
+               <strong class="camp-recruit-arrival-details-heading">Modifiers</strong>
+               <div id="camp-recruit-arrival-modifiers" class="camp-recruit-arrival-modifiers"></div>
+               <div class="camp-recruit-arrival-details-row camp-recruit-arrival-details-adjusted"><span>Adjusted time</span><strong id="camp-recruit-arrival-adjusted">0s</strong></div>
+             </div>
+           </span>
            <div id="camp-prototype-connectivity-statuses" class="camp-prototype-connectivity-statuses" aria-hidden="true"></div>
           <div id="camp-production-dismiss-surface" class="camp-production-dismiss-surface" data-touch-activation="manual" aria-hidden="true" hidden></div>
           <div id="camp-prototype-interaction-menu" class="camp-prototype-interaction-menu" role="menu" aria-label="Camp element actions" hidden></div>
@@ -998,6 +1013,15 @@
         <button class="settings-btn" onclick="document.getElementById('import-fichier').click()">Import save (.txt)</button>
         <input type="file" id="import-fichier" accept=".txt" style="display:none" onchange="importerSauvegarde(event)">
         <div class="settings-separateur"></div>
+        <div class="settings-audio-title">Interface</div>
+        <label class="settings-volume-row settings-theme-row">
+          <span>Interface style</span>
+          <select id="settings-ui-theme" aria-label="Interface style" onchange="gererThemeInterface(this.value)">
+            <option value="basic">Basic</option>
+            <option value="stylish">Stylish</option>
+          </select>
+        </label>
+        <div class="settings-separateur"></div>
         <div class="settings-audio-title">Audio</div>
         <label class="settings-volume-row">
           <span>Sound effects</span>
@@ -1033,7 +1057,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0077</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0078</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1171,7 +1195,7 @@
     <div class="explo-modal-panneau cannelle-bargain-panel cannelle-bargain-game-panel" role="document" tabindex="-1">
       <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-game-title">Cannelle's Bargain</span><button class="explo-modal-close" type="button" aria-label="Give up duel" onclick="abandonnerCannelleBargain()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>
       <div class="cannelle-bargain-scoreboard">
-        <span><img src="img/Cat faces/Bernardo.png" alt="Bernardo"><strong id="cannelle-bargain-score-bernardo">0</strong></span>
+        <span><img data-bernardo-cat-face alt="Bernardo"><strong id="cannelle-bargain-score-bernardo">0</strong></span>
         <span><b id="cannelle-bargain-round">Round 1 / 5</b><small id="cannelle-bargain-difficulty">Difficulty 1</small></span>
         <span><img src="img/Cat faces/cannelle-3.png" alt="Cannelle"><strong id="cannelle-bargain-score-cannelle">0</strong></span>
       </div>
@@ -1275,7 +1299,7 @@
       <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>DON'T MISS!</span></div>
       <div class="bird-track">
         <div class="bird-target cat-catch-target">
-          <img id="cat-catch-target-icone" class="bird-target-icone cat-catch-target-icone" src="img/Cat faces/Bernardo.png?v=0.0026" alt="Bernardo target">
+          <img id="cat-catch-target-icone" class="bird-target-icone cat-catch-target-icone" alt="Bernardo target">
         </div>
         <div id="cat-catch-cursor" class="bird-cursor"></div>
       </div>
@@ -1301,7 +1325,7 @@
           <span id="recruit-target-name">Visitor</span>
         </div>
         <div class="recruit-portrait-wrap recruit-portrait-bernardo">
-          <img class="recruit-portrait" src="img/Cat faces/Bernardo.png?v=0.0026" alt="">
+          <img class="recruit-portrait" data-bernardo-cat-face alt="">
           <span>Bernardo</span>
         </div>
         <div id="recruit-bernardo-speech" class="recruit-speech recruit-speech-bernardo" aria-label="Bernardo says: We have plenty of food. Join us, and you'll never go hungry again.">We have plenty of food. Join us, and you'll never go hungry again.</div>
@@ -1362,7 +1386,7 @@
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
   <script src="js/data/content.js?v=0.0058"></script>
   <script src="js/data/perks.generated.js?v=0.0001"></script>
-  <script src="js/data/changelog.js?v=0.0077"></script>
+  <script src="js/data/changelog.js?v=0.0078"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
   <script src="js/data/cannelle-bargain.js?v=0.0001"></script>
   <script src="js/data/dialogues.js?v=0.0007"></script>
@@ -1383,7 +1407,7 @@
   <script src="js/ui/camp.js?v=0.0031"></script>
   <script src="js/ui/dialogs.js?v=0.0002"></script>
   <script src="js/ui/guidance.js?v=0.0003"></script>
-  <script src="js/ui/touch-activation.js?v=0.0007"></script>
+  <script src="js/ui/touch-activation.js?v=0.0008"></script>
   <script src="js/ui/logs.js?v=0.0001"></script>
   <script src="js/ui/notifications.js?v=0.0001"></script>
   <script src="js/ui/changelog.js?v=0.0001"></script>

@@ -444,8 +444,13 @@ const KITTY_ICON = '<img src="img/interface/Gang_Final.png?v=0.0026" class="kitt
 const CHECK_ICON = '<img src="img/interface/✅_Final.png?v=0.0026" class="check-icon" alt="done">';
 
 // ── Per-kitty face icons ────────────────────────────────────
+const LIVE_BERNARDO_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
+  ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-bernardo"; })
+  : null;
 const CAT_FACES = {
-  bernardo: "img/Cat faces/Bernardo.png?v=0.0026",
+  bernardo: LIVE_BERNARDO_FACE
+    ? LIVE_BERNARDO_FACE.runtimePath + "?v=live-r" + LIVE_BERNARDO_FACE.revision
+    : "",
   mochi:    "img/Cat faces/Mochi_Final.png?v=0.0026",
   luna:     "img/Cat faces/Luna_Final.png?v=0.0026",
   alt1:     "img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026",

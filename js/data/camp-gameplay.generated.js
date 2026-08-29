@@ -379,17 +379,31 @@
         "kind": "runtime-rule",
         "id": "smallFountainBlueprintLearned"
       },
-      "effects": {},
+      "effects": {
+        "appeal": 1
+      },
       "upgradeTiers": {},
       "simulation": {
         "ranks": 12
       },
       "build": {
         "entryMode": "build",
-        "durationSeconds": 1800,
-        "costs": {
-          "pebbleBricks": 1
-        }
+        "durationSeconds": 1800
+      },
+      "law": {
+        "family": "small-fountain",
+        "baseCosts": {
+          "pebbleBricks": 5
+        },
+        "growth": 1.7,
+        "authoredRanks": {
+          "1": {
+            "pebbleBricks": 5
+          }
+        },
+        "rounding": "ceil",
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
       }
     },
     "cardboardLitterbox": {
@@ -405,17 +419,31 @@
         "kind": "runtime-rule",
         "id": "cardboardLitterboxBlueprintLearned"
       },
-      "effects": {},
+      "effects": {
+        "campXp": 8
+      },
       "upgradeTiers": {},
       "simulation": {
         "ranks": 12
       },
       "build": {
         "entryMode": "build",
-        "durationSeconds": 1800,
-        "costs": {
-          "cardboardPlanks": 1
-        }
+        "durationSeconds": 3600
+      },
+      "law": {
+        "family": "cardboard-litterbox",
+        "baseCosts": {
+          "cardboardPlanks": 5
+        },
+        "growth": 1.7,
+        "authoredRanks": {
+          "1": {
+            "cardboardPlanks": 5
+          }
+        },
+        "rounding": "ceil",
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
       }
     },
     "woodCathouse": {
@@ -489,6 +517,45 @@
         "authoredRanks": {
           "1": {
             "basicWoodPlanks": 2
+          }
+        },
+        "rounding": "ceil",
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
+      }
+    },
+    "lanternOnPole": {
+      "assetId": "lantern-on-pole",
+      "name": "Lantern on pole",
+      "category": "decoration",
+      "repeatable": true,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "unlock": {
+        "kind": "not-wired"
+      },
+      "effects": {
+        "appeal": 1.5
+      },
+      "upgradeTiers": {},
+      "simulation": {
+        "ranks": 12
+      },
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 3600
+      },
+      "law": {
+        "family": "lantern-on-pole",
+        "baseCosts": {
+          "basicWoodPlanks": 10
+        },
+        "growth": 1.7,
+        "authoredRanks": {
+          "1": {
+            "basicWoodPlanks": 10
           }
         },
         "rounding": "ceil",

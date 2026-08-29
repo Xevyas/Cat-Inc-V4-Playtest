@@ -88,6 +88,11 @@
       return action;
     }
 
+    function allowsReflexRelease(rootAction) {
+      return Boolean(rootAction && typeof rootAction.getAttribute === "function"
+        && rootAction.getAttribute("data-touch-activation") === "reflex-release");
+    }
+
     function eventTimestamp(event) {
       const value = Number(event && event.timeStamp);
       return Number.isFinite(value) && value >= 0 ? value : 0;
@@ -419,8 +424,11 @@
       const pointerId = finitePointerId(event);
       const record = pointerId === null ? null : activeByPointer.get(pointerId);
       if (!record || record.kind !== "touch") return;
-      if (Math.hypot((Number(event.clientX) || 0) - record.startX,
-        (Number(event.clientY) || 0) - record.startY) > TAP_MOVE_TOLERANCE) invalidateRecord(record);
+      if (!allowsReflexRelease(record.root)
+          && Math.hypot((Number(event.clientX) || 0) - record.startX,
+            (Number(event.clientY) || 0) - record.startY) > TAP_MOVE_TOLERANCE) {
+        invalidateRecord(record);
+      }
     }
 
     function activateRecord(record) {

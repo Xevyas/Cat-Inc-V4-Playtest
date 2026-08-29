@@ -445,14 +445,16 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
 .camp-recruit-visitor-ready {
   isolation: isolate;
 }
-.camp-recruit-visitor-portrait {
+.camp-recruit-visitor .camp-recruit-visitor-portrait {
   position: relative;
   z-index: 0;
   display: grid;
-  width: clamp(28px, 3.3vw, 43px);
+  width: var(--camp-cat-marker-size, 36px);
   aspect-ratio: 1;
   place-items: stretch;
   isolation: isolate;
+  transform: scale(var(--camp-cat-world-scale, 1));
+  transform-origin: center;
 }
 .camp-recruit-visitor .camp-recruit-visitor-portrait img {
   display: block;
@@ -3502,6 +3504,44 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 .ressources-liste::-webkit-scrollbar { height: 4px; }
 .ressources-liste::-webkit-scrollbar-thumb { border-radius: 999px; background: #dbcab5; }
 
+.ressources-theme-toggle {
+  display: inline-flex;
+  flex: 0 0 58px;
+  min-width: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 5px;
+  color: #725d4c;
+  border: 0;
+  border-left: 1px solid #e8ddd0;
+  background: #fffaf3;
+  cursor: pointer;
+  z-index: 2;
+}
+.ressources-theme-toggle:hover { color: var(--couleur-accent); background: #fff3e5; }
+.ressources-theme-toggle:focus-visible { outline: 3px solid rgba(212, 98, 42, .48); outline-offset: -3px; }
+.ressources-theme-toggle[data-current-theme="stylish"] {
+  color: #805022;
+  background: #f7ead7;
+  box-shadow: inset 0 0 0 1px rgba(128, 80, 34, .15);
+}
+.ressources-theme-toggle-icone {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(-2deg);
+}
+.ressources-theme-toggle-label {
+  font-size: .47rem;
+  font-weight: 900;
+  letter-spacing: .02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .ressources-gerer {
   display: inline-flex;
   flex: 0 0 62px;
@@ -4726,10 +4766,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   content: none;
 }
 .camp-recruit-arrival-status {
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 4px);
-  z-index: 5;
+  display: block;
   padding: 2px 5px;
   border: 1px solid rgba(114, 77, 42, .18);
   border-radius: 999px;
@@ -4740,9 +4777,78 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   font-weight: 900;
   line-height: normal;
   white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.camp-recruit-arrival-status[hidden] { display: none; }
+.camp-recruit-arrival-status:hover,
+.camp-recruit-arrival-status[aria-expanded="true"] { border-color: rgba(114, 77, 42, .48); background: #fff4d7; }
+.camp-recruit-arrival-status:focus-visible { outline: 3px solid rgba(212, 98, 42, .52); outline-offset: 2px; }
+.camp-recruit-arrival-control {
+  position: absolute;
+  left: 36%;
+  top: 29.333333%;
+  z-index: 8;
+  display: block;
+  width: clamp(20px, 2.2vw, 30px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.camp-recruit-arrival-control > .camp-recruit-arrival-status {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 4px);
   transform: translateX(-50%);
 }
+.camp-recruit-arrival-details {
+  position: fixed;
+  z-index: 240;
+  display: grid;
+  gap: 7px;
+  width: min(300px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid #dec9b1;
+  border-radius: 11px;
+  background: #fffaf2;
+  color: #5d422e;
+  box-shadow: 0 9px 24px rgba(54, 38, 26, .24);
+  font-size: .72rem;
+  line-height: 1.3;
+  pointer-events: auto;
+}
+.camp-recruit-arrival-details[hidden] { display: none; }
+.camp-recruit-arrival-details-title { color: #713810; font-size: .82rem; }
+.camp-recruit-arrival-details-heading {
+  padding-top: 3px;
+  color: #8a694c;
+  font-size: .64rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.camp-recruit-arrival-details-row,
+.camp-recruit-arrival-modifier {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.camp-recruit-arrival-details-row > span,
+.camp-recruit-arrival-modifier > span:first-child { color: #80664e; }
+.camp-recruit-arrival-details-row > strong,
+.camp-recruit-arrival-modifier > span:last-child { color: #b55729; white-space: nowrap; }
+.camp-recruit-arrival-modifiers { display: grid; gap: 5px; }
+.camp-recruit-arrival-modifiers-empty { color: #8a796a; font-style: italic; }
+.camp-recruit-arrival-details-adjusted {
+  margin-top: 3px;
+  padding-top: 7px;
+  border-top: 1px solid #eadbca;
+}
 .camp-recruit-visitor {
+  --camp-cat-marker-size: 36px;
   position: absolute;
   left: var(--camp-recruit-left, 8%);
   top: var(--camp-recruit-top, 4%);
@@ -9435,6 +9541,22 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+.settings-theme-row select {
+  grid-column: 2 / 4;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid #d8c8b6;
+  border-radius: var(--rayon-petit);
+  background: white;
+  color: var(--couleur-texte);
+  font: inherit;
+  cursor: pointer;
+}
+.settings-theme-row select:focus-visible {
+  outline: 3px solid rgba(224, 123, 57, .35);
+  outline-offset: 2px;
+}
 
 .settings-btn {
   font-family: 'Nunito', sans-serif;
@@ -13822,6 +13944,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   .ressource-chiffres { flex-direction: column; align-items: flex-start; gap: 1px; }
   .ressource-valeur { font-size: .78rem; }
   .ressources .ressource-taux { max-width: 7ch; font-size: .46rem; }
+  .ressources-theme-toggle { flex-basis: 56px; min-width: 56px; }
   .ressources-gerer { flex-basis: 46px; min-width: 46px; padding: 4px; }
   .ressources-gerer-label { display: none; }
 
@@ -14193,6 +14316,7 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
     padding: 2px 3px;
   }
   .ressources .ressource-taux { display: none; }
+  .ressources-theme-toggle { display: none; }
   .ressources-gerer { height: 48px; }
 
   body[data-onglet-actif="camp"].camp-recruitment-unlocked #top-bar {
@@ -14486,6 +14610,29 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 #overlay-root > .camp-profile-modal .camp-profile-panel { width: min(440px, 100%); }
 .camp-profile-header-actions { display: inline-flex; align-items: center; gap: 6px; }
 .camp-profile-header-actions .bouton-settings { order: initial; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; }
+.camp-profile-header-actions .camp-profile-discord-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 32px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: none;
+  color: #5865f2;
+  font-size: .68rem;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 150ms, transform 150ms;
+}
+.camp-profile-header-actions .camp-profile-discord-button:visited { color: #5865f2; }
+.camp-profile-header-actions .camp-profile-discord-button:hover { border-color: var(--couleur-accent); }
+.camp-profile-header-actions .camp-profile-discord-button:active { transform: scale(.92); }
 .header > .camp-profile-wrap { flex: 0 0 auto; }
 .camp-profile-content { display: grid; gap: 14px; padding-top: 4px; }
 .camp-profile-identity { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 12px; }

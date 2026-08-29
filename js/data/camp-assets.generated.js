@@ -979,90 +979,6 @@
         }
       }
     },
-    "catTreeV2": {
-      "assetId": "cat-tree-v2",
-      "runtimeId": "catTreeV2",
-      "name": "Cat Tree V2",
-      "category": "decoration",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "cat-tree-v2",
-              "runtimeId": "catTreeV2",
-              "name": "Cat Tree V2",
-              "category": "decoration",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/left.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 74,
-                  "top": 32,
-                  "right": 346,
-                  "bottom": 390
-                },
-                "right": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 123,
-                  "top": 19,
-                  "right": 298,
-                  "bottom": 402
-                },
-                "up": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 66,
-                  "top": 18,
-                  "right": 353,
-                  "bottom": 390
-                },
-                "left": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 113,
-                  "top": 17,
-                  "right": 306,
-                  "bottom": 403
-                }
-              },
-              "access": {
-                "activationPolicy": "all-ports-reachable",
-                "ports": [
-                  {
-                    "id": "access-1",
-                    "side": "south",
-                    "cellPolicy": "all-cells-reachable",
-                    "approachCells": [
-                      {
-                        "x": 0,
-                        "y": 1,
-                        "side": "south"
-                      }
-                    ],
-                    "minimumReachableCells": 1
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
     "catchen": {
       "assetId": "catchen",
       "runtimeId": "catchen",
@@ -2346,7 +2262,7 @@
           }
         },
         "2": {
-          "liveRevision": 1,
+          "liveRevision": 2,
           "revisions": {
             "1": {
               "assetId": "job-center",
@@ -2356,14 +2272,14 @@
               "placeable": true,
               "tier": 2,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 3,
               "height": 4,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -2458,6 +2374,301 @@
                       }
                     ],
                     "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "2": {
+              "assetId": "job-center",
+              "runtimeId": "jobCenter",
+              "name": "Job Center",
+              "category": "building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 3,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/left.png"
+              },
+              "stickerCategory": "jobs",
+              "stickerSlot": {
+                "id": "jobs-emblem",
+                "enabled": true,
+                "mode": "pitched-roof",
+                "category": "jobs",
+                "anchors": {
+                  "down": {
+                    "auto": "right",
+                    "left": {
+                      "x": 0.6011,
+                      "y": 0.0,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.545356,
+                          "y": -0.09715
+                        },
+                        {
+                          "x": 0.64912,
+                          "y": -0.032712
+                        },
+                        {
+                          "x": 0.655335,
+                          "y": -0.149137
+                        },
+                        {
+                          "x": 0.55353,
+                          "y": -0.213268
+                        }
+                      ],
+                      "visible": false
+                    },
+                    "right": {
+                      "x": 0.62,
+                      "y": 0.48,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.668879,
+                          "y": 0.426808
+                        },
+                        {
+                          "x": 0.558524,
+                          "y": 0.386423
+                        },
+                        {
+                          "x": 0.569629,
+                          "y": 0.534816
+                        },
+                        {
+                          "x": 0.681894,
+                          "y": 0.574213
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "right": {
+                    "auto": "right",
+                    "left": {
+                      "x": 0.2299,
+                      "y": 0.0517,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.280626,
+                          "y": 0.0855
+                        },
+                        {
+                          "x": 0.296403,
+                          "y": 0.024101
+                        },
+                        {
+                          "x": 0.180648,
+                          "y": 0.018878
+                        },
+                        {
+                          "x": 0.161888,
+                          "y": 0.08
+                        }
+                      ],
+                      "visible": true
+                    },
+                    "right": {
+                      "x": 0.7655,
+                      "y": 0.0462,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.699187,
+                          "y": 0.018664
+                        },
+                        {
+                          "x": 0.714836,
+                          "y": 0.079871
+                        },
+                        {
+                          "x": 0.833488,
+                          "y": 0.074388
+                        },
+                        {
+                          "x": 0.814861,
+                          "y": 0.013457
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "up": {
+                    "auto": "left",
+                    "left": {
+                      "x": 0.39,
+                      "y": 0.48,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.451443,
+                          "y": 0.386421
+                        },
+                        {
+                          "x": 0.340972,
+                          "y": 0.426807
+                        },
+                        {
+                          "x": 0.328139,
+                          "y": 0.574214
+                        },
+                        {
+                          "x": 0.440525,
+                          "y": 0.534816
+                        }
+                      ],
+                      "visible": true
+                    },
+                    "right": {
+                      "x": 0.3896,
+                      "y": 0.0,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.341436,
+                          "y": -0.023697
+                        },
+                        {
+                          "x": 0.445262,
+                          "y": -0.088149
+                        },
+                        {
+                          "x": 0.437251,
+                          "y": -0.204581
+                        },
+                        {
+                          "x": 0.335386,
+                          "y": -0.140434
+                        }
+                      ],
+                      "visible": false
+                    }
+                  },
+                  "left": {
+                    "auto": "left",
+                    "left": {
+                      "x": 0.779,
+                      "y": 0.283,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.722571,
+                          "y": 0.188029
+                        },
+                        {
+                          "x": 0.7135,
+                          "y": 0.363271
+                        },
+                        {
+                          "x": 0.835846,
+                          "y": 0.378724
+                        },
+                        {
+                          "x": 0.844041,
+                          "y": 0.20326
+                        }
+                      ],
+                      "visible": true
+                    },
+                    "right": {
+                      "x": 0.2249,
+                      "y": 0.2989,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.290501,
+                          "y": 0.379355
+                        },
+                        {
+                          "x": 0.281381,
+                          "y": 0.203617
+                        },
+                        {
+                          "x": 0.15965,
+                          "y": 0.218891
+                        },
+                        {
+                          "x": 0.16789,
+                          "y": 0.394852
+                        }
+                      ],
+                      "visible": true
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": true,
+                "baseSticker": true,
+                "defaultScale": 1.19,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "jobs-briefcase-paw",
+                "defaultColorId": "kraft"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 960,
+                  "left": 47,
+                  "top": 57,
+                  "right": 593,
+                  "bottom": 823
+                },
+                "right": {
+                  "canvasWidth": 960,
+                  "canvasHeight": 640,
+                  "left": 49,
+                  "top": 46,
+                  "right": 910,
+                  "bottom": 607
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 960,
+                  "left": 47,
+                  "top": 58,
+                  "right": 592,
+                  "bottom": 823
+                },
+                "left": {
+                  "canvasWidth": 960,
+                  "canvasHeight": 640,
+                  "left": 49,
+                  "top": 46,
+                  "right": 910,
+                  "bottom": 607
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 3,
+                        "side": "south"
+                      },
+                      {
+                        "x": 1,
+                        "y": 3,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 2
                   }
                 ]
               }
@@ -2809,6 +3020,72 @@
                   "top": 45,
                   "right": 275,
                   "bottom": 376
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "littleFlowerGarden": {
+      "assetId": "little-flower-garden",
+      "runtimeId": "littleFlowerGarden",
+      "name": "Little Flower Garden",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": null,
+          "revisions": {
+            "1": {
+              "assetId": "little-flower-garden",
+              "runtimeId": "littleFlowerGarden",
+              "name": "Little Flower Garden",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 75,
+                  "top": 108,
+                  "right": 344,
+                  "bottom": 355
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 86,
+                  "top": 96,
+                  "right": 335,
+                  "bottom": 362
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 70,
+                  "top": 94,
+                  "right": 345,
+                  "bottom": 354
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 86,
+                  "top": 101,
+                  "right": 335,
+                  "bottom": 362
                 }
               }
             }
@@ -4863,6 +5140,90 @@
         }
       }
     },
+    "catTreeV2": {
+      "assetId": "cat-tree-v2",
+      "runtimeId": "catTreeV2",
+      "name": "Wood Cat Tree",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "cat-tree-v2",
+              "runtimeId": "catTreeV2",
+              "name": "Wood Cat Tree",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 74,
+                  "top": 32,
+                  "right": 346,
+                  "bottom": 390
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 123,
+                  "top": 19,
+                  "right": 298,
+                  "bottom": 402
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 66,
+                  "top": 18,
+                  "right": 353,
+                  "bottom": 390
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 113,
+                  "top": 17,
+                  "right": 306,
+                  "bottom": 403
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "woodCathouse": {
       "assetId": "wood-cathouse",
       "runtimeId": "woodCathouse",
@@ -6834,90 +7195,6 @@
         }
       }
     },
-    "catTreeV2": {
-      "assetId": "cat-tree-v2",
-      "runtimeId": "catTreeV2",
-      "name": "Cat Tree V2",
-      "category": "decoration",
-      "placeable": true,
-      "tiers": {
-        "1": {
-          "liveRevision": 1,
-          "revisions": {
-            "1": {
-              "assetId": "cat-tree-v2",
-              "runtimeId": "catTreeV2",
-              "name": "Cat Tree V2",
-              "category": "decoration",
-              "placeable": true,
-              "tier": 1,
-              "revision": 1,
-              "status": "live",
-              "width": 1,
-              "height": 1,
-              "sprites": {
-                "down": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/left.png"
-              },
-              "spriteBounds": {
-                "down": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 74,
-                  "top": 32,
-                  "right": 346,
-                  "bottom": 390
-                },
-                "right": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 123,
-                  "top": 19,
-                  "right": 298,
-                  "bottom": 402
-                },
-                "up": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 66,
-                  "top": 18,
-                  "right": 353,
-                  "bottom": 390
-                },
-                "left": {
-                  "canvasWidth": 420,
-                  "canvasHeight": 420,
-                  "left": 113,
-                  "top": 17,
-                  "right": 306,
-                  "bottom": 403
-                }
-              },
-              "access": {
-                "activationPolicy": "all-ports-reachable",
-                "ports": [
-                  {
-                    "id": "access-1",
-                    "side": "south",
-                    "cellPolicy": "all-cells-reachable",
-                    "approachCells": [
-                      {
-                        "x": 0,
-                        "y": 1,
-                        "side": "south"
-                      }
-                    ],
-                    "minimumReachableCells": 1
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
     "catchen": {
       "assetId": "catchen",
       "runtimeId": "catchen",
@@ -8201,7 +8478,7 @@
           }
         },
         "2": {
-          "liveRevision": 1,
+          "liveRevision": 2,
           "revisions": {
             "1": {
               "assetId": "job-center",
@@ -8211,14 +8488,14 @@
               "placeable": true,
               "tier": 2,
               "revision": 1,
-              "status": "live",
+              "status": "retired",
               "width": 3,
               "height": 4,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/right.png",
-                "up": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/up.png",
-                "left": "img/Buildings/Camp Runtime/training-center/tier-1/revision-1/left.png"
+                "down": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/training-center/tier-1/revision-1/left.png"
               },
               "stickerCategory": "jobs",
               "stickerSlot": {
@@ -8313,6 +8590,301 @@
                       }
                     ],
                     "minimumReachableCells": 1
+                  }
+                ]
+              }
+            },
+            "2": {
+              "assetId": "job-center",
+              "runtimeId": "jobCenter",
+              "name": "Job Center",
+              "category": "building",
+              "placeable": true,
+              "tier": 2,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 3,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/job-center/tier-2/revision-2/left.png"
+              },
+              "stickerCategory": "jobs",
+              "stickerSlot": {
+                "id": "jobs-emblem",
+                "enabled": true,
+                "mode": "pitched-roof",
+                "category": "jobs",
+                "anchors": {
+                  "down": {
+                    "auto": "right",
+                    "left": {
+                      "x": 0.6011,
+                      "y": 0.0,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.545356,
+                          "y": -0.09715
+                        },
+                        {
+                          "x": 0.64912,
+                          "y": -0.032712
+                        },
+                        {
+                          "x": 0.655335,
+                          "y": -0.149137
+                        },
+                        {
+                          "x": 0.55353,
+                          "y": -0.213268
+                        }
+                      ],
+                      "visible": false
+                    },
+                    "right": {
+                      "x": 0.62,
+                      "y": 0.48,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.668879,
+                          "y": 0.426808
+                        },
+                        {
+                          "x": 0.558524,
+                          "y": 0.386423
+                        },
+                        {
+                          "x": 0.569629,
+                          "y": 0.534816
+                        },
+                        {
+                          "x": 0.681894,
+                          "y": 0.574213
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "right": {
+                    "auto": "right",
+                    "left": {
+                      "x": 0.2299,
+                      "y": 0.0517,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.280626,
+                          "y": 0.0855
+                        },
+                        {
+                          "x": 0.296403,
+                          "y": 0.024101
+                        },
+                        {
+                          "x": 0.180648,
+                          "y": 0.018878
+                        },
+                        {
+                          "x": 0.161888,
+                          "y": 0.08
+                        }
+                      ],
+                      "visible": true
+                    },
+                    "right": {
+                      "x": 0.7655,
+                      "y": 0.0462,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.699187,
+                          "y": 0.018664
+                        },
+                        {
+                          "x": 0.714836,
+                          "y": 0.079871
+                        },
+                        {
+                          "x": 0.833488,
+                          "y": 0.074388
+                        },
+                        {
+                          "x": 0.814861,
+                          "y": 0.013457
+                        }
+                      ],
+                      "visible": true
+                    }
+                  },
+                  "up": {
+                    "auto": "left",
+                    "left": {
+                      "x": 0.39,
+                      "y": 0.48,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.451443,
+                          "y": 0.386421
+                        },
+                        {
+                          "x": 0.340972,
+                          "y": 0.426807
+                        },
+                        {
+                          "x": 0.328139,
+                          "y": 0.574214
+                        },
+                        {
+                          "x": 0.440525,
+                          "y": 0.534816
+                        }
+                      ],
+                      "visible": true
+                    },
+                    "right": {
+                      "x": 0.3896,
+                      "y": 0.0,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.341436,
+                          "y": -0.023697
+                        },
+                        {
+                          "x": 0.445262,
+                          "y": -0.088149
+                        },
+                        {
+                          "x": 0.437251,
+                          "y": -0.204581
+                        },
+                        {
+                          "x": 0.335386,
+                          "y": -0.140434
+                        }
+                      ],
+                      "visible": false
+                    }
+                  },
+                  "left": {
+                    "auto": "left",
+                    "left": {
+                      "x": 0.779,
+                      "y": 0.283,
+                      "rotation": -85.0,
+                      "quad": [
+                        {
+                          "x": 0.722571,
+                          "y": 0.188029
+                        },
+                        {
+                          "x": 0.7135,
+                          "y": 0.363271
+                        },
+                        {
+                          "x": 0.835846,
+                          "y": 0.378724
+                        },
+                        {
+                          "x": 0.844041,
+                          "y": 0.20326
+                        }
+                      ],
+                      "visible": true
+                    },
+                    "right": {
+                      "x": 0.2249,
+                      "y": 0.2989,
+                      "rotation": 85.0,
+                      "quad": [
+                        {
+                          "x": 0.290501,
+                          "y": 0.379355
+                        },
+                        {
+                          "x": 0.281381,
+                          "y": 0.203617
+                        },
+                        {
+                          "x": 0.15965,
+                          "y": 0.218891
+                        },
+                        {
+                          "x": 0.16789,
+                          "y": 0.394852
+                        }
+                      ],
+                      "visible": true
+                    }
+                  }
+                },
+                "anchorReview": true,
+                "required": true,
+                "baseSticker": true,
+                "defaultScale": 1.19,
+                "defaultAnchorChoice": "auto",
+                "defaultStickerId": "jobs-briefcase-paw",
+                "defaultColorId": "kraft"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 960,
+                  "left": 47,
+                  "top": 57,
+                  "right": 593,
+                  "bottom": 823
+                },
+                "right": {
+                  "canvasWidth": 960,
+                  "canvasHeight": 640,
+                  "left": 49,
+                  "top": 46,
+                  "right": 910,
+                  "bottom": 607
+                },
+                "up": {
+                  "canvasWidth": 640,
+                  "canvasHeight": 960,
+                  "left": 47,
+                  "top": 58,
+                  "right": 592,
+                  "bottom": 823
+                },
+                "left": {
+                  "canvasWidth": 960,
+                  "canvasHeight": 640,
+                  "left": 49,
+                  "top": 46,
+                  "right": 910,
+                  "bottom": 607
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 3,
+                        "side": "south"
+                      },
+                      {
+                        "x": 1,
+                        "y": 3,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 2
                   }
                 ]
               }
@@ -8664,6 +9236,72 @@
                   "top": 45,
                   "right": 275,
                   "bottom": 376
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "littleFlowerGarden": {
+      "assetId": "little-flower-garden",
+      "runtimeId": "littleFlowerGarden",
+      "name": "Little Flower Garden",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": null,
+          "revisions": {
+            "1": {
+              "assetId": "little-flower-garden",
+              "runtimeId": "littleFlowerGarden",
+              "name": "Little Flower Garden",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "approved",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/down.png",
+                "right": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/right.png",
+                "up": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/up.png",
+                "left": "tools/camp_asset_studio/library/assets/little-flower-garden/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 75,
+                  "top": 108,
+                  "right": 344,
+                  "bottom": 355
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 86,
+                  "top": 96,
+                  "right": 335,
+                  "bottom": 362
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 70,
+                  "top": 94,
+                  "right": 345,
+                  "bottom": 354
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 86,
+                  "top": 101,
+                  "right": 335,
+                  "bottom": 362
                 }
               }
             }
@@ -10888,6 +11526,90 @@
                   "right": 536,
                   "bottom": 390
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "catTreeV2": {
+      "assetId": "cat-tree-v2",
+      "runtimeId": "catTreeV2",
+      "name": "Wood Cat Tree",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "assetId": "cat-tree-v2",
+              "runtimeId": "catTreeV2",
+              "name": "Wood Cat Tree",
+              "category": "decoration",
+              "placeable": true,
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/cat-tree-v2/tier-1/revision-1/left.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 74,
+                  "top": 32,
+                  "right": 346,
+                  "bottom": 390
+                },
+                "right": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 123,
+                  "top": 19,
+                  "right": 298,
+                  "bottom": 402
+                },
+                "up": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 66,
+                  "top": 18,
+                  "right": 353,
+                  "bottom": 390
+                },
+                "left": {
+                  "canvasWidth": 420,
+                  "canvasHeight": 420,
+                  "left": 113,
+                  "top": 17,
+                  "right": 306,
+                  "bottom": 403
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }

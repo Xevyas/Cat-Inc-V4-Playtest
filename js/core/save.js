@@ -172,6 +172,10 @@ function normaliserProfilCampSauvegarde(value) {
   };
 }
 
+function normaliserUiTheme(value) {
+  return value === "stylish" ? "stylish" : "basic";
+}
+
 function donneesSauvegardeReconnaissables(d) {
   if (!estObjetSauvegarde(d)) return false;
   const champsConnus = ["chatons", "wood", "cardboard", "cardboardPieces", "kittiesData", "workRecipeSlots"];
@@ -955,7 +959,11 @@ function analyserSauvegardeBrute(raw) {
     };
   }
   if (estObjetSauvegarde(data)) {
-    data = { ...data, campProfile: normaliserProfilCampSauvegarde(data.campProfile) };
+    data = {
+      ...data,
+      campProfile: normaliserProfilCampSauvegarde(data.campProfile),
+      uiTheme: normaliserUiTheme(data.uiTheme)
+    };
   }
   const erreur = validerStructureSauvegarde(data);
   return erreur ? { ok: false, erreur: erreur } : { ok: true, data: data };
@@ -1007,6 +1015,7 @@ function analyserSauvegardeBrute(raw) {
     avertirSurplusNourriture: etat.avertirSurplusNourriture,
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
+    uiTheme:                 normaliserUiTheme(etat.uiTheme),
     campCatPortraitScale:    etat.campCatPortraitScale,
     hideCampCatIcons:          etat.hideCampCatIcons,
     resourceBarHidden:       etat.resourceBarHidden,
@@ -1169,6 +1178,7 @@ function analyserSauvegardeBrute(raw) {
   etat.avertirSurplusNourriture = d.avertirSurplusNourriture !== false;
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0;
+  etat.uiTheme             = normaliserUiTheme(d.uiTheme);
   etat.campCatPortraitScale = d.campCatPortraitScale !== undefined
     ? Math.max(0.7, Math.min(1.3, d.campCatPortraitScale))
     : 1;
@@ -1538,6 +1548,7 @@ function analyserSauvegardeBrute(raw) {
     normaliserStickerSelectionSauvegarde: normaliserStickerSelectionSauvegarde,
     normaliserLayoutStickersSauvegarde: normaliserLayoutStickersSauvegarde,
     normaliserProfilCampSauvegarde: normaliserProfilCampSauvegarde,
+    normaliserUiTheme: normaliserUiTheme,
     migrerDonneesSauvegarde: migrerDonneesSauvegarde,
     deriverEtapeTutorielSawmill: deriverEtapeTutorielSawmill
   });
