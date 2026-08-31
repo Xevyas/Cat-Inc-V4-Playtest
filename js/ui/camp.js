@@ -372,10 +372,18 @@
     Object.keys(revision.sprites).forEach(function(direction) {
       sprites[direction] = runtimeSpritePath(revision.sprites[direction], revision);
     });
+    const groundingSprites = {};
+    Object.keys(revision.groundingSprites || {}).forEach(function(direction) {
+      groundingSprites[direction] = runtimeSpritePath(
+        revision.groundingSprites[direction], revision
+      );
+    });
     return {
       tier: revision.tier,
       revision: revision.revision,
       sprites: sprites,
+      groundingSprites: groundingSprites,
+      groundingBounds: revision.groundingBounds || null,
       width: revision.width,
       height: revision.height,
       occupiedCells: revision.occupiedCells

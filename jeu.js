@@ -3218,6 +3218,17 @@ if (globalThis.CatInc.touchActivationController) {
       };
     }
   );
+  globalThis.CatInc.touchActivationController.registerSemanticAction(
+    "perks.select",
+    function(payload) {
+      if (!payload || !payload.perkId) return false;
+      clickerSphere(payload.perkId);
+      return true;
+    },
+    function(rootElement) {
+      return { perkId: rootElement && rootElement.dataset ? rootElement.dataset.perkId : null };
+    }
+  );
 }
 const settingsOpener = typeof document !== "undefined" && document
   ? document.querySelector(".bouton-settings") : null;
@@ -3540,28 +3551,38 @@ function gererVolumeAudio(canal, rawValue) {
   sauvegarder();
 }
 function appliquerThemeInterface() {
-  const theme = saveCore.normaliserUiTheme(etat.uiTheme);
-  etat.uiTheme = theme;
+  const themeStocke = saveCore.normaliserUiTheme(etat.uiTheme);
+  const themeDisponible = typeof saveCore.isRealDevEnvironment === "function"
+    && saveCore.isRealDevEnvironment();
+  const themeEffectif = themeDisponible ? themeStocke : "basic";
+  etat.uiTheme = themeStocke;
   if (typeof document !== "undefined") {
-    if (document.body) document.body.dataset.uiTheme = theme;
+    if (document.body) document.body.dataset.uiTheme = themeEffectif;
     const settingsInput = document.getElementById("settings-ui-theme");
-    if (settingsInput) settingsInput.value = theme;
+    if (settingsInput) {
+      settingsInput.value = themeEffectif;
+      settingsInput.disabled = !themeDisponible;
+      const settingsRow = settingsInput.closest(".settings-theme-row");
+      if (settingsRow) settingsRow.hidden = !themeDisponible;
+    }
     const quickToggle = document.getElementById("ui-theme-quick-toggle");
     if (quickToggle) {
-      const nextTheme = theme === "stylish" ? "basic" : "stylish";
+      quickToggle.hidden = !themeDisponible;
+      const nextTheme = themeEffectif === "stylish" ? "basic" : "stylish";
       const nextThemeLabel = nextTheme === "stylish" ? "Stylish" : "Basic";
-      const currentThemeLabel = theme === "stylish" ? "Stylish" : "Basic";
+      const currentThemeLabel = themeEffectif === "stylish" ? "Stylish" : "Basic";
       const actionLabel = "Switch to " + nextThemeLabel + " (" + currentThemeLabel + " is active)";
-      quickToggle.dataset.currentTheme = theme;
+      quickToggle.dataset.currentTheme = themeEffectif;
       quickToggle.setAttribute("aria-label", actionLabel);
       quickToggle.title = actionLabel;
       const quickLabel = document.getElementById("ui-theme-quick-label");
       if (quickLabel) quickLabel.textContent = nextThemeLabel;
     }
   }
-  return theme;
+  return themeEffectif;
 }
 function gererThemeInterface(value) {
+  if (!saveCore.isRealDevEnvironment()) return appliquerThemeInterface();
   etat.uiTheme = saveCore.normaliserUiTheme(value);
   appliquerThemeInterface();
   sauvegarder();
@@ -3832,6 +3853,7 @@ function modifierQueteQuotidienne(modifier) {
   modifier(q);
   if (JSON.stringify(q) === avant) return false;
   sauvegarder();
+  renduQuetesQuotidiennes();
   return true;
 }
 
@@ -3983,10 +4005,52 @@ function mettreAJourProgressionObjectif(obj, bouton, guide) {
   }
 }
 
-let objectifVueActive = "guide";
+let dailyQuestsHudReduit = false;
+let dailyQuestsHudStructureKey = "";
+let dailyQuestsHudResetSecond = null;
+
+function nombreQuetesQuotidiennesCompletes(q) {
+  return (q.scoutingSuccesses >= 10 ? 1 : 0)
+    + (q.catLevelUps >= 1 ? 1 : 0)
+    + (q.birdCaught ? 1 : 0)
+    + (q.recipesCompleted >= 10 ? 1 : 0);
+}
+
+function definirDailyQuestsHudReduit(reduit) {
+  dailyQuestsHudReduit = reduit === true;
+  const panneau = document.getElementById("daily-quests-hud");
+  const bouton = document.getElementById("daily-quests-toggle");
+  const icone = document.getElementById("daily-quests-toggle-icon");
+  if (panneau && panneau.classList.contains("daily-quests-hud-collapsed") !== dailyQuestsHudReduit) {
+    panneau.classList.toggle("daily-quests-hud-collapsed", dailyQuestsHudReduit);
+  }
+  if (bouton) {
+    const expanded = dailyQuestsHudReduit ? "false" : "true";
+    const label = (dailyQuestsHudReduit ? "Expand" : "Collapse") + " Daily Quests";
+    if (bouton.getAttribute("aria-expanded") !== expanded) bouton.setAttribute("aria-expanded", expanded);
+    if (bouton.getAttribute("aria-label") !== label) bouton.setAttribute("aria-label", label);
+  }
+  const symbole = dailyQuestsHudReduit ? "+" : "−";
+  if (icone && icone.textContent !== symbole) icone.textContent = symbole;
+}
+
+function toggleDailyQuestsHud() {
+  definirDailyQuestsHudReduit(!dailyQuestsHudReduit);
+}
 
 function renduQuetesQuotidiennes() {
-  const q = etat.dailyQuests || queteQuotidienneParDefaut(cleDateParis(Date.now()));
+  const panneau = document.getElementById("daily-quests-hud");
+  if (!panneau) return;
+  const q = etat.dailyQuests;
+  const visible = dailyQuetesDebloquees() && q && q.rewardClaimed !== true;
+  if (panneau.hidden === visible) panneau.hidden = !visible;
+  const ariaHidden = visible ? "false" : "true";
+  if (panneau.getAttribute("aria-hidden") !== ariaHidden) panneau.setAttribute("aria-hidden", ariaHidden);
+  if (!visible) {
+    dailyQuestsHudStructureKey = "";
+    dailyQuestsHudResetSecond = null;
+    return;
+  }
   const familleRecette = (typeof WORK_FAMILIES !== "undefined" && WORK_FAMILIES[q.recipeFamily])
     ? WORK_FAMILIES[q.recipeFamily].label
     : ({ wood: "Wood", food: "Food", rock: "Rocks" }[q.recipeFamily] || "selected family");
@@ -3996,35 +4060,47 @@ function renduQuetesQuotidiennes() {
     { label: "Catch a bird", value: (q.birdCaught ? 1 : 0) + " / 1", done: q.birdCaught },
     { label: "Complete 10 " + familleRecette + " recipes", value: Math.min(10, q.recipesCompleted) + " / 10", done: q.recipesCompleted >= 10 }
   ];
+  const completeCount = nombreQuetesQuotidiennesCompletes(q);
+  const complete = quetesQuotidiennesCompletes(q);
+  ecrireTexte(document.getElementById("daily-quests-title"), "Daily Quests · " + completeCount + "/4");
+  const ready = document.getElementById("daily-quests-ready");
+  if (ready && ready.hidden === complete) ready.hidden = !complete;
+  definirDailyQuestsHudReduit(dailyQuestsHudReduit);
+
   const liste = document.getElementById("daily-quests-liste");
   if (!liste) return;
-  ecrireHTML(liste, lignes.map(function(ligne) {
-    return '<div class="daily-quest-row' + (ligne.done ? ' daily-quest-done' : '') + '">' +
-      '<span class="daily-quest-label">' + (ligne.done ? '<span class="daily-quest-check" aria-hidden="true">✓</span>' : '') + echapperAttributHtml(ligne.label) + '</span>' +
-      '<span class="daily-quest-value">' + echapperAttributHtml(ligne.value) + '</span>' +
-    '</div>';
-  }).join(""));
-  const complete = quetesQuotidiennesCompletes(q);
   const reward = document.getElementById("daily-quests-reward");
-  if (reward) {
-    const rewardQty = recompenseQuetesQuotidiennes();
-    const resetLabel = "Resets in " + formaterCompteAReboursQuetes(millisecondesAvantMinuitParis(Date.now()));
-    ecrireHTML(reward, '<span class="daily-reward-action"><img class="daily-reward-icon" src="img/resources/Canned Cat Food_Final.png" alt="Canned Cat Food">' +
-      '<strong class="daily-reward-quantity">×' + rewardQty + '</strong>' +
-      '<button id="daily-claim-reward" class="daily-claim-button" type="button" onclick="reclamerRecompenseQuotidienne()"' + (complete && !q.rewardClaimed ? '' : ' disabled') + '>' + (q.rewardClaimed ? 'Claimed' : 'Claim reward') + '</button></span>' +
-      '<span class="daily-reward-reset">' + echapperAttributHtml(resetLabel) + '</span>');
+  const rewardQty = recompenseQuetesQuotidiennes();
+  const structureKey = [q.recipeFamily, q.scoutingSuccesses, q.catLevelUps, q.birdCaught, q.recipesCompleted, rewardQty, complete].join("|");
+  if (structureKey !== dailyQuestsHudStructureKey) {
+    ecrireHTML(liste, lignes.map(function(ligne) {
+      return '<div class="daily-quest-row' + (ligne.done ? ' daily-quest-done' : '') + '">' +
+        '<span class="daily-quest-label"><span class="daily-quest-check" aria-hidden="true">' + (ligne.done ? '✓' : '○') + '</span>' + echapperAttributHtml(ligne.label) + '</span>' +
+        '<span class="daily-quest-value">' + echapperAttributHtml(ligne.value) + '</span>' +
+      '</div>';
+    }).join(""));
+    if (reward) {
+      ecrireHTML(reward, '<span class="daily-reward-action"><img class="daily-reward-icon" src="img/resources/Canned Cat Food_Final.png" alt="Canned Cat Food">' +
+        '<strong class="daily-reward-quantity">×' + rewardQty + '</strong>' +
+        '<button id="daily-claim-reward" class="daily-claim-button" type="button" onclick="reclamerRecompenseQuotidienne()"' + (complete ? '' : ' disabled') + '>Claim reward</button></span>' +
+        '<span id="daily-reward-reset" class="daily-reward-reset"></span>');
+    }
+    dailyQuestsHudStructureKey = structureKey;
   }
-  ecrireTexte(document.getElementById("daily-quests-secondaires"), "");
+  const resetSecond = Math.floor(millisecondesAvantMinuitParis(Date.now()) / 1000);
+  if (resetSecond !== dailyQuestsHudResetSecond) {
+    ecrireTexte(document.getElementById("daily-reward-reset"), "Resets in " + formaterCompteAReboursQuetes(resetSecond * 1000));
+    dailyQuestsHudResetSecond = resetSecond;
+  }
 }
 
-function renduObjectifsCamp(actifs, dailyAvailable, dailyRewardClaimed) {
+function renduObjectifsCamp(actifs) {
   const panneau = document.getElementById("camp-active-objectives");
   const liste = document.getElementById("camp-active-objectives-list");
   const bascule = document.getElementById("camp-active-objectives-toggle");
   if (!panneau || !liste) return;
   const objectifs = Array.isArray(actifs) ? actifs : [];
-  const afficherDaily = Boolean(dailyAvailable && !dailyRewardClaimed && objectifs.length === 0);
-  panneau.hidden = objectifs.length === 0 && !afficherDaily;
+  panneau.hidden = objectifs.length === 0;
   liste.hidden = objectifsCampReplies;
   panneau.classList.toggle("camp-active-objectives-collapsed", objectifsCampReplies);
   if (bascule) {
@@ -4032,25 +4108,8 @@ function renduObjectifsCamp(actifs, dailyAvailable, dailyRewardClaimed) {
     bascule.setAttribute("aria-expanded", objectifsCampReplies ? "false" : "true");
     bascule.setAttribute("aria-label", (objectifsCampReplies ? "Expand" : "Collapse") + " Active goals");
   }
-  if (!objectifs.length && !afficherDaily) {
+  if (!objectifs.length) {
     liste.innerHTML = "";
-    return;
-  }
-  if (afficherDaily) {
-    const q = etat.dailyQuests || queteQuotidienneParDefaut(cleDateParis(Date.now()));
-    const lignes = [
-      { label: "Scout successfully", value: Math.min(10, q.scoutingSuccesses) + "/10", done: q.scoutingSuccesses >= 10 },
-      { label: "Level up a Cat", value: Math.min(1, q.catLevelUps) + "/1", done: q.catLevelUps >= 1 },
-      { label: "Catch a bird", value: (q.birdCaught ? 1 : 0) + "/1", done: q.birdCaught },
-      { label: "Complete recipes", value: Math.min(10, q.recipesCompleted) + "/10", done: q.recipesCompleted >= 10 }
-    ];
-    liste.innerHTML = lignes.map(function(ligne) {
-      return '<span class="camp-active-daily' + (ligne.done ? ' done' : '') + '"><span aria-hidden="true">'
-        + (ligne.done ? '✓' : '○') + '</span>' + echapperAttributHtml(ligne.label)
-        + '<b>' + ligne.value + '</b></span>';
-    }).join("") + (quetesQuotidiennesCompletes(q)
-      ? '<button type="button" onclick="reclamerRecompenseQuotidienne()">Claim daily reward</button>'
-      : '');
     return;
   }
   liste.innerHTML = objectifs.map(function(obj) {
@@ -4081,12 +4140,6 @@ function basculerObjectifsCamp(event) {
   }
 }
 
-function toggleObjectifsVue() {
-  if (!dailyQuetesDebloquees()) return;
-  objectifVueActive = objectifVueActive === "daily" ? "guide" : "daily";
-  renduObjectifs();
-}
-
 function renduObjectifs() {
   const panneau = document.getElementById("panneau-objectifs");
   const liste = document.getElementById("objectif-guide-liste");
@@ -4097,29 +4150,13 @@ function renduObjectifs() {
     sauvegarder();
     exploTabDirty = true;
   }
-  const dailyAvailable = dailyQuetesDebloquees();
-  if (!dailyAvailable && objectifVueActive === "daily") objectifVueActive = "guide";
+  renduQuetesQuotidiennes();
   const actifs = objectifsActifsTries();
-  // Daily quests temporarily replace the completed tutorial until their
-  // reward is claimed. Claiming hides the whole objectives panel until the
-  // next Paris-midnight reset starts a fresh set.
-  const dailyRewardClaimed = dailyAvailable && etat.dailyQuests && etat.dailyQuests.rewardClaimed === true;
-  renduObjectifsCamp(actifs, dailyAvailable, dailyRewardClaimed);
-  if (dailyRewardClaimed && objectifVueActive === "daily") objectifVueActive = "guide";
-  const tutorielTermine = dailyAvailable && !dailyRewardClaimed && actifs.length === 0;
-  if (tutorielTermine) objectifVueActive = "daily";
+  renduObjectifsCamp(actifs);
   // Keep the guide's original availability check explicit for compatibility
   // with lightweight UI audits that inspect this render path.
   document.body.classList.toggle("objectifs-disponibles", actifs.length > 0);
-  const visible = actifs.length > 0 || (dailyAvailable && !dailyRewardClaimed);
-  document.body.classList.toggle("objectifs-disponibles", visible);
-  const modeButton = document.getElementById("objectifs-vue-toggle");
-  if (modeButton) {
-    modeButton.style.display = dailyAvailable && !tutorielTermine && !dailyRewardClaimed ? "inline-flex" : "none";
-    modeButton.textContent = objectifVueActive === "daily" ? "Guide" : "Daily";
-    modeButton.setAttribute("aria-pressed", objectifVueActive === "daily" ? "true" : "false");
-  }
-  if (!visible) {
+  if (actifs.length === 0) {
     ecrireStyle(panneau, "display", "none");
     objectifPrincipalId = null;
     objectifGuideSelectionneId = null;
@@ -4129,31 +4166,7 @@ function renduObjectifs() {
   }
   ecrireStyle(panneau, "display", "");
   const guideBody = document.getElementById("objectifs-actifs");
-  const dailyBody = document.getElementById("objectifs-daily");
-  if (objectifVueActive === "daily" && dailyAvailable && !dailyRewardClaimed) {
-    if (guideBody) guideBody.style.display = "none";
-    if (dailyBody) dailyBody.style.display = "flex";
-    const q = etat.dailyQuests;
-    const completeCount = (q.scoutingSuccesses >= 10 ? 1 : 0) + (q.catLevelUps >= 1 ? 1 : 0) + (q.birdCaught ? 1 : 0) + (q.recipesCompleted >= 10 ? 1 : 0);
-    ecrireTexte(document.getElementById("objectifs-titre"), tutorielTermine ? "Daily quests" : "Daily quests · " + completeCount + " / 4");
-    const titreDaily = document.getElementById("objectifs-titre");
-    if (titreDaily) titreDaily.setAttribute("aria-label", "Toggle daily quests");
-    renduQuetesQuotidiennes();
-    return;
-  }
   if (guideBody) guideBody.style.display = "flex";
-  if (dailyBody) dailyBody.style.display = "none";
-  if (actifs.length === 0) {
-    objectifPrincipalId = null;
-    objectifGuideSelectionneId = null;
-    objectifsGuideStructureKey = "";
-    ecrireHTML(liste, '<div class="objectifs-terminees">Tutorial complete. Open Daily quests when you are ready.</div>');
-    ecrireTexte(document.getElementById("objectifs-titre"), "Tutorial complete");
-    const titreTermine = document.getElementById("objectifs-titre");
-    if (titreTermine) titreTermine.setAttribute("aria-label", "Toggle tutorial guide");
-    ecrireTexte(document.getElementById("objectif-guide-secondaires"), "");
-    return;
-  }
 
   normaliserObjectifGuideSelectionne(actifs);
   objectifPrincipalId = objectifGuideSelectionneId;
@@ -5869,23 +5882,45 @@ function renduBuildings(u) {
 
 // ── 9e. Facilities section
 let facilitiesMobileVue = "jobs";
+let jobsWorkspaceVue = "training";
+
+function actualiserJobsWorkspace() {
+  ["training", "specialization"].forEach(function(view) {
+    const active = jobsWorkspaceVue === view;
+    const button = domParId("jobs-workspace-tab-" + view);
+    const panel = domParId(view === "training" ? "jobs-training-panel" : "section-advanced-training");
+    if (button) {
+      button.classList.toggle("btn-filtre-work-actif", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+      button.tabIndex = active ? 0 : -1;
+    }
+    if (panel) panel.hidden = !active;
+  });
+}
+
+function selectionnerJobsWorkspace(view) {
+  if (view !== "training" && view !== "specialization") return false;
+  jobsWorkspaceVue = view;
+  actualiserJobsWorkspace();
+  if (view === "specialization") actualiserProgressionApprentissagePerk();
+  return true;
+}
 
 function actualiserSousOngletsFacilities(u) {
   const nav = domParId("facilities-subtabs");
   const contenu = domParId("contenu-facilities");
   if (!nav || !contenu) return;
 
-  const sousOngletsVisibles = !!u.advancedTraining;
-  if (facilitiesMobileVue === "training" && !u.advancedTraining) facilitiesMobileVue = "jobs";
+  const sousOngletsVisibles = !!u.laboratory;
   if (facilitiesMobileVue === "lab" && !u.laboratory) facilitiesMobileVue = "jobs";
 
   nav.dataset.hasTabs = sousOngletsVisibles ? "true" : "false";
-  nav.dataset.tabCount = u.laboratory ? "3" : "2";
+  nav.dataset.tabCount = u.laboratory ? "2" : "1";
   nav.setAttribute("aria-hidden", sousOngletsVisibles ? "false" : "true");
   contenu.dataset.facilitiesView = facilitiesMobileVue;
   document.body.classList.toggle("facilities-subtabs-actifs", sousOngletsVisibles);
 
-  ["jobs", "training", "lab"].forEach(function(view) {
+  ["jobs", "lab"].forEach(function(view) {
     const bouton = domParId("facilities-subtab-" + view);
     if (!bouton) return;
     const actif = view === facilitiesMobileVue;
@@ -5904,13 +5939,14 @@ function selectionnerVueFacilitiesMobile(view) {
   if (view !== "jobs" && view !== "training" && view !== "lab") return;
   if (view === "training" && !u.advancedTraining) return;
   if (view === "lab" && !u.laboratory) return;
-  facilitiesMobileVue = view;
+  const cibleSpecialisation = view === "training";
+  facilitiesMobileVue = cibleSpecialisation ? "jobs" : view;
   jcDirty = true;
   labDirty = true;
   _tcKey = null;
   rendu();
   requestAnimationFrame(function() {
-    const cibleId = view === "training" ? "section-advanced-training" : (view === "lab" ? "section-laboratory" : "section-job-center");
+    const cibleId = cibleSpecialisation ? "section-advanced-training" : (view === "lab" ? "section-laboratory" : "section-job-center");
     const section = domParId(cibleId);
     if (section) section.scrollIntoView({ block: "start" });
   });
@@ -5926,23 +5962,22 @@ function renduFacilities(u) {
   if (jcCapacity.available) renduJobCenter(u);
 
   const secTC = domParId("section-advanced-training");
-  const facilities = domParId("contenu-facilities");
-  if (facilities) facilities.classList.toggle("advanced-training-available", !!u.advancedTraining);
   if (secTC) {
-    ecrireStyle(secTC, "display", u.advancedTraining ? "" : "none");
-    if (u.advancedTraining) {
-      const tcCapacity = batimentFonctionnelCamp("jobCenter", 2);
-      const tcOverview = domParId("tc-overview");
-      const tcIface = domParId("tc-interface");
-      const tcIntro = domParId("advanced-training-intro-copy");
-      ecrireStyle(tcOverview, "display", "block");
-      ecrireTexte(tcIntro, tcCapacity.available
-        ? "Select a cat to review its specialization sphere."
-        : "Upgrade the Job Center to Tier 2 to unlock advanced specializations.");
-      ecrireStyle(tcIface, "display", tcCapacity.available ? "block" : "none");
-      if (tcCapacity.available) renduAdvancedTraining();
+    const tcCapacity = batimentFonctionnelCamp("jobCenter", 2);
+    const tcIface = domParId("tc-interface");
+    const tcIntro = domParId("advanced-training-intro-copy");
+    ecrireTexte(tcIntro, tcCapacity.available
+      ? "Improve a Cat that already has a Job."
+      : "Upgrade the Job Center to Tier 2 to unlock Specialization.");
+    ecrireStyle(tcIntro, "display", tcCapacity.available ? "none" : "block");
+    ecrireStyle(tcIface, "display", tcCapacity.available ? "block" : "none");
+    secTC.classList.toggle("jobs-function-locked", !tcCapacity.available);
+    if (tcCapacity.available) {
+      renduAdvancedTraining();
+      actualiserProgressionApprentissagePerk();
     }
   }
+  actualiserJobsWorkspace();
 
   const secLab = domParId("section-laboratory");
   if (secLab) {
@@ -6199,44 +6234,30 @@ function renduAdvancedTraining() {
   _tcKey = key;
 
   let html = '<div class="tc-workspace">';
+  if (etat.perkLearningEnCours) {
+    const action = etat.perkLearningEnCours;
+    const activeKitty = etat.kittiesData[action.kittyIndex];
+    const activePerk = noeudPerkV2(action.perkId);
+    const remainingMs = Math.max(0, action.duree - (Date.now() - action.startTs));
+    const pct = Math.min(100, Math.floor((action.duree - remainingMs) / action.duree * 100));
+    html += '<div class="tc-active-learning" aria-label="Active Specialization learning">';
+    html += '<div class="tc-active-learning-copy"><strong>' + echapperAttributHtml(activeKitty ? activeKitty.nom : "Cat") + '</strong><span>Learning ' + echapperAttributHtml(activePerk ? activePerk.name : "a Perk") + '</span><span id="perk-learning-summary-label">' + formaterTemps(Math.ceil(remainingMs / 1000)) + ' remaining</span></div>';
+    html += '<div class="inv-learning-barre"><div id="perk-learning-summary-progress" class="inv-learning-progres" style="width:' + pct + '%"></div></div>';
+    html += '</div>';
+  }
   if (k) {
     const pickerMetier = METIERS[k.metier];
     const pickerLevel = jobLevelInfo(k.metier);
-    html += '<button type="button" class="tc-mobile-picker" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')" aria-label="Change the cat selected for specialization">';
+    html += '<button type="button" class="tc-cat-picker" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')" aria-label="Change the cat selected for specialization">';
     html += '<span class="tc-cat-icon">' + kittyIconHtml(k) + '</span>';
-    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + echapperAttributHtml(pickerMetier ? pickerMetier.emoji + ' ' + pickerMetier.nom : k.metier) + ' · Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
+    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + echapperAttributHtml(pickerMetier ? pickerMetier.emoji + ' ' + pickerMetier.nom : k.metier) + ' · Specialization Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
     html += '<span class="tc-mobile-picker-action">Change</span></button>';
   } else {
-    html += '<button type="button" class="tc-mobile-picker tc-mobile-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Select a cat with a job</span></button>';
+    html += '<button type="button" class="tc-cat-picker tc-cat-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Select a cat with a job</span></button>';
   }
   html += '<div class="tc-workspace-grid">';
-  html += '<aside class="tc-roster tc-roster-desktop" aria-label="Cats with jobs">';
-  html += '<div class="tc-roster-title">Cats with jobs</div>';
-  html += '<div class="tc-roster-list" role="group" aria-label="Cats with jobs">';
-  if (roster.length === 0) {
-    html += '<p class="tc-empty">Train a cat in the Job Center first.</p>';
-  } else {
-    roster.forEach(function(entry) {
-      const kitty = entry.k;
-      const metier = METIERS[kitty.metier];
-      const level = jobLevelInfo(kitty.metier);
-      const active = entry.i === tcSpecKittySelectionne;
-      html += '<button type="button" class="tc-cat-card' + (active ? ' tc-cat-card-active' : '') + '" aria-pressed="' + (active ? 'true' : 'false') + '" onclick="selectionnerTrainingCat(' + entry.i + ')">';
-      html += '<span class="tc-cat-icon">' + kittyIconHtml(kitty) + '</span>';
-      html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(kitty.nom) + '</span><span class="tc-cat-job">' + echapperAttributHtml(metier ? metier.emoji + ' ' + metier.nom : kitty.metier) + '</span></span>';
-      html += '<span class="tc-cat-level">Lv. ' + level.cur + '/' + level.max + '</span>';
-      html += '</button>';
-    });
-  }
-  html += '</div></aside>';
   html += '<section class="tc-sphere-column" aria-label="Selected cat specialization">';
   if (k) {
-    const metier = METIERS[k.metier];
-    const level = jobLevelInfo(k.metier);
-    html += '<div class="tc-selected-cat">';
-    html += '<div class="tc-selected-icon">' + kittyIconHtml(k) + '</div>';
-    html += '<div><div class="tc-selected-name">' + echapperAttributHtml(k.nom) + '</div><div class="tc-selected-job">' + echapperAttributHtml(metier ? metier.emoji + ' ' + metier.nom : k.metier) + ' · Specialization Lv. ' + level.cur + ' / ' + level.max + '</div></div>';
-    html += '</div>';
     if (selectedGrid.length) html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
     else html += '<p class="tc-empty">This job does not have a specialization sphere yet.</p>';
   } else {
@@ -6284,33 +6305,13 @@ function renduSphereGrid(jobId) {
 
   var canvasWidth = Math.max(580, Math.max.apply(null, def.spheres.map(function(s) { return s.x; })) + 60);
   var canvasHeight = Math.max(580, Math.max.apply(null, def.spheres.map(function(s) { return s.y; })) + 60);
+  var responsiveScale = typeof matchMedia === 'function' && matchMedia('(max-width: 768px)').matches ? 0.72 : 1;
+  var renderedWidth = Math.round(canvasWidth * responsiveScale);
+  var renderedHeight = Math.round(canvasHeight * responsiveScale);
 
   var parts = [];
-  var sphereFogNow = Date.now();
   var sphereFogClass = SPHERE_FOG_MOTION_ENABLED ? ' sphere-fog-motion' : '';
-  var sphereFogStyle = '--sphere-fog-animation-delay:-' + (sphereFogNow % MAP_FOG_ANIMATION_DURATION_MS) + 'ms;'
-    + '--sphere-fog-secondary-animation-delay:-' + (sphereFogNow % MAP_FOG_SECONDARY_DURATION_MS) + 'ms;';
-  parts.push('<svg viewBox="0 0 ' + canvasWidth + ' ' + canvasHeight + '" xmlns="http://www.w3.org/2000/svg" class="sphere-svg' + sphereFogClass + '" style="' + sphereFogStyle + '">');
-  parts.push(
-    '<defs>'
-    + '<clipPath id="sphere-fog-clip"><rect x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" rx="12" ry="12"></rect></clipPath>'
-    + '<filter id="sphere-fog-seam-softener" x="-2%" y="-1%" width="104%" height="102%" color-interpolation-filters="sRGB">'
-    + '<feGaussianBlur in="SourceGraphic" stdDeviation="1.8 0"></feGaussianBlur>'
-    + '</filter>'
-    + '</defs>'
-    + '<g clip-path="url(#sphere-fog-clip)">'
-    + '<rect x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" fill="#2f2925"></rect>'
-    + '<g class="sphere-fog-primary-track" filter="url(#sphere-fog-seam-softener)">'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" preserveAspectRatio="none"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" preserveAspectRatio="none" transform="translate(' + (canvasWidth * 2) + ' 0) scale(-1 1)"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="' + (canvasWidth * 2) + '" y="0" width="' + canvasWidth + '" height="' + canvasHeight + '" preserveAspectRatio="none"></image>'
-    + '</g>'
-    + '<g class="sphere-fog-secondary-track" filter="url(#sphere-fog-seam-softener)">'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="-35" width="' + canvasWidth + '" height="' + (canvasHeight + 70) + '" preserveAspectRatio="none"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="0" y="-35" width="' + canvasWidth + '" height="' + (canvasHeight + 70) + '" preserveAspectRatio="none" transform="translate(' + (canvasWidth * 2) + ' 0) scale(-1 1)"></image>'
-    + '<image href="img/Maps/Perks fog.png" x="' + (canvasWidth * 2) + '" y="-35" width="' + canvasWidth + '" height="' + (canvasHeight + 70) + '" preserveAspectRatio="none"></image>'
-    + '</g></g>'
-  );
+  parts.push('<svg width="' + renderedWidth + '" height="' + renderedHeight + '" viewBox="0 0 ' + canvasWidth + ' ' + canvasHeight + '" data-render-scale="' + responsiveScale + '" xmlns="http://www.w3.org/2000/svg" class="sphere-svg" aria-label="Specialization Perk tree">');
 
   // Read-only edges are derived from the canonical prerequisite IDs.
   def.prerequisiteEdges.forEach(function(conn) {
@@ -6344,6 +6345,7 @@ function renduSphereGrid(jobId) {
     parts.push(
       '<g id="sphere-node-' + s.id + '"'
       + ' role="button" tabindex="0" aria-label="' + echapperAttributHtml(s.nom + ' — ' + actualEtat) + '"'
+      + ' data-touch-activation="pan-aware-release" data-input-action="perks.select" data-perk-id="' + echapperAttributHtml(s.id) + '"'
       + ' onclick="clickerSphere(\'' + s.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();clickerSphere(\'' + s.id + '\');}" style="cursor:pointer"'
       + ' opacity="' + opacity + '">'
     );
@@ -6374,7 +6376,7 @@ function renduSphereGrid(jobId) {
 
   parts.push('</svg>');
 
-  containerEl.innerHTML = parts.join('')
+  containerEl.innerHTML = '<div class="sphere-tree-viewport sphere-fog-workspace' + sphereFogClass + '"><div class="sphere-tree-scroll" tabindex="0" aria-label="Scrollable Specialization Perk tree">' + parts.join('') + '</div></div>'
     + '<div class="sphere-detail-panel" id="sphere-detail-panel">'
     + '<div class="sphere-detail-nom" id="sphere-detail-nom">Select a perk to see its description.</div>'
     + '<div class="sphere-detail-desc" id="sphere-detail-desc"></div>'
@@ -6419,13 +6421,14 @@ function clickerSphere(sphereId) {
         var noms = { cannedCatFood: 'Canned Cat Food' };
         return cout[res] + ' ' + (noms[res] || res);
       }).join(', ');
+      var dureeLabel = formaterTemps(dureeApprentissagePerkMs(sphere) / 1000);
       var busy = !!etat.perkLearningEnCours;
       var selectedBusy = tcSpecKittySelectionne !== null
         && kittyIsUnavailableForNewAssignment(tcSpecKittySelectionne);
       learnHtml = '<div class="sphere-cout">'
-        + '<span class="sphere-cout-label">Cost: ' + coutLabel + '</span>'
+        + '<span class="sphere-cout-label">Cost: ' + coutLabel + ' · Duration: ' + dureeLabel + '</span>'
         + (busy
-            ? '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Advanced Training is busy</button>'
+            ? '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Specialization is busy</button>'
             : selectedBusy
             ? '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Selected Cat is busy</button>'
             : canAfford
@@ -6446,7 +6449,7 @@ function clickerSphere(sphereId) {
 function apprendrePerkV2(perkId) {
   if (!perksV2Api || !_sphereGridJob || !batimentFonctionnelCamp("jobCenter", 2).available) return false;
   if (etat.perkLearningEnCours) {
-    afficherNotification("Advanced Training is already busy.");
+    afficherNotification("Specialization is already busy.");
     return false;
   }
   const kitty = tcSpecKittySelectionne !== null ? etat.kittiesData[tcSpecKittySelectionne] : null;
@@ -6500,8 +6503,12 @@ function actualiserProgressionApprentissagePerk() {
   const remaining = Math.max(0, Math.ceil((action.duree - elapsed) / 1000));
   const label = document.getElementById("perk-learning-label");
   const progress = document.getElementById("perk-learning-progress");
+  const summaryLabel = document.getElementById("perk-learning-summary-label");
+  const summaryProgress = document.getElementById("perk-learning-summary-progress");
   if (label) label.textContent = "Learning… " + formaterTemps(remaining) + " remaining";
   if (progress) progress.style.width = pct + "%";
+  if (summaryLabel) summaryLabel.textContent = formaterTemps(remaining) + " remaining";
+  if (summaryProgress) summaryProgress.style.width = pct + "%";
 }
 
 function terminerApprentissagePerk() {
@@ -7406,7 +7413,6 @@ function renduDynamique() {
   if (ongletActif === "camp")         renduCampPrototypeDynamique();
   if (ongletActif === "buildings")    renduBuildings(u);
   if (ongletActif === "facilities")   renduFacilities(u);
-  if (ongletActif === "facilities")   actualiserProgressionApprentissagePerk();
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
   if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif });
@@ -7785,6 +7791,30 @@ function recompenseLabel(camp) {
   return (id || "reward") + " received";
 }
 
+function renduRecompensesCampaignEnAttente(recompenses) {
+  const entries = (Array.isArray(recompenses) ? recompenses : []).filter(function(entry) {
+    return entry && entry.recompense && Number(entry.qty) > 0;
+  });
+  if (!entries.length) return "";
+  return '<div class="campaign-pending-reward" aria-label="Campaign reward"><strong>Reward</strong><div class="campaign-pending-reward-list">'
+    + entries.map(function(entry) {
+      const rewardId = entry.recompense;
+      const item = ITEMS[rewardId];
+      const resourceIcon = iconeRessourceCamp(rewardId);
+      const label = item
+        ? item.nom
+        : (resourceIcon
+          ? libelleRessourceCamp(rewardId)
+          : recompenseLabel({ recompense: rewardId }).replace(/ received(?:\s.*)?$/, ""));
+      const visual = resourceIcon
+        ? '<img src="' + echapperAttributHtml(resourceIcon) + '" alt="">'
+        : '<span class="campaign-pending-reward-item-icon" aria-hidden="true">' + (item && item.emoji ? item.emoji : "🎁") + '</span>';
+      return '<span class="campaign-pending-reward-entry">' + visual
+        + '<span>' + echapperAttributHtml(label) + ' <strong>×' + formaterNombre(entry.qty) + '</strong></span></span>';
+    }).join("")
+    + '</div></div>';
+}
+
 function renderCampaignCards() {
   const listeEl   = document.getElementById("liste-campaigns");
   const scoutEl   = document.getElementById("liste-scoutings");
@@ -7921,6 +7951,7 @@ function renderCampaignCards() {
 
       if (resultatCampaign) {
         if (resultatCampaign.success) {
+          html += renduRecompensesCampaignEnAttente(resultatCampaign.recompenses);
           html += '<button class="explo-result-action explo-result-reward" onclick="recupererRecompenseCampaign(\'' + camp.id + '\')">🎁 Claim campaign reward</button>';
         } else {
           html += '<button class="explo-result-action explo-result-failure" onclick="reessayerCampaign(\'' + camp.id + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">Try again</button>';
@@ -9002,23 +9033,13 @@ function recupererRecompenseCampaign(campaignId) {
   const camp = CONFIG.campaigns[campaignId];
   if (!resultat || !resultat.success || !camp) return;
   if (!autoriserActionTableOperationsCamp()) return false;
-  const repartition = repartirRecompensesExploration(resultat.recompenses);
-  if (!repartition.reclamees.length) {
-    notifierRecompensesStockageEnAttente(repartition.restantes);
-    return false;
-  }
+  const repartition = repartirRecompensesExploration(resultat.recompenses, true);
+  if (!repartition.reclamees.length) return false;
   if (typeof jouerSonRewardChest === "function") jouerSonRewardChest();
   repartition.reclamees.forEach(function(entry) { appliquerRecompense(entry.recompense, entry.qty); });
-  if (repartition.restantes.length) {
-    resultat.recompenses = repartition.restantes;
-    ajouterLog("event", "Campaign reward partially claimed: " + camp.nom
-      + ". Storage-limited rewards are still waiting.");
-    notifierRecompensesStockageEnAttente(repartition.restantes);
-  } else {
-    if (!etat.campaignsCompletees.includes(campaignId)) etat.campaignsCompletees.push(campaignId);
-    delete etat.resultatsCampaigns[campaignId];
-    ajouterLog("unlock", "Campaign completed: " + camp.nom + ". Reward claimed.");
-  }
+  if (!etat.campaignsCompletees.includes(campaignId)) etat.campaignsCompletees.push(campaignId);
+  delete etat.resultatsCampaigns[campaignId];
+  ajouterLog("unlock", "Campaign completed: " + camp.nom + ". Reward claimed.");
   carteDirty = true;
   exploTabDirty = true;
   verifierObjectifs(); sauvegarder(); rendu();
@@ -9720,8 +9741,8 @@ function apprendreLivre(itemId) {
     // Start the first legitimate set when the lesson is actually learned.
     etat.dailyQuests = null;
     initialiserQuetesQuotidiennes();
-    afficherNotification("Daily quests unlocked! Open the guide to see today's goals.");
-    ajouterLog("unlock", "The Daily Purpose learned. Daily quests are now available in the guide.");
+    afficherNotification("Daily quests unlocked! Today's goals are ready.");
+    ajouterLog("unlock", "The Daily Purpose learned. Daily quests are now available in the Daily Quests HUD.");
   }
   etat.learningEnCours = null;
   inventaireDirty = true;
@@ -11167,7 +11188,7 @@ function renduJobCenter(u) {
 
   if (jcDirty) {
     masquerInfoMetierJC(true);
-    let html = '<div class="jc-section-titre">Training</div>';
+    let html = '';
 
     if (etat.formationTermineeEnAttente) {
       jcFormationKittySelectionne = null;
@@ -15392,7 +15413,7 @@ function verifierDeblocageSmallStorageShed() {
   return true;
 }
 
-function repartirRecompensesExploration(recompenses) {
+function repartirRecompensesExploration(recompenses, autoriserDepassementStockage) {
   const quantites = {};
   const ordre = [];
   (Array.isArray(recompenses) ? recompenses : []).forEach(function(entry) {
@@ -15410,7 +15431,7 @@ function repartirRecompensesExploration(recompenses) {
   ordre.forEach(function(recompenseId) {
     const qty = quantites[recompenseId];
     let qtyReclamee = qty;
-    if (ressourceSoumiseStockage(recompenseId)) {
+    if (!autoriserDepassementStockage && ressourceSoumiseStockage(recompenseId)) {
       const stockage = etatStockageRessource(recompenseId);
       qtyReclamee = Math.min(qty, Math.max(0, stockage.capacite - stockage.stock));
     }
@@ -16059,6 +16080,22 @@ function placementCampPrototypePourItem(uid) {
     : null;
 }
 
+function tierPhysiqueCampPrototype(item, placement, amelioration) {
+  const tierFonctionnel = item && Number.isInteger(item.tier) && item.tier > 0
+    ? item.tier : 1;
+  if (placement && Number.isInteger(placement.tier) && placement.tier > 0) {
+    return placement.tier;
+  }
+  const ameliorationValide = Boolean(
+    item
+    && amelioration
+    && amelioration.type === item.type
+    && amelioration.startTier === tierFonctionnel
+    && amelioration.targetTier === tierFonctionnel + 1
+  );
+  return ameliorationValide ? amelioration.targetTier : tierFonctionnel;
+}
+
 function evaluerPlacementCampPrototype(placement) {
   if (
     !placement
@@ -16222,7 +16259,11 @@ function definirPositionPlacementCampPrototype(typeId, x, y, rotation, uid) {
     campPrototypeRotationAPlacer = placement.rotation;
   }
   const resultat = actualiserValiditePlacementCampPrototype();
-  const dimensions = dimensionsCampPrototype(placement.type, placement.rotation);
+  const dimensions = dimensionsCampPrototype(
+    placement.type,
+    placement.rotation,
+    placement.tier
+  );
   definirMessageCampPrototype(resultat.valide
     ? type.label + " ready at column " + (placement.x + 1) + ", row "
       + (placement.y + 1) + ". Confirm to place it."
@@ -16901,6 +16942,55 @@ function assetCampPrototypePourRotation(type, rotation, functionalTier) {
     /(\.[a-z0-9]+)(\?[^#]*)?$/i,
     "_r" + rotationNormalisee + "$1$2"
   );
+}
+
+function groundingCampPrototypePourRotation(type, rotation, functionalTier) {
+  if (!type || type.category === "junk" || type.canonicalOrientation === "down") return "";
+  const direction = {
+    0: "down", 90: "right", 180: "up", 270: "left"
+  }[campPrototypeApi.normaliserRotation(rotation)];
+  const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
+    type.id,
+    Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
+  );
+  return runtimeVisual && direction && runtimeVisual.groundingSprites
+    ? runtimeVisual.groundingSprites[direction] || ""
+    : "";
+}
+
+function boundsGroundingCampPrototypePourRotation(type, rotation, functionalTier) {
+  if (!type) return null;
+  const direction = {
+    0: "down", 90: "right", 180: "up", 270: "left"
+  }[campPrototypeApi.normaliserRotation(rotation)];
+  const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
+    type.id,
+    Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
+  );
+  return runtimeVisual && runtimeVisual.groundingBounds && direction
+    ? runtimeVisual.groundingBounds[direction] || null
+    : null;
+}
+
+function ajouterGroundingCampPrototype(conteneur, type, x, y, rotation, functionalTier) {
+  if (!conteneur || !type) return;
+  const dimensions = dimensionsCampPrototype(type.id, rotation, functionalTier);
+  const src = groundingCampPrototypePourRotation(type, dimensions.rotation, functionalTier);
+  if (!src) return;
+  const bounds = boundsGroundingCampPrototypePourRotation(
+    type, dimensions.rotation, functionalTier
+  ) || {x: 0, y: 0, width: dimensions.width, height: dimensions.height};
+  const grounding = document.createElement("img");
+  grounding.className = "camp-prototype-grounding-sprite";
+  grounding.src = src;
+  grounding.alt = "";
+  grounding.draggable = false;
+  grounding.setAttribute("aria-hidden", "true");
+  grounding.style.left = ((x + Number(bounds.x)) / campPrototypeApi.GRID_WIDTH * 100) + "%";
+  grounding.style.top = ((y + Number(bounds.y)) / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+  grounding.style.width = (Number(bounds.width) / campPrototypeApi.GRID_WIDTH * 100) + "%";
+  grounding.style.height = (Number(bounds.height) / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+  conteneur.appendChild(grounding);
 }
 
 function prechargerRotationSuivanteCampPrototype(type, rotation, functionalTier) {
@@ -18163,7 +18253,8 @@ function positionnerUiFlottanteCampPrototype() {
     placement.type,
     placement.x,
     placement.y,
-    placement.rotation
+    placement.rotation,
+    placement.tier
   );
   if (campTaskPanelState) ancrerCampTaskPanel();
 }
@@ -21627,7 +21718,7 @@ function rendrePaletteCampPrototype() {
   const labels = {
     house: "Houses",
     building: "Buildings",
-    decoration: "Decorations",
+    decoration: "Decor",
     road: "Paths",
     fence: "Fences",
     junk: "Junk",
@@ -22206,6 +22297,7 @@ function configurerDeclencheurPanneauCamp(bouton, popupRole, controlsId) {
 
 function rendreItemsCampPrototype(presencesCamp) {
   const conteneur = document.getElementById("camp-prototype-items");
+  const groundingConteneur = document.getElementById("camp-prototype-grounding");
   const statutsConnexion = document.getElementById("camp-prototype-connectivity-statuses");
   if (!conteneur) return;
   const presences = presencesCamp || indexerPresencesChatsCamp();
@@ -22213,6 +22305,7 @@ function rendreItemsCampPrototype(presencesCamp) {
   // its floating action. Keep that menu alive; Edit mode never exposes it.
   if (campPrototypeModeEdition) fermerMenuInteractionCampPrototype();
   conteneur.innerHTML = "";
+  if (groundingConteneur) groundingConteneur.innerHTML = "";
   if (statutsConnexion) statutsConnexion.innerHTML = "";
   const contexteConnexions = contexteConnexionsAfficheesCampPrototype();
   actualiserAlerteAccesMaisonCampPrototype(contexteConnexions);
@@ -22250,8 +22343,11 @@ function rendreItemsCampPrototype(presencesCamp) {
     const xAffiche = placement ? placement.x : item.x;
     const yAffiche = placement ? placement.y : item.y;
     const rotationAffiche = placement ? placement.rotation : item.rotation;
-    const tierAffiche = placement ? placement.tier : (item.tier || 1);
+    const tierAffiche = tierPhysiqueCampPrototype(item, placement, ameliorationBatiment);
     const dimensions = dimensionsCampPrototype(item.type, rotationAffiche, tierAffiche);
+    ajouterGroundingCampPrototype(
+      groundingConteneur, type, xAffiche, yAffiche, rotationAffiche, tierAffiche
+    );
     const connexion = connexionsParItem[item.uid] || null;
     const connexionInactive = Boolean(connexion && !connexion.active);
     const formationsJobsPretes = type.id === "jobCenter"
@@ -22472,7 +22568,8 @@ function rendreItemsCampPrototype(presencesCamp) {
       nouveauPlacement.x,
       nouveauPlacement.y,
       null,
-      nouveauPlacement.rotation
+      nouveauPlacement.rotation,
+      nouveauPlacement.tier
     );
     const typeNouveauPlacement = typeCampPrototype(nouveauPlacement.type);
     const connexionNouveauPlacement =
@@ -23082,11 +23179,11 @@ function reinitialiserTerrainCampPrototype() {
   renduCampPrototype();
 }
 
-function positionCampDepuisPointeur(event, typeId, decalageX, decalageY, rotation) {
+function positionCampDepuisPointeur(event, typeId, decalageX, decalageY, rotation, tier) {
   const board = document.getElementById("camp-prototype-board");
   const type = typeCampPrototype(typeId);
   if (!board || !type) return null;
-  const dimensions = dimensionsCampPrototype(typeId, rotation);
+  const dimensions = dimensionsCampPrototype(typeId, rotation, tier);
   const cadre = board.getBoundingClientRect();
   if (cadre.width <= 0 || cadre.height <= 0) return null;
   const colonne = Math.floor((event.clientX - cadre.left) / cadre.width * campPrototypeApi.GRID_WIDTH);
@@ -23136,14 +23233,18 @@ function areteClotureDepuisPointeurCampPrototype(event, typeId) {
   });
 }
 
-function afficherApercuCampPrototype(typeId, x, y, ignoreUid, rotation) {
+function afficherApercuCampPrototype(typeId, x, y, ignoreUid, rotation, tier) {
   const ghost = document.getElementById("camp-prototype-ghost");
   const type = typeCampPrototype(typeId);
   if (!ghost || !type) return null;
+  const tierApercu = Number.isInteger(tier) && tier > 0
+    ? tier
+    : (campPrototypePlacementEnCours && campPrototypePlacementEnCours.tier) || 1;
   const resultat = evaluerPlacementCampPrototype({
     mode: ignoreUid ? "existing" : "new",
     uid: ignoreUid || null,
     type: typeId,
+    tier: tierApercu,
     x: x,
     y: y,
     rotation: rotation
@@ -23155,7 +23256,7 @@ function afficherApercuCampPrototype(typeId, x, y, ignoreUid, rotation) {
     ghost,
     type,
     rotation,
-    campPrototypePlacementEnCours ? campPrototypePlacementEnCours.tier : 1
+    tierApercu
   );
   ajouterRaccordsRouteBatimentCampPrototype(
     ghost,
@@ -23163,15 +23264,16 @@ function afficherApercuCampPrototype(typeId, x, y, ignoreUid, rotation) {
     {
       uid: ignoreUid || "camp-pending-connector",
       type: typeId,
+      tier: tierApercu,
       x: x,
       y: y,
       rotation: rotation
     },
     type
   );
-  appliquerCadreCampPrototype(ghost, type, x, y, rotation);
+  appliquerCadreCampPrototype(ghost, type, x, y, rotation, tierApercu);
   if (campPrototypePlacementEnCours) {
-    positionnerActionsPlacementCampPrototype(typeId, x, y, rotation);
+    positionnerActionsPlacementCampPrototype(typeId, x, y, rotation, tierApercu);
   }
   return resultat;
 }
@@ -23463,7 +23565,11 @@ function tournerSelectionCampPrototype() {
   if (placement.mode === "new") campPrototypeRotationAPlacer = placement.rotation;
   prechargerRotationSuivanteCampPrototype(type, placement.rotation, placement.tier || 1);
   const resultat = actualiserValiditePlacementCampPrototype();
-  const dimensions = dimensionsCampPrototype(placement.type, placement.rotation);
+  const dimensions = dimensionsCampPrototype(
+    placement.type,
+    placement.rotation,
+    placement.tier
+  );
   definirMessageCampPrototype(type.label + " rotated to " + placement.rotation
     + "°. Footprint: " + dimensions.width + " × " + dimensions.height + ". "
     + (resultat.valide
@@ -23836,7 +23942,8 @@ function demarrerInteractionCampPrototype(event) {
       campPrototypeTypeAPlacer,
       undefined,
       undefined,
-      campPrototypeRotationAPlacer
+      campPrototypeRotationAPlacer,
+      campPrototypePlacementEnCours ? campPrototypePlacementEnCours.tier : 1
     );
     if (!position) return;
     campPrototypePointeur = {
@@ -23844,6 +23951,7 @@ function demarrerInteractionCampPrototype(event) {
       mode: "place",
       type: campPrototypeTypeAPlacer,
       rotation: campPrototypeRotationAPlacer,
+      tier: campPrototypePlacementEnCours ? campPrototypePlacementEnCours.tier : 1,
       x: position.x,
       y: position.y
     };
@@ -23852,7 +23960,8 @@ function demarrerInteractionCampPrototype(event) {
       position.x,
       position.y,
       null,
-      campPrototypeRotationAPlacer
+      campPrototypeRotationAPlacer,
+      campPrototypePlacementEnCours ? campPrototypePlacementEnCours.tier : 1
     );
     board.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -23915,13 +24024,14 @@ function demarrerInteractionCampPrototype(event) {
     campPrototypeRotationAPlacer = 0;
     const placement = placementCampPrototypePourItem(item.uid)
       || commencerPlacementExistantCampPrototype(item);
-    const dimensions = dimensionsCampPrototype(item.type, placement.rotation);
+    const dimensions = dimensionsCampPrototype(item.type, placement.rotation, placement.tier);
     campPrototypePointeur = {
       pointerId: event.pointerId,
       mode: "move",
       uid: item.uid,
       type: item.type,
       rotation: placement.rotation,
+      tier: placement.tier,
       decalageX: Math.max(0, Math.min(dimensions.width - 1, colonne - placement.x)),
       decalageY: Math.max(0, Math.min(dimensions.height - 1, ligne - placement.y)),
       x: placement.x,
@@ -24032,7 +24142,8 @@ function deplacerInteractionCampPrototype(event) {
     campPrototypePointeur.type,
     campPrototypePointeur.mode === "move" ? campPrototypePointeur.decalageX : undefined,
     campPrototypePointeur.mode === "move" ? campPrototypePointeur.decalageY : undefined,
-    campPrototypePointeur.rotation
+    campPrototypePointeur.rotation,
+    campPrototypePointeur.tier
   );
   if (!position) return;
   campPrototypePointeur.x = position.x;
@@ -24047,7 +24158,8 @@ function deplacerInteractionCampPrototype(event) {
     position.x,
     position.y,
     campPrototypePointeur.mode === "move" ? campPrototypePointeur.uid : null,
-    campPrototypePointeur.rotation
+    campPrototypePointeur.rotation,
+    campPrototypePointeur.tier
   );
   event.preventDefault();
 }
@@ -26012,8 +26124,44 @@ if (DEV_MODE && new URLSearchParams(location.search).get("cannelleBargainQa") ==
   }, 0);
 }
 
+// Focused, transient fixture for the Daily Purpose -> Daily Quests browser
+// journey. It remains debug-only and save-locked, and every progress button
+// calls the same canonical hooks as ordinary gameplay.
+const dailyQuestsQaMode = new URLSearchParams(location.search).get("dailyQuestsQa");
+if (DEV_MODE && (dailyQuestsQaMode === "prelearn" || dailyQuestsQaMode === "learned")) {
+  setTimeout(function() {
+    sauvegardeVerrouillee = true;
+    definirModePrologue(false);
+    let top = dialogueOuvertAuPremierPlan();
+    while (top) {
+      fermerDialogueModal(top);
+      top = dialogueOuvertAuPremierPlan();
+    }
+    if (!etat.itemsAcquis.includes("dailyPurpose")) etat.itemsAcquis.push("dailyPurpose");
+    if (!etat.itemsEtudies.includes("dailyPurpose")) etat.itemsEtudies.push("dailyPurpose");
+    etat.itemsAppris = etat.itemsAppris.filter(function(itemId) { return itemId !== "dailyPurpose"; });
+    if (dailyQuestsQaMode === "learned") etat.itemsAppris.push("dailyPurpose");
+    etat.dailyQuests = null;
+    initialiserQuetesQuotidiennes();
+    resCategorieFiltree = "books";
+    itemSelectionne = "dailyPurpose";
+    inventaireDirty = true;
+    changerOnglet(dailyQuestsQaMode === "prelearn" ? "inventaire" : "camp", { semanticCommit: false });
+    rendu();
+    renduObjectifs();
+
+    const controles = document.createElement("div");
+    controles.id = "daily-quests-qa-controls";
+    controles.className = "daily-quests-qa-controls";
+    controles.innerHTML = '<button type="button" onclick="enregistrerSuccesScoutingQuotidien(1)">QA: +1 scouting</button>'
+      + '<button type="button" onclick="enregistrerSuccesScoutingQuotidien(10); enregistrerNiveauQuotidien(1); enregistrerOiseauQuotidien(); var q = etat.dailyQuests; enregistrerRecettesQuotidiennes(q && q.recipeFamily, 10)">QA: complete today</button>';
+    document.body.appendChild(controles);
+  }, 0);
+}
+
 if (window.matchMedia("(max-width: 768px)").matches) {
   definirObjectifsReduits(true);
+  definirDailyQuestsHudReduit(true);
 }
 
 // Mobile browsers may suspend timers, put a page in the back/forward cache,

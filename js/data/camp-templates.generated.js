@@ -84,7 +84,8 @@
           "fromZoneId": "home",
           "toZoneId": "greenGarden",
           "costs": {
-            "rockBricks": 20
+            "rockBricks": 50,
+            "basicWoodPlanks": 100
           },
           "durationSeconds": 18000,
           "requiredCats": 2,
@@ -664,7 +665,12 @@
           "typeId": "flowerBush",
           "x": 10,
           "y": 11,
-          "zoneId": "home"
+          "zoneId": "home",
+          "reward": {
+            "resourceId": "basicWoodPlanks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "home:10:10",

@@ -869,6 +869,35 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0079Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Daily Quests now appear in a dedicated collapsible Camp HUD after The Daily Purpose is learned."
+      ])
+    }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Core runtime panels now use a consistent semantic typography scale across desktop and mobile.",
+        "Desktop navigation labels remain fully readable in a wider rail while mobile keeps its bottom navigation.",
+        "Ordinary runtime actions, modal controls and panel spacing now share clearer touch-friendly sizing and states.",
+        "Jobs now unifies Training and Specialization in one workspace with a larger scrollable Perk tree.",
+        "Camp structures now use geometry-authored directional grounding shadows for stronger depth and placement."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Campaign reward cards now show every exact reward, and Campaign claims can exceed storage capacity once so progression never stalls.",
+        "Buildings being upgraded now keep their target Tier visual and footprint throughout construction and after reload.",
+        "Moving upgraded Camp buildings now preserves their built Tier footprint, artwork and collision geometry."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0078Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -904,7 +933,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0078",
+    baseVersion: "0.0079",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -917,6 +946,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0079",
+      date: "2026-08-31",
+      categories: release0079Categories
+    }),
     Object.freeze({
       version: "0.0078",
       date: "2026-08-29",

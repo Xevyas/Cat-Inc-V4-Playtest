@@ -49,7 +49,7 @@
       "id": "cat-faces-cannelle-3",
       "name": "Cannelle",
       "runtimePath": "img/Cat faces/cannelle-3.png",
-      "revision": 1,
+      "revision": 3,
       "alternative": false
     },
     {
@@ -64,6 +64,13 @@
       "name": "Mochi",
       "runtimePath": "img/Cat faces/Mochi_Final.png",
       "revision": 5,
+      "alternative": false
+    },
+    {
+      "id": "cat-faces-naya",
+      "name": "Naya",
+      "runtimePath": "img/Cat faces/naya.png",
+      "revision": 1,
       "alternative": false
     },
     {

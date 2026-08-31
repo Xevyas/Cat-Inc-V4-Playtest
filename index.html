@@ -294,7 +294,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0078 · August 29, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0079 · August 31, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -453,7 +453,7 @@
       </div>
     </div>
     </div>
-    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="basic" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Stylish (Basic is active)" title="Switch to Stylish (Basic is active)">
+    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="basic" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Stylish (Basic is active)" title="Switch to Stylish (Basic is active)" hidden>
       <span class="ressources-theme-toggle-icone" aria-hidden="true">Aa</span>
       <span id="ui-theme-quick-label" class="ressources-theme-toggle-label">Stylish</span>
     </button>
@@ -542,13 +542,13 @@
 
   <!-- ONGLETS: moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
-    <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" data-bernardo-cat-face alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
-    <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><img class="onglet-icone" src="img/interface/Camp.png" alt=""> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
-    <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
-    <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/Jobs.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Jobs</span></button>
-    <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
-    <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Bag">Inventory</span></button>
-    <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Logs">Logs</span></button>
+    <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" data-bernardo-cat-face alt=""> <span class="onglet-label">Gang</span></button>
+    <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><img class="onglet-icone" src="img/interface/Camp.png" alt=""> <span class="onglet-label">Camp</span></button>
+    <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
+    <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/Jobs.png" alt=""> <span class="onglet-label">Jobs</span></button>
+    <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label">Explore</span></button>
+    <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label">Bag</span></button>
+    <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label">Logs</span></button>
   </div>
 
   <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none">
@@ -572,18 +572,6 @@
     <section id="camp-prototype-panel" class="panneau camp-prototype-panel" aria-label="Base Camp">
       <div class="camp-prototype-stage">
         <div class="camp-prototype-heading">
-          <div class="camp-prototype-heading-main">
-            <div class="camp-prototype-title-row">
-              <span class="panneau-aide-wrap">
-                <button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Base Camp" aria-expanded="false" aria-controls="base-camp-help" onclick="togglePanneauAide(event)">?</button>
-                <span id="base-camp-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">
-                  <span>Tap a camp element to interact with it. Tap reachable debris to assign an available Cat and start its demolition.</span>
-                  <span>Use the categories at the bottom to build. Press and hold a completed asset to move or remove it.</span>
-                  <span class="camp-dev-only">Debug categories can place other camp items or claim adjacent territory. Natural clearing debris cannot be moved; the Junk menu provides independent decorative copies.</span>
-                </span>
-              </span>
-            </div>
-          </div>
           <div class="camp-prototype-heading-actions">
             <div id="camp-prototype-blocked-alert" class="camp-prototype-blocked-alert" hidden>
               <button id="camp-prototype-blocked-alert-toggle" class="camp-prototype-blocked-alert-toggle" type="button" aria-label="Show blocked buildings" aria-expanded="false" aria-controls="camp-prototype-blocked-alert-panel" onclick="basculerAlerteBatimentsBloquesCampPrototype(event)">!</button>
@@ -670,6 +658,7 @@
            <div id="camp-prototype-territory-zones" class="camp-prototype-territory-zones" aria-label="Neighbor garden access sites"></div>
           <div id="camp-prototype-terrain" class="camp-prototype-terrain"></div>
           <div class="camp-prototype-grid" aria-hidden="true"></div>
+          <div id="camp-prototype-grounding" class="camp-prototype-grounding" aria-hidden="true"></div>
           <div id="camp-prototype-items" class="camp-prototype-items"></div>
           <div id="camp-task-ui-layer" class="camp-task-ui-layer" aria-hidden="true"></div>
           <button id="bird-btn" class="camp-bird-perch" type="button" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
@@ -742,7 +731,7 @@
         </button>
         <button type="button" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
           <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png" alt="">
-          <span>Decorations</span>
+          <span>Decor</span>
         </button>
         <button type="button" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
           <img class="camp-prototype-category-icon-image" src="img/Maps/Camp%20Runtime/Paths/Basic%20Trail_Camp_TopDown_Watercolor_Game_v1.png" alt="">
@@ -800,31 +789,24 @@
   <div id="contenu-facilities" role="tabpanel" aria-labelledby="onglet-facilities" aria-hidden="true" style="display:none">
     <div id="facilities-subtabs" class="facilities-subtabs" role="tablist" aria-label="Jobs sections" aria-hidden="true" data-has-tabs="false">
       <button id="facilities-subtab-jobs" class="facilities-subtab btn-filtre-work facilities-subtab-active btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="section-job-center" onclick="selectionnerVueFacilitiesMobile('jobs')">Jobs</button>
-      <button id="facilities-subtab-training" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-advanced-training" onclick="selectionnerVueFacilitiesMobile('training')">Train</button>
       <button id="facilities-subtab-lab" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-laboratory" onclick="selectionnerVueFacilitiesMobile('lab')" style="display:none">Lab</button>
     </div>
     <div class="grille grille-2col" id="facilities-grid">
-      <section class="panneau panneau-buildings" id="section-job-center" style="display:none">
-        <h2 class="panneau-titre panneau-titre-aide">Job Center <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job Center" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)">?</button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train unassigned cats for jobs that match the gang's needs.</span></span></h2>
-        <div class="bloc-action bloc-action-building">
-          <img class="work-sprite" src="img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001" alt="Front view of the Job Center">
-          <div class="bloc-entete-textes">
-            <span class="bloc-desc">Jobs improve production and unlock specialized roles.</span>
+      <section class="panneau panneau-buildings jobs-page" id="section-job-center" style="display:none">
+        <div class="work-filtres jobs-workspace-tabs">
+          <div class="work-filtres-btns" role="tablist" aria-label="Jobs workspaces">
+            <button id="jobs-workspace-tab-training" class="btn-filtre-work btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="jobs-training-panel" onclick="selectionnerJobsWorkspace('training')">Training</button>
+            <button id="jobs-workspace-tab-specialization" class="btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-advanced-training" tabindex="-1" onclick="selectionnerJobsWorkspace('specialization')">Specialization</button>
           </div>
         </div>
-        <div id="jc-interface" style="display:none"></div>
-      </section>
-      <section class="panneau panneau-buildings" id="section-advanced-training" style="display:none">
-        <h2 class="panneau-titre panneau-titre-aide">Advanced Training <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job Center advanced training" aria-expanded="false" aria-controls="advanced-training-help" onclick="togglePanneauAide(event)">?</button><span id="advanced-training-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Job Center Tier 2 develops experienced workers through permanent specializations.</span></span></h2>
-        <div id="tc-overview">
-          <div class="bloc-action bloc-action-building">
-            <img class="work-sprite" src="img/Buildings/Camp%20Runtime/training-center/tier-1/revision-1/down.png?v=0.0001" alt="Job Center Tier 2">
-            <div class="bloc-entete-textes">
-              <span class="bloc-desc" id="advanced-training-intro-copy">Job Center Tier 2 is where cats sharpen their skills and unlock permanent specializations.</span>
-            </div>
-          </div>
-        </div>
-        <div id="tc-interface" class="tc-interface" style="display:none"></div>
+        <section class="jobs-function-section" id="jobs-training-panel" role="tabpanel" aria-labelledby="jobs-workspace-tab-training">
+          <h3 class="jobs-function-title panneau-titre-aide" id="jobs-training-heading">Training <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job training" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)">?</button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train an unassigned Cat for one of the gang's available Jobs.</span></span></h3>
+          <div id="jc-interface" style="display:none"></div>
+        </section>
+        <section class="jobs-function-section jobs-specialization-section" id="section-advanced-training" role="tabpanel" aria-labelledby="jobs-workspace-tab-specialization" hidden>
+          <p class="jobs-function-copy" id="advanced-training-intro-copy">Upgrade the Job Center to Tier 2 to unlock Specialization.</p>
+          <div id="tc-interface" class="tc-interface" style="display:none"></div>
+        </section>
       </section>
       <section class="panneau panneau-buildings" id="section-laboratory" style="display:none">
         <h2 class="panneau-titre panneau-titre-aide">Laboratory <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Laboratory" aria-expanded="false" aria-controls="laboratory-help" onclick="togglePanneauAide(event)">?</button><span id="laboratory-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Study engineering and discover entirely new forms of boosts.</span></span></h2>
@@ -927,9 +909,7 @@
     <div id="food-management-panel" style="display:none"></div>
     <div class="management-layout" id="management-layout">
       <div id="liste-kitties" class="liste-kitties"></div>
-      <div class="management-detail" id="detail-kitty">
-        <div class="etat-vide"><strong>Your gang is waiting</strong><span>Catch your first cat to unlock its profile.</span></div>
-      </div>
+      <div class="management-detail" id="detail-kitty"></div>
     </div>
   </div>
 
@@ -973,12 +953,22 @@
 
   </main> <!-- /contenu-principal -->
 
-  <!-- Legacy objective renderer kept for Daily Quest state and navigation.
-       Its player-facing summary now lives below Base Camp. -->
+  <aside id="daily-quests-hud" class="daily-quests-hud" role="region" aria-labelledby="daily-quests-title" aria-hidden="true" hidden>
+    <button id="daily-quests-toggle" class="daily-quests-header" type="button" aria-expanded="true" aria-controls="daily-quests-body" onclick="toggleDailyQuestsHud()">
+      <span id="daily-quests-title">Daily Quests · 0/4</span>
+      <span id="daily-quests-ready" class="daily-quests-ready" hidden>Reward ready</span>
+      <span id="daily-quests-toggle-icon" class="daily-quests-toggle-icon" aria-hidden="true">−</span>
+    </button>
+    <div id="daily-quests-body" class="daily-quests-body">
+      <div id="daily-quests-liste" class="daily-quests-liste"></div>
+      <div id="daily-quests-reward" class="daily-quests-reward"></div>
+    </div>
+  </aside>
+
+  <!-- The legacy Tutorial/Objectives dock remains intentionally hidden. -->
   <div id="panneau-objectifs" role="region" aria-labelledby="objectifs-titre">
     <div id="objectifs-entete">
       <h2 id="objectifs-titre" tabindex="0" role="button" data-clavier-clic="true" aria-label="Toggle tutorial guide" aria-expanded="true" aria-controls="objectifs-corps" onclick="toggleObjectifs()">Next step</h2>
-      <button id="objectifs-vue-toggle" type="button" onclick="event.stopPropagation(); toggleObjectifsVue()" aria-pressed="false" title="Show daily quests" style="display:none">Daily</button>
       <button id="objectifs-toggle" type="button" aria-expanded="true" aria-controls="objectifs-corps" onclick="event.stopPropagation(); toggleObjectifs()" title="Collapse guide">−</button>
     </div>
     <div id="objectifs-corps">
@@ -990,11 +980,6 @@
         </div>
         <div id="objectif-guide-liste" class="obj-guide-liste"></div>
         <div id="objectif-guide-secondaires" class="obj-guide-secondaires"></div>
-      </div>
-      <div id="objectifs-daily" class="objectifs-daily" style="display:none">
-        <div id="daily-quests-liste" class="daily-quests-liste"></div>
-        <div id="daily-quests-reward" class="daily-quests-reward"></div>
-        <div id="daily-quests-secondaires" class="obj-guide-secondaires"></div>
       </div>
     </div>
   </div>
@@ -1014,7 +999,7 @@
         <input type="file" id="import-fichier" accept=".txt" style="display:none" onchange="importerSauvegarde(event)">
         <div class="settings-separateur"></div>
         <div class="settings-audio-title">Interface</div>
-        <label class="settings-volume-row settings-theme-row">
+        <label class="settings-volume-row settings-theme-row" hidden>
           <span>Interface style</span>
           <select id="settings-ui-theme" aria-label="Interface style" onchange="gererThemeInterface(this.value)">
             <option value="basic">Basic</option>
@@ -1057,7 +1042,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0078</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0079</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1386,7 +1371,7 @@
   <script src="js/data/cat-faces.generated.js?v=0.0003"></script>
   <script src="js/data/content.js?v=0.0058"></script>
   <script src="js/data/perks.generated.js?v=0.0001"></script>
-  <script src="js/data/changelog.js?v=0.0078"></script>
+  <script src="js/data/changelog.js?v=0.0079"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
   <script src="js/data/cannelle-bargain.js?v=0.0001"></script>
   <script src="js/data/dialogues.js?v=0.0007"></script>

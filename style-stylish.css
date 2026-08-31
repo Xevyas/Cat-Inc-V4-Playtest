@@ -1,0 +1,108 @@
+/* Runtime UI V2 pilot: opt-in visual overrides for Gang only. */
+body[data-ui-theme="stylish"] #contenu-gang {
+  --stylish-paper-main: #f6f0e4;
+  --stylish-paper-card: #fffaf0;
+  --stylish-paper-callout: #fff7e8;
+  --stylish-ink: #3f3026;
+  --stylish-ink-muted: #756555;
+  --stylish-honey: #9f5e2a;
+  --stylish-sage: #56724f;
+  --stylish-blue: #566d7e;
+  --stylish-border: #a88765;
+  --stylish-paper-grain: url("img/interface/ui-paper-grain.png");
+  --stylish-pencil-edge: url("img/interface/ui-pencil-border.svg");
+  color: var(--stylish-ink);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-section-titre {
+  color: var(--stylish-ink-muted);
+  border-top-color: var(--stylish-border);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-carte {
+  background: var(--stylish-paper-card);
+  border-color: var(--stylish-border);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-carte:hover {
+  border-color: var(--stylish-honey);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-carte:focus-visible {
+  outline: 3px solid rgba(184, 111, 50, .38);
+  outline-offset: 2px;
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-carte-active {
+  background: #f2d7b2;
+  border-color: var(--stylish-honey);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-nom,
+body[data-ui-theme="stylish"] #contenu-gang .detail-nom,
+body[data-ui-theme="stylish"] #contenu-gang .detail-val,
+body[data-ui-theme="stylish"] #contenu-gang .xp-bonus-ligne {
+  color: var(--stylish-ink);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-metier,
+body[data-ui-theme="stylish"] #contenu-gang .detail-titre,
+body[data-ui-theme="stylish"] #contenu-gang .detail-section-titre {
+  color: var(--stylish-honey);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-niveau,
+body[data-ui-theme="stylish"] #contenu-gang .kitty-statut-free,
+body[data-ui-theme="stylish"] #contenu-gang .xp-val {
+  color: var(--stylish-sage);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .kitty-statut-work { color: var(--stylish-honey); }
+body[data-ui-theme="stylish"] #contenu-gang .kitty-statut-explo { color: var(--stylish-blue); }
+body[data-ui-theme="stylish"] #contenu-gang .kitty-statut-training { color: #8a651f; }
+
+body[data-ui-theme="stylish"] #contenu-gang .management-detail {
+  background: var(--stylish-paper-main);
+  border-color: var(--stylish-border);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .detail-gauche {
+  border-color: var(--stylish-border);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .detail-section {
+  background: var(--stylish-paper-callout);
+  border-color: var(--stylish-border);
+}
+
+/* One SVG contour replaces every native/overlay edge; tint stays CSS-owned. */
+body[data-ui-theme="stylish"] #contenu-gang .kitty-carte,
+body[data-ui-theme="stylish"] #contenu-gang .management-detail,
+body[data-ui-theme="stylish"] #contenu-gang .detail-section {
+  background-image: none;
+  border-color: transparent;
+  border-image-source: var(--stylish-pencil-edge);
+  border-image-slice: 14;
+  border-image-width: 14px;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+  box-shadow: none;
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .detail-titre,
+body[data-ui-theme="stylish"] #contenu-gang .detail-section-titre,
+body[data-ui-theme="stylish"] #contenu-gang .xp-section {
+  border-color: var(--stylish-border);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang .detail-label,
+body[data-ui-theme="stylish"] #contenu-gang .detail-catch-info,
+body[data-ui-theme="stylish"] #contenu-gang .xp-label {
+  color: var(--stylish-ink-muted);
+}
+
+body[data-ui-theme="stylish"] #contenu-gang button:focus-visible,
+body[data-ui-theme="stylish"] #contenu-gang [role="button"]:focus-visible {
+  outline: 3px solid rgba(184, 111, 50, .42);
+  outline-offset: 2px;
+}

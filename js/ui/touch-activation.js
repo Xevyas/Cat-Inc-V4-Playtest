@@ -12,6 +12,7 @@
     ".recruit-pitch-btn", "[data-touch-activation='manual']"
   ].join(",");
   const TAP_MOVE_TOLERANCE = 8;
+  const PAN_AWARE_TAP_MOVE_TOLERANCE = 16;
   const TAP_MAX_DURATION_MS = 450;
   const MAX_SUPPRESSION_RECORDS = 64;
   const MAX_LEDGER_RECORDS = 256;
@@ -91,6 +92,15 @@
     function allowsReflexRelease(rootAction) {
       return Boolean(rootAction && typeof rootAction.getAttribute === "function"
         && rootAction.getAttribute("data-touch-activation") === "reflex-release");
+    }
+
+    function movementTolerance(rootAction) {
+      if (allowsReflexRelease(rootAction)) return Infinity;
+      if (rootAction && typeof rootAction.getAttribute === "function"
+          && rootAction.getAttribute("data-touch-activation") === "pan-aware-release") {
+        return PAN_AWARE_TAP_MOVE_TOLERANCE;
+      }
+      return TAP_MOVE_TOLERANCE;
     }
 
     function eventTimestamp(event) {
@@ -424,9 +434,8 @@
       const pointerId = finitePointerId(event);
       const record = pointerId === null ? null : activeByPointer.get(pointerId);
       if (!record || record.kind !== "touch") return;
-      if (!allowsReflexRelease(record.root)
-          && Math.hypot((Number(event.clientX) || 0) - record.startX,
-            (Number(event.clientY) || 0) - record.startY) > TAP_MOVE_TOLERANCE) {
+      if (Math.hypot((Number(event.clientX) || 0) - record.startX,
+            (Number(event.clientY) || 0) - record.startY) > movementTolerance(record.root)) {
         invalidateRecord(record);
       }
     }
