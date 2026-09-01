@@ -924,6 +924,14 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0081Categories = Object.freeze([
+    Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Quality of Life", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Bug Fixes", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0078Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -959,7 +967,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0080",
+    baseVersion: "0.0081",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -972,6 +980,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0081",
+      date: "2026-09-01",
+      categories: release0081Categories
+    }),
     Object.freeze({
       version: "0.0080",
       date: "2026-09-01",
