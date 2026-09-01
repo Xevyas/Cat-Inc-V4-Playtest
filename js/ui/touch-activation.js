@@ -6,7 +6,10 @@
     "button", "a[href]", "summary", "[role='button']", "[role='menuitem']",
     "[role='tab']", "[data-clavier-clic]", "[onclick]", "[data-touch-activation-root]"
   ].join(",");
-  const EXTERNAL_TOUCH_SELECTOR = "#camp-prototype-items [data-camp-uid]";
+  const EXTERNAL_TOUCH_SELECTOR = [
+    "#camp-prototype-paths [data-camp-uid]",
+    "#camp-prototype-items [data-camp-uid]"
+  ].join(",");
   const MANUAL_CONTROL_SELECTOR = [
     "input", "select", "textarea", "[contenteditable='true']", "[role='slider']",
     ".recruit-pitch-btn", "[data-touch-activation='manual']"

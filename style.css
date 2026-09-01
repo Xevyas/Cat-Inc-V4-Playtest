@@ -4580,7 +4580,10 @@ body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
   width: 100%;
   aspect-ratio: 3 / 2;
   margin: 0;
-  overflow: hidden;
+  /* The map wrapper still crops undiscovered horizontal property columns.
+     Keep the logical board open so groundingBounds may continue into the
+     separate shoreline band without changing placement or grid geometry. */
+  overflow: visible;
   border: 2px solid #705a3d;
   border-bottom: 0;
   border-radius: 12px 12px 0 0;
@@ -4643,9 +4646,11 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   outline-offset: -4px;
 }
 .camp-prototype-environment,
+.camp-prototype-ground,
 .camp-prototype-territory-zones,
 .camp-prototype-terrain,
 .camp-prototype-grid,
+.camp-prototype-paths,
 .camp-prototype-grounding,
 .camp-prototype-items,
 .camp-task-ui-layer,
@@ -4655,9 +4660,45 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   inset: 0;
 }
 .camp-prototype-environment {
-  z-index: 0;
+  z-index: 1;
   overflow: hidden;
   pointer-events: none;
+}
+.camp-prototype-ground {
+  z-index: 0;
+  overflow: visible;
+  /* One terrain surface continues behind the complete historical river band.
+     Side/top marks remain clipped to the Camp while the environment's real
+     irregular bank silhouette covers the lower extension. */
+  clip-path: inset(0 0 -24% 0);
+  pointer-events: none;
+}
+.camp-prototype-ground-base,
+.camp-prototype-ground-override,
+.camp-prototype-ground-detail {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+.camp-prototype-ground-base,
+.camp-prototype-ground-override {
+  background-color: #b9d982;
+  background-repeat: repeat;
+  background-size: 72% auto;
+}
+.camp-prototype-ground-base {
+  background-position: center top;
+  /* Owner QA: every player-visible base motif is 25% smaller than the prior
+     72% rendering while retaining the same seamless approved source. */
+  background-size: 54% auto;
+}
+.camp-prototype-ground-override { background-position: center; }
+.camp-prototype-ground-detail {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.28;
+  transform-origin: center;
 }
 .camp-prototype-houses,
 .camp-prototype-gardens,
@@ -5058,6 +5099,8 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   background: transparent;
 }
 .camp-prototype-river-segments {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -5953,7 +5996,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   box-shadow: none;
 }
 .camp-prototype-terrain {
-  z-index: 3;
+  z-index: 4;
   pointer-events: none;
 }
 .camp-prototype-terrain-cleared {
@@ -6136,6 +6179,15 @@ body.camp-prototype-editing .camp-prototype-obstacle {
 }
 .camp-prototype-items {
   z-index: 4;
+  pointer-events: none;
+}
+.camp-prototype-paths {
+  z-index: 2;
+  pointer-events: none;
+}
+.camp-prototype-path-joins {
+  position: absolute;
+  overflow: visible;
   pointer-events: none;
 }
 .camp-prototype-grounding {
@@ -6554,7 +6606,6 @@ body.camp-prototype-editing .camp-location-cats {
 .camp-prototype-color-junk { --camp-prototype-color: #8da269; }
 .camp-prototype-color-dev-visual { --camp-prototype-color: #8c79bd; }
 .camp-prototype-road {
-  z-index: 2;
   padding: 0;
   overflow: visible;
   border: none;
@@ -14553,10 +14604,7 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   border-radius: 12px;
 }
 .camp-prototype-board {
-  background-color: #b9d86a;
-  background-image: url("img/Maps/Camp%20Runtime/Environment/Camp_Grass_Texture_Game_v1.webp?v=0.0001");
-  background-repeat: repeat;
-  background-size: 38% auto;
+  background-color: #a9c978;
 }
 .camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-board,
 .camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-river-band {

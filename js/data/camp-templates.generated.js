@@ -20,6 +20,44 @@
         "height": 12,
         "houseDecorHeight": 4
       },
+      "defaultTerrainTypeId": "grass",
+      "terrainTypes": [
+        {
+          "id": "grass",
+          "label": "Stylized Grass",
+          "variantSalt": 2179038169,
+          "baseTile": {
+            "id": "grassV1Base",
+            "path": "img/Maps/Camp Runtime/Terrain/grass/base.png"
+          },
+          "detailOverlays": [
+            {
+              "id": "grassV1DetailA",
+              "path": "img/Maps/Camp Runtime/Terrain/grass/detail-1.png"
+            },
+            {
+              "id": "grassV1DetailB",
+              "path": "img/Maps/Camp Runtime/Terrain/grass/detail-2.png"
+            },
+            {
+              "id": "grassV1DetailC",
+              "path": "img/Maps/Camp Runtime/Terrain/grass/detail-3.png"
+            },
+            {
+              "id": "grassV1DetailD",
+              "path": "img/Maps/Camp Runtime/Terrain/grass/detail-4.png"
+            },
+            {
+              "id": "grassV1DetailE",
+              "path": "img/Maps/Camp Runtime/Terrain/grass/detail-5.png"
+            },
+            {
+              "id": "grassV1DetailF",
+              "path": "img/Maps/Camp Runtime/Terrain/grass/detail-6.png"
+            }
+          ]
+        }
+      ],
       "initialBuildableRect": {
         "x": 6,
         "y": 4,

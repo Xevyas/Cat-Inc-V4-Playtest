@@ -1070,7 +1070,7 @@ function normaliserOccupationsChatons() {
       changed = true;
     }
   });
-  if (etat.perkLearningEnCours && !claim(etat.perkLearningEnCours.kittyIndex)) {
+  if (etat.perkLearningEnCours && !claim(etat.perkLearningEnCours.kittyIndex, true)) {
     etat.perkLearningEnCours = null;
     changed = true;
   }
@@ -6271,10 +6271,13 @@ function renduAdvancedTraining() {
 function renduSphereGrid(jobId) {
   var containerEl = document.getElementById('sphere-grid-container');
   if (!containerEl) return;
-  _sphereGridJob      = jobId;
-  _sphereSelectionnee = null;
+  _sphereGridJob = jobId;
 
   var canonicalNodes = perkNodesV2PourJob(jobId);
+  var selectionPreservee = canonicalNodes.some(function(node) {
+    return node.id === _sphereSelectionnee;
+  }) ? _sphereSelectionnee : null;
+  _sphereSelectionnee = selectionPreservee;
   if (!canonicalNodes.length) { containerEl.innerHTML = ''; return; }
   var def = {
     spheres: canonicalNodes.map(function(node) {
@@ -6381,6 +6384,10 @@ function renduSphereGrid(jobId) {
     + '<div class="sphere-detail-nom" id="sphere-detail-nom">Select a perk to see its description.</div>'
     + '<div class="sphere-detail-desc" id="sphere-detail-desc"></div>'
     + '</div>';
+  if (selectionPreservee) {
+    _sphereSelectionnee = null;
+    clickerSphere(selectionPreservee);
+  }
 }
 
 function clickerSphere(sphereId) {
@@ -14342,7 +14349,10 @@ function synchroniserEtatCampDepuisPrototype() {
   const terrain = campPrototypeApi.normaliserTerrain(campPrototypeTerrain);
   camp.terrain = {
     claimedZoneIds: terrain.claimedZoneIds.slice(),
-    clearedCells: terrain.clearedCells.slice()
+    clearedCells: terrain.clearedCells.slice(),
+    terrainTypeOverrides: terrain.terrainTypeOverrides.map(function(override) {
+      return Object.assign({}, override);
+    })
   };
   camp.demolitions = campPrototypeDemolitionsActives().map(function(demolition) {
     return Object.assign({}, demolition);
@@ -16945,12 +16955,14 @@ function assetCampPrototypePourRotation(type, rotation, functionalTier) {
 }
 
 function groundingCampPrototypePourRotation(type, rotation, functionalTier) {
-  if (!type || type.category === "junk" || type.canonicalOrientation === "down") return "";
-  const direction = {
-    0: "down", 90: "right", 180: "up", 270: "left"
-  }[campPrototypeApi.normaliserRotation(rotation)];
+  if (!type) return "";
+  const direction = type.category === "junk" || type.canonicalOrientation === "down"
+    ? "down"
+    : {
+      0: "down", 90: "right", 180: "up", 270: "left"
+    }[campPrototypeApi.normaliserRotation(rotation)];
   const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
-    type.id,
+    type.runtimeAssetId || type.id,
     Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
   );
   return runtimeVisual && direction && runtimeVisual.groundingSprites
@@ -16964,7 +16976,7 @@ function boundsGroundingCampPrototypePourRotation(type, rotation, functionalTier
     0: "down", 90: "right", 180: "up", 270: "left"
   }[campPrototypeApi.normaliserRotation(rotation)];
   const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
-    type.id,
+    type.runtimeAssetId || type.id,
     Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
   );
   return runtimeVisual && runtimeVisual.groundingBounds && direction
@@ -17150,8 +17162,9 @@ function ajouterCellulesHitCampPrototype(element, item, functionalTier, rotation
 }
 
 function ajouterRaccordsRouteBatimentCampPrototype(element, layout, item, type) {
-  if (!element || !item || !type || !accesCampPrototype(type, item.tier || 1)) return;
-  campPrototypeApi.raccordsRouteItem(layout, item).forEach(function(raccord) {
+  if (!element || !item || !type || !accesCampPrototype(type, item.tier || 1)) return 0;
+  const raccords = campPrototypeApi.raccordsRouteItem(layout, item);
+  raccords.forEach(function(raccord) {
     const connecteur = document.createElement("i");
     connecteur.className = "camp-prototype-building-road-connector "
       + "camp-prototype-building-road-connector-" + raccord.direction;
@@ -17200,6 +17213,7 @@ function ajouterRaccordsRouteBatimentCampPrototype(element, layout, item, type) 
     }
     element.insertBefore(connecteur, element.firstChild);
   });
+  return raccords.length;
 }
 
 function fermerMenuInteractionCampPrototype() {
@@ -21345,9 +21359,11 @@ function actualiserCloturesCampPrototype(zonesConquises) {
 
 function rendreTerrainCampPrototype(presencesCamp) {
   const zones = document.getElementById("camp-prototype-territory-zones");
+  const ground = document.getElementById("camp-prototype-ground");
   const terrain = document.getElementById("camp-prototype-terrain");
-  if (!zones || !terrain) return;
+  if (!zones || !ground || !terrain) return;
   zones.innerHTML = "";
+  ground.innerHTML = "";
   terrain.innerHTML = "";
   const presences = presencesCamp || indexerPresencesChatsCamp();
   const zonesConquises = new Set(campPrototypeTerrain.claimedZoneIds);
@@ -21356,6 +21372,45 @@ function rendreTerrainCampPrototype(presencesCamp) {
   const explorationParJardin = { redGarden: "C1", greenGarden: "E1" };
   const firstGroundRewardAnchor = firstGroundRewardGuidanceAnchor();
   actualiserCloturesCampPrototype(zonesConquises);
+  const defaultTerrainType = campPrototypeApi.TERRAIN_TYPES[campPrototypeApi.DEFAULT_TERRAIN_TYPE_ID];
+  if (defaultTerrainType) {
+    const base = document.createElement("span");
+    base.className = "camp-prototype-ground-base";
+    base.dataset.campTerrainType = defaultTerrainType.id;
+    base.style.backgroundImage = 'url("' + defaultTerrainType.baseTile.path + '")';
+    appliquerCadreTerrainCampPrototype(
+      base, 0, 0, campPrototypeApi.GRID_WIDTH, campPrototypeApi.GRID_HEIGHT + 2.8125
+    );
+    ground.appendChild(base);
+  }
+  for (let y = 0; y < campPrototypeApi.GRID_HEIGHT; y += 1) {
+    for (let x = 0; x < campPrototypeApi.GRID_WIDTH; x += 1) {
+      const editable = y >= campPrototypeApi.HOUSE_DECOR_HEIGHT;
+      const visual = editable
+        ? campPrototypeApi.terrainVisuelPourCellule(campPrototypeTerrain, x, y)
+        : campPrototypeApi.terrainVisuelPourType(defaultTerrainType.id, x, y);
+      if (!visual) continue;
+      if (editable && visual.terrainTypeId !== defaultTerrainType.id) {
+        const override = document.createElement("span");
+        override.className = "camp-prototype-ground-override";
+        override.dataset.campTerrainType = visual.terrainTypeId;
+        override.style.backgroundImage = 'url("' + visual.baseTile.path + '")';
+        appliquerCadreTerrainCampPrototype(override, x, y, 1, 1);
+        ground.appendChild(override);
+      }
+      if (!visual.detailOverlay) continue;
+      const detail = document.createElement("span");
+      detail.className = "camp-prototype-ground-detail";
+      detail.dataset.campTerrainType = visual.terrainTypeId;
+      detail.dataset.campTerrainDetail = visual.detailOverlay.id;
+      detail.style.backgroundImage = 'url("' + visual.detailOverlay.path + '")';
+      detail.style.transform = "rotate(" + visual.detailRotation + "deg) scale(" + visual.detailScale + ")";
+      appliquerCadreTerrainCampPrototype(
+        detail, visual.detailFrameX, visual.detailFrameY, 1.4, 1.4
+      );
+      ground.appendChild(detail);
+    }
+  }
   Object.keys(campPrototypeApi.TERRITORY_ZONES).forEach(function(zoneId) {
     const zone = campPrototypeApi.TERRITORY_ZONES[zoneId];
     const conquise = zonesConquises.has(zoneId);
@@ -22297,6 +22352,7 @@ function configurerDeclencheurPanneauCamp(bouton, popupRole, controlsId) {
 
 function rendreItemsCampPrototype(presencesCamp) {
   const conteneur = document.getElementById("camp-prototype-items");
+  const cheminsConteneur = document.getElementById("camp-prototype-paths");
   const groundingConteneur = document.getElementById("camp-prototype-grounding");
   const statutsConnexion = document.getElementById("camp-prototype-connectivity-statuses");
   if (!conteneur) return;
@@ -22305,6 +22361,7 @@ function rendreItemsCampPrototype(presencesCamp) {
   // its floating action. Keep that menu alive; Edit mode never exposes it.
   if (campPrototypeModeEdition) fermerMenuInteractionCampPrototype();
   conteneur.innerHTML = "";
+  if (cheminsConteneur) cheminsConteneur.innerHTML = "";
   if (groundingConteneur) groundingConteneur.innerHTML = "";
   if (statutsConnexion) statutsConnexion.innerHTML = "";
   const contexteConnexions = contexteConnexionsAfficheesCampPrototype();
@@ -22316,6 +22373,15 @@ function rendreItemsCampPrototype(presencesCamp) {
     entreeCampBloquee
   );
   const connexionsParItem = contexteConnexions.evaluation.byItem;
+  if (groundingConteneur) {
+    campPrototypeApi.obstaclesTerrain(campPrototypeTerrain).forEach(function(obstacle) {
+      const type = typeCampPrototype(obstacle.runtimeAssetId);
+      if (!type) return;
+      ajouterGroundingCampPrototype(
+        groundingConteneur, type, obstacle.x, obstacle.y, 0, 1
+      );
+    });
+  }
   campPrototypeLayout.forEach(function(item) {
     const type = typeCampPrototype(item.type);
     if (!type) return;
@@ -22471,19 +22537,28 @@ function rendreItemsCampPrototype(presencesCamp) {
         visualBadge.textContent = "Visual only";
         bouton.appendChild(visualBadge);
       }
-      ajouterRaccordsRouteBatimentCampPrototype(
-        bouton,
-        contexteConnexions.layout,
-        {
-          uid: item.uid,
-          type: item.type,
-          tier: tierAffiche,
-          x: xAffiche,
-          y: yAffiche,
-          rotation: rotationAffiche
-        },
-        type
-      );
+      if (cheminsConteneur) {
+        const raccordsConteneur = document.createElement("div");
+        raccordsConteneur.className = "camp-prototype-path-joins";
+        raccordsConteneur.setAttribute("aria-hidden", "true");
+        appliquerCadreCampPrototype(
+          raccordsConteneur, type, xAffiche, yAffiche, rotationAffiche, tierAffiche
+        );
+        const nombreRaccords = ajouterRaccordsRouteBatimentCampPrototype(
+          raccordsConteneur,
+          contexteConnexions.layout,
+          {
+            uid: item.uid,
+            type: item.type,
+            tier: tierAffiche,
+            x: xAffiche,
+            y: yAffiche,
+            rotation: rotationAffiche
+          },
+          type
+        );
+        if (nombreRaccords > 0) cheminsConteneur.appendChild(raccordsConteneur);
+      }
       if ((item.tier || 1) > 1) {
         const tierBadge = document.createElement("span");
         tierBadge.className = "camp-building-tier-badge";
@@ -22503,7 +22578,9 @@ function rendreItemsCampPrototype(presencesCamp) {
       (presences.byItem[item.uid] || []).concat(presences.byType[item.type] || [])
     );
     appliquerCadreCampPrototype(bouton, type, xAffiche, yAffiche, rotationAffiche, tierAffiche);
-    conteneur.appendChild(bouton);
+    const conteneurMonde = type.category === "road" && cheminsConteneur
+      ? cheminsConteneur : conteneur;
+    conteneurMonde.appendChild(bouton);
     if (doitEtreRepare && reparationCampDebloquee(type.id)
         && !reparationBatiment && !campPrototypeModeEdition
         && itemAccessiblePourReparationCamp(item)) {

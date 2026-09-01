@@ -16,6 +16,19 @@
   const GRID_WIDTH = ACTIVE_CAMP_TEMPLATE.grid.width;
   const GRID_HEIGHT = ACTIVE_CAMP_TEMPLATE.grid.height;
   const HOUSE_DECOR_HEIGHT = ACTIVE_CAMP_TEMPLATE.grid.houseDecorHeight;
+  const TERRAIN_DETAIL_FRAME_SIZE = 1.4;
+  const TERRAIN_DETAIL_FRAME_INSET = 0.2;
+  const DEFAULT_TERRAIN_TYPE_ID = ACTIVE_CAMP_TEMPLATE.defaultTerrainTypeId;
+  const TERRAIN_TYPES = Object.freeze((ACTIVE_CAMP_TEMPLATE.terrainTypes || []).reduce(function(index, type) {
+    if (type && typeof type.id === "string" && type.baseTile
+        && Array.isArray(type.detailOverlays) && type.detailOverlays.length > 0) {
+      index[type.id] = type;
+    }
+    return index;
+  }, {}));
+  if (!TERRAIN_TYPES[DEFAULT_TERRAIN_TYPE_ID]) {
+    throw new Error("The active Camp template must declare its default terrain type.");
+  }
   const OBSTACLE_ASSET_ROOT = "img/Maps/Camp%20Runtime/Obstacles/";
   const RUNTIME_MANIFEST = CatInc.data && CatInc.data.campAssets
     ? CatInc.data.campAssets
@@ -316,6 +329,7 @@
       gameplay: revision.gameplay || fallback.gameplay,
       stickerSlot: normaliserStickerSlot(revision.stickerSlot || fallback.stickerSlot),
       canonicalOrientation: family && family.category === "junk" ? "down" : "",
+      runtimeAssetId: typeId,
       runtimeTier: revision.tier,
       runtimeRevision: revision.revision,
       runtimeStatus: revision.status
@@ -871,9 +885,10 @@
   }, 0);
   function runtimeObstacle(runtimeTypeId, fallback) {
     const revision = runtimeRevision(runtimeTypeId, 1);
-    if (!revision) return Object.freeze(fallback);
+    if (!revision) return Object.freeze({...fallback, runtimeAssetId: runtimeTypeId});
     return Object.freeze({
       ...fallback,
+      runtimeAssetId: runtimeTypeId,
       label: revision.name || fallback.label,
       width: revision.width,
       height: revision.height,
@@ -905,6 +920,7 @@
       const gameplay = revision.gameplay || {};
       items.push(Object.freeze({
         id: family.assetId || runtimeId,
+        runtimeAssetId: runtimeId,
         label: revision.name || family.name || family.assetId || runtimeId,
         width: revision.width,
         height: revision.height,
@@ -1007,6 +1023,88 @@
     return entier(x) + ":" + entier(y);
   }
 
+  function terrainType(typeId) {
+    return TERRAIN_TYPES[typeId] || TERRAIN_TYPES[DEFAULT_TERRAIN_TYPE_ID];
+  }
+
+  function hashTerrain(type, x, y, channel) {
+    let hash = (Number(type.variantSalt) >>> 0) ^ Math.imul((entier(channel) || 0) + 1, 0x27d4eb2d)
+      ^ Math.imul(entier(x) + 1, 0x9e3779b1)
+      ^ Math.imul(entier(y) + 1, 0x85ebca77);
+    hash ^= hash >>> 16;
+    hash = Math.imul(hash, 0x7feb352d);
+    hash ^= hash >>> 15;
+    hash = Math.imul(hash, 0x846ca68b);
+    hash ^= hash >>> 16;
+    return hash >>> 0;
+  }
+
+  function terrainTypeIdPourCellule(terrain, x, y) {
+    if (!zoneTerrainPourCellule(x, y)) return null;
+    const key = cleCellule(x, y);
+    const overrides = terrain && Array.isArray(terrain.terrainTypeOverrides)
+      ? terrain.terrainTypeOverrides : [];
+    const override = overrides.find(function(candidate) {
+      return candidate && candidate.cell === key && TERRAIN_TYPES[candidate.terrainTypeId];
+    });
+    return override ? override.terrainTypeId : DEFAULT_TERRAIN_TYPE_ID;
+  }
+
+  function cellulePorteDetailTerrain(type, x, y) {
+    const blockX = Math.floor(entier(x) / 2);
+    const blockY = Math.floor(entier(y) / 2);
+    const localX = ((entier(x) % 2) + 2) % 2;
+    const localY = ((entier(y) % 2) + 2) % 2;
+    const localIndex = localY * 2 + localX;
+    const primary = hashTerrain(type, blockX, blockY, 6) % 4;
+    if (localIndex === primary) return true;
+    // Every 2 x 2 world block owns one full tuft, with a bounded second tuft
+    // in roughly one block out of three. This removes large empty pockets
+    // without allowing dense local clusters or a repeated cell ordering.
+    if (hashTerrain(type, blockX, blockY, 7) % 3 !== 0) return false;
+    const secondary = (primary + 1 + (hashTerrain(type, blockX, blockY, 8) % 3)) % 4;
+    return localIndex === secondary;
+  }
+
+  function terrainVisuelPourType(typeId, x, y) {
+    const type = terrainType(typeId);
+    const overlays = type.detailOverlays;
+    const detail = cellulePorteDetailTerrain(type, x, y)
+      ? overlays[hashTerrain(type, x, y, 1) % overlays.length]
+      : null;
+    const detailOffsetX = ((hashTerrain(type, x, y, 2) % 61) - 30) / 100;
+    const detailOffsetY = ((hashTerrain(type, x, y, 3) % 61) - 30) / 100;
+    // Only permanent world boundaries constrain authored terrain details.
+    // Player content is deliberately absent: Paths and placeables simply
+    // occlude the stable detail in the normal layer order.
+    const detailFrameX = Math.max(0, Math.min(
+      GRID_WIDTH - TERRAIN_DETAIL_FRAME_SIZE,
+      x - TERRAIN_DETAIL_FRAME_INSET + detailOffsetX
+    ));
+    const detailFrameY = Math.max(0, Math.min(
+      GRID_HEIGHT - TERRAIN_DETAIL_FRAME_SIZE,
+      y - TERRAIN_DETAIL_FRAME_INSET + detailOffsetY
+    ));
+    return Object.freeze({
+      terrainTypeId: type.id,
+      baseTile: type.baseTile,
+      detailOverlay: detail,
+      detailOffsetX: detailOffsetX,
+      detailOffsetY: detailOffsetY,
+      detailFrameX: detailFrameX,
+      detailFrameY: detailFrameY,
+      detailRotation: (hashTerrain(type, x, y, 4) % 31) - 15,
+      // Owner QA: keep the approved complete sprites but render them exactly
+      // 30% smaller than the preceding integrated pass (0.75 * 0.70).
+      detailScale: (0.78 + (hashTerrain(type, x, y, 5) % 31) / 100) * 0.525
+    });
+  }
+
+  function terrainVisuelPourCellule(terrain, x, y) {
+    const typeId = terrainTypeIdPourCellule(terrain, x, y);
+    return typeId ? terrainVisuelPourType(typeId, x, y) : null;
+  }
+
   function lireCleCellule(value) {
     if (typeof value !== "string" || !/^\d+:\d+$/.test(value)) return null;
     const parties = value.split(":");
@@ -1067,6 +1165,7 @@
         minCatLevel: type.minCatLevel,
         durationSeconds: type.durationSeconds,
         requiredCats: type.requiredCats || 1,
+        runtimeAssetId: type.runtimeAssetId || "",
         reward: definition.reward ? Object.freeze({...definition.reward}) : null,
         asset: type.asset,
         zoneId: definition.zoneId,
@@ -1091,7 +1190,8 @@
     return {
       version: ACTIVE_CAMP_TEMPLATE.terrainVersion,
       claimedZoneIds: ACTIVE_CAMP_TEMPLATE.zones.filter(function(zone) { return zone.initial; }).map(function(zone) { return zone.id; }),
-      clearedCells: INITIAL_CLEARED_CELLS.slice()
+      clearedCells: INITIAL_CLEARED_CELLS.slice(),
+      terrainTypeOverrides: []
     };
   }
 
@@ -1118,6 +1218,18 @@
         cellulesLibres.add(cleCellule(cellule.x, cellule.y));
       });
     });
+    const terrainTypeOverrides = new Map();
+    if (Array.isArray(source.terrainTypeOverrides)) {
+      source.terrainTypeOverrides.forEach(function(override) {
+        if (!override || typeof override !== "object") return;
+        const cell = lireCleCellule(override.cell);
+        const typeId = typeof override.terrainTypeId === "string" ? override.terrainTypeId : "";
+        if (!cell || !zoneTerrainPourCellule(cell.x, cell.y) || !TERRAIN_TYPES[typeId]) return;
+        const key = cleCellule(cell.x, cell.y);
+        if (typeId === DEFAULT_TERRAIN_TYPE_ID) terrainTypeOverrides.delete(key);
+        else terrainTypeOverrides.set(key, {cell: key, terrainTypeId: typeId});
+      });
+    }
     return {
       version: ACTIVE_CAMP_TEMPLATE.terrainVersion,
       claimedZoneIds: Object.keys(TERRITORY_ZONES).filter(function(zoneId) {
@@ -1127,8 +1239,29 @@
         const celluleA = lireCleCellule(a);
         const celluleB = lireCleCellule(b);
         return celluleA.y - celluleB.y || celluleA.x - celluleB.x;
+      }),
+      terrainTypeOverrides: Array.from(terrainTypeOverrides.values()).sort(function(a, b) {
+        const celluleA = lireCleCellule(a.cell);
+        const celluleB = lireCleCellule(b.cell);
+        return celluleA.y - celluleB.y || celluleA.x - celluleB.x;
       })
     };
+  }
+
+  function remplacerTerrainCellule(terrain, x, y, typeId) {
+    const cell = zoneTerrainPourCellule(x, y) ? cleCellule(x, y) : "";
+    if (!cell || !TERRAIN_TYPES[typeId]) {
+      return {valide: false, raison: "Unknown terrain cell or type.", terrain: normaliserTerrain(terrain)};
+    }
+    const normalise = normaliserTerrain(terrain);
+    const overrides = normalise.terrainTypeOverrides.filter(function(candidate) {
+      return candidate.cell !== cell;
+    });
+    if (typeId !== DEFAULT_TERRAIN_TYPE_ID) {
+      overrides.push({cell: cell, terrainTypeId: typeId});
+    }
+    normalise.terrainTypeOverrides = overrides;
+    return {valide: true, raison: "", terrain: normaliserTerrain(normalise)};
   }
 
   function estZoneConquise(terrain, zoneId) {
@@ -1276,7 +1409,8 @@
     });
     return normaliserTerrain({
       claimedZoneIds: Array.from(zonesConquises),
-      clearedCells: Array.from(cellulesLibres)
+      clearedCells: Array.from(cellulesLibres),
+      terrainTypeOverrides: normalise.terrainTypeOverrides
     });
   }
 
@@ -1896,6 +2030,8 @@
     GRID_HEIGHT: GRID_HEIGHT,
     HOUSE_DECOR_HEIGHT: HOUSE_DECOR_HEIGHT,
     TERRAIN_CELL_COUNT: TERRAIN_CELL_COUNT,
+    DEFAULT_TERRAIN_TYPE_ID: DEFAULT_TERRAIN_TYPE_ID,
+    TERRAIN_TYPES: TERRAIN_TYPES,
     ITEM_TYPES: ITEM_TYPES,
     FENCE_TYPES: FENCE_TYPES,
     STICKER_CATALOG: STICKER_CATALOG,
@@ -1914,9 +2050,15 @@
     OBSTACLE_TYPES: OBSTACLE_TYPES,
     OBSTACLE_LAYOUT: OBSTACLE_LAYOUT,
     DEMOLITION_BASE_DURATION_SECONDS: DEMOLITION_BASE_DURATION_SECONDS,
+    DEFAULT_TERRAIN_TYPE_ID: DEFAULT_TERRAIN_TYPE_ID,
+    TERRAIN_TYPES: TERRAIN_TYPES,
     normaliserRotation: normaliserRotation,
     celluleDansGrille: celluleDansGrille,
     cleCellule: cleCellule,
+    terrainTypeIdPourCellule: terrainTypeIdPourCellule,
+    terrainVisuelPourType: terrainVisuelPourType,
+    terrainVisuelPourCellule: terrainVisuelPourCellule,
+    remplacerTerrainCellule: remplacerTerrainCellule,
     zoneTerrainPourCellule: zoneTerrainPourCellule,
     cellulesRectangle: cellulesRectangle,
     aretesLigne: aretesLigne,
