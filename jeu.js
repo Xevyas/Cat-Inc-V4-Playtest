@@ -10480,15 +10480,13 @@ function renduModalJC() {
     }
   } else if (jcModalOuvert.mode === "spec") {
     if (titreEl) titreEl.textContent = "🎓 Select a cat to specialize";
-    const avecMetier = etat.kittiesData.reduce(function(acc, k, i) {
-      if (k.metier !== null && kittyEligiblePourAffectationOrdinaire(k)) acc.push(i);
-      return acc;
-    }, []);
+    const avecMetier = advancedTrainingKitties();
     if (avecMetier.length === 0) {
       html = '<p class="jc-modal-vide">No cats have a job yet.</p>';
     } else {
-      avecMetier.forEach(function(idx) {
-        const k = etat.kittiesData[idx];
+      avecMetier.forEach(function(entry) {
+        const idx = entry.i;
+        const k = entry.k;
         const m = METIERS[k.metier];
         const _mlvl = jobLevelInfo(k.metier);
         html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
@@ -10519,8 +10517,8 @@ function selectionnerKittyFormation(kittyIndex) {
 }
 
 function selectionnerTrainingCat(kittyIndex) {
-  const kitty = etat.kittiesData[kittyIndex];
-  if (!kitty || !kitty.metier || !METIERS[kitty.metier]) return;
+  const selection = advancedTrainingKitties().find(function(entry) { return entry.i === kittyIndex; });
+  if (!selection) return;
   tcSpecKittySelectionne = kittyIndex;
   _tcKey = null;
   renduAdvancedTraining();
