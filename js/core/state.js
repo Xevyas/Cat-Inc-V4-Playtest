@@ -83,6 +83,8 @@ function creerEtatInitial() {
   cannelleTokens:       0,
   cannelleBargainNextAt: 0,
   cannelleBargainRulesSeen: false,
+  boostInventory:       {},
+  shortcutMapFinTs:     0,
   perksV2:              { version: 2, learned: [] },
   perkLearningEnCours:  null,   // { perkId, kittyIndex, jobId, startTs, duree, costs } in ms
   workBoostFinTs:       0,

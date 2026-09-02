@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0170" />
+  <link rel="stylesheet" href="style.css?v=0.0171" />
   <link rel="stylesheet" href="style-stylish.css?v=0.0001" />
   <style>
     /* First-paint guard: only the gardens are fogged. Houses and river remain
@@ -390,6 +390,7 @@
   <section class="ressources" aria-label="Resources">
     <div class="ressources-fixes">
       <button id="bird-debug-btn" onclick="montrerOiseau()" title="[DEV] Force bird spawn" aria-label="Force a bird spawn for testing" class="bird-debug-btn"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
+      <button id="purrsuasion-v2-debug-btn" type="button" onclick="ouvrirPurrsuasionV2Setup()" title="[DEV] Open Purrsuasion V2 POC" aria-label="Open Purrsuasion V2 proof of concept" class="purrsuasion-v2-debug-btn" style="display:none">P2</button>
     </div>
     <div class="ressources-liste" id="ressources-liste">
     <div class="ressource" id="row-cardboard-planks" data-resource-key="cardboardPlanks" data-family="wood" data-tooltip="Cardboard Planks" data-tier="T1" style="display:none">
@@ -484,8 +485,8 @@
             <small id="camp-profile-name-status" role="status" aria-live="polite"></small>
           </form>
         </div>
-        <div class="camp-profile-stats" aria-label="Current Camp statistics">
-          <span><small>Camp Level</small><strong id="camp-profile-panel-level">0</strong></span>
+        <div id="camp-profile-stats" class="camp-profile-stats" aria-label="Current Camp statistics">
+          <span id="camp-profile-panel-level-wrap"><small>Camp Level</small><strong id="camp-profile-panel-level">0</strong></span>
           <span id="camp-profile-panel-cats-wrap">
             <button id="camp-housing-summary" class="camp-profile-stat-action" type="button" aria-label="Show Housing Capacity details" aria-expanded="false" aria-controls="camp-housing-details" onclick="toggleDetailsHousingCamp(event)">?</button>
             <small>Cats / Capacity</small><strong id="camp-profile-panel-cats">0 / 4</strong>
@@ -497,7 +498,7 @@
             <span id="camp-appeal-details" class="camp-appeal-details" role="region" aria-label="Appeal details" hidden></span>
           </span>
         </div>
-        <div class="camp-profile-progress">
+        <div id="camp-profile-progress" class="camp-profile-progress">
           <span class="camp-level-xp"><b>Camp XP</b><em id="camp-profile-panel-xp">0 / 10</em></span>
           <span id="camp-profile-panel-progress" class="camp-level-progress" role="progressbar" aria-label="Camp XP toward the next level" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><i></i></span>
           <span class="camp-profile-bonus">Current Level bonus <strong id="camp-profile-panel-bonus">Appeal +0</strong></span>
@@ -665,8 +666,8 @@
           <div id="camp-task-ui-layer" class="camp-task-ui-layer" aria-hidden="true"></div>
           <button id="bird-btn" class="camp-bird-perch" type="button" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
            <div class="camp-prototype-neighbor-fog" aria-hidden="true">
-             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-red" data-camp-fog-zone="redGarden"></span>
-             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"></span>
+             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-red" data-camp-fog-zone="redGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
+             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
            </div>
            <div id="camp-prototype-fences" class="camp-prototype-fences" aria-hidden="true"></div>
            <span class="camp-recruit-arrival-control">
@@ -833,6 +834,13 @@
         <h2 class="panneau-titre panneau-titre-aide">Items <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Items" aria-expanded="false" aria-controls="items-help" onclick="togglePanneauAide(event)">?</button><span id="items-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Guides and discoveries that unlock new possibilities.</span></span></h2>
         <div id="inv-liste-items">
           <p class="inv-vide">Your backpack is empty.</p>
+        </div>
+      </section>
+
+      <section class="panneau" id="section-boosts">
+        <h2 class="panneau-titre">Boosts</h2>
+        <div id="inv-liste-boosts">
+          <p class="inv-vide">No boosts yet.</p>
         </div>
       </section>
 
@@ -1044,7 +1052,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0079</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong id="settings-game-version"></strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1335,6 +1343,70 @@
     </div>
   </div>
 
+  <!-- DEBUG-ONLY PURRSUASION V2 PROOF OF CONCEPT -->
+  <div id="purrsuasion-v2-setup" class="bird-minijeu-overlay purrsuasion-v2-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="purrsuasion-v2-setup-title" style="display:none">
+    <div class="purrsuasion-v2-card purrsuasion-v2-setup-card" role="document" tabindex="-1">
+      <span class="reflex-game-tag">DEBUG POC · NO SAVE</span>
+      <h3 id="purrsuasion-v2-setup-title">Purrsuasion V2</h3>
+      <p>Choose the incoming Cat to simulate. Three conversations decide whether Bernardo wins them over.</p>
+      <label class="purrsuasion-v2-cat-picker" for="purrsuasion-v2-cat-select">Incoming Cat
+        <select id="purrsuasion-v2-cat-select" onchange="mettreAJourPurrsuasionV2Setup()"></select>
+      </label>
+      <div class="purrsuasion-v2-difficulty-heading">
+        <strong id="purrsuasion-v2-difficulty-label">Difficulty 1</strong>
+        <button id="purrsuasion-v2-help-btn" class="purrsuasion-v2-help" type="button" aria-expanded="false" aria-controls="purrsuasion-v2-difficulty-panel" onclick="basculerAidePurrsuasionV2()">?</button>
+      </div>
+      <div id="purrsuasion-v2-difficulty-panel" class="purrsuasion-v2-difficulty-panel" hidden></div>
+      <button id="purrsuasion-v2-start" class="recruit-pitch-btn" type="button" onclick="lancerPurrsuasionV2()">START NEGOTIATION</button>
+      <button class="bird-skip-btn" type="button" onclick="fermerPurrsuasionV2Setup()">Close POC</button>
+    </div>
+  </div>
+
+  <div id="purrsuasion-v2-game" class="bird-minijeu-overlay purrsuasion-v2-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="purrsuasion-v2-title" style="display:none">
+    <div id="purrsuasion-v2-card" class="purrsuasion-v2-card" role="document" tabindex="-1">
+      <div class="recruit-title-row">
+        <h3 id="purrsuasion-v2-title">Purrsuasion V2</h3>
+        <span id="purrsuasion-v2-round-badge" class="recruit-difficulty">Round 1 / 3 · 0 pts</span>
+      </div>
+      <div id="purrsuasion-v2-dialogue-phase" class="purrsuasion-v2-dialogue-phase">
+        <div class="purrsuasion-v2-conversation">
+          <div id="purrsuasion-v2-visitor-line" class="purrsuasion-v2-question">Is there a warm place to sleep?</div>
+          <div class="purrsuasion-v2-speaker">
+            <img id="purrsuasion-v2-visitor-portrait" class="purrsuasion-v2-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="Simulated visitor">
+            <strong id="purrsuasion-v2-visitor-name">Visitor</strong>
+          </div>
+        </div>
+        <div class="purrsuasion-v2-answer-stage">
+          <div class="purrsuasion-v2-speaker purrsuasion-v2-bernardo-answer">
+            <img class="purrsuasion-v2-portrait" data-bernardo-cat-face alt="Bernardo">
+            <strong>Bernardo</strong>
+          </div>
+          <div class="purrsuasion-v2-answer-content">
+            <div id="purrsuasion-v2-countdown" class="purrsuasion-v2-countdown" role="timer" aria-label="30 seconds remaining">
+              <span id="purrsuasion-v2-answer-time">30</span>
+              <small>SEC</small>
+            </div>
+            <div id="purrsuasion-v2-replies" class="purrsuasion-v2-replies"></div>
+          </div>
+        </div>
+      </div>
+      <div id="purrsuasion-v2-roulette" class="purrsuasion-v2-roulette" hidden>
+        <div id="purrsuasion-v2-selected-reply" class="purrsuasion-v2-selected-reply"></div>
+        <div id="purrsuasion-v2-dial" class="purrsuasion-v2-dial">
+          <span class="purrsuasion-v2-dial-zone purrsuasion-v2-band-bronze"></span>
+          <span class="purrsuasion-v2-dial-zone purrsuasion-v2-band-silver"></span>
+          <span class="purrsuasion-v2-dial-zone purrsuasion-v2-band-gold"></span>
+          <div id="purrsuasion-v2-cursor" class="purrsuasion-v2-cursor" aria-hidden="true"></div>
+          <img class="purrsuasion-v2-dial-bernardo" data-bernardo-cat-face alt="Bernardo">
+        </div>
+      </div>
+      <button id="purrsuasion-v2-stop" class="recruit-pitch-btn" type="button" onclick="arreterRoulettePurrsuasionV2()" hidden>STOP THE PAW</button>
+      <div id="purrsuasion-v2-feedback" class="purrsuasion-v2-feedback" role="status" aria-live="polite"></div>
+      <button id="purrsuasion-v2-next" class="recruit-pitch-btn" type="button" onclick="continuerPurrsuasionV2()" hidden>NEXT ROUND</button>
+      <button id="purrsuasion-v2-leave" class="bird-skip-btn" type="button" onclick="abandonnerPurrsuasionV2()">Leave POC</button>
+    </div>
+  </div>
+
   <!-- PURRSUASION RESULT -->
   <div id="recruit-result-popup" class="bird-success-overlay recruit-result-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recruit-result-title" aria-describedby="recruit-result-message" style="display:none">
     <div id="recruit-result-card" class="recruit-result-card" role="document" tabindex="-1">
@@ -1400,7 +1472,7 @@
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0003"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0002"></script>
-  <script src="jeu.js?v=0.0197"></script>
+  <script src="jeu.js?v=0.0198"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

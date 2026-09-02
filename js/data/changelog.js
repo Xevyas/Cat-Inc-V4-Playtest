@@ -953,6 +953,33 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0084Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Cannelle's Shop now offers temporary Camp Boost consumables.",
+        "Recruiting now uses the new Purrsuasion dial mini-game."
+      ])
+    }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Camp Level is revealed alongside Appeal, and upgrade-ready buildings show a clear badge that scales with the Camp view.",
+        "Cannelle's Shop help is now more compact, and Settings displays the current game version."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Camp Force now counts only Cats that are eligible for the selected action.",
+        "Camp houses keep their grounding shadows visible without clipping at the sides.",
+        "Neighbor fog now keeps hidden plots covered while moving more smoothly and naturally."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0078Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -988,7 +1015,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0083",
+    baseVersion: "0.0084",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1001,6 +1028,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0084",
+      date: "2026-09-02",
+      categories: release0084Categories
+    }),
     Object.freeze({
       version: "0.0083",
       date: "2026-09-01",

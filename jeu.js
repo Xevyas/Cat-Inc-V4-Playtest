@@ -113,7 +113,9 @@ function campGameplayEffectEntries(typeId, currentTier, targetTier) {
   const effectIds = Array.from(new Set(
     Object.keys(currentEffects).concat(Object.keys(targetEffects))
   ));
-  return effectIds.map(function(effectId) {
+  return effectIds.filter(function(effectId) {
+    return effectId !== "campXp" || appealCampDebloque();
+  }).map(function(effectId) {
     const presentation = CAMP_GAMEPLAY_EFFECT_PRESENTATION[effectId] || {};
     const defaultValue = Number.isFinite(Number(presentation.defaultValue))
       ? Number(presentation.defaultValue) : 0;
@@ -244,6 +246,23 @@ function positionnerPopoverEffetsBatimentCamp() {
 
 function ouvrirPopoverEffetsBatimentCamp(trigger, type, effectEntries) {
   if (!trigger || !type || !Array.isArray(effectEntries) || !effectEntries.length) return false;
+  const effects = creerAffichageEffetsCamp(effectEntries, {
+    tagName: "div",
+    className: "camp-building-effects-popover-list",
+    ariaLabel: type.label + " Tier 1 effects"
+  });
+  return ouvrirPopoverInformationCamp(trigger, {
+    title: "Tier 1 Effects",
+    subject: type.label + ":",
+    content: effects,
+    ariaLabel: type.label + " Tier 1 effects",
+    openLabel: "Hide Tier 1 effects for " + type.label
+  });
+}
+
+function ouvrirPopoverInformationCamp(trigger, options) {
+  const config = options || {};
+  if (!trigger || !config.content) return false;
   const popover = obtenirPopoverEffetsBatimentCamp();
   if (declencheurPopoverEffetsBatimentCamp === trigger && !popover.hidden) {
     fermerPopoverEffetsBatimentCamp(false);
@@ -253,23 +272,20 @@ function ouvrirPopoverEffetsBatimentCamp(trigger, type, effectEntries) {
   popover.innerHTML = "";
   const title = document.createElement("strong");
   title.className = "camp-building-effects-popover-title";
-  title.textContent = "Tier 1 Effects";
+  title.textContent = config.title || "Information";
   const building = document.createElement("span");
   building.className = "camp-building-effects-popover-building";
-  building.textContent = type.label + ":";
-  const effects = creerAffichageEffetsCamp(effectEntries, {
-    tagName: "div",
-    className: "camp-building-effects-popover-list",
-    ariaLabel: type.label + " Tier 1 effects"
-  });
+  building.textContent = config.subject || "";
   popover.appendChild(title);
   popover.appendChild(building);
-  popover.appendChild(effects);
-  popover.setAttribute("aria-label", type.label + " Tier 1 effects");
+  popover.appendChild(config.content);
+  popover.setAttribute("aria-label", config.ariaLabel || "Information");
+  popover.classList.toggle("camp-building-effects-popover-shop",
+    trigger.classList.contains("market-stall-shop-product-help"));
   popover.hidden = false;
   declencheurPopoverEffetsBatimentCamp = trigger;
   trigger.setAttribute("aria-expanded", "true");
-  trigger.setAttribute("aria-label", "Hide Tier 1 effects for " + type.label);
+  trigger.setAttribute("aria-label", config.openLabel || "Hide information");
   positionnerPopoverEffetsBatimentCamp();
   return true;
 }
@@ -277,7 +293,7 @@ function ouvrirPopoverEffetsBatimentCamp(trigger, type, effectEntries) {
 function gererClicExterieurPopoverEffetsBatimentCamp(event) {
   if (!declencheurPopoverEffetsBatimentCamp || !event || !event.target) return;
   if (event.target.closest
-      && event.target.closest(".camp-prototype-palette-effects-toggle, #camp-building-effects-popover")) return;
+      && event.target.closest(".camp-prototype-palette-effects-toggle, .market-stall-shop-product-help, #camp-building-effects-popover")) return;
   fermerPopoverEffetsBatimentCamp(false);
 }
 
@@ -2574,24 +2590,33 @@ function actualiserAffichageProfilCamp() {
   actualiserPortraitsBernardoCanoniques();
 
   ecrireTexte(document.getElementById("camp-profile-summary-name"), profile.name);
-  ecrireTexte(document.getElementById("camp-profile-summary-level"), "Lv. " + progression.level);
+  const summaryLevel = document.getElementById("camp-profile-summary-level");
+  ecrireTexte(summaryLevel, "Lv. " + progression.level);
+  if (summaryLevel) summaryLevel.hidden = !appealUnlocked;
   const summaryCats = document.getElementById("camp-profile-summary-cats");
   ecrireTexte(summaryCats, "Cats " + recruited);
   if (summaryCats) summaryCats.classList.toggle("is-full", housing.full);
   ecrireTexte(document.getElementById("camp-profile-summary-appeal"), "Appeal " + formaterNombreAppealUi(appeal, 6));
   const summaryAppeal = document.getElementById("camp-profile-summary-appeal");
   if (summaryAppeal) summaryAppeal.hidden = !appealUnlocked;
-  summary.setAttribute("aria-label", "Open Camp Profile. " + profile.name + ", Level "
-    + progression.level + ", " + recruited + " of " + housing.capacity + " Cats housed"
+  summary.setAttribute("aria-label", "Open Camp Profile. " + profile.name
+    + (appealUnlocked ? ", Level " + progression.level : "")
+    + ", " + recruited + " of " + housing.capacity + " Cats housed"
     + (appealUnlocked ? ", Appeal " + formaterNombreAppealUi(appeal, 6) : ""));
   appliquerImageProfilCamp(document.getElementById("camp-profile-summary-avatar"), selected);
   appliquerImageProfilCamp(document.getElementById("camp-profile-panel-avatar"), selected);
 
   ecrireTexte(document.getElementById("camp-profile-panel-level"), progression.level);
+  const panelLevel = document.getElementById("camp-profile-panel-level-wrap");
+  if (panelLevel) panelLevel.hidden = !appealUnlocked;
   ecrireTexte(document.getElementById("camp-profile-panel-cats"), recruited + " / " + housing.capacity);
   ecrireTexte(document.getElementById("camp-profile-panel-appeal"), formaterNombreAppealUi(appeal, 6));
   const panelAppeal = document.getElementById("camp-profile-panel-appeal-wrap");
   if (panelAppeal) panelAppeal.hidden = !appealUnlocked;
+  const panelStats = document.getElementById("camp-profile-stats");
+  if (panelStats) panelStats.classList.toggle("is-pre-appeal", !appealUnlocked);
+  const panelProgress = document.getElementById("camp-profile-progress");
+  if (panelProgress) panelProgress.hidden = !appealUnlocked;
   ecrireTexte(document.getElementById("camp-profile-panel-xp"), progression.xp + " / " + progression.nextThreshold);
   ecrireTexte(document.getElementById("camp-profile-panel-bonus"), "Appeal +" + formaterNombreAppealUi(progression.appeal, 6));
   const progress = document.getElementById("camp-profile-panel-progress");
@@ -3500,6 +3525,7 @@ function reset() {
 
 function ouvrirModalSettings() {
   const openerToken = arguments[0] || null;
+  actualiserVersionSettings();
   document.getElementById("toggle-adjusted-time").checked = etat.afficherTempsAjusteRecrutement;
   const overfoodToggle = document.getElementById("toggle-overfood-warning");
   if (overfoodToggle) overfoodToggle.checked = etat.avertirSurplusNourriture !== false;
@@ -3532,6 +3558,10 @@ function ouvrirModalSettings() {
   if (typeof mobileInputDiagnostic !== "undefined") {
     mobileInputDiagnostic.recordOutcome("settings.open", null);
   }
+}
+function actualiserVersionSettings() {
+  const versionElement = document.getElementById("settings-game-version");
+  if (versionElement) versionElement.textContent = "v" + GAME_RELEASE_VERSION;
 }
 function actualiserVolumeAudioUI(canal, rawValue) {
   const value = Math.max(0, Math.min(100, Number(rawValue) || 0));
@@ -9303,6 +9333,122 @@ let itemSelectionne      = null;
 let inventaireDirty      = true;
 let resCategorieFiltree  = "all";
 
+const CANNELLE_SHORTCUT_MAP_DURATION_MS = 10 * 60 * 1000;
+
+function produitsBoostCannelle() {
+  return SHOP_DATA.merchandise.filter(function(product) {
+    return product.rewardType === "boost-quantity";
+  });
+}
+
+function quantiteBoostCannelle(boostId) {
+  return Math.max(0, Math.floor(Number(etat.boostInventory && etat.boostInventory[boostId]) || 0));
+}
+
+function boostShortcutMapActif(now) {
+  return Number(etat.shortcutMapFinTs) > (Number.isFinite(Number(now)) ? Number(now) : Date.now());
+}
+
+function multiplicateurVitesseCannelle(scope, now) {
+  const bonuses = scope === "exploration" && boostShortcutMapActif(now) ? [2] : [];
+  return composerMultiplicateursVitesseCannelle(bonuses);
+}
+
+function composerMultiplicateursVitesseCannelle(multipliers) {
+  return 1 + (Array.isArray(multipliers) ? multipliers : []).reduce(function(total, multiplier) {
+    return total + (multiplier - 1);
+  }, 0);
+}
+
+function avancerTimersExplorationCannelle(deltaMs) {
+  if (!(deltaMs > 0)) return false;
+  etat.exploEnCours.forEach(function(explo) { explo.startTs -= deltaMs; });
+  if (etat.exploZoneEnCours) etat.exploZoneEnCours.startTs -= deltaMs;
+  Object.values(etat.scoutingsEnCours).forEach(function(sc) { sc.startTs -= deltaMs; });
+  return true;
+}
+
+function iconeBoostCannelleHtml(product, className) {
+  if (!product || !product.iconId || !product.iconRuntimePath) return '<span class="boost-icon-fallback">BOOST</span>';
+  const cssClass = className ? ' class="' + echapperAttributHtml(className) + '"' : "";
+  return '<span class="boost-icon-wrap" data-studio-icon-id="' + echapperAttributHtml(product.iconId) + '">'
+    + '<img' + cssClass + ' src="' + echapperAttributHtml(product.iconRuntimePath) + '" alt=""'
+    + ' onerror="this.hidden=true;this.nextElementSibling.hidden=false">'
+    + '<span class="boost-icon-fallback" hidden>BOOST</span></span>';
+}
+
+function renderBoostsList() {
+  const list = document.getElementById("inv-liste-boosts");
+  if (!list) return;
+  const owned = produitsBoostCannelle().filter(function(product) {
+    return quantiteBoostCannelle(product.rewardId) > 0 || product.rewardId === "shortcutMap" && boostShortcutMapActif();
+  });
+  if (!owned.length) {
+    list.innerHTML = etatVideHtml("No boosts yet", "Cannelle sells reusable boosts from Shop Owner Level 10.");
+    return;
+  }
+  list.innerHTML = owned.map(function(product) {
+    return '<article class="inv-boost-card" data-boost-id="' + echapperAttributHtml(product.rewardId) + '">'
+      + iconeBoostCannelleHtml(product, "inv-boost-icon")
+      + '<div class="inv-boost-copy"><strong>' + echapperAttributHtml(product.name) + '</strong>'
+      + '<span>' + echapperAttributHtml(product.description) + '</span>'
+      + '<small>Owned: <b data-boost-quantity>' + quantiteBoostCannelle(product.rewardId) + '</b></small></div>'
+      + '<div class="inv-boost-action"><span data-boost-state></span>'
+      + '<button class="btn-inv-action" type="button" data-boost-activate onclick="activerBoostCannelle(\''
+      + echapperAttributHtml(product.rewardId) + '\')">Activate</button></div></article>';
+  }).join("");
+}
+
+function actualiserBoostsInventaire() {
+  const expectedIds = produitsBoostCannelle().filter(function(product) {
+    return quantiteBoostCannelle(product.rewardId) > 0 || product.rewardId === "shortcutMap" && boostShortcutMapActif();
+  }).map(function(product) { return product.rewardId; }).join(",");
+  const renderedIds = Array.from(document.querySelectorAll("[data-boost-id]"))
+    .map(function(card) { return card.dataset.boostId; }).join(",");
+  if (expectedIds !== renderedIds) renderBoostsList();
+  produitsBoostCannelle().forEach(function(product) {
+    const card = document.querySelector('[data-boost-id="' + product.rewardId + '"]');
+    if (!card) return;
+    const quantity = quantiteBoostCannelle(product.rewardId);
+    const quantityEl = card.querySelector("[data-boost-quantity]");
+    const stateEl = card.querySelector("[data-boost-state]");
+    const button = card.querySelector("[data-boost-activate]");
+    ecrireTexte(quantityEl, quantity);
+    let unavailable = quantity <= 0;
+    let state = quantity > 0 ? "Ready" : "None owned";
+    if (product.rewardId === "shortcutMap" && boostShortcutMapActif()) {
+      unavailable = true;
+      state = "Active · " + formaterCooldownCannelleBargain(etat.shortcutMapFinTs - Date.now());
+    } else if (product.rewardId === "birdWhistle" && !birdWhistleDisponible()) {
+      unavailable = true;
+      state = quantity > 0 ? "Bird unavailable" : state;
+    }
+    ecrireTexte(stateEl, state);
+    if (button) button.disabled = unavailable;
+  });
+}
+
+function activerBoostCannelle(boostId) {
+  if (quantiteBoostCannelle(boostId) <= 0) return false;
+  let accepted = false;
+  if (boostId === "birdWhistle") accepted = appelerProchainOiseau();
+  if (boostId === "shortcutMap" && !boostShortcutMapActif()) {
+    etat.shortcutMapFinTs = Date.now() + CANNELLE_SHORTCUT_MAP_DURATION_MS;
+    accepted = true;
+  }
+  if (!accepted) return false;
+  etat.boostInventory[boostId] = quantiteBoostCannelle(boostId) - 1;
+  inventaireDirty = true;
+  exploTabDirty = true;
+  ajouterLog("event", boostId === "birdWhistle"
+    ? "Bird Whistle used. The next Bird event was called immediately."
+    : "Shortcut Map activated. Exploration Speed ×2 for 10 minutes.");
+  afficherNotification(boostId === "birdWhistle" ? "A Bird answered the whistle!" : "Shortcut Map active: Exploration Speed ×2.");
+  sauvegarder();
+  rendu();
+  return true;
+}
+
 // ── Resource info popup ───────────────────────────────────────
 let _resPopupTarget = null;
 let _workPopupContext = null;
@@ -9880,12 +10026,14 @@ function renduInventaire(u) {
   // Items list — only rebuild when dirty (avoids killing click events every 100ms)
   if (inventaireDirty) {
     renderItemsList();
+    renderBoostsList();
     inventaireDirty = false;
   }
 
   renderInventoryTabs(u);
   actualiserVisibiliteInventaire();
   renderResourcesSection(u);
+  actualiserBoostsInventaire();
 }
 
 const RES_CATEGORIES = [
@@ -9928,6 +10076,9 @@ function renderInventoryTabs(u) {
   const hasBooks = itemIds.some(function(itemId) { return ITEMS[itemId].type !== "unique" && ITEMS[itemId].category !== "blueprint"; });
   const hasBlueprints = itemIds.some(function(itemId) { return ITEMS[itemId].category === "blueprint"; });
   const hasUnique = itemIds.some(function(itemId) { return ITEMS[itemId].type === "unique"; });
+  const hasBoosts = produitsBoostCannelle().some(function(product) {
+    return quantiteBoostCannelle(product.rewardId) > 0 || product.rewardId === "shortcutMap" && boostShortcutMapActif();
+  });
   const availableCats = RES_CATEGORIES.filter(function(cat) {
     return allVisible.some(function(r) { return r.category === cat.id; });
   });
@@ -9935,6 +10086,7 @@ function renderInventoryTabs(u) {
   if (hasBooks) availableTabs.push({ id: "books", label: "Books" });
   if (hasBlueprints) availableTabs.push({ id: "blueprints", label: "Blueprints" });
   if (hasUnique) availableTabs.push({ id: "unique", label: "Unique" });
+  if (hasBoosts) availableTabs.push({ id: "boosts", label: "Boosts" });
   availableCats.forEach(function(cat) { availableTabs.push(cat); });
 
   const validFilter = availableTabs.some(function(tab) { return tab.id === resCategorieFiltree; });
@@ -9962,12 +10114,18 @@ function renderInventoryTabs(u) {
 
 function actualiserVisibiliteInventaire() {
   const afficheItems = ["all", "books", "blueprints", "unique"].includes(resCategorieFiltree);
-  const afficheResources = !["books", "blueprints", "unique"].includes(resCategorieFiltree);
+  const afficheBoosts = ["all", "boosts"].includes(resCategorieFiltree);
+  const afficheResources = !["books", "blueprints", "unique", "boosts"].includes(resCategorieFiltree);
   const itemsSection = document.getElementById("section-items");
+  const boostsSection = document.getElementById("section-boosts");
   const resourcesSection = document.getElementById("section-inv-resources");
   if (itemsSection) {
     itemsSection.style.display = afficheItems ? "" : "none";
     itemsSection.setAttribute("aria-hidden", afficheItems ? "false" : "true");
+  }
+  if (boostsSection) {
+    boostsSection.style.display = afficheBoosts ? "" : "none";
+    boostsSection.setAttribute("aria-hidden", afficheBoosts ? "false" : "true");
   }
   if (resourcesSection) {
     resourcesSection.style.display = afficheResources ? "" : "none";
@@ -10987,9 +11145,11 @@ function htmlLigneAffectationKitty(options) {
   const contextHtml = config.contextHtml || (config.contextText
     ? '<span class="worker-modal-kitty-status">'
       + echapperAttributHtml(config.contextText) + '</span>' : "");
+  const forceDisabled = Boolean(force && force.disabled === true);
   const forceHtml = force
     ? '<button class="btn-forcer"' + attributsDonneesLigneAffectationKitty(force.data)
       + ' aria-label="' + echapperAttributHtml(force.label) + '"'
+      + (forceDisabled ? ' disabled aria-disabled="true"' : "")
       + (force.attributes || "") + '>' + echapperAttributHtml(force.text || "Force") + '</button>'
     : '<div></div>';
   return '<div class="' + rowClass + '"'
@@ -11010,7 +11170,8 @@ function creerElementLigneAffectationKitty(options) {
   if (!row) return null;
   if (typeof options.onSelect === "function") row.addEventListener("click", options.onSelect);
   const force = row.querySelector(".btn-forcer");
-  if (force && options.force && typeof options.force.onSelect === "function") {
+  if (force && options.force && options.force.disabled !== true
+      && typeof options.force.onSelect === "function") {
     force.addEventListener("click", function(event) {
       event.stopPropagation();
       options.force.onSelect();
@@ -11767,6 +11928,14 @@ function tick() {
     campPrototypeDemolitionsActives().forEach(function(demolition) {
       demolition.startTs -= avance;
     });
+  }
+
+  // Cannelle timed speed boosts compose additively with one another and only
+  // advance Exploration-family timers while the game is actively ticking.
+  const vitesseExplorationCannelle = multiplicateurVitesseCannelle("exploration", Date.now());
+  if (vitesseExplorationCannelle > 1) {
+    const avanceExplorationCannelle = (vitesseExplorationCannelle - 1) * TICK_DT * 1000;
+    avancerTimersExplorationCannelle(avanceExplorationCannelle);
   }
 
   appliquerManualFocusCamp(TICK_DT);
@@ -16992,6 +17161,9 @@ function ajouterGroundingCampPrototype(conteneur, type, x, y, rotation, function
   ) || {x: 0, y: 0, width: dimensions.width, height: dimensions.height};
   const grounding = document.createElement("img");
   grounding.className = "camp-prototype-grounding-sprite";
+  if (type.category === "junk") {
+    grounding.classList.add("camp-prototype-grounding-sprite-junk");
+  }
   grounding.src = src;
   grounding.alt = "";
   grounding.draggable = false;
@@ -17001,6 +17173,11 @@ function ajouterGroundingCampPrototype(conteneur, type, x, y, rotation, function
   grounding.style.width = (Number(bounds.width) / campPrototypeApi.GRID_WIDTH * 100) + "%";
   grounding.style.height = (Number(bounds.height) / campPrototypeApi.GRID_HEIGHT * 100) + "%";
   conteneur.appendChild(grounding);
+  if (type.category === "junk") {
+    const renfort = grounding.cloneNode(false);
+    renfort.classList.add("camp-prototype-grounding-sprite-junk-reinforcement");
+    conteneur.appendChild(renfort);
+  }
 }
 
 function prechargerRotationSuivanteCampPrototype(type, rotation, functionalTier) {
@@ -19036,16 +19213,25 @@ function abandonnerCannelleBargain() {
 let marketStallShopCategoryId = null;
 
 function categorieBoutiqueMarketStallActive() {
-  const configured = SHOP_DATA.categories.some(function(category) {
+  const owner = cannelleShopOwner();
+  const level = owner ? Math.max(0, Math.floor(Number(owner.niveau) || 0)) : 0;
+  const categories = SHOP_DATA.categories.filter(function(category) {
+    return level >= (Number(category.requiredLevel) || 0);
+  });
+  const configured = categories.some(function(category) {
     return category.id === marketStallShopCategoryId;
   }) ? marketStallShopCategoryId : SHOP_DATA.activeCategoryId;
-  return SHOP_DATA.categories.some(function(category) { return category.id === configured; })
+  return categories.some(function(category) { return category.id === configured; })
     ? configured
-    : (SHOP_DATA.categories[0] && SHOP_DATA.categories[0].id || null);
+    : (categories[0] && categories[0].id || null);
 }
 
 function selectionnerCategorieBoutiqueMarketStall(categoryId) {
-  if (!SHOP_DATA.categories.some(function(category) { return category.id === categoryId; })) return false;
+  const owner = cannelleShopOwner();
+  const level = owner ? Math.max(0, Math.floor(Number(owner.niveau) || 0)) : 0;
+  if (!SHOP_DATA.categories.some(function(category) {
+    return category.id === categoryId && level >= (Number(category.requiredLevel) || 0);
+  })) return false;
   marketStallShopCategoryId = categoryId;
   renduBoutiqueMarketStall();
   return true;
@@ -19070,6 +19256,36 @@ function gererClavierCategoriesBoutiqueMarketStall(event) {
   if (refreshed) refreshed.focus();
 }
 
+function ouvrirAideMarchandiseCannelle(event, productId) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const trigger = event && event.currentTarget;
+  const product = SHOP_DATA.merchandise.find(function(item) { return item.id === productId; });
+  if (!trigger || !product) return false;
+  if (product.category === "blueprints") {
+    const buildingTypeId = String(product.rewardId || "").replace(/Blueprint$/, "");
+    const definition = definitionGameplayCamp(buildingTypeId);
+    const entries = campGameplayEffectEntries(buildingTypeId, 1, null);
+    if (!definition || !entries.length) return false;
+    return ouvrirPopoverEffetsBatimentCamp(trigger, {
+      label: definition.name || product.name.replace(/ Blueprint$/, "")
+    }, entries);
+  }
+  if (!product.description) return false;
+  const copy = document.createElement("p");
+  copy.className = "market-stall-shop-product-help-copy";
+  copy.textContent = product.description;
+  return ouvrirPopoverInformationCamp(trigger, {
+    title: "Item Effect",
+    subject: product.name + ":",
+    content: copy,
+    ariaLabel: product.name + " effect",
+    openLabel: "Hide effect for " + product.name
+  });
+}
+
 function renduBoutiqueMarketStall() {
   const cannelle = cannelleShopOwner();
   const availability = disponibiliteBoutiqueMarketStall();
@@ -19084,8 +19300,11 @@ function renduBoutiqueMarketStall() {
   if (miniGame) miniGame.hidden = level < 10;
   actualiserCooldownCannelleBargain();
   const activeCategoryId = categorieBoutiqueMarketStallActive();
+  const visibleCategories = SHOP_DATA.categories.filter(function(category) {
+    return level >= (Number(category.requiredLevel) || 0);
+  });
   const tabs = document.getElementById("market-stall-shop-tabs");
-  if (tabs) tabs.innerHTML = SHOP_DATA.categories.map(function(category) {
+  if (tabs) tabs.innerHTML = visibleCategories.map(function(category) {
     const active = category.id === activeCategoryId;
     return '<button type="button" id="market-stall-shop-tab-' + echapperAttributHtml(category.id)
       + '" data-market-shop-category="' + echapperAttributHtml(category.id)
@@ -19129,9 +19348,14 @@ function renduBoutiqueMarketStall() {
     const buttonLabel = owned || levelLocked ? stateLabel
       : "Buy " + product.name + " for " + priceLabel;
     html += '<article class="market-stall-shop-slot" data-market-product="' + product.id + '">'
+      + '<button class="market-stall-shop-product-help" type="button" aria-label="Show effect for '
+      + echapperAttributHtml(product.name) + '" aria-controls="camp-building-effects-popover" aria-expanded="false"'
+      + ' data-closed-label="Show effect for ' + echapperAttributHtml(product.name) + '"'
+      + ' onclick="ouvrirAideMarchandiseCannelle(event, \'' + echapperAttributHtml(product.id) + '\')">?</button>'
       + '<strong>' + echapperAttributHtml(product.name) + '</strong>'
       + '<span class="market-stall-shop-preview">'
-      + (preview ? '<img src="' + echapperAttributHtml(preview) + '" alt="' + echapperAttributHtml(product.name) + '">' : '')
+      + (preview ? '<img src="' + echapperAttributHtml(preview) + '" alt="' + echapperAttributHtml(product.name) + '">'
+        : product.iconId ? iconeBoostCannelleHtml(product, "market-stall-shop-product-icon") : '')
       + '</span>'
       + '<button type="button"' + (owned ? ' class="market-stall-shop-owned"' : '')
       + ' aria-label="' + echapperAttributHtml(buttonLabel) + '"'
@@ -19609,7 +19833,10 @@ function rendreCampTaskPanel(options) {
       const forcable = busy && kittyPeutEtreForceParWork(kittyIndex);
       const levelTooLow = (Number(kitty.niveau) || 0) < definition.minLevel;
       const assignedElsewhere = selectedSlot >= 0 && selectedSlot !== state.activeSlot;
-      const disabled = (busy && !forcable) || levelTooLow || assignedElsewhere;
+      const eligibleForAction = kittyPeutEtreSelectionnePourTacheCamp(
+        kittyIndex, definition.minLevel
+      );
+      const disabled = !eligibleForAction || assignedElsewhere;
       return {
         kitty: kitty,
         kittyIndex: kittyIndex,
@@ -19631,9 +19858,9 @@ function rendreCampTaskPanel(options) {
       const levelTooLow = candidate.levelTooLow;
       const disabled = candidate.disabled;
       if (!disabled) eligibleCount += 1;
-      const status = busy
-        ? kittyAllocationLabel(kittyIndex).text
-        : (levelTooLow ? "Requires level " + definition.minLevel
+      const status = levelTooLow
+        ? "Requires level " + definition.minLevel
+        : (busy ? kittyAllocationLabel(kittyIndex).text
           : (selectedSlot >= 0 ? "Selected" : "Available"));
       const rowLabel = selectedSlot >= 0
         ? "Change " + kitty.nom + " in slot " + (selectedSlot + 1)
@@ -19656,7 +19883,9 @@ function rendreCampTaskPanel(options) {
           data: { campTaskForceCat: kittyIndex },
           label: "Force assign " + kitty.nom + " to " + definition.actionLabel,
           text: "Force",
-          onSelect: function() { campTaskPanelSelectKitty(kittyIndex); }
+          disabled: disabled,
+          onSelect: !disabled
+            ? function() { campTaskPanelSelectKitty(kittyIndex); } : null
         } : null
       });
       if (row) picker.appendChild(row);
@@ -20268,7 +20497,8 @@ function libelleRessourceCamp(resourceId) {
     rockBricks: "Rock Bricks",
     humanLeftovers: "Human Leftovers",
     humanWorkersFood: "Workers Food",
-    cannedCatFood: "Canned Cat Food"
+    cannedCatFood: "Canned Cat Food",
+    cannelleTokens: "Cannelle's Tokens"
   }[resourceId] || resourceId;
 }
 
@@ -20288,7 +20518,8 @@ function iconeRessourceCamp(resourceId) {
     rockBricks: "img/resources/Rock Brick_Final.png",
     humanLeftovers: "img/resources/Human Leftovers_Final.png",
     humanWorkersFood: "img/resources/Human Workers Food_Final.png",
-    cannedCatFood: "img/resources/Canned Cat Food_Final.png"
+    cannedCatFood: "img/resources/Canned Cat Food_Final.png",
+    cannelleTokens: "img/resources/silver-coin.png"
   }[resourceId] || "";
 }
 
@@ -20296,6 +20527,29 @@ function ressourcesAmeliorationCampSuffisantes(upgrade) {
   return Boolean(upgrade && Object.keys(upgrade.costs || {}).every(function(resourceId) {
     return (Number(etat[resourceId]) || 0) >= (Number(upgrade.costs[resourceId]) || 0);
   }));
+}
+
+function ameliorationCampEligiblePourBadge(item) {
+  if (!item || item.construit !== true) return null;
+  const upgrade = prochaineAmeliorationCamp(item);
+  const capacite = upgrade
+    ? capaciteBatimentCamp(item.type, item.tier || 1, { item: item })
+    : null;
+  return capacite && capacite.available ? upgrade : null;
+}
+
+function actualiserBadgesAmeliorationCamp() {
+  document.querySelectorAll("[data-camp-upgrade-ready-uid]").forEach(function(badge) {
+    const item = itemCampPrototype(badge.dataset.campUpgradeReadyUid);
+    // Eligibility/access changes already own a structural Camp render. Between
+    // those renders, reuse the canonical quote and affordability authorities
+    // so resource changes stay cheap and immediate without recalculating Camp
+    // connectivity on every simulation tick.
+    const upgrade = item && item.construit === true
+      ? prochaineAmeliorationCamp(item)
+      : null;
+    badge.hidden = !ressourcesAmeliorationCampSuffisantes(upgrade);
+  });
 }
 
 function empreintesTiersCampIdentiques(typeId, leftTier, rightTier) {
@@ -20910,6 +21164,7 @@ function renduCampPrototypeDynamique(maintenant) {
   if ((!DEV_MODE && !campDebloque()) || (document.body.dataset.ongletActif || "gang") !== "camp") return;
   const timestamp = Number.isFinite(maintenant) ? maintenant : Date.now();
   renduCampProductionPanelDynamique(timestamp);
+  actualiserBadgesAmeliorationCamp();
   // Keep the canonical worker timer live between full structural renders.
   // This is intentionally cheap direct-DOM work and must not be throttled to
   // the demolition menu's once-per-second cadence.
@@ -22562,6 +22817,19 @@ function rendreItemsCampPrototype(presencesCamp) {
         tierBadge.className = "camp-building-tier-badge";
         tierBadge.textContent = "T" + (item.tier || 1);
         bouton.appendChild(tierBadge);
+      }
+      const upgradeBadgeEligible = !placement && !campPrototypeModeEdition
+        ? ameliorationCampEligiblePourBadge(item)
+        : null;
+      if (upgradeBadgeEligible) {
+        const upgradeBadge = document.createElement("span");
+        upgradeBadge.className = "camp-building-upgrade-ready-badge";
+        upgradeBadge.dataset.campUpgradeReadyUid = item.uid;
+        upgradeBadge.hidden = !ressourcesAmeliorationCampSuffisantes(upgradeBadgeEligible);
+        upgradeBadge.title = "Upgrade ready";
+        upgradeBadge.setAttribute("aria-hidden", "true");
+        upgradeBadge.innerHTML = '<img src="img/interface/Upgrade.png" alt="">';
+        bouton.appendChild(upgradeBadge);
       }
       if (formationsJobsPretes > 0) {
         const readyBadge = document.createElement("span");
@@ -25223,60 +25491,14 @@ document.addEventListener("keydown", function(e) {
 // 13c. RECRUITMENT MINI-GAME: PURRSUASION
 // ════════════════════════════════════════════════════════════
 
-const RECRUIT_GAME_DURATION = 10;
-const RECRUIT_GOOD_MIN = 42;
-const RECRUIT_GOOD_MAX = 68;
-const RECRUIT_HOLD_TARGET = 2;
-const RECRUIT_RISE_SPEED = 42;
-const RECRUIT_FALL_SPEED = 20;
-const RECRUIT_DIALOGUES = [
-  {
-    visitor: "I'm alone... and I haven't eaten in days.",
-    bernardo: "We have plenty of food. Join us, and you'll never go hungry again."
-  },
-  {
-    visitor: "I don't have anywhere safe to sleep.",
-    bernardo: "We have shelter, warm beds, and cats watching each other's backs."
-  },
-  {
-    visitor: "The humans keep chasing me away.",
-    bernardo: "Then you need protection. Nobody messes with a member of my gang."
-  },
-  {
-    visitor: "I don't trust gangs.",
-    bernardo: "Good instinct. This isn't just a gang - it's an organization. With snacks."
-  },
-  {
-    visitor: "What exactly do I get if I join?",
-    bernardo: "Food, shelter, purpose, and the privilege of exceptional leadership."
-  },
-  {
-    visitor: "I've always managed perfectly well on my own.",
-    bernardo: "So did I. Then I realized being alone means nobody brings you dinner."
-  },
-  {
-    visitor: "Why should I follow you?",
-    bernardo: "Because I have a plan, a camp, and several cats who already pretend to agree with me."
-  },
-  {
-    visitor: "I'm not much of a fighter.",
-    bernardo: "Perfect. We need builders, cooks, explorers... Everyone has a place here."
-  },
-  {
-    visitor: "The humans own everything around here.",
-    bernardo: "Not for long. We're building something of our own, one cardboard box at a time."
-  },
-  {
-    visitor: "This sounds suspiciously like work.",
-    bernardo: "It is - but organized work, with meals, shelter, and promotion opportunities."
-  }
-];
+// The legacy hold-and-release Recruit constants and dialogue pool were retired
+// when the Studio-backed Purrsuasion V2 became the production Recruit engine.
 var _recruitMiniJeuActif = false;
 var _recruitPitchActif = false;
 var _recruitTimerDemarre = false;
 var _recruitTrust = 18;
 var _recruitGoodTime = 0;
-var _recruitTimeLeft = RECRUIT_GAME_DURATION;
+var _recruitTimeLeft = 0;
 var _recruitNom = "";
 var _recruitDifficulty = 1;
 var _recruitSpeedMultiplier = 1;
@@ -25289,12 +25511,7 @@ function multiplicateurVitesseMiniJeuRecruit() {
 }
 
 function choisirDialogueRecruit() {
-  var index = Math.floor(Math.random() * RECRUIT_DIALOGUES.length);
-  if (index === _recruitDialoguePrecedent && RECRUIT_DIALOGUES.length > 1) {
-    index = (index + 1 + Math.floor(Math.random() * (RECRUIT_DIALOGUES.length - 1))) % RECRUIT_DIALOGUES.length;
-  }
-  _recruitDialoguePrecedent = index;
-  return RECRUIT_DIALOGUES[index];
+  return null;
 }
 
 function arreterAnimationMiniJeuRecruit() {
@@ -25383,46 +25600,7 @@ function gererClavierPitchRecruit(event, actif) {
 function ouvrirMiniJeuRecruit() {
   if (etat.chatons < 3 || !recrutementDepuisCampDebloque()
       || !sequenceEstPrete() || _recruitMiniJeuActif || campLogementSature()) return;
-  if (!ouvrirSessionMiniJeu("recruit")) return;
-  _recruitNom = nomProchainChat();
-  const portrait = document.getElementById("recruit-target-portrait");
-  const nom = document.getElementById("recruit-target-name");
-  const visitorSpeech = document.getElementById("recruit-visitor-speech");
-  const bernardoSpeech = document.getElementById("recruit-bernardo-speech");
-  const dialogue = choisirDialogueRecruit();
-  if (portrait) portrait.src = assurerVisageProchainChat();
-  if (nom) nom.textContent = _recruitNom;
-  if (visitorSpeech) {
-    visitorSpeech.textContent = dialogue.visitor;
-    visitorSpeech.setAttribute("aria-label", _recruitNom + " says: " + dialogue.visitor);
-  }
-  if (bernardoSpeech) {
-    bernardoSpeech.textContent = dialogue.bernardo;
-    bernardoSpeech.setAttribute("aria-label", "Bernardo says: " + dialogue.bernardo);
-  }
-
-  _recruitMiniJeuActif = true;
-  renduSequence();
-  _recruitPitchActif = false;
-  _recruitTimerDemarre = false;
-  _recruitTrust = 18;
-  _recruitGoodTime = 0;
-  _recruitTimeLeft = RECRUIT_GAME_DURATION;
-  _recruitDifficulty = Math.max(1, etat.chatons - 2);
-  _recruitSpeedMultiplier = multiplicateurVitesseMiniJeuRecruit();
-  const difficulty = document.getElementById("recruit-difficulty");
-  const bouton = document.getElementById("recruit-pitch-btn");
-  if (difficulty) difficulty.textContent = "Difficulty " + _recruitDifficulty + " · Cursor speed ×" + _recruitSpeedMultiplier.toFixed(2);
-  if (bouton) bouton.textContent = "HOLD TO START YOUR PITCH";
-  ouvrirDialogueModal("recruit-minijeu", {
-    dismissible: true,
-    fermer: function() { echouerMiniJeuRecruit("closed"); },
-    focusSelector: "#recruit-pitch-btn",
-    returnFocusSelector: "#bouton-sequence"
-  });
-  const trustTrack = document.getElementById("recruit-trust-track");
-  _recruitTrackWidth = trustTrack ? trustTrack.clientWidth : 0;
-  mettreAJourMiniJeuRecruit();
+  return lancerPurrsuasionV2Production();
 }
 
 function echouerMiniJeuRecruit(raison) {
@@ -25539,6 +25717,381 @@ window.addEventListener("blur", function() { definirPitchRecruitActif(false); })
 document.addEventListener("selectstart", function(event) {
   var target = event.target;
   if (target && target.closest && target.closest(".recruit-minijeu-carte")) event.preventDefault();
+});
+
+// ════════════════════════════════════════════════════════════
+// 13c-bis. DEBUG-ONLY PURRSUASION V2 PROOF OF CONCEPT
+// ════════════════════════════════════════════════════════════
+
+const PURRSUASION_V2_PROFILES = campGameplayData.purrsuasion.profiles;
+const PURRSUASION_V2_CONTENT = globalThis.CatInc.data.dialogues.purrsuasion;
+
+var _purrsuasionV2 = null;
+
+function profilPurrsuasionV2(catNumber) {
+  const cat = Math.max(4, Math.min(20, Math.floor(Number(catNumber) || 4)));
+  return PURRSUASION_V2_PROFILES[cat - 4];
+}
+
+function scenariosPurrsuasionV2(catNumber) {
+  const overrides = PURRSUASION_V2_CONTENT.recruitOverrides || {};
+  return overrides[String(catNumber)] || PURRSUASION_V2_CONTENT.genericPool;
+}
+
+function choisirScenariosPurrsuasionV2(catNumber) {
+  const pool = scenariosPurrsuasionV2(catNumber).slice();
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const other = Math.floor(Math.random() * (index + 1));
+    [pool[index], pool[other]] = [pool[other], pool[index]];
+  }
+  return pool.slice(0, 3).map(function(scenario) {
+    const variants = scenario.visitorLines;
+    return {
+      id: scenario.id,
+      visitor: variants[Math.floor(Math.random() * variants.length)],
+      replies: ["good", "neutral", "bad"].map(function(quality) {
+        return {quality: quality, text: scenario.replies[quality]};
+      })
+    };
+  });
+}
+
+function bandesPurrsuasionV2(quality) {
+  if (quality === "good") return ["bronze", "silver", "gold"];
+  if (quality === "neutral") return ["bronze", "silver"];
+  return ["bronze"];
+}
+
+function scorePurrsuasionV2(quality, cursorPct, targetSize) {
+  const distance = Math.abs(Number(cursorPct) - 50);
+  const halfTarget = Math.max(1, Number(targetSize)) / 2;
+  const ratio = distance / halfTarget;
+  if (ratio > 1) return 0;
+  if (quality === "good" && ratio <= 0.2) return 3;
+  if ((quality === "good" || quality === "neutral") && ratio <= 0.55) return 2;
+  return 1;
+}
+
+function resultatPurrsuasionV2(total, profile) {
+  return { total: Number(total) || 0, required: profile.required, success: (Number(total) || 0) >= profile.required };
+}
+
+function nomSimulePurrsuasionV2(profile) {
+  return NOMS_KITTIES[profile.cat - 1] || ("Cat #" + profile.cat);
+}
+
+function remplirSelectPurrsuasionV2() {
+  const select = document.getElementById("purrsuasion-v2-cat-select");
+  if (!select || select.options.length) return;
+  PURRSUASION_V2_PROFILES.forEach(function(profile, index) {
+    const option = document.createElement("option");
+    option.value = String(profile.cat);
+    option.textContent = "Cat #" + profile.cat + " · Difficulty " + (index + 1);
+    select.appendChild(option);
+  });
+}
+
+function mettreAJourPurrsuasionV2Setup() {
+  const select = document.getElementById("purrsuasion-v2-cat-select");
+  const profile = profilPurrsuasionV2(select ? select.value : 4);
+  const difficulty = profile.cat - 3;
+  const label = document.getElementById("purrsuasion-v2-difficulty-label");
+  const panel = document.getElementById("purrsuasion-v2-difficulty-panel");
+  if (label) label.textContent = "Difficulty " + difficulty + " · Incoming Cat #" + profile.cat;
+  if (panel) panel.innerHTML = "<span>Required points: <strong>" + profile.required + "</strong></span>"
+    + "<span>Answer time: <strong>" + profile.answerSeconds + " seconds</strong></span>"
+    + "<span>Roulette speed: <strong>" + profile.speed + "% / second</strong></span>"
+    + "<span>Target size: <strong>" + profile.targetSize + "% of track</strong></span>";
+}
+
+function basculerAidePurrsuasionV2() {
+  const panel = document.getElementById("purrsuasion-v2-difficulty-panel");
+  const button = document.getElementById("purrsuasion-v2-help-btn");
+  if (!panel || !button) return;
+  panel.hidden = !panel.hidden;
+  button.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
+}
+
+function ouvrirPurrsuasionV2Setup() {
+  if (!DEV_MODE || miniJeuRuntimeActif()) return false;
+  remplirSelectPurrsuasionV2();
+  mettreAJourPurrsuasionV2Setup();
+  ouvrirDialogueModal("purrsuasion-v2-setup", {
+    dismissible: true,
+    fermer: fermerPurrsuasionV2Setup,
+    focusSelector: "#purrsuasion-v2-cat-select",
+    returnFocusSelector: "#purrsuasion-v2-debug-btn"
+  });
+  return true;
+}
+
+function fermerPurrsuasionV2Setup() {
+  fermerDialogueModal("purrsuasion-v2-setup");
+}
+
+function lancerPurrsuasionV2() {
+  if (!DEV_MODE) return false;
+  const select = document.getElementById("purrsuasion-v2-cat-select");
+  const profile = profilPurrsuasionV2(select ? select.value : 4);
+  fermerPurrsuasionV2Setup();
+  return demarrerPurrsuasionV2(profile, true);
+}
+
+function lancerPurrsuasionV2Production() {
+  const profile = profilPurrsuasionV2(etat.chatons + 1);
+  return demarrerPurrsuasionV2(profile, false);
+}
+
+function demarrerPurrsuasionV2(profile, debug) {
+  const runtimeId = debug ? "purrsuasion-v2-poc" : "recruit";
+  if (!ouvrirSessionMiniJeu(runtimeId)) return false;
+  _purrsuasionV2 = {
+    profile: profile,
+    debug: Boolean(debug),
+    runtimeId: runtimeId,
+    visitorName: debug ? nomSimulePurrsuasionV2(profile) : nomProchainChat(),
+    scenarios: choisirScenariosPurrsuasionV2(profile.cat),
+    round: 0,
+    total: 0,
+    phase: "answer",
+    timeLeft: profile.answerSeconds,
+    cursorPct: 0,
+    quality: null
+  };
+  const visitorName = document.getElementById("purrsuasion-v2-visitor-name");
+  const visitorPortrait = document.getElementById("purrsuasion-v2-visitor-portrait");
+  const leave = document.getElementById("purrsuasion-v2-leave");
+  if (visitorName) visitorName.textContent = _purrsuasionV2.visitorName;
+  if (visitorPortrait) {
+    if (!debug) visitorPortrait.src = assurerVisageProchainChat();
+    visitorPortrait.alt = _purrsuasionV2.visitorName;
+  }
+  if (leave) leave.textContent = debug ? "Leave POC" : "Give up";
+  _recruitMiniJeuActif = !debug;
+  if (!debug) renduSequence();
+  ouvrirDialogueModal("purrsuasion-v2-game", {
+    dismissible: true,
+    fermer: debug ? fermerPurrsuasionV2 : function() { finaliserPurrsuasionV2Production(false); },
+    focusSelector: ".purrsuasion-v2-reply",
+    returnFocusSelector: debug ? "#purrsuasion-v2-debug-btn" : "#bouton-sequence"
+  });
+  commencerRoundPurrsuasionV2();
+  return true;
+}
+
+function nettoyerFeedbackPurrsuasionV2() {
+  const card = document.getElementById("purrsuasion-v2-card");
+  if (card) card.classList.remove("feedback-gold", "feedback-silver", "feedback-bronze", "feedback-miss");
+}
+
+function commencerRoundPurrsuasionV2() {
+  if (!_purrsuasionV2) return;
+  _purrsuasionV2.round += 1;
+  _purrsuasionV2.phase = "answer";
+  _purrsuasionV2.timeLeft = _purrsuasionV2.profile.answerSeconds;
+  _purrsuasionV2.quality = null;
+  nettoyerFeedbackPurrsuasionV2();
+  const dialogue = _purrsuasionV2.scenarios[_purrsuasionV2.round - 1];
+  const line = document.getElementById("purrsuasion-v2-visitor-line");
+  const dialoguePhase = document.getElementById("purrsuasion-v2-dialogue-phase");
+  const replies = document.getElementById("purrsuasion-v2-replies");
+  const roulette = document.getElementById("purrsuasion-v2-roulette");
+  const stop = document.getElementById("purrsuasion-v2-stop");
+  const next = document.getElementById("purrsuasion-v2-next");
+  const feedback = document.getElementById("purrsuasion-v2-feedback");
+  if (line) line.textContent = dialogue.visitor;
+  if (dialoguePhase) dialoguePhase.hidden = false;
+  if (replies) {
+    const order = [0, 1, 2].sort(function(a, b) {
+      return ((a + _purrsuasionV2.round + _purrsuasionV2.profile.cat) % 3)
+        - ((b + _purrsuasionV2.round + _purrsuasionV2.profile.cat) % 3);
+    });
+    replies.innerHTML = order.map(function(index) {
+      const reply = dialogue.replies[index];
+      return '<button type="button" class="purrsuasion-v2-reply" onclick="choisirReponsePurrsuasionV2(\''
+        + reply.quality + '\', this)">' + reply.text + "</button>";
+    }).join("");
+  }
+  if (roulette) roulette.hidden = true;
+  if (stop) stop.hidden = true;
+  if (next) next.hidden = true;
+  if (feedback) feedback.textContent = "";
+  actualiserPurrsuasionV2();
+  demarrerAnimationMiniJeu(_purrsuasionV2.runtimeId, function(dt) {
+    if (!_purrsuasionV2 || _purrsuasionV2.phase !== "answer") return false;
+    _purrsuasionV2.timeLeft -= dt;
+    actualiserPurrsuasionV2();
+    if (_purrsuasionV2.timeLeft <= 0) {
+      terminerRoundPurrsuasionV2("miss", 0, "Time ran out — 0 points. The roulette is skipped.");
+      return false;
+    }
+    return true;
+  });
+}
+
+function actualiserPurrsuasionV2() {
+  if (!_purrsuasionV2) return;
+  const badge = document.getElementById("purrsuasion-v2-round-badge");
+  const time = document.getElementById("purrsuasion-v2-answer-time");
+  const countdown = document.getElementById("purrsuasion-v2-countdown");
+  const ratio = Math.max(0, Math.min(1, _purrsuasionV2.timeLeft / _purrsuasionV2.profile.answerSeconds));
+  if (badge) badge.textContent = "Round " + _purrsuasionV2.round + " / 3 · " + _purrsuasionV2.total + " pts";
+  if (time) time.textContent = Math.max(0, Math.ceil(_purrsuasionV2.timeLeft));
+  if (countdown) {
+    countdown.style.setProperty("--purr-timer-progress", ratio.toFixed(4));
+    countdown.classList.toggle("timer-orange", ratio <= 0.5 && ratio > 0.25);
+    countdown.classList.toggle("timer-red", ratio <= 0.25);
+    countdown.setAttribute("aria-label", Math.max(0, Math.ceil(_purrsuasionV2.timeLeft)) + " seconds remaining");
+  }
+}
+
+function fondSegmentPurrsuasionV2(color, portion) {
+  const span = Math.max(0, Math.min(100, portion)) * 3.6;
+  return "conic-gradient(from " + (180 - span / 2).toFixed(2) + "deg, "
+    + color + " 0deg " + span.toFixed(2) + "deg, transparent " + span.toFixed(2) + "deg 360deg)";
+}
+
+function positionnerCurseurPurrsuasionV2(cursor, pourcentage) {
+  if (!cursor) return;
+  const angle = Math.max(0, Math.min(100, Number(pourcentage) || 0)) * 3.6;
+  cursor.style.transform = "translateX(-50%) rotate(" + angle.toFixed(2) + "deg)";
+}
+
+function choisirReponsePurrsuasionV2(quality, button) {
+  if (!_purrsuasionV2 || _purrsuasionV2.phase !== "answer") return;
+  arreterAnimationMiniJeu(_purrsuasionV2.runtimeId);
+  _purrsuasionV2.phase = "roulette";
+  _purrsuasionV2.quality = quality;
+  _purrsuasionV2.cursorPct = 0;
+  document.querySelectorAll(".purrsuasion-v2-reply").forEach(function(reply) {
+    reply.disabled = true;
+    reply.classList.toggle("selected", reply === button);
+  });
+  const dialoguePhase = document.getElementById("purrsuasion-v2-dialogue-phase");
+  const selectedReply = document.getElementById("purrsuasion-v2-selected-reply");
+  const dial = document.getElementById("purrsuasion-v2-dial");
+  const roulette = document.getElementById("purrsuasion-v2-roulette");
+  const stop = document.getElementById("purrsuasion-v2-stop");
+  if (dialoguePhase) dialoguePhase.hidden = true;
+  if (selectedReply) {
+    selectedReply.className = "purrsuasion-v2-selected-reply quality-" + quality;
+    selectedReply.textContent = button ? button.textContent : "";
+  }
+  const replies = document.getElementById("purrsuasion-v2-replies");
+  if (replies) replies.innerHTML = "";
+  if (dial) {
+    dial.className = "purrsuasion-v2-dial quality-" + quality;
+    dial.style.setProperty("--purr-bronze-segment", fondSegmentPurrsuasionV2("#c37b4f", _purrsuasionV2.profile.targetSize));
+    dial.style.setProperty("--purr-silver-segment", fondSegmentPurrsuasionV2("#c8cbc8", _purrsuasionV2.profile.targetSize * 0.55));
+    dial.style.setProperty("--purr-gold-segment", fondSegmentPurrsuasionV2("#edbd42", _purrsuasionV2.profile.targetSize * 0.2));
+  }
+  if (roulette) {
+    roulette.hidden = false;
+  }
+  if (stop) stop.hidden = false;
+  positionnerCurseurPurrsuasionV2(document.getElementById("purrsuasion-v2-cursor"), 0);
+  demarrerAnimationMiniJeu(_purrsuasionV2.runtimeId, function(dt) {
+    if (!_purrsuasionV2 || _purrsuasionV2.phase !== "roulette") return false;
+    _purrsuasionV2.cursorPct = (_purrsuasionV2.cursorPct + _purrsuasionV2.profile.speed * dt) % 100;
+    positionnerCurseurPurrsuasionV2(document.getElementById("purrsuasion-v2-cursor"), _purrsuasionV2.cursorPct);
+    return true;
+  });
+  if (stop) stop.focus();
+}
+
+function arreterRoulettePurrsuasionV2() {
+  if (!_purrsuasionV2 || _purrsuasionV2.phase !== "roulette") return;
+  arreterAnimationMiniJeu(_purrsuasionV2.runtimeId);
+  const points = scorePurrsuasionV2(_purrsuasionV2.quality, _purrsuasionV2.cursorPct, _purrsuasionV2.profile.targetSize);
+  const tier = points === 3 ? "gold" : points === 2 ? "silver" : points === 1 ? "bronze" : "miss";
+  const label = points ? tier.charAt(0).toUpperCase() + tier.slice(1) + "! +" + points + " point" + (points > 1 ? "s" : "") : "Miss — 0 points";
+  terminerRoundPurrsuasionV2(tier, points, label);
+}
+
+function terminerRoundPurrsuasionV2(tier, points, message) {
+  if (!_purrsuasionV2 || (_purrsuasionV2.phase !== "answer" && _purrsuasionV2.phase !== "roulette")) return;
+  arreterAnimationMiniJeu(_purrsuasionV2.runtimeId);
+  _purrsuasionV2.phase = "result";
+  _purrsuasionV2.total += points;
+  const card = document.getElementById("purrsuasion-v2-card");
+  const replies = document.getElementById("purrsuasion-v2-replies");
+  const stop = document.getElementById("purrsuasion-v2-stop");
+  const next = document.getElementById("purrsuasion-v2-next");
+  const feedback = document.getElementById("purrsuasion-v2-feedback");
+  if (card) card.classList.add("feedback-" + tier);
+  if (replies) replies.innerHTML = "";
+  if (stop) stop.hidden = true;
+  if (feedback) feedback.textContent = message;
+  actualiserPurrsuasionV2();
+  if (_purrsuasionV2.round === 3) {
+    const result = resultatPurrsuasionV2(_purrsuasionV2.total, _purrsuasionV2.profile);
+    _purrsuasionV2.success = result.success;
+    if (feedback) feedback.textContent = _purrsuasionV2.debug
+      ? (result.success
+        ? _purrsuasionV2.visitorName + " is convinced and agrees to join the Gang! Debug score: " + result.total + " / " + result.required + "."
+        : _purrsuasionV2.visitorName + " wasn't convinced. Try again later. Debug score: " + result.total + " / " + result.required + ".")
+      : "Negotiation complete.";
+    if (next) { next.hidden = false; next.textContent = _purrsuasionV2.debug ? "TRY ANOTHER CAT" : "CONTINUE"; }
+  } else if (next) {
+    next.hidden = false;
+    next.textContent = "NEXT ROUND";
+  }
+  if (next) next.focus();
+}
+
+function continuerPurrsuasionV2() {
+  if (!_purrsuasionV2 || _purrsuasionV2.phase !== "result") return;
+  if (_purrsuasionV2.round >= 3) {
+    if (!_purrsuasionV2.debug) {
+      finaliserPurrsuasionV2Production(_purrsuasionV2.success);
+      return;
+    }
+    fermerPurrsuasionV2();
+    ouvrirPurrsuasionV2Setup();
+    return;
+  }
+  commencerRoundPurrsuasionV2();
+  const firstReply = document.querySelector(".purrsuasion-v2-reply");
+  if (firstReply) firstReply.focus();
+}
+
+function fermerPurrsuasionV2() {
+  if (!_purrsuasionV2) return;
+  const runtimeId = _purrsuasionV2.runtimeId;
+  arreterAnimationMiniJeu(runtimeId);
+  fermerDialogueModal("purrsuasion-v2-game");
+  fermerSessionMiniJeu(runtimeId);
+  _purrsuasionV2 = null;
+}
+
+function abandonnerPurrsuasionV2() {
+  if (!_purrsuasionV2) return;
+  if (_purrsuasionV2.debug) fermerPurrsuasionV2();
+  else finaliserPurrsuasionV2Production(false);
+}
+
+function finaliserPurrsuasionV2Production(success) {
+  if (!_purrsuasionV2 || _purrsuasionV2.debug || !_recruitMiniJeuActif) return;
+  const nom = _purrsuasionV2.visitorName;
+  const visage = assurerVisageProchainChat();
+  fermerPurrsuasionV2();
+  _recruitNom = nom;
+  if (success) reussirMiniJeuRecruit();
+  else {
+    _recruitMiniJeuActif = false;
+    demarrerRechargeCatch();
+    ajouterLog("event", "Failed to recruit " + nom + ".");
+    sauvegarder();
+    rendu();
+    ouvrirPopupRecruitResult(false, nom, visage);
+  }
+}
+
+document.addEventListener("keydown", function(event) {
+  if ((event.key !== " " && event.key !== "Enter") || !_purrsuasionV2 || _purrsuasionV2.phase !== "roulette") return;
+  if (event.target && event.target.closest && event.target.closest("button, input, select, textarea, [role=button]")) return;
+  event.preventDefault();
+  arreterRoulettePurrsuasionV2();
 });
 
 // ════════════════════════════════════════════════════════════
@@ -25669,6 +26222,29 @@ function montrerOiseau() {
   var dbg = document.getElementById("bird-debug-btn");
   if (dbg) dbg.style.display = "none";
   actualiserIndicateursPremierOiseau();
+}
+
+function birdWhistleDisponible() {
+  const bird = document.getElementById("bird-btn");
+  const birdAlreadyWaiting = Boolean(bird && bird.style.display !== "none");
+  const successPopup = document.getElementById("bird-success-popup");
+  const resultPending = Boolean(successPopup && successPopup.style.display !== "none");
+  return Boolean(bird) && !birdAlreadyWaiting && !resultPending && !_birdMiniJeuPending && !miniJeuRuntimeActif()
+    && catheringDebloquee() && arbreAccessibleCamp()
+    && (etat.birdPremiereReussie || onboardingPremierOiseauPret(Date.now()));
+}
+
+function appelerProchainOiseau() {
+  if (!birdWhistleDisponible()) return false;
+  if (_birdTimerId) clearTimeout(_birdTimerId);
+  _birdTimerId = null;
+  if (!etat.birdPremiereReussie) {
+    etat.birdPremierDeclenche = true;
+    etat.birdPremierSpawnTs = Date.now();
+  }
+  montrerOiseau();
+  const bird = document.getElementById("bird-btn");
+  return Boolean(bird && bird.style.display !== "none");
 }
 
 function demarrerBirdMiniJeu() {
@@ -25814,6 +26390,8 @@ document.addEventListener("keydown", function(e) {
 // ════════════════════════════════════════════════════════════
 
 initialiserRessourcesAccessibles();
+const purrsuasionV2DebugButton = document.getElementById("purrsuasion-v2-debug-btn");
+if (purrsuasionV2DebugButton) purrsuasionV2DebugButton.style.display = DEV_MODE ? "inline-flex" : "none";
 const partieExistante = charger();
 appliquerThemeInterface();
 campPanelDiagnostic.configure({

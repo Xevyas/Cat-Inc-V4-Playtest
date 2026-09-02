@@ -256,7 +256,7 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workRecipeSlots", "perksV2", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp", "campProfile"];
+  const champsObjets = ["workRecipeSlots", "perksV2", "boostInventory", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp", "campProfile"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
@@ -268,6 +268,13 @@ function validerStructureSauvegarde(d) {
     if (d.perksV2.learned.some(function(perkId) { return typeof perkId !== "string"; })) {
       return "Invalid Perks V2 learned IDs.";
     }
+  }
+  if (d.boostInventory !== undefined) {
+    const boostIds = Object.keys(d.boostInventory);
+    if (boostIds.length > 128 || boostIds.some(function(boostId) {
+      return !/^[A-Za-z][A-Za-z0-9]{0,79}$/.test(boostId)
+        || !Number.isInteger(d.boostInventory[boostId]) || d.boostInventory[boostId] < 0;
+    })) return "Invalid boost inventory.";
   }
   if (d.campProfile !== undefined) {
     if (Object.keys(d.campProfile).some(function(key) {
@@ -295,7 +302,7 @@ function validerStructureSauvegarde(d) {
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
     "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "basicWoodPlanksTotalProduit", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
-    "cannelleTokens", "cannelleBargainNextAt",
+    "cannelleTokens", "cannelleBargainNextAt", "shortcutMapFinTs",
     "workBoostFinTs", "manualFocusOnboardingCompletedTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
     "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique", "campCatPortraitScale"
   ];
@@ -994,6 +1001,8 @@ function analyserSauvegardeBrute(raw) {
     cannelleTokens:         etat.cannelleTokens,
     cannelleBargainNextAt:  etat.cannelleBargainNextAt,
     cannelleBargainRulesSeen: etat.cannelleBargainRulesSeen,
+    boostInventory:         etat.boostInventory,
+    shortcutMapFinTs:       etat.shortcutMapFinTs,
     perksV2:                perksV2Api.normalizeProgress(etat.perksV2),
     perkLearningEnCours:    etat.perkLearningEnCours,
     workBoostFinTs:         etat.workBoostFinTs,
@@ -1134,6 +1143,13 @@ function analyserSauvegardeBrute(raw) {
   etat.cannelleTokens         = Number.isFinite(d.cannelleTokens) ? Math.max(0, Math.floor(d.cannelleTokens)) : 0;
   etat.cannelleBargainNextAt  = Number.isFinite(d.cannelleBargainNextAt) ? Math.max(0, d.cannelleBargainNextAt) : 0;
   etat.cannelleBargainRulesSeen = d.cannelleBargainRulesSeen === true;
+  etat.boostInventory         = d.boostInventory && typeof d.boostInventory === "object"
+    ? Object.keys(d.boostInventory).reduce(function(inventory, boostId) {
+        inventory[boostId] = Math.max(0, Math.floor(Number(d.boostInventory[boostId]) || 0));
+        return inventory;
+      }, Object.create(null))
+    : {};
+  etat.shortcutMapFinTs       = Number.isFinite(d.shortcutMapFinTs) ? Math.max(0, d.shortcutMapFinTs) : 0;
   etat.perksV2                = perksV2Api.normalizeProgress(d.perksV2);
   etat.perkLearningEnCours    = d.perkLearningEnCours    || null;
   etat.workBoostFinTs         = d.workBoostFinTs         || 0;

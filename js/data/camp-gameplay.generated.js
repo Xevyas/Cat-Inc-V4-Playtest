@@ -33,6 +33,136 @@
     "growth": 1.5,
     "appealPerLevel": 1
   },
+  "purrsuasion": {
+    "rounds": 3,
+    "scores": {
+      "gold": 3,
+      "silver": 2,
+      "bronze": 1,
+      "miss": 0
+    },
+    "profiles": [
+      {
+        "cat": 4,
+        "required": 3,
+        "answerSeconds": 30,
+        "targetSize": 54,
+        "speed": 55
+      },
+      {
+        "cat": 5,
+        "required": 3,
+        "answerSeconds": 27,
+        "targetSize": 54,
+        "speed": 55
+      },
+      {
+        "cat": 6,
+        "required": 3,
+        "answerSeconds": 27,
+        "targetSize": 51,
+        "speed": 55
+      },
+      {
+        "cat": 7,
+        "required": 3,
+        "answerSeconds": 27,
+        "targetSize": 51,
+        "speed": 60
+      },
+      {
+        "cat": 8,
+        "required": 4,
+        "answerSeconds": 27,
+        "targetSize": 51,
+        "speed": 60
+      },
+      {
+        "cat": 9,
+        "required": 4,
+        "answerSeconds": 24,
+        "targetSize": 51,
+        "speed": 60
+      },
+      {
+        "cat": 10,
+        "required": 4,
+        "answerSeconds": 24,
+        "targetSize": 48,
+        "speed": 60
+      },
+      {
+        "cat": 11,
+        "required": 4,
+        "answerSeconds": 24,
+        "targetSize": 48,
+        "speed": 65
+      },
+      {
+        "cat": 12,
+        "required": 4,
+        "answerSeconds": 21,
+        "targetSize": 48,
+        "speed": 65
+      },
+      {
+        "cat": 13,
+        "required": 4,
+        "answerSeconds": 21,
+        "targetSize": 45,
+        "speed": 65
+      },
+      {
+        "cat": 14,
+        "required": 4,
+        "answerSeconds": 21,
+        "targetSize": 45,
+        "speed": 70
+      },
+      {
+        "cat": 15,
+        "required": 5,
+        "answerSeconds": 21,
+        "targetSize": 45,
+        "speed": 70
+      },
+      {
+        "cat": 16,
+        "required": 5,
+        "answerSeconds": 18,
+        "targetSize": 45,
+        "speed": 70
+      },
+      {
+        "cat": 17,
+        "required": 5,
+        "answerSeconds": 18,
+        "targetSize": 42,
+        "speed": 70
+      },
+      {
+        "cat": 18,
+        "required": 5,
+        "answerSeconds": 18,
+        "targetSize": 42,
+        "speed": 75
+      },
+      {
+        "cat": 19,
+        "required": 5,
+        "answerSeconds": 15,
+        "targetSize": 42,
+        "speed": 75
+      },
+      {
+        "cat": 20,
+        "required": 5,
+        "answerSeconds": 15,
+        "targetSize": 39,
+        "speed": 75
+      }
+    ]
+  },
   "definitions": {
     "cardboardBox": {
       "assetId": "cardboard-box",

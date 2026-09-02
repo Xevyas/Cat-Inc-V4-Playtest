@@ -215,6 +215,184 @@
       "text": "Now that's real wood. We can finally build a proper Wood Cathouse. Check Houses in the Camp."
     }
   ],
+  "purrsuasion": {
+    "genericPool": [
+      {
+        "id": "food",
+        "visitorLines": [
+          "Will there be enough food for one more Cat?",
+          "How do you keep everyone fed?"
+        ],
+        "replies": {
+          "good": "We plan our stores carefully, and useful paws are always welcome.",
+          "neutral": "We usually find something by supper.",
+          "bad": "Catch your own and we won't have a problem."
+        }
+      },
+      {
+        "id": "shelter",
+        "visitorLines": [
+          "Is there a warm, dry place to sleep?",
+          "What happens when the rain comes?"
+        ],
+        "replies": {
+          "good": "We build shelter together, and every Cat gets a safe bed.",
+          "neutral": "Most nights are comfortable enough.",
+          "bad": "You look fluffy. You'll manage."
+        }
+      },
+      {
+        "id": "safety",
+        "visitorLines": [
+          "How safe is this camp, really?",
+          "What protects the camp at night?"
+        ],
+        "replies": {
+          "good": "We watch each other's backs and improve our defenses together.",
+          "neutral": "It is quieter here than on the street.",
+          "bad": "Stay behind someone braver."
+        }
+      },
+      {
+        "id": "comfort",
+        "visitorLines": [
+          "Is there anywhere comfortable to rest?"
+        ],
+        "replies": {
+          "good": "Rest matters. We make room for every Cat to recover.",
+          "neutral": "There are a few decent corners.",
+          "bad": "Comfort makes Cats soft."
+        }
+      },
+      {
+        "id": "adventure",
+        "visitorLines": [
+          "Is life with your Gang ever exciting?",
+          "Do you ever explore beyond the camp?"
+        ],
+        "replies": {
+          "good": "We explore, build and protect a home of our own. No two days are alike.",
+          "neutral": "Something unexpected happens now and then.",
+          "bad": "If it gets boring, you can count the planks."
+        }
+      },
+      {
+        "id": "belonging",
+        "visitorLines": [
+          "Would I actually belong in your camp?",
+          "Do new Cats get treated like outsiders?"
+        ],
+        "replies": {
+          "good": "Every Cat brings something different. We'll find the place where you shine.",
+          "neutral": "There are plenty of Cats around, at least.",
+          "bad": "Belonging is mostly a matter of looking busy."
+        }
+      },
+      {
+        "id": "usefulness",
+        "visitorLines": [
+          "What if I don't know how to help?"
+        ],
+        "replies": {
+          "good": "We teach each other. Your strengths will reveal where you fit.",
+          "neutral": "We can probably find you a task.",
+          "bad": "Then try not to get in the way."
+        }
+      },
+      {
+        "id": "facilities",
+        "visitorLines": [
+          "Does this camp have anything besides boxes?"
+        ],
+        "replies": {
+          "good": "It grows every day: workshops, shelter and places built by Cats for Cats.",
+          "neutral": "We have the basics and a few plans.",
+          "bad": "A box is more than enough luxury."
+        }
+      },
+      {
+        "id": "trust",
+        "visitorLines": [
+          "How do I know your Gang keeps its promises?"
+        ],
+        "replies": {
+          "good": "Judge us by what we build and how we care for every member.",
+          "neutral": "You can stay cautious until you settle in.",
+          "bad": "You don't. That's the exciting part."
+        }
+      },
+      {
+        "id": "freedom",
+        "visitorLines": [
+          "Would I still have space to be myself?"
+        ],
+        "replies": {
+          "good": "Yes. We coordinate when it matters and respect each Cat's space.",
+          "neutral": "Nobody watches you all the time.",
+          "bad": "Freedom is scheduled after chores."
+        }
+      },
+      {
+        "id": "contribution",
+        "visitorLines": [
+          "Will I have to work all day?"
+        ],
+        "replies": {
+          "good": "Everyone contributes, but we share the load and rest together too.",
+          "neutral": "There is work, but not every minute.",
+          "bad": "Only until everything is finished. So, yes."
+        }
+      },
+      {
+        "id": "future",
+        "visitorLines": [
+          "Is this camp actually going somewhere?"
+        ],
+        "replies": {
+          "good": "Absolutely. Every new paw helps turn this camp into a lasting home.",
+          "neutral": "We have made some progress already.",
+          "bad": "Ask again when the roof stops leaking."
+        }
+      }
+    ],
+    "recruitOverrides": {
+      "10": [
+        {
+          "id": "cannelle-trade",
+          "visitorLines": [
+            "Does your Gang understand a fair trade?"
+          ],
+          "replies": {
+            "good": "A fair deal makes both sides stronger. You'll have a real voice here.",
+            "neutral": "We can discuss terms when you arrive.",
+            "bad": "The best deal is doing what I say."
+          }
+        },
+        {
+          "id": "cannelle-ambition",
+          "visitorLines": [
+            "Is there room here for an ambitious Cat?"
+          ],
+          "replies": {
+            "good": "Plenty. Build something valuable and the whole Gang will notice.",
+            "neutral": "There are a few opportunities.",
+            "bad": "Ambition is fine when it stays quiet."
+          }
+        },
+        {
+          "id": "cannelle-market",
+          "visitorLines": [
+            "Could this camp support a proper market someday?"
+          ],
+          "replies": {
+            "good": "With the right Cat organizing it, absolutely.",
+            "neutral": "Maybe, once the basics are handled.",
+            "bad": "We already have boxes. What else would anyone buy?"
+          }
+        }
+      ]
+    }
+  },
   "scenes": [
     {
       "id": "ecran-story-cannelle-recruit",

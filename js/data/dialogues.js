@@ -3,6 +3,7 @@
 
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
+  const GENERATED_PURRSUASION = CatInc.data.dialogueCatalog && CatInc.data.dialogueCatalog.purrsuasion;
 
   const LEGACY_CHARACTERS = Object.freeze({
     bernard: Object.freeze({ id: "bernardo", name: "Bernardo", side: "left", portrait: "img/Cat faces/Bernardo.png" }),
@@ -1427,6 +1428,7 @@ function characterFromLine(line) {
     scenes: SCENES,
     beats: SCENE_BEATS,
     quickDialogues: QUICK_DIALOGUES,
+    purrsuasion: GENERATED_PURRSUASION,
     hydrateModal: hydrateModal,
     resetModal: resetModal,
     advanceModal: advanceModal
