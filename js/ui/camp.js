@@ -118,8 +118,8 @@
   }
 
   function runtimeReviewRevision(typeId, preferredTier) {
-    const family = RUNTIME_MANIFEST.reviewAssets
-      && RUNTIME_MANIFEST.reviewAssets[typeId];
+    const family = RUNTIME_MANIFEST.assets
+      && RUNTIME_MANIFEST.assets[typeId];
     const tier = family && family.tiers
       && family.tiers[String(preferredTier || 1)];
     if (!tier || !Number.isInteger(tier.liveRevision)) return null;
@@ -240,9 +240,8 @@
     if (!sticker || !color || !anchor || anchor.visible === false) return null;
     return Object.freeze({
       ...selection,
-      image: sticker.maskDataUri || (
-        sticker.runtimePath + (sticker.runtimePath.includes("?") ? "&" : "?") + "sticker-art=3"
-      ),
+      image: sticker.runtimePath
+        + (sticker.runtimePath.includes("?") ? "&" : "?") + "sticker-art=3",
       color: color.hex,
       x: anchor.x,
       y: anchor.y,

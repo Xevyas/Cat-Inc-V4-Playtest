@@ -183,6 +183,7 @@ function creerEtatInitial() {
   exploZoneEnCours:    null,   // { zoneId, kittyIndices, startTs, duree }
   resultatsExplorationZones: {}, // { zoneId: { success, kittyIndices } }
   resultatsCampaigns:  {},     // { campaignId: { success, kittyIndices, recompenses[] } }
+  explorationRetries: { zones: {}, campaigns: {} }, // Capped failure counts by canonical activity ID.
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
   butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, tripled, rewards } }
   managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null },

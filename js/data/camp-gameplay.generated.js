@@ -163,6 +163,66 @@
       }
     ]
   },
+  "cannelleBargain": {
+    "offersPerRound": 3,
+    "rounds": 5,
+    "scores": {
+      "correct": 1,
+      "fastestCorrectBonus": 1,
+      "wrongOrTimeout": 0
+    },
+    "unlockLevelStep": 10,
+    "rewardPerDifficulty": 1,
+    "roundSeconds": 5,
+    "cooldownHours": 3,
+    "difficulties": [
+      {
+        "difficulty": 1,
+        "minDelaySeconds": 2.2,
+        "maxDelaySeconds": 3,
+        "accuracyPercent": 60,
+        "minGapPercent": 30
+      },
+      {
+        "difficulty": 2,
+        "minDelaySeconds": 1.9,
+        "maxDelaySeconds": 2.6,
+        "accuracyPercent": 70,
+        "minGapPercent": 22
+      },
+      {
+        "difficulty": 3,
+        "minDelaySeconds": 1.6,
+        "maxDelaySeconds": 2.3,
+        "accuracyPercent": 78,
+        "minGapPercent": 16
+      },
+      {
+        "difficulty": 4,
+        "minDelaySeconds": 1.35,
+        "maxDelaySeconds": 2,
+        "accuracyPercent": 85,
+        "minGapPercent": 11
+      },
+      {
+        "difficulty": 5,
+        "minDelaySeconds": 1.15,
+        "maxDelaySeconds": 1.8,
+        "accuracyPercent": 90,
+        "minGapPercent": 7.5
+      }
+    ],
+    "laterDifficulty": {
+      "minDelayStepSeconds": 0.09,
+      "minDelayFloorSeconds": 0.7,
+      "maxDelayStepSeconds": 0.1,
+      "maxDelayFloorSeconds": 1.1,
+      "accuracyStepPercent": 1.5,
+      "accuracyCeilingPercent": 96,
+      "minGapStepPercent": 0.6,
+      "minGapFloorPercent": 4
+    }
+  },
   "definitions": {
     "cardboardBox": {
       "assetId": "cardboard-box",

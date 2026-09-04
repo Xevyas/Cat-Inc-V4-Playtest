@@ -4,8 +4,93 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0171" />
-  <link rel="stylesheet" href="style-stylish.css?v=0.0001" />
+  <!-- The curtain can paint without waiting for runtime CSS, fonts or scripts. -->
+  <style>
+    #boot-curtain { position: fixed; inset: 0; z-index: 2147483647; display: grid;
+      place-content: center; gap: 18px; padding: 24px; box-sizing: border-box;
+      background: #f4ead6; color: #62482f; text-align: center; font: 18px/1.5 Georgia, serif; }
+    #boot-curtain[hidden], #boot-curtain [hidden] { display: none !important; }
+    #boot-curtain strong { font: bold 44px/1.2 Georgia, serif; }
+    #boot-curtain p { margin: 0; max-width: 30em; }
+    #boot-curtain button { min-height: 44px; padding: 10px 20px; margin: 4px;
+      background: #fffaf0; color: #62482f; border: 1px solid #987550;
+      border-radius: 10px; font: inherit; cursor: pointer; }
+    #boot-curtain button:focus-visible { outline: 3px solid #62482f; outline-offset: 3px; }
+  </style>
+  <script>
+    (function() {
+      const boot = (window.CatInc = window.CatInc || {}).boot = {};
+      let fatal = false;
+      let recoveryFocus = null;
+      const curtain = function() { return document.getElementById("boot-curtain"); };
+      const pending = function() { return !curtain() || !curtain().hidden; };
+      boot.reveal = function() {
+        if (fatal) return;
+        clearTimeout(deadline);
+        curtain().hidden = true;
+        cleanup();
+        if (curtain().contains(document.activeElement) && recoveryFocus && recoveryFocus.isConnected) {
+          recoveryFocus.focus({preventScroll: true});
+        }
+      };
+      boot.fail = function(message, canContinue) {
+        if (!pending()) return;
+        fatal = fatal || !canContinue;
+        const show = function() {
+          const cover = curtain();
+          if (!cover.contains(document.activeElement)) recoveryFocus = document.activeElement;
+          cover.inert = false;
+          cover.removeAttribute("aria-hidden");
+          document.getElementById("boot-message").textContent = message;
+          document.getElementById("boot-recovery").hidden = false;
+          document.getElementById("boot-continue").hidden = fatal;
+        };
+        if (curtain()) show();
+        else document.addEventListener("DOMContentLoaded", show, {once: true});
+      };
+      function error(event) {
+        // Image failures belong to the current-surface readiness check below.
+        if (event.target && /^(IMG|AUDIO|VIDEO|SOURCE)$/.test(event.target.tagName)) return;
+        boot.fail("Cat Inc could not start. Please reload to try again.", false);
+      }
+      function input(event) {
+        if (!pending()) return;
+        const button = event.target.closest && event.target.closest("#boot-curtain button");
+        if (button && event.type === "click") {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (button.id === "boot-reload") location.reload();
+          else boot.reveal();
+          return;
+        }
+        if (button && !event.type.startsWith("key")) return;
+        // Keep recovery keyboard navigation inside the curtain, even if the
+        // real Intro has already installed its own dialog focus trap.
+        if (event.type === "keydown" && event.key === "Tab" && curtain()) {
+          const buttons = Array.from(curtain().querySelectorAll("button")).filter(b => !b.hidden && !b.parentElement.hidden);
+          if (buttons.length) {
+            const index = buttons.indexOf(document.activeElement);
+            buttons[(index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus();
+          }
+        }
+        if (button && event.type === "keydown" && (event.key === "Enter" || event.key === " ")) button.click();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      const events = ["click", "pointerdown", "pointerup", "touchstart", "touchend", "keydown", "keyup", "wheel"];
+      function cleanup() {
+        events.forEach(type => window.removeEventListener(type, input, true));
+        window.removeEventListener("error", error, true);
+        window.removeEventListener("unhandledrejection", error);
+      }
+      events.forEach(type => window.addEventListener(type, input, {capture: true, passive: false}));
+      window.addEventListener("error", error, true);
+      window.addEventListener("unhandledrejection", error);
+      const deadline = setTimeout(function() {
+        boot.fail("Loading is taking longer than expected. You can reload and try again.", !fatal && boot.surfaceRendered === true);
+      }, 45000);
+    })();
+  </script>
   <style>
     /* First-paint guard: only the gardens are fogged. Houses and river remain
        visible while game state is loading. */
@@ -24,6 +109,19 @@
   </style>
 </head>
 <body data-ui-theme="basic">
+  <div id="boot-curtain" role="status" aria-live="polite">
+    <strong>Cat Inc</strong>
+    <p id="boot-message">Loading…</p>
+    <div id="boot-recovery" hidden>
+      <button id="boot-reload" type="button">Reload</button>
+      <button id="boot-continue" type="button" hidden>Continue anyway</button>
+    </div>
+    <noscript>Enable JavaScript to play Cat Inc.</noscript>
+  </div>
+  <!-- Body stylesheets block the following runtime, while the preceding,
+       self-contained curtain is already paintable. -->
+  <link rel="stylesheet" href="style.css?v=0.0171" />
+  <link rel="stylesheet" href="style-stylish.css?v=0.0001" />
 
   <!-- INTRO -->
   <div id="ecran-intro" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
@@ -330,7 +428,7 @@
     <div class="zone-sequence">
       <button id="bouton-vitesse" onclick="cyclerVitesse()">1×</button>
       <div class="stats-attrapage-wrapper" id="stats-attrapage-wrapper">
-        <button id="bouton-stats-attrapage" class="bouton-stats" onclick="toggleStatsAttrapage()" title="Recruiting stats" aria-label="Show recruiting stats" aria-expanded="false" aria-controls="popover-stats-attrapage">?</button>
+        <button id="bouton-stats-attrapage" class="interface-details-control bouton-stats" onclick="toggleStatsAttrapage()" title="Recruiting stats" aria-label="Show recruiting stats" aria-expanded="false" aria-controls="popover-stats-attrapage"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
         <div id="popover-stats-attrapage" class="popover-stats" role="region" aria-label="Recruiting stats" aria-hidden="true" style="display:none">
           <div class="popover-ligne"><span>Next visitor</span><span id="stat-recruit-difficulty"></span></div>
           <div class="popover-ligne"><span>Base arrival time</span><span id="stat-minimum"></span></div>
@@ -488,12 +586,12 @@
         <div id="camp-profile-stats" class="camp-profile-stats" aria-label="Current Camp statistics">
           <span id="camp-profile-panel-level-wrap"><small>Camp Level</small><strong id="camp-profile-panel-level">0</strong></span>
           <span id="camp-profile-panel-cats-wrap">
-            <button id="camp-housing-summary" class="camp-profile-stat-action" type="button" aria-label="Show Housing Capacity details" aria-expanded="false" aria-controls="camp-housing-details" onclick="toggleDetailsHousingCamp(event)">?</button>
+            <button id="camp-housing-summary" class="interface-details-control camp-profile-stat-action" type="button" aria-label="Show Housing Capacity details" aria-expanded="false" aria-controls="camp-housing-details" onclick="toggleDetailsHousingCamp(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
             <small>Cats / Capacity</small><strong id="camp-profile-panel-cats">0 / 4</strong>
             <span id="camp-housing-details" class="camp-appeal-details" role="region" aria-label="Housing Capacity details" hidden></span>
           </span>
           <span id="camp-profile-panel-appeal-wrap">
-            <button id="camp-appeal-summary" class="camp-profile-stat-action" type="button" aria-label="Show Appeal details" aria-expanded="false" aria-controls="camp-appeal-details" onclick="toggleDetailsAttractiviteCamp(event)">?</button>
+            <button id="camp-appeal-summary" class="interface-details-control camp-profile-stat-action" type="button" aria-label="Show Appeal details" aria-expanded="false" aria-controls="camp-appeal-details" onclick="toggleDetailsAttractiviteCamp(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
             <small>Appeal</small><strong id="camp-profile-panel-appeal">0</strong>
             <span id="camp-appeal-details" class="camp-appeal-details" role="region" aria-label="Appeal details" hidden></span>
           </span>
@@ -575,7 +673,7 @@
         <div class="camp-prototype-heading">
           <div class="camp-prototype-heading-actions">
             <div id="camp-prototype-blocked-alert" class="camp-prototype-blocked-alert" hidden>
-              <button id="camp-prototype-blocked-alert-toggle" class="camp-prototype-blocked-alert-toggle" type="button" aria-label="Show blocked buildings" aria-expanded="false" aria-controls="camp-prototype-blocked-alert-panel" onclick="basculerAlerteBatimentsBloquesCampPrototype(event)">!</button>
+              <button id="camp-prototype-blocked-alert-toggle" class="camp-prototype-blocked-alert-toggle" type="button" aria-label="Show blocked buildings" aria-expanded="false" aria-controls="camp-prototype-blocked-alert-panel" onclick="basculerAlerteBatimentsBloquesCampPrototype(event)"></button>
               <div id="camp-prototype-blocked-alert-panel" class="camp-prototype-blocked-alert-panel" role="status" hidden>
                 <strong id="camp-prototype-blocked-alert-title">Blocked buildings</strong>
                 <ul id="camp-prototype-blocked-alert-list"></ul>
@@ -687,7 +785,7 @@
           <div id="camp-prototype-placement-actions" class="camp-prototype-placement-actions camp-prototype-edit-only" role="group" aria-label="Rotate, confirm, cancel or remove placement" hidden>
             <p id="camp-prototype-house-access-warning" class="camp-prototype-house-access-warning" role="status" aria-live="polite" hidden></p>
             <button id="camp-prototype-rotate" class="camp-prototype-placement-action camp-prototype-rotate" type="button" aria-label="Rotate 90 degrees" title="Rotate 90°" onclick="tournerSelectionCampPrototype()" disabled>
-              <img src="img/interface/Rotate_Final.png?v=0.0001" alt="">
+              <img loading="lazy" decoding="async" src="img/interface/Rotate_Final.png?v=0.0001" alt="">
             </button>
             <button id="camp-prototype-placement-confirm" class="camp-prototype-placement-action camp-prototype-placement-confirm" type="button" aria-label="Confirm placement" aria-describedby="camp-prototype-status" title="Confirm placement" onclick="validerPlacementCampPrototype()" disabled>
               <img src="img/interface/✅_Final.png?v=0.0026" alt="">
@@ -696,15 +794,15 @@
               <img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">
             </button>
             <button id="camp-prototype-delete" class="camp-prototype-placement-action camp-prototype-delete" type="button" aria-label="Remove selected item" title="Remove selected item" onclick="supprimerSelectionCampPrototype()" disabled>
-              <img src="img/interface/Trash_Final.png?v=0.0001" alt="">
+              <img loading="lazy" decoding="async" src="img/interface/Trash_Final.png?v=0.0001" alt="">
             </button>
            </div>
            </div>
            <div class="camp-prototype-river-band" aria-hidden="true">
              <div class="camp-prototype-river-segments">
-               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.png?v=0.0001" alt=""></span>
-               <span><img class="camp-prototype-river camp-prototype-river-home" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.png?v=0.0001" alt=""></span>
-               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.png?v=0.0001" alt=""></span>
+               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
+               <span><img class="camp-prototype-river camp-prototype-river-home" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
+               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
              </div>
              <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
            </div>
@@ -741,11 +839,11 @@
           <span>Paths</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="fence" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('fence')">
-          <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/camp-boundary-fence/tier-1/revision-3/down.png" alt="">
+          <img class="camp-prototype-category-icon-image" loading="lazy" decoding="async" src="img/Buildings/Camp%20Runtime/camp-boundary-fence/tier-1/revision-3/down.png" alt="">
           <span>Fences</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="junk" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('junk')">
-          <img class="camp-prototype-category-icon-image" src="img/Maps/Camp%20Runtime/Obstacles/Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png" alt="">
+          <img class="camp-prototype-category-icon-image" loading="lazy" decoding="async" src="img/Maps/Camp%20Runtime/Obstacles/Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png" alt="">
           <span>Junk</span>
         </button>
         <button type="button" class="camp-dev-only" data-camp-category="dev-library" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('dev-library')">
@@ -762,6 +860,7 @@
 
   <!-- CONTENU WORK: family recipe slots -->
   <div id="contenu-work" role="tabpanel" aria-labelledby="onglet-work" aria-hidden="true" style="display:none">
+    <div class="work-sheet">
     <div id="gang-leader-banner" style="display:none"></div>
     <div class="work-filtres">
       <div class="work-subnav">
@@ -786,6 +885,7 @@
       <!-- Family recipe slots are generated by initialiserWorkStructure(). -->
     </section>
 
+    </div>
   </div> <!-- /contenu-work -->
 
   <!-- CONTENU FACILITIES -->
@@ -803,7 +903,7 @@
           </div>
         </div>
         <section class="jobs-function-section" id="jobs-training-panel" role="tabpanel" aria-labelledby="jobs-workspace-tab-training">
-          <h3 class="jobs-function-title panneau-titre-aide" id="jobs-training-heading">Training <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job training" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)">?</button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train an unassigned Cat for one of the gang's available Jobs.</span></span></h3>
+          <h3 class="jobs-function-title panneau-titre-aide" id="jobs-training-heading">Training <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Job training" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train an unassigned Cat for one of the gang's available Jobs.</span></span></h3>
           <div id="jc-interface" style="display:none"></div>
         </section>
         <section class="jobs-function-section jobs-specialization-section" id="section-advanced-training" role="tabpanel" aria-labelledby="jobs-workspace-tab-specialization" hidden>
@@ -812,9 +912,9 @@
         </section>
       </section>
       <section class="panneau panneau-buildings" id="section-laboratory" style="display:none">
-        <h2 class="panneau-titre panneau-titre-aide">Laboratory <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Laboratory" aria-expanded="false" aria-controls="laboratory-help" onclick="togglePanneauAide(event)">?</button><span id="laboratory-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Study engineering and discover entirely new forms of boosts.</span></span></h2>
+        <h2 class="panneau-titre panneau-titre-aide">Laboratory <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Laboratory" aria-expanded="false" aria-controls="laboratory-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="laboratory-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Study engineering and discover entirely new forms of boosts.</span></span></h2>
         <div class="bloc-action bloc-action-building">
-          <img class="work-sprite" src="img/Buildings/Laboratory_Final.png?v=0.0034" alt="Laboratory">
+          <img class="work-sprite" loading="lazy" decoding="async" src="img/Buildings/Laboratory_Final.png?v=0.0034" alt="Laboratory">
           <div class="bloc-entete-textes">
             <span class="bloc-desc">A laboratory where cats can discover new engineering laws and principles.</span>
           </div>
@@ -828,13 +928,16 @@
   <!-- CONTENU INVENTAIRE -->
   <div id="contenu-inventaire" role="tabpanel" aria-labelledby="onglet-inventaire" aria-hidden="true" style="display:none">
     <div id="inv-res-tabs"></div>
+    <div class="bag-sheet">
     <div class="grille grille-2col">
 
       <section class="panneau" id="section-items">
-        <h2 class="panneau-titre panneau-titre-aide">Items <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Items" aria-expanded="false" aria-controls="items-help" onclick="togglePanneauAide(event)">?</button><span id="items-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Guides and discoveries that unlock new possibilities.</span></span></h2>
+        <h2 class="panneau-titre panneau-titre-aide">Items <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Items" aria-expanded="false" aria-controls="items-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="items-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Guides and discoveries that unlock new possibilities.</span></span></h2>
+        <div id="inv-item-filters" hidden></div>
         <div id="inv-liste-items">
           <p class="inv-vide">Your backpack is empty.</p>
         </div>
+        <div id="inv-training-resources" hidden></div>
       </section>
 
       <section class="panneau" id="section-boosts">
@@ -845,12 +948,14 @@
       </section>
 
       <section class="panneau" id="section-inv-resources">
-        <h2 class="panneau-titre panneau-titre-aide">Resources <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Resources" aria-expanded="false" aria-controls="inventory-resources-help" onclick="togglePanneauAide(event)">?</button><span id="inventory-resources-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Everything gathered and crafted by your gang.</span></span></h2>
+        <h2 class="panneau-titre panneau-titre-aide">Resources <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Resources" aria-expanded="false" aria-controls="inventory-resources-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="inventory-resources-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Everything gathered and crafted by your gang.</span></span></h2>
+        <div id="inv-resource-filters" hidden></div>
         <p id="inventory-storage-summary" class="inventory-storage-summary" role="status"></p>
         <div id="inv-resources"></div>
       </section>
 
     </div>
+    </div> <!-- /bag-sheet -->
   </div> <!-- /contenu-inventaire -->
 
   <!-- CONTENU EXPLORATIONS -->
@@ -859,12 +964,13 @@
     <section class="panneau" id="section-explo-map">
       <div class="explo-map-heading">
         <h2 class="panneau-titre">Neighborhood map</h2>
-        <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Neighborhood map" aria-expanded="false" aria-controls="neighborhood-map-help" onclick="togglePanneauAide(event)">?</button><span id="neighborhood-map-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Select a zone to review its status, campaigns and scouting missions.</span></span>
+        <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Neighborhood map" aria-expanded="false" aria-controls="neighborhood-map-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="neighborhood-map-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Select a zone to review its status, campaigns and scouting missions.</span></span>
       </div>
       <div id="explo-map-section"></div>
     </section>
 
     <div id="exploration-mobile-zone-header" class="exploration-mobile-zone-header" aria-hidden="true">
+      <span class="exploration-zone-inspector-label">Selected Zone</span>
       <div class="exploration-mobile-zone-top">
         <button type="button" class="exploration-mobile-back" onclick="retourCarteExplorationMobile()" aria-label="Return to the neighborhood map">← Map</button>
         <div class="exploration-mobile-zone-identity">
@@ -873,6 +979,7 @@
         </div>
         <span id="exploration-mobile-zone-status" class="exploration-mobile-zone-status"></span>
       </div>
+      <p id="exploration-mobile-zone-description" class="exploration-zone-description"></p>
       <div id="exploration-mobile-mission-tabs" class="exploration-mobile-mission-tabs" role="tablist" aria-label="Zone mission types">
         <button id="exploration-mobile-campaigns-tab" type="button" role="tab" aria-controls="section-campaigns" onclick="selectionnerTypeMissionExplorationMobile('campaigns')">
           Campaigns <span id="exploration-mobile-campaigns-count">0</span>
@@ -1162,7 +1269,7 @@
         <div id="market-stall-shop-tabs" class="market-stall-shop-tabs" role="tablist" aria-label="Shop categories" onkeydown="gererClavierCategoriesBoutiqueMarketStall(event)"></div>
         <div id="market-stall-shop-mini-game" class="market-stall-shop-mini-game" hidden>
           <button id="market-stall-shop-mini-game-launch" type="button" onclick="ouvrirCannelleBargain()"><span>Cannelle's Bargain</span><small id="market-stall-shop-mini-game-state">Play</small></button>
-          <button id="market-stall-shop-mini-game-help" type="button" aria-label="Cannelle's Bargain rules" title="Rules" onclick="ouvrirReglesCannelleBargain(event)">?</button>
+          <button id="market-stall-shop-mini-game-help" type="button" aria-label="Cannelle's Bargain rules" title="Rules" onclick="ouvrirReglesCannelleBargain(event)" class="interface-details-control"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
         </div>
       </div>
       <p id="market-stall-shop-status" class="market-stall-shop-status" role="status" aria-live="polite"></p>
@@ -1172,7 +1279,7 @@
 
   <div id="cannelle-bargain-rules-modal" class="explo-modal cannelle-bargain-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cannelle-bargain-rules-title" style="display:none">
     <div class="explo-modal-panneau cannelle-bargain-panel" role="document" tabindex="-1">
-      <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-rules-title">Cannelle's Bargain — Rules</span></div>
+      <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-rules-title">Cannelle's Bargain — How to Play</span></div>
       <div id="cannelle-bargain-rules-copy" class="cannelle-bargain-rules-copy"></div>
       <button id="cannelle-bargain-rules-confirm" class="btn-inv-action" type="button" onclick="confirmerReglesCannelleBargain()">Got it!</button>
     </div>
@@ -1181,7 +1288,7 @@
   <div id="cannelle-bargain-picker-modal" class="explo-modal cannelle-bargain-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cannelle-bargain-picker-title" style="display:none">
     <div class="explo-modal-panneau cannelle-bargain-panel" role="document" tabindex="-1">
       <div class="explo-modal-header"><span class="explo-modal-titre" id="cannelle-bargain-picker-title">Choose difficulty</span><button class="explo-modal-close" type="button" aria-label="Close difficulty picker" onclick="fermerPickerCannelleBargain()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>
-      <p class="cannelle-bargain-token-balance"><img src="img/resources/silver-coin.png" alt=""> Cannelle's Tokens: <strong id="cannelle-bargain-token-balance">0</strong></p>
+      <p class="cannelle-bargain-token-balance"><img loading="lazy" decoding="async" src="img/resources/silver-coin.png" alt=""> Cannelle's Tokens: <strong id="cannelle-bargain-token-balance">0</strong></p>
       <div id="cannelle-bargain-difficulties" class="cannelle-bargain-difficulties"></div>
     </div>
   </div>
@@ -1192,10 +1299,13 @@
       <div class="cannelle-bargain-scoreboard">
         <span><img data-bernardo-cat-face alt="Bernardo"><strong id="cannelle-bargain-score-bernardo">0</strong></span>
         <span><b id="cannelle-bargain-round">Round 1 / 5</b><small id="cannelle-bargain-difficulty">Difficulty 1</small></span>
-        <span><img src="img/Cat faces/cannelle-3.png" alt="Cannelle"><strong id="cannelle-bargain-score-cannelle">0</strong></span>
+        <span><img loading="lazy" decoding="async" src="img/Cat faces/cannelle-3.png" alt="Cannelle"><strong id="cannelle-bargain-score-cannelle">0</strong></span>
       </div>
       <div id="cannelle-bargain-offers" class="cannelle-bargain-offers"></div>
-      <p id="cannelle-bargain-timer" class="cannelle-bargain-timer" role="timer">5.0s</p>
+      <div id="cannelle-bargain-timer" class="mini-game-countdown cannelle-bargain-timer" role="timer" aria-label="5 seconds remaining">
+        <span id="cannelle-bargain-time">5</span>
+        <small>SEC</small>
+      </div>
       <p id="cannelle-bargain-feedback" class="cannelle-bargain-feedback" role="status" aria-live="polite">Choose the best Cat Food per gold coin.</p>
       <button id="cannelle-bargain-next" class="btn-inv-action" type="button" hidden onclick="continuerCannelleBargain()">Next round</button>
     </div>
@@ -1354,7 +1464,7 @@
       </label>
       <div class="purrsuasion-v2-difficulty-heading">
         <strong id="purrsuasion-v2-difficulty-label">Difficulty 1</strong>
-        <button id="purrsuasion-v2-help-btn" class="purrsuasion-v2-help" type="button" aria-expanded="false" aria-controls="purrsuasion-v2-difficulty-panel" onclick="basculerAidePurrsuasionV2()">?</button>
+        <button id="purrsuasion-v2-help-btn" aria-label="Recruitment details" class="interface-details-control purrsuasion-v2-help" type="button" aria-expanded="false" aria-controls="purrsuasion-v2-difficulty-panel" onclick="basculerAidePurrsuasionV2()"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
       </div>
       <div id="purrsuasion-v2-difficulty-panel" class="purrsuasion-v2-difficulty-panel" hidden></div>
       <button id="purrsuasion-v2-start" class="recruit-pitch-btn" type="button" onclick="lancerPurrsuasionV2()">START NEGOTIATION</button>
@@ -1367,6 +1477,15 @@
       <div class="recruit-title-row">
         <h3 id="purrsuasion-v2-title">Purrsuasion V2</h3>
         <span id="purrsuasion-v2-round-badge" class="recruit-difficulty">Round 1 / 3 · 0 pts</span>
+      </div>
+      <div class="purrsuasion-v2-progress">
+        <div class="purrsuasion-v2-progress-heading">
+          <strong>Recruitment</strong>
+          <span id="purrsuasion-v2-progress-value">0 / 3</span>
+        </div>
+        <div id="purrsuasion-v2-progress-track" class="purrsuasion-v2-progress-track" role="progressbar" aria-label="Recruitment progress" aria-valuemin="0" aria-valuenow="0" aria-valuemax="3">
+          <span id="purrsuasion-v2-progress-fill" class="purrsuasion-v2-progress-fill"></span>
+        </div>
       </div>
       <div id="purrsuasion-v2-dialogue-phase" class="purrsuasion-v2-dialogue-phase">
         <div class="purrsuasion-v2-conversation">
@@ -1399,8 +1518,14 @@
           <div id="purrsuasion-v2-cursor" class="purrsuasion-v2-cursor" aria-hidden="true"></div>
           <img class="purrsuasion-v2-dial-bernardo" data-bernardo-cat-face alt="Bernardo">
         </div>
+        <div class="purrsuasion-v2-legend">Gold +3 · Silver +2 · Bronze +1</div>
       </div>
       <button id="purrsuasion-v2-stop" class="recruit-pitch-btn" type="button" onclick="arreterRoulettePurrsuasionV2()" hidden>STOP THE PAW</button>
+      <div id="purrsuasion-v2-callout" class="purrsuasion-v2-callout" role="status" hidden>
+        <strong id="purrsuasion-v2-result-copy"></strong>
+        <span id="purrsuasion-v2-award" class="purrsuasion-v2-award"></span>
+        <span id="purrsuasion-v2-reward" class="purrsuasion-v2-reward" aria-hidden="true"></span>
+      </div>
       <div id="purrsuasion-v2-feedback" class="purrsuasion-v2-feedback" role="status" aria-live="polite"></div>
       <button id="purrsuasion-v2-next" class="recruit-pitch-btn" type="button" onclick="continuerPurrsuasionV2()" hidden>NEXT ROUND</button>
       <button id="purrsuasion-v2-leave" class="bird-skip-btn" type="button" onclick="abandonnerPurrsuasionV2()">Leave POC</button>
@@ -1447,7 +1572,6 @@
   <script src="js/data/perks.generated.js?v=0.0001"></script>
   <script src="js/data/changelog.js?v=0.0083"></script>
   <script src="js/data/dialogues.generated.js?v=0.0005"></script>
-  <script src="js/data/cannelle-bargain.js?v=0.0001"></script>
   <script src="js/data/dialogues.js?v=0.0007"></script>
   <script src="js/data/shop.js?v=0.0001"></script>
   <script src="js/core/state.js?v=0.0047"></script>
@@ -1455,9 +1579,16 @@
   <script src="js/core/dev-tools.js?v=0.0001"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/data/camp-gameplay.generated.js?v=0.0008"></script>
+  <script src="js/data/cannelle-bargain.js?v=0.0002"></script>
   <script src="js/data/playable-content-scenario.js?v=0.0002"></script>
   <script src="js/core/incrementor-law.js?v=0.0004"></script>
   <script src="js/data/camp-assets.generated.js?v=0.0016"></script>
+  <script>
+    if (/(?:^|[?&])debug=1(?:&|$)/.test(location.search)
+        && /(?:^|[?&])campAssetTest=/.test(location.search)) {
+      document.write('<script src="tools/camp_asset_studio/.runtime/camp-asset-test.generated.js"><\/script>');
+    }
+  </script>
   <script src="js/data/camp-templates.generated.js?v=0.0003"></script>
   <script src="js/core/camp-connectivity.js?v=0.0003"></script>
   <script src="js/core/camp-capabilities.js?v=0.0001"></script>

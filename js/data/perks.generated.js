@@ -1526,13 +1526,22 @@
       "id": "builderConstructionSpecialist",
       "jobId": "builder",
       "name": "Builder",
-      "description": "Initial job perk",
+      "description": "+2% multiplicative Construction / Repair / Tier Upgrade speed per Cat level while assigned.",
       "starting": false,
       "granted": true,
       "available": true,
       "prerequisites": [],
       "costs": {},
-      "effects": [],
+      "effects": [
+        {
+          "effectId": "assignedCampActionLevelSpeedMultiplier",
+          "parameters": {
+            "factor": 1.02,
+            "jobId": "builder",
+            "taskScope": "construction-repair-upgrade"
+          }
+        }
+      ],
       "layout": {
         "x": 60,
         "y": 300
@@ -2086,6 +2095,22 @@
       }
     }
   },
+  "assignedCampActionLevelSpeedMultiplier": {
+    "shape": "job-and-task-scoped-level-multiplier",
+    "parameters": {
+      "factor": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 10
+      },
+      "jobId": {
+        "type": "job-id"
+      },
+      "taskScope": {
+        "type": "camp-task-scope"
+      }
+    }
+  },
   "globalCampActionSpeedMultiplier": {
     "shape": "task-scoped-multiplier",
     "parameters": {
@@ -2210,6 +2235,11 @@
       return context && context.jobId === parameters.jobId
         && campTaskScopeMatches(parameters.taskScope, context.taskKind)
         ? Math.max(current, parameters.factor) : current;
+    },
+    assignedCampActionLevelSpeedMultiplier: function(current, parameters, context) {
+      return context && context.jobId === parameters.jobId
+        && campTaskScopeMatches(parameters.taskScope, context.taskKind)
+        ? current * Math.pow(parameters.factor, Math.max(0, Number(context.catLevel) || 0)) : current;
     },
     globalCampActionSpeedMultiplier: function(current, parameters, context) {
       return context && campTaskScopeMatches(parameters.taskScope, context.taskKind)
@@ -2369,8 +2399,13 @@
     workRecipeSlotDelta: function(progress, familyId) {
       return effectValue(progress, "workRecipeSlotDelta", 0, {familyId: familyId});
     },
-    assignedCampActionSpeedMultiplier: function(progress, jobId, taskKind) {
-      return multiplier(progress, "assignedCampActionSpeedMultiplier", {jobId: jobId, taskKind: taskKind});
+    assignedCampActionLevelSpeedMultiplier: function(progress, jobId, taskKind, catLevel) {
+      return multiplier(progress, "assignedCampActionLevelSpeedMultiplier", {jobId: jobId, taskKind: taskKind, catLevel: catLevel});
+    },
+    assignedCampActionSpeedMultiplier: function(progress, jobId, taskKind, catLevel) {
+      const context = {jobId: jobId, taskKind: taskKind, catLevel: catLevel};
+      return multiplier(progress, "assignedCampActionSpeedMultiplier", context)
+        * multiplier(progress, "assignedCampActionLevelSpeedMultiplier", context);
     },
     globalCampActionSpeedMultiplier: function(progress, taskKind) {
       return multiplier(progress, "globalCampActionSpeedMultiplier", {taskKind: taskKind});

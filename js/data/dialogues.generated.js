@@ -580,9 +580,9 @@
         }
       ],
       "asset": {
-        "type": "icon",
-        "src": "img/Cat faces/Bernardo.png",
-        "alt": "Bernardo"
+        "type": "illustration",
+        "src": "img/Story scenes/Intro.webp",
+        "alt": "A child reaches toward Bernardo while their mother holds their hand."
       }
     },
     {
@@ -791,7 +791,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/Story scenes/Story 3.png",
+        "src": "img/Story scenes/Story 3.webp",
         "alt": "Bernardo addresses two other kittens in the garden."
       }
     },
@@ -865,7 +865,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/Story scenes/Story 3.png",
+        "src": "img/Story scenes/Story 3.webp",
         "alt": "Bernardo, Mochi and Luna inspect their cluttered new garden."
       }
     },
@@ -1847,7 +1847,7 @@
       ],
       "asset": {
         "type": "illustration",
-        "src": "img/Story scenes/Story 6b.png",
+        "src": "img/Story scenes/Story 6b.webp",
         "alt": "Bernardo studies charts and diagrams in an open book."
       }
     },

@@ -4,16 +4,8 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
 
-  const COOLDOWN_MS = 3 * 60 * 60 * 1000;
-  const NORMAL_ROUNDS = 5;
-  const ROUND_DURATION_MS = 5000;
-  const INITIAL_DIFFICULTIES = Object.freeze([
-    Object.freeze({ minDelayMs: 2200, maxDelayMs: 3000, accuracy: 0.60, minGap: 0.30 }),
-    Object.freeze({ minDelayMs: 1900, maxDelayMs: 2600, accuracy: 0.70, minGap: 0.22 }),
-    Object.freeze({ minDelayMs: 1600, maxDelayMs: 2300, accuracy: 0.78, minGap: 0.16 }),
-    Object.freeze({ minDelayMs: 1350, maxDelayMs: 2000, accuracy: 0.85, minGap: 0.11 }),
-    Object.freeze({ minDelayMs: 1150, maxDelayMs: 1800, accuracy: 0.90, minGap: 0.075 })
-  ]);
+  const TUNING = CatInc.data.campGameplay && CatInc.data.campGameplay.cannelleBargain;
+  if (!TUNING) throw new Error("Cannelle's Bargain requires canonical Gameplay & Balance data");
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -21,18 +13,38 @@
 
   function difficultyConfig(difficulty) {
     const level = Math.max(1, Math.floor(Number(difficulty) || 1));
-    if (level <= INITIAL_DIFFICULTIES.length) return INITIAL_DIFFICULTIES[level - 1];
-    const extra = level - INITIAL_DIFFICULTIES.length;
+    const authored = TUNING.difficulties[level - 1];
+    if (authored) return Object.freeze({
+      minDelayMs: Math.round(authored.minDelaySeconds * 1000),
+      maxDelayMs: Math.round(authored.maxDelaySeconds * 1000),
+      accuracy: authored.accuracyPercent / 100,
+      minGap: authored.minGapPercent / 100
+    });
+    const base = TUNING.difficulties[TUNING.difficulties.length - 1];
+    const later = TUNING.laterDifficulty;
+    const extra = level - TUNING.difficulties.length;
     return Object.freeze({
-      minDelayMs: Math.round(clamp(1150 - extra * 90, 700, 1150)),
-      maxDelayMs: Math.round(clamp(1800 - extra * 100, 1100, 1800)),
-      accuracy: clamp(0.90 + extra * 0.015, 0.90, 0.96),
-      minGap: clamp(0.075 - extra * 0.006, 0.04, 0.075)
+      minDelayMs: Math.round(Math.max(later.minDelayFloorSeconds, base.minDelaySeconds - extra * later.minDelayStepSeconds) * 1000),
+      maxDelayMs: Math.round(Math.max(later.maxDelayFloorSeconds, base.maxDelaySeconds - extra * later.maxDelayStepSeconds) * 1000),
+      accuracy: Math.min(later.accuracyCeilingPercent, base.accuracyPercent + extra * later.accuracyStepPercent) / 100,
+      minGap: Math.max(later.minGapFloorPercent, base.minGapPercent - extra * later.minGapStepPercent) / 100
     });
   }
 
+  function roundDurationMs() {
+    return TUNING.roundSeconds * 1000;
+  }
+
+  function cooldownMs() {
+    return TUNING.cooldownHours * 60 * 60 * 1000;
+  }
+
+  function normalRounds() {
+    return TUNING.rounds;
+  }
+
   function unlockedDifficulties(cannelleLevel) {
-    const count = Math.max(0, Math.floor((Number(cannelleLevel) || 0) / 10));
+    const count = Math.max(0, Math.floor((Number(cannelleLevel) || 0) / TUNING.unlockLevelStep));
     return Array.from({ length: count }, function(_, index) { return index + 1; });
   }
 
@@ -41,7 +53,7 @@
   }
 
   function bestOfferIndex(offers) {
-    if (!Array.isArray(offers) || offers.length !== 3) return -1;
+    if (!Array.isArray(offers) || offers.length !== TUNING.offersPerRound) return -1;
     let best = 0;
     for (let index = 1; index < offers.length; index += 1) {
       if (offerRatio(offers[index]) > offerRatio(offers[best])) best = index;
@@ -51,7 +63,7 @@
 
   function qualityGap(offers) {
     const ratios = offers.map(offerRatio).sort(function(a, b) { return b - a; });
-    return ratios.length === 3 && ratios[1] > 0 ? ratios[0] / ratios[1] - 1 : 0;
+    return ratios.length === TUNING.offersPerRound && ratios[1] > 0 ? ratios[0] / ratios[1] - 1 : 0;
   }
 
   function randomIndex(length, random) {
@@ -124,22 +136,22 @@
   function commitCooldown(state, now) {
     if (!state || typeof state !== "object") return 0;
     const startedAt = Number.isFinite(now) ? now : Date.now();
-    state.cannelleBargainNextAt = startedAt + COOLDOWN_MS;
+    state.cannelleBargainNextAt = startedAt + cooldownMs();
     return state.cannelleBargainNextAt;
   }
 
   function creditReward(state, transaction, difficulty, won) {
     if (!state || !transaction || transaction.rewardCredited || !won) return 0;
-    const reward = Math.max(1, Math.floor(Number(difficulty) || 1));
+    const reward = Math.max(1, Math.floor(Number(difficulty) || 1)) * TUNING.rewardPerDifficulty;
     transaction.rewardCredited = true;
     state.cannelleTokens = Math.max(0, Number(state.cannelleTokens) || 0) + reward;
     return reward;
   }
 
   CatInc.data.cannelleBargain = Object.freeze({
-    COOLDOWN_MS: COOLDOWN_MS,
-    NORMAL_ROUNDS: NORMAL_ROUNDS,
-    ROUND_DURATION_MS: ROUND_DURATION_MS,
+    roundDurationMs: roundDurationMs,
+    cooldownMs: cooldownMs,
+    normalRounds: normalRounds,
     difficultyConfig: difficultyConfig,
     unlockedDifficulties: unlockedDifficulties,
     offerRatio: offerRatio,

@@ -85,4 +85,69 @@
     basculerClasse: basculerClasse,
     setBarreProgress: setBarreProgress
   });
+
+  // One boot-only scan of the real rendered surface, never a game asset manifest.
+  // Layout is retained behind the opaque curtain, including the Camp camera.
+  if (CatInc.boot) CatInc.boot.ready = async function() {
+    const boot = CatInc.boot;
+    const frames = function() {
+      return new Promise(resolve => root.requestAnimationFrame(() => root.requestAnimationFrame(resolve)));
+    };
+    const assets = new Map();
+    const failures = new Set();
+    function awaitImage(url, image) {
+      if (!url || assets.has(url)) return;
+      if (!image) {
+        image = new root.Image();
+        image.src = url;
+      }
+      assets.set(url, image.decode().catch(function(error) {
+        failures.add(url);
+        root.console.warn("Cat Inc boot image could not be decoded:", url, error);
+      }));
+    }
+    function scan() {
+      root.document.body.querySelectorAll("*").forEach(function(element) {
+        if (element.closest("#boot-curtain") || !element.getClientRects().length) return;
+        const style = root.getComputedStyle(element);
+        if (style.visibility !== "visible" || style.display === "none") return;
+        if (element.tagName === "IMG" && element.loading !== "lazy") {
+          awaitImage(element.currentSrc || element.src, element);
+        }
+        // Includes the renderer's terrain, paths and fog, plus visible UI
+        // backgrounds. Reading computed URLs reuses their canonical paths.
+        [style, root.getComputedStyle(element, "::before"), root.getComputedStyle(element, "::after")].forEach(function(paint, index) {
+          if (index && (paint.content === "none" || paint.content === "normal" || paint.display === "none")) return;
+          const images = paint.backgroundImage + " " + paint.maskImage;
+          for (const match of images.matchAll(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/g)) {
+            const url = match[1] || match[2] || match[3];
+            if (!url.startsWith("data:")) awaitImage(url);
+          }
+        });
+      });
+    }
+    try {
+      // The existing Camp renderer finalizes its camera/first reveal in two
+      // frames. Let that seam run before discovering its visible world layers.
+      await frames();
+      boot.surfaceRendered = true;
+      let previousSize;
+      do {
+        scan();
+        previousSize = assets.size;
+        await Promise.all(assets.values());
+        await root.document.fonts.ready;
+        await frames();
+        scan();
+      } while (assets.size !== previousSize);
+      root.document.dispatchEvent(new CustomEvent("catinc:boot-ready", {
+        detail: {assets: Array.from(assets.keys()), failures: Array.from(failures)}
+      }));
+      if (failures.size) boot.fail("Some pictures could not load. You can reload or continue playing.", true);
+      else boot.reveal();
+    } catch (error) {
+      root.console.error("Cat Inc boot readiness failed:", error);
+      boot.fail("Cat Inc could not finish loading. Please reload to try again.", false);
+    }
+  };
 })(typeof window !== "undefined" ? window : globalThis);

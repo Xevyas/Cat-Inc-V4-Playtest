@@ -28,7 +28,7 @@
           "variantSalt": 2179038169,
           "baseTile": {
             "id": "grassV1Base",
-            "path": "img/Maps/Camp Runtime/Terrain/grass/base.png"
+            "path": "img/Maps/Camp Runtime/Terrain/grass/base.webp"
           },
           "detailOverlays": [
             {

@@ -19,25 +19,25 @@
   });
 
   const LEGACY_SCENES = Object.freeze([
-    Object.freeze({ id: "ecran-intro", name: "Introduction", flag: "introVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Intro.png", alt: "A child reaches toward Bernardo while their mother holds their hand." }) }),
+    Object.freeze({ id: "ecran-intro", name: "Introduction", flag: "introVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Intro.webp", alt: "A child reaches toward Bernardo while their mother holds their hand." }) }),
     Object.freeze({ id: "ecran-story-1", name: "Bernardo's plan begins", flag: "story1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." }) }),
     Object.freeze({ id: "ecran-story-2", name: "Mochi joins the gang", flag: "story2Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Mochi_Final.png", alt: "Portrait of Mochi." }) }),
-    Object.freeze({ id: "ecran-story-3", name: "The adventure begins", flag: "story3Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo addresses two other kittens in the garden." }) }),
-    Object.freeze({ id: "ecran-story-camp-intro", name: "A garden to rebuild", flag: "storyCampIntroVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo, Mochi and Luna inspect their cluttered new garden." }) }),
+    Object.freeze({ id: "ecran-story-3", name: "The adventure begins", flag: "story3Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.webp", alt: "Bernardo addresses two other kittens in the garden." }) }),
+    Object.freeze({ id: "ecran-story-camp-intro", name: "A garden to rebuild", flag: "storyCampIntroVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.webp", alt: "Bernardo, Mochi and Luna inspect their cluttered new garden." }) }),
     Object.freeze({ id: "ecran-story-camp-full", name: "Room for one more", flag: "storyCampFullVue", asset: Object.freeze({ type: "icon", src: "img/Buildings/Cardboard Box_Final.png", alt: "A Cardboard Box shelter." }) }),
     Object.freeze({ id: "ecran-story-manual-focus", name: "A Little Encouragement", flag: "storyManualFocusVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo preparing to encourage the workers." }) }),
-    Object.freeze({ id: "ecran-story-4", name: "Our first creation", flag: "story4Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 4.png", alt: "Three kittens admire their first cardboard shelter." }) }),
+    Object.freeze({ id: "ecran-story-4", name: "Our first creation", flag: "story4Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 4.webp", alt: "Three kittens admire their first cardboard shelter." }) }),
     Object.freeze({ id: "ecran-story-greatest-incrementor-part-1", name: "The Greatest Incrementor — Part 1", flag: "storyGreatestIncrementorPart1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/the-greatest-incrementor.png", alt: "Portrait of The Greatest Incrementor." }) }),
     Object.freeze({ id: "ecran-story-basic-wood", name: "Beyond Cardboard", flag: "storyBasicWoodVue", asset: Object.freeze({ type: "icon", src: "img/resources/Basic Wood_Final.png?v=0.0029", alt: "A stack of sturdy Basic Wood logs." }) }),
     Object.freeze({ id: "ecran-story-first-expedition", name: "Beyond the Fence", flag: "storyFirstExpeditionVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo planning the first expedition." }) }),
     Object.freeze({ id: "ecran-story-house-evacuation", name: "They Built a Camp", flag: "storyHouseEvacuationVue" }),
     Object.freeze({ id: "ecran-story-left-house", name: "The Neighbors Are Leaving", flag: "storyLeftHouseEvacuationVue" }),
     Object.freeze({ id: "ecran-story-6a", name: "What's that thing?", flag: "story6aVue", asset: Object.freeze({ type: "icon", src: "img/resources/Books_Final.png", alt: "A mysterious book found during scouting." }) }),
-    Object.freeze({ id: "ecran-story-6b", name: "A job for everyone", flag: "story6bVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 6b.png", alt: "Bernardo studies charts and diagrams in an open book." }) }),
+    Object.freeze({ id: "ecran-story-6b", name: "A job for everyone", flag: "story6bVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 6b.webp", alt: "Bernardo studies charts and diagrams in an open book." }) }),
     Object.freeze({ id: "ecran-story-salad", name: "Chef's kiss", flag: "storySaladVue", asset: Object.freeze({ type: "icon", src: "img/resources/Catnip Salad_Final.png", alt: "A freshly prepared Catnip Salad." }) }),
     Object.freeze({ id: "ecran-story-seminar", name: "Everybody loves seminars, right?", flag: "storySeminarVue", asset: Object.freeze({ type: "icon", src: "img/resources/Books_Final.png", alt: "A corporate seminar booklet." }) }),
     Object.freeze({ id: "ecran-story-explorator", name: "A New Horizon", flag: "storyExploratorVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of the gang's first Explorator." }) }),
-    Object.freeze({ id: "ecran-story-bird", name: "The bird", flag: "storyBirdVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Bernardo caught bird.png?v=0.0029", alt: "Bernardo leaps toward a bird perched on a tree branch." }) })
+    Object.freeze({ id: "ecran-story-bird", name: "The bird", flag: "storyBirdVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Bernardo caught bird.webp?v=0.0030", alt: "Bernardo leaps toward a bird perched on a tree branch." }) })
   ]);
 
 const LEGACY_SCENE_BEATS = Object.freeze({

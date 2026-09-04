@@ -108,6 +108,8 @@
       const firstLock = backgroundState.size === 0;
       if (firstLock && documentRef.body.style) savedBodyOverflow = documentRef.body.style.overflow || "";
       Array.from(documentRef.body.children).forEach(function(element) {
+        // The first-paint curtain owns input independently until atomic reveal.
+        if (element.id === "boot-curtain") return;
         if (!backgroundState.has(element)) {
           backgroundState.set(element, {
             inert: Boolean(element.inert),

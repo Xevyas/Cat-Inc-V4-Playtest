@@ -407,7 +407,7 @@ const REGIONS = {
   startingNeighbourhood: {
     id:     "startingNeighbourhood",
     nom:    "Starting Neighbourhood",
-    mapImg: "img/Maps/Starting Neighbourhood.png",
+    mapImg: "img/Maps/Starting Neighbourhood.webp",
     zones:  ZONES_CARTE,
   },
 };

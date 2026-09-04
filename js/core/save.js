@@ -8,6 +8,28 @@
     normalizeProgress: function() { return { version: 2, learned: [] }; }
   });
 
+  function normaliserExplorationRetries(value, etat) {
+    const result = { zones: {}, campaigns: {} };
+    const data = CatInc.data || {};
+    const catalogs = {
+      zones: data.content && data.content.ZONES_CARTE,
+      campaigns: data.config && data.config.CONFIG.campaigns
+    };
+    ["zones", "campaigns"].forEach(function(kind) {
+      const counts = value && value[kind];
+      if (!counts || typeof counts !== "object" || Array.isArray(counts)) return;
+      const completed = (kind === "zones" ? etat.zonesExplorees : etat.campaignsCompletees) || [];
+      const pending = (kind === "zones" ? etat.resultatsExplorationZones : etat.resultatsCampaigns) || {};
+      Object.keys(counts).forEach(function(id) {
+        if (["__proto__", "constructor", "prototype"].includes(id)) return;
+        if (catalogs[kind] && !Object.prototype.hasOwnProperty.call(catalogs[kind], id)) return;
+        if (completed.includes(id) || (pending[id] && pending[id].success)) return;
+        if (Number.isInteger(counts[id]) && counts[id] > 0) result[kind][id] = Math.min(3, counts[id]);
+      });
+    });
+    return result;
+  }
+
   // V4 environments must never read or overwrite V3 browser data. The
   // Playtest deployment will use its own namespace when publication begins.
   const STORAGE_NAMESPACE = "catInc.v4.playtest";
@@ -1069,6 +1091,7 @@ function analyserSauvegardeBrute(raw) {
     exploZoneEnCours:    etat.exploZoneEnCours,
     resultatsExplorationZones: etat.resultatsExplorationZones,
     resultatsCampaigns:  etat.resultatsCampaigns,
+    explorationRetries: normaliserExplorationRetries(etat.explorationRetries, etat),
     scoutingsEnCours:    etat.scoutingsEnCours,
     butinsScouting:      etat.butinsScouting,
     managers:            etat.managers,
@@ -1352,6 +1375,7 @@ function analyserSauvegardeBrute(raw) {
   etat.exploZoneEnCours    = d.exploZoneEnCours    || null;
   etat.resultatsExplorationZones = d.resultatsExplorationZones || {};
   etat.resultatsCampaigns  = d.resultatsCampaigns  || {};
+  etat.explorationRetries = normaliserExplorationRetries(d.explorationRetries, etat);
   etat.scoutingsEnCours    = d.scoutingsEnCours    || {};
   etat.butinsScouting      = d.butinsScouting      || {};
   Object.values(etat.butinsScouting).forEach(function(butin) {
