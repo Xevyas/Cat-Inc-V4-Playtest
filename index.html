@@ -108,7 +108,7 @@
     }
   </style>
 </head>
-<body data-ui-theme="basic">
+<body data-ui-theme="stylish">
   <div id="boot-curtain" role="status" aria-live="polite">
     <strong>Cat Inc</strong>
     <p id="boot-message">Loading…</p>
@@ -552,9 +552,9 @@
       </div>
     </div>
     </div>
-    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="basic" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Stylish (Basic is active)" title="Switch to Stylish (Basic is active)" hidden>
+    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="stylish" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Basic (Stylish is active)" title="Switch to Basic (Stylish is active)" hidden>
       <span class="ressources-theme-toggle-icone" aria-hidden="true">Aa</span>
-      <span id="ui-theme-quick-label" class="ressources-theme-toggle-label">Stylish</span>
+      <span id="ui-theme-quick-label" class="ressources-theme-toggle-label">Basic</span>
     </button>
     <button class="ressources-gerer" type="button" onclick="ouvrirGestionRessources()" aria-label="Choose resources shown in the top bar" aria-haspopup="dialog" aria-controls="resource-bar-modal">
       <span class="ressources-gerer-icone" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -644,7 +644,7 @@
     <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" data-bernardo-cat-face alt=""> <span class="onglet-label">Gang</span></button>
     <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><img class="onglet-icone" src="img/interface/Camp.png" alt=""> <span class="onglet-label">Camp</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
-    <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/Jobs.png" alt=""> <span class="onglet-label">Jobs</span></button>
+    <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/job.png" alt=""> <span class="onglet-label">Jobs</span></button>
     <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label">Explore</span></button>
     <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label">Bag</span></button>
     <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label">Logs</span></button>
@@ -1046,6 +1046,7 @@
 
   <!-- CONTENU LOGS -->
   <div id="contenu-logs" role="tabpanel" aria-labelledby="onglet-logs" aria-hidden="true" style="display:none">
+    <div class="work-sheet">
     <div class="logs-heading">
       <h2>Gang history</h2>
       <p>Review important events or replay the stories you have unlocked.</p>
@@ -1065,6 +1066,7 @@
     <div id="logs-vue-stories" class="logs-vue" role="tabpanel" aria-labelledby="logs-subtab-stories" aria-hidden="true" style="display:none">
       <h3 class="stories-section-title">Main Story</h3>
       <div id="stories-liste"></div>
+    </div>
     </div>
   </div> <!-- /contenu-logs -->
 
@@ -1272,7 +1274,12 @@
           <button id="market-stall-shop-mini-game-help" type="button" aria-label="Cannelle's Bargain rules" title="Rules" onclick="ouvrirReglesCannelleBargain(event)" class="interface-details-control"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
         </div>
       </div>
-      <p id="market-stall-shop-status" class="market-stall-shop-status" role="status" aria-live="polite"></p>
+      <div id="market-stall-shop-stock" class="market-stall-shop-stock" role="status" aria-live="polite">
+        <strong>My stock</strong>
+        <span data-shop-resource="cannedCatFood"><img alt=""><span></span></span>
+        <span data-shop-resource="cannelleTokens" hidden><img alt=""><span></span></span>
+      </div>
+      <p id="market-stall-shop-status" class="market-stall-shop-status" role="status" aria-live="polite" hidden></p>
       <div id="market-stall-shop-grid" class="market-stall-shop-grid" role="tabpanel" aria-label="Cannelle merchandise"></div>
     </div>
   </div>

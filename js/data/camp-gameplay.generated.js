@@ -585,7 +585,7 @@
         "baseCosts": {
           "pebbleBricks": 5
         },
-        "growth": 1.7,
+        "growth": 10,
         "authoredRanks": {
           "1": {
             "pebbleBricks": 5
@@ -593,7 +593,7 @@
         },
         "rounding": "ceil",
         "refundRate": 0.5,
-        "durationGrowth": 1.4
+        "durationGrowth": 5
       }
     },
     "cardboardLitterbox": {
@@ -625,7 +625,7 @@
         "baseCosts": {
           "cardboardPlanks": 5
         },
-        "growth": 1.7,
+        "growth": 10,
         "authoredRanks": {
           "1": {
             "cardboardPlanks": 5
@@ -633,7 +633,7 @@
         },
         "rounding": "ceil",
         "refundRate": 0.5,
-        "durationGrowth": 1.4
+        "durationGrowth": 5
       }
     },
     "woodCathouse": {

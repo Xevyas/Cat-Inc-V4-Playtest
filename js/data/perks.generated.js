@@ -2265,25 +2265,40 @@
     throw new Error("Perks V2 effect contract/runtime mismatch");
   }
 
-  function effectsFor(progress, effectId) {
+  function effectsFor(progress, effectId, explain) {
     if (!effectContract[effectId] || !effectImplementations[effectId]) return [];
     const active = activeNodeIds(progress);
     const effects = [];
     catalog.nodes.forEach(function(node) {
       if (!active.has(node.id)) return;
-      node.effects.forEach(function(effect) { if (effect.effectId === effectId) effects.push(effect); });
+      node.effects.forEach(function(effect) {
+        if (effect.effectId === effectId) effects.push(explain
+          ? Object.assign({nodeId: node.id, label: node.name}, effect) : effect);
+      });
     });
     return effects;
   }
 
-  function effectValue(progress, effectId, initial, context) {
-    return effectsFor(progress, effectId).reduce(function(value, effect) {
-      return effectImplementations[effectId](value, effect.parameters, context || null);
+  function effectValue(progress, effectId, initial, context, modifiers) {
+    const contributions = modifiers ? [] : null;
+    const result = effectsFor(progress, effectId, modifiers).reduce(function(value, effect) {
+      const next = effectImplementations[effectId](value, effect.parameters, context || null);
+      if (modifiers && next !== value) {
+        // A replacing effect (e.g. the highest learned speed tier) supersedes
+        // earlier contributions; stacking effects retain their relative factor.
+        const standalone = effectImplementations[effectId](initial, effect.parameters, context || null);
+        if (next === standalone) contributions.length = 0;
+        contributions.push({id: effect.nodeId, label: effect.label,
+          factor: next / (next === standalone ? initial : value)});
+      }
+      return next;
     }, initial);
+    if (modifiers) contributions.forEach(function(entry) { modifiers.push(entry); });
+    return result;
   }
 
-  function multiplier(progress, effectId, context) {
-    return effectValue(progress, effectId, 1, context);
+  function multiplier(progress, effectId, context, modifiers) {
+    return effectValue(progress, effectId, 1, context, modifiers);
   }
 
   function hasCapability(progress, effectId) {
@@ -2402,13 +2417,13 @@
     assignedCampActionLevelSpeedMultiplier: function(progress, jobId, taskKind, catLevel) {
       return multiplier(progress, "assignedCampActionLevelSpeedMultiplier", {jobId: jobId, taskKind: taskKind, catLevel: catLevel});
     },
-    assignedCampActionSpeedMultiplier: function(progress, jobId, taskKind, catLevel) {
+    assignedCampActionSpeedMultiplier: function(progress, jobId, taskKind, catLevel, modifiers) {
       const context = {jobId: jobId, taskKind: taskKind, catLevel: catLevel};
-      return multiplier(progress, "assignedCampActionSpeedMultiplier", context)
-        * multiplier(progress, "assignedCampActionLevelSpeedMultiplier", context);
+      return multiplier(progress, "assignedCampActionSpeedMultiplier", context, modifiers)
+        * multiplier(progress, "assignedCampActionLevelSpeedMultiplier", context, modifiers);
     },
-    globalCampActionSpeedMultiplier: function(progress, taskKind) {
-      return multiplier(progress, "globalCampActionSpeedMultiplier", {taskKind: taskKind});
+    globalCampActionSpeedMultiplier: function(progress, taskKind, modifiers) {
+      return multiplier(progress, "globalCampActionSpeedMultiplier", {taskKind: taskKind}, modifiers);
     },
     houseConstructionCostMultiplier: function(progress) {
       return multiplier(progress, "houseConstructionCostMultiplier", null);

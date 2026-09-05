@@ -53,6 +53,13 @@
       "alternative": false
     },
     {
+      "id": "cat-faces-jimmy",
+      "name": "Jimmy",
+      "runtimePath": "img/Cat faces/jimmy.png",
+      "revision": 2,
+      "alternative": false
+    },
+    {
       "id": "cat-faces-luna",
       "name": "Luna",
       "runtimePath": "img/Cat faces/Luna_Final.png",
@@ -64,6 +71,13 @@
       "name": "Mochi",
       "runtimePath": "img/Cat faces/Mochi_Final.png",
       "revision": 5,
+      "alternative": false
+    },
+    {
+      "id": "cat-faces-mochi-v2",
+      "name": "Mochi V2",
+      "runtimePath": "img/Cat faces/mochi-v2.png",
+      "revision": 1,
       "alternative": false
     },
     {

@@ -266,6 +266,9 @@ function ouvrirPopoverInformationCamp(trigger, options) {
   const config = options || {};
   if (!trigger || !config.content) return false;
   const popover = obtenirPopoverEffetsBatimentCamp();
+  const durationPopover = trigger.classList.contains("camp-task-duration-help");
+  const host = durationPopover ? trigger.closest(".explo-modal") : document.body;
+  if (host && popover.parentElement !== host) host.appendChild(popover);
   if (declencheurPopoverEffetsBatimentCamp === trigger && !popover.hidden) {
     fermerPopoverEffetsBatimentCamp(false);
     return false;
@@ -279,11 +282,12 @@ function ouvrirPopoverInformationCamp(trigger, options) {
   building.className = "camp-building-effects-popover-building";
   building.textContent = config.subject || "";
   popover.appendChild(title);
-  popover.appendChild(building);
+  if (config.subject) popover.appendChild(building);
   popover.appendChild(config.content);
   popover.setAttribute("aria-label", config.ariaLabel || "Information");
   popover.classList.toggle("camp-building-effects-popover-shop",
     trigger.classList.contains("market-stall-shop-product-help"));
+  popover.classList.toggle("camp-building-effects-popover-duration", durationPopover);
   popover.hidden = false;
   declencheurPopoverEffetsBatimentCamp = trigger;
   trigger.setAttribute("aria-expanded", "true");
@@ -295,13 +299,14 @@ function ouvrirPopoverInformationCamp(trigger, options) {
 function gererClicExterieurPopoverEffetsBatimentCamp(event) {
   if (!declencheurPopoverEffetsBatimentCamp || !event || !event.target) return;
   if (event.target.closest
-      && event.target.closest(".camp-prototype-palette-effects-toggle, .market-stall-shop-product-help, #camp-building-effects-popover")) return;
+      && event.target.closest(".camp-prototype-palette-effects-toggle, .market-stall-shop-product-help, .camp-task-duration-help, #camp-building-effects-popover")) return;
   fermerPopoverEffetsBatimentCamp(false);
 }
 
 function gererClavierPopoverEffetsBatimentCamp(event) {
   if (!declencheurPopoverEffetsBatimentCamp || !event || event.key !== "Escape") return;
   event.preventDefault();
+  event.stopImmediatePropagation();
   fermerPopoverEffetsBatimentCamp(true);
 }
 
@@ -315,7 +320,7 @@ if (typeof document !== "undefined") {
     }
   }, { passive: false });
   document.addEventListener("click", gererClicExterieurPopoverEffetsBatimentCamp);
-  document.addEventListener("keydown", gererClavierPopoverEffetsBatimentCamp);
+  document.addEventListener("keydown", gererClavierPopoverEffetsBatimentCamp, true);
   document.addEventListener("scroll", positionnerPopoverEffetsBatimentCamp, { passive: true, capture: true });
   if (typeof window !== "undefined") {
     window.addEventListener("resize", positionnerPopoverEffetsBatimentCamp, { passive: true });
@@ -1870,26 +1875,29 @@ function multiplicateurVitesseActionCampKitty(kitty) {
   );
 }
 
-function multiplicateurVitesseBuilderCamp(kitty, taskKind) {
+function multiplicateurVitesseBuilderCamp(kitty, taskKind, modifiers) {
   if (!perksV2Api || !kitty) return 1;
   return perksV2Api.assignedCampActionSpeedMultiplier(
-    progressionPerksV2(), kitty.metier, taskKind, kitty.niveau
+    progressionPerksV2(), kitty.metier, taskKind, kitty.niveau, modifiers
   );
 }
 
-function multiplicateurVitesseGlobaleConstructionCamp(taskKind) {
+function multiplicateurVitesseGlobaleConstructionCamp(taskKind, modifiers) {
   return perksV2Api
-    ? perksV2Api.globalCampActionSpeedMultiplier(progressionPerksV2(), taskKind)
+    ? perksV2Api.globalCampActionSpeedMultiplier(progressionPerksV2(), taskKind, modifiers)
     : 1;
 }
 
-function multiplicateurVitesseActionsCamp(kittyIndices, taskKind) {
+function multiplicateurVitesseActionsCamp(kittyIndices, taskKind, details) {
   const indices = Array.isArray(kittyIndices) ? kittyIndices : [];
   const multiplicateurs = indices.map(function(kittyIndex) {
     const kitty = Number.isInteger(kittyIndex) ? etat.kittiesData[kittyIndex] : null;
-    return kitty
-      ? multiplicateurVitesseActionCampKitty(kitty) * multiplicateurVitesseBuilderCamp(kitty, taskKind)
-      : null;
+    if (!kitty) return null;
+    const levelSpeed = multiplicateurVitesseActionCampKitty(kitty);
+    const modifiers = details ? [{label: "Camp Actions Speed", factor: levelSpeed}] : null;
+    const multiplier = levelSpeed * multiplicateurVitesseBuilderCamp(kitty, taskKind, modifiers);
+    if (details) details.push({kittyIndex: kittyIndex, name: kitty.nom, modifiers: modifiers, multiplier: multiplier});
+    return multiplier;
   }).filter(function(multiplier) {
     return Number.isFinite(multiplier) && multiplier > 0;
   });
@@ -1899,13 +1907,19 @@ function multiplicateurVitesseActionsCamp(kittyIndices, taskKind) {
   }, 0) / multiplicateurs.length;
 }
 
-function dureeEffectiveActionCamp(dureeBase, kittyIndices, taskKind) {
+function dureeEffectiveActionCamp(dureeBase, kittyIndices, taskKind, details) {
   const duree = Number(dureeBase);
   if (!Number.isFinite(duree) || duree <= 0) return 0;
-  return duree / (
-    multiplicateurVitesseActionsCamp(kittyIndices, taskKind)
-    * multiplicateurVitesseGlobaleConstructionCamp(taskKind)
-  );
+  if (details) {
+    details.cats = [];
+    details.modifiers = [];
+    details.baseDuration = duree;
+  }
+  const teamSpeed = multiplicateurVitesseActionsCamp(kittyIndices, taskKind, details && details.cats);
+  const totalSpeed = teamSpeed * multiplicateurVitesseGlobaleConstructionCamp(taskKind, details && details.modifiers);
+  const duration = duree / totalSpeed;
+  if (details) Object.assign(details, {teamSpeed: teamSpeed, totalSpeed: totalSpeed, duration: duration});
+  return duration;
 }
 
 function ingenieurPeutEtreForme(metierId) {
@@ -3584,37 +3598,33 @@ function gererVolumeAudio(canal, rawValue) {
 }
 function appliquerThemeInterface() {
   const themeStocke = saveCore.normaliserUiTheme(etat.uiTheme);
-  const themeDisponible = typeof saveCore.isRealDevEnvironment === "function"
-    && saveCore.isRealDevEnvironment();
-  const themeEffectif = themeDisponible ? themeStocke : "basic";
   etat.uiTheme = themeStocke;
   if (typeof document !== "undefined") {
-    if (document.body) document.body.dataset.uiTheme = themeEffectif;
+    if (document.body) document.body.dataset.uiTheme = themeStocke;
     const settingsInput = document.getElementById("settings-ui-theme");
     if (settingsInput) {
-      settingsInput.value = themeEffectif;
-      settingsInput.disabled = !themeDisponible;
+      settingsInput.value = themeStocke;
+      settingsInput.disabled = false;
       const settingsRow = settingsInput.closest(".settings-theme-row");
-      if (settingsRow) settingsRow.hidden = !themeDisponible;
+      if (settingsRow) settingsRow.hidden = false;
     }
     const quickToggle = document.getElementById("ui-theme-quick-toggle");
     if (quickToggle) {
-      quickToggle.hidden = !themeDisponible;
-      const nextTheme = themeEffectif === "stylish" ? "basic" : "stylish";
+      quickToggle.hidden = false;
+      const nextTheme = themeStocke === "stylish" ? "basic" : "stylish";
       const nextThemeLabel = nextTheme === "stylish" ? "Stylish" : "Basic";
-      const currentThemeLabel = themeEffectif === "stylish" ? "Stylish" : "Basic";
+      const currentThemeLabel = themeStocke === "stylish" ? "Stylish" : "Basic";
       const actionLabel = "Switch to " + nextThemeLabel + " (" + currentThemeLabel + " is active)";
-      quickToggle.dataset.currentTheme = themeEffectif;
+      quickToggle.dataset.currentTheme = themeStocke;
       quickToggle.setAttribute("aria-label", actionLabel);
       quickToggle.title = actionLabel;
       const quickLabel = document.getElementById("ui-theme-quick-label");
       if (quickLabel) quickLabel.textContent = nextThemeLabel;
     }
   }
-  return themeEffectif;
+  return themeStocke;
 }
 function gererThemeInterface(value) {
-  if (!saveCore.isRealDevEnvironment()) return appliquerThemeInterface();
   etat.uiTheme = saveCore.normaliserUiTheme(value);
   appliquerThemeInterface();
   inventaireDirty = true;
@@ -5532,11 +5542,20 @@ function renduSlotRecette(familyId, slotIdx) {
       + echapperAttributHtml(pauseReason) + '</span></p>'
     : '';
   const headerStorageFull = stylish && capacite.available && stockage.plein;
-  const recipeHeaderLabel = headerStorageFull ? '<small class="work-recipe-header-status" role="status">Paused · Storage full</small>' : '<small>RECIPE</small>';
+  const recipeHeaderStatus = headerStorageFull
+    ? '<span class="work-recipe-header-status" role="status"><span class="interface-symbol interface-warning" aria-hidden="true"></span><span>Paused · Storage full</span></span>'
+    : '';
+  const storageFullButton = headerStorageFull
+    ? '<button type="button" class="work-storage-full-btn" aria-label="Storage full" aria-controls="inv-res-popup" aria-expanded="false" data-work-family="' + familyId + '" data-work-slot="' + slotIdx + '" onclick="toggleWorkStoragePopup(this,event)" onkeydown="if(event.key===\'Escape\'){hideResPopup();event.stopPropagation()}"><span class="interface-symbol interface-warning" aria-hidden="true"></span></button>'
+    : '';
+  const recipeChangeButton = '<button type="button" class="work-recipe-change-button" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')\">Change</button>';
   const stageGauge = stylish ? '<span class="purrsuasion-v2-progress-track work-stage-track"><span class="purrsuasion-v2-progress-fill" style="width:var(--fill)"></span></span>' : '';
-  el.innerHTML = (stylish ? '' : pauseHtml) + '<div class="work-recipe-slot-top">'
+  el.innerHTML = (stylish ? '' : pauseHtml) + '<div class="work-recipe-slot-top' + (headerStorageFull ? ' work-recipe-slot-top-paused' : '') + '">'
     + '<span class="work-recipe-slot-number" aria-label="Recipe slot ' + (slotIdx + 1) + '">' + (slotIdx + 1) + '</span>'
-    + '<button type="button" class="work-recipe-selected" aria-label="Change recipe in slot ' + (slotIdx + 1) + ', currently Tier ' + pair.tier + ' ' + echapperAttributHtml(pair.procLabel) + '" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><span class="work-recipe-tier work-tier-badge work-tier-badge-tier-' + pair.tier + '" aria-hidden="true">T' + pair.tier + '</span><img src="' + pair.procIcon + '" alt=""><span>' + recipeHeaderLabel + '<strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
+    + '<button type="button" class="work-recipe-selected" aria-label="Change recipe in slot ' + (slotIdx + 1) + ', currently Tier ' + pair.tier + ' ' + echapperAttributHtml(pair.procLabel) + '" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><span class="work-recipe-tier work-tier-badge work-tier-badge-tier-' + pair.tier + '" aria-hidden="true">T' + pair.tier + '</span><img src="' + pair.procIcon + '" alt=""><span><small>RECIPE</small><strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
+    + recipeHeaderStatus
+    + storageFullButton
+    + recipeChangeButton
     + '</div>'
     + '<div class="work-recipe-flow">'
     + (stylish ? '<section class="work-recipe-cat">' + catHtml + '</section>' : '')
@@ -5545,8 +5564,13 @@ function renduSlotRecette(familyId, slotIdx) {
     + '<section class="work-recipe-resource work-recipe-resource-output' + (processFocusable ? ' work-manual-focus-available' : '') + (processFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="processing"' + produceTrigger + ' style="--fill:' + Math.round(progress.processing * 100) + '%">' + processInfo + manualFocusBadgeHtml(processFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">PROCESSING</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small class="work-recipe-output-details">' + formaterTemps(processingDuration) + (stylish ? ' · ' : ' for ') + libelleNombreDecimal(outputPerCycle, 2) + (stylish ? '' : ' · Stock ' + formaterNombre(etat[pair.procRes]) + ' / ' + formaterNombre(stockage.capacite)) + '</small>' : '<small class="work-recipe-output-details">' + (stylish ? '' : 'Output') + '</small>') + stageGauge + (stylish && !headerStorageFull ? pauseHtml : '') + '</section>'
     + '</div>';
   if (_workPopupContext && _workPopupContext.familyId === familyId && _workPopupContext.slotIdx === slotIdx) {
-    const trigger = el.querySelector('.work-recipe-info-btn[data-work-phase="' + _workPopupContext.phase + '"]');
-    if (trigger) showWorkResourcePopup(trigger);
+    const trigger = _workPopupContext.phase === 'storage'
+      ? el.querySelector('.work-storage-full-btn')
+      : el.querySelector('.work-recipe-info-btn[data-work-phase="' + _workPopupContext.phase + '"]');
+    if (trigger) {
+      if (_workPopupContext.phase === 'storage') showWorkStoragePopup(trigger);
+      else showWorkResourcePopup(trigger);
+    }
     else hideResPopup();
   }
 }
@@ -8466,7 +8490,7 @@ function renduCarteGrille() {
           }
           if (inProgress) html += '<span class="carte-badge-encours">⏳</span>';
           if (revealReady) html += '<span class="carte-badge-result carte-badge-reveal" title="Zone ready to reveal">🔍</span>';
-          if (campaignRewardReady || scoutingRewardReady) html += '<span class="carte-badge-result carte-badge-reward" title="Rewards ready to claim">🎁</span>';
+          if (campaignRewardReady || scoutingRewardReady) html += '<span class="carte-badge-result carte-badge-reward" title="Rewards ready to claim"><img src="img/interface/reward.png" alt=""></span>';
           if (failedResultReady) html += '<span class="carte-badge-result carte-badge-failure" title="Mission ready to retry"><span class="interface-symbol interface-cross" aria-hidden="true"></span></span>';
           if (exploree) {
             var zoneScouts = Object.values(CONFIG.scoutings).filter(function(s) {
@@ -9735,6 +9759,25 @@ function toggleWorkResourcePopup(el, evt) {
   if (evt) evt.stopPropagation();
   if (_resPopupTarget === el) { hideResPopup(); return; }
   showWorkResourcePopup(el);
+}
+
+function showWorkStoragePopup(el) {
+  if (_resPopupTarget && _resPopupTarget !== el) _resPopupTarget.setAttribute("aria-expanded", "false");
+  _resPopupTarget = el;
+  _workPopupContext = { familyId: el.dataset.workFamily, slotIdx: Number(el.dataset.workSlot), phase: "storage" };
+  el.setAttribute("aria-expanded", "true");
+  const popup = document.getElementById("inv-res-popup");
+  popup.classList.add("work-production-popup");
+  popup.setAttribute("aria-hidden", "false");
+  popup.innerHTML = '<div class="irp-header"><span class="interface-symbol interface-warning" aria-hidden="true"></span><div class="irp-header-text"><div class="irp-nom">Storage full</div></div></div>';
+  popup.style.display = "block";
+  positionnerWorkResourcePopup(el, popup);
+}
+
+function toggleWorkStoragePopup(el, evt) {
+  if (evt) evt.stopPropagation();
+  if (_resPopupTarget === el) { hideResPopup(); return; }
+  showWorkStoragePopup(el);
 }
 
 function toggleWorkManagerPopup(el, evt) {
@@ -19109,7 +19152,7 @@ function disponibiliteBoutiqueMarketStall() {
   }
   const capacity = capaciteBatimentCamp("marketStall", 1, { item: item, contentUnlocked: true });
   return capacity.available
-    ? { available: true, reason: "Cannelle's stock is ready." }
+    ? { available: true, reason: "" }
     : { available: false, reason: capacity.reason || "Reconnect the Market Stall to shop." };
 }
 
@@ -19176,12 +19219,13 @@ function actualiserCompteAReboursMiniJeu(element, remainingMs, durationMs) {
 }
 
 function actualiserCooldownCannelleBargain() {
+  actualiserStockBoutiqueMarketStall();
   const container = document.getElementById("market-stall-shop-mini-game");
   const state = document.getElementById("market-stall-shop-mini-game-state");
   const launch = document.getElementById("market-stall-shop-mini-game-launch");
   if (!container || container.hidden || !state || !launch) return;
   const remaining = cooldownRestantCannelleBargain(Date.now());
-  ecrireTexte(state, remaining > 0 ? "Ready in " + formaterCooldownCannelleBargain(remaining) : "Play · " + (etat.cannelleTokens || 0) + " Tokens");
+  ecrireTexte(state, remaining > 0 ? "Ready in " + formaterCooldownCannelleBargain(remaining) : "Play");
   launch.disabled = remaining > 0;
   launch.setAttribute("aria-label", remaining > 0
     ? "Cannelle's Bargain available in " + formaterCooldownCannelleBargain(remaining)
@@ -19543,6 +19587,21 @@ function ouvrirAideMarchandiseCannelle(event, productId) {
   });
 }
 
+function actualiserStockBoutiqueMarketStall() {
+  const stock = document.getElementById("market-stall-shop-stock");
+  if (!stock) return;
+  stock.querySelectorAll("[data-shop-resource]").forEach(function(entry) {
+    const resource = entry.dataset.shopResource;
+    entry.hidden = resource === "cannelleTokens" && niveauCannelleShopOwner() < 10;
+    if (entry.hidden) return;
+    const icon = entry.querySelector("img");
+    const source = iconeRessourceCamp(resource);
+    if (icon.getAttribute("src") !== source) icon.setAttribute("src", source);
+    icon.alt = libelleRessourceCamp(resource);
+    ecrireTexte(entry.querySelector("span"), etat[resource] || 0);
+  });
+}
+
 function renduBoutiqueMarketStall() {
   const cannelle = cannelleShopOwner();
   const availability = disponibiliteBoutiqueMarketStall();
@@ -19553,6 +19612,8 @@ function renduBoutiqueMarketStall() {
   ecrireTexte(document.getElementById("market-stall-shop-tier-hint"),
     "New items at Level " + SHOP_DATA.nextMerchandiseLevel(level));
   ecrireTexte(document.getElementById("market-stall-shop-status"), availability.reason);
+  const status = document.getElementById("market-stall-shop-status");
+  if (status) status.hidden = availability.available;
   const miniGame = document.getElementById("market-stall-shop-mini-game");
   if (miniGame) miniGame.hidden = level < 10;
   actualiserCooldownCannelleBargain();
@@ -19971,6 +20032,61 @@ function ancrerCampTaskPanel() {
   else setTimeout(placer, 0);
 }
 
+function creerDetailsDureeActionCamp(timing, prefix, durationText) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "camp-task-panel-pill camp-task-duration-help";
+  button.dataset.closedLabel = "Show action duration details";
+  button.setAttribute("aria-label", button.dataset.closedLabel);
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-controls", "camp-building-effects-popover");
+  const duration = document.createElement("span");
+  duration.className = "camp-task-duration-value";
+  duration.textContent = durationText;
+  const help = document.createElement("span");
+  help.className = "camp-task-duration-help-icon";
+  help.setAttribute("aria-hidden", "true");
+  help.innerHTML = '<span class="interface-symbol interface-details"></span>';
+  button.appendChild(duration);
+  button.appendChild(help);
+  const content = document.createElement("div");
+  content.id = prefix + "-duration-details";
+  content.className = "camp-task-duration-details";
+  const row = function(label, value) {
+    const line = document.createElement("div");
+    const name = document.createElement("span");
+    name.textContent = label;
+    const amount = document.createElement("strong");
+    amount.textContent = value;
+    line.appendChild(name);
+    line.appendChild(amount);
+    content.appendChild(line);
+  };
+  const factor = function(value) { return "×" + value.toFixed(2); };
+  row("Base duration", formaterDureeMinutesCamp(timing.baseDuration));
+  timing.cats.forEach(function(cat) {
+    cat.modifiers.forEach(function(modifier) {
+      row(cat.name + " · " + modifier.label, factor(modifier.factor));
+    });
+    if (timing.cats.length > 1) row(cat.name + " · Speed", factor(cat.multiplier));
+  });
+  if (timing.cats.length > 1) row("Team speed (average)", factor(timing.teamSpeed));
+  timing.modifiers.forEach(function(modifier) { row(modifier.label, factor(modifier.factor)); });
+  row("Total speed", factor(timing.totalSpeed));
+  row("Final duration", formaterDureeMinutesCamp(timing.duration));
+  button.addEventListener("click", function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    ouvrirPopoverInformationCamp(button, {
+      title: "Action duration",
+      content: content,
+      ariaLabel: "Action duration details",
+      openLabel: "Hide action duration details"
+    });
+  });
+  return {button: button, content: content};
+}
+
 function rendreCampTaskPanel(options) {
   const state = campTaskPanelState;
   const definition = campTaskPanelDefinition();
@@ -19980,6 +20096,10 @@ function rendreCampTaskPanel(options) {
   const summary = document.getElementById(prefix + "-summary");
   const contenu = document.getElementById(prefix + "-kitties");
   if (!title || !summary || !contenu) return false;
+  if (declencheurPopoverEffetsBatimentCamp
+      && declencheurPopoverEffetsBatimentCamp.classList.contains("camp-task-duration-help")) {
+    fermerPopoverEffetsBatimentCamp(false);
+  }
   const ancienPicker = document.querySelector(".camp-task-cat-picker-layer");
   if (ancienPicker) ancienPicker.remove();
   ecrireTexte(title, definition.actionLabel);
@@ -20000,10 +20120,24 @@ function rendreCampTaskPanel(options) {
   details.className = "camp-task-panel-summary-copy";
   const meta = document.createElement("span");
   meta.className = "camp-task-panel-meta";
-  const duration = document.createElement("span");
-  duration.className = "camp-task-panel-pill";
-  duration.textContent = formaterDureeMinutesCamp(definition.duration);
-  meta.appendChild(duration);
+  const timing = {};
+  const assigned = state.selection.length === definition.requiredCats
+    && state.selection.every(function(index) { return Number.isInteger(index) && etat.kittiesData[index]; });
+  const taskKind = state.kind === "house" || state.kind === "building" ? "construction"
+    : (state.kind === "demolition" ? "junk" : state.kind);
+  const effectiveDuration = assigned
+    ? dureeEffectiveActionCamp(definition.duration, state.selection, taskKind, timing)
+    : definition.duration;
+  const durationText = formaterDureeMinutesCamp(effectiveDuration);
+  const timingDetails = assigned ? creerDetailsDureeActionCamp(timing, prefix, durationText) : null;
+  if (timingDetails) {
+    meta.appendChild(timingDetails.button);
+  } else {
+    const duration = document.createElement("span");
+    duration.className = "camp-task-panel-pill";
+    duration.textContent = durationText;
+    meta.appendChild(duration);
+  }
   const level = document.createElement("span");
   level.className = "camp-task-panel-pill";
   level.textContent = "Level : " + definition.minLevel + "+";

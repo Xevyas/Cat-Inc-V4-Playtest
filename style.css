@@ -9533,8 +9533,42 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 .camp-task-panel-meta {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+}
+.camp-task-duration-help {
+  gap: 7px;
+  min-height: 32px;
+  padding-right: 7px;
+  cursor: pointer;
+}
+.camp-task-duration-help-icon {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  padding-left: 7px;
+  border-left: 1px solid #d8bea1;
+}
+.camp-task-duration-help[aria-expanded="true"] {
+  border-color: #9f744c;
+  background: #f6e8d5;
+}
+.camp-task-duration-details {
+  display: grid;
+  gap: 3px;
+}
+.camp-task-duration-details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 3px 0;
+}
+.camp-task-duration-details strong { white-space: nowrap; }
+.camp-building-effects-popover-duration {
+  z-index: 2300;
+  width: min(310px, calc(100vw - 16px));
+  overflow: auto;
 }
 .camp-task-panel-pill {
   display: inline-flex;
@@ -11681,6 +11715,7 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
 }
 .carte-badge-reveal { top: 5px; left: 5px; }
 .carte-badge-reward { top: 5px; right: 5px; }
+.carte-badge-reward img { width: 21px; height: 21px; object-fit: contain; }
 .carte-badge-failure { bottom: 5px; left: 5px; background: #fff0ee; }
 .carte-nom         { font-size: 0.55rem; font-weight: 700; text-align: center; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 
@@ -15278,6 +15313,10 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 .market-stall-shop-header small { color:var(--texte-secondaire,#685b50); }
 .market-stall-shop-portrait { width:54px; height:54px; object-fit:contain; border-radius:50%; background:#fff8e8; }
 .market-stall-shop-tier-hint,.market-stall-shop-status { margin:8px 0; font-size:.8rem; }
+.market-stall-shop-stock { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin:8px 0; font-size:.8rem; }
+.market-stall-shop-stock > span { display:inline-flex; align-items:center; gap:4px; }
+.market-stall-shop-stock > span[hidden] { display:none; }
+.market-stall-shop-stock img { width:28px; height:28px; object-fit:contain; }
 .market-stall-shop-action-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
 .market-stall-shop-tabs { display:flex; gap:6px; }
 .market-stall-shop-tab { min-height:40px; padding:6px 11px; border-radius:999px; font-size:.8rem; }

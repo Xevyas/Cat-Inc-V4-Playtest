@@ -521,7 +521,12 @@
           "portraitClass": "cannelle",
           "html": "Start with the blueprints. I think you'll like this one."
         }
-      ]
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/Buildings/Camp Runtime/market-stall/tier-1/revision-8/down.png",
+        "alt": "market stall"
+      }
     },
     {
       "id": "ecran-intro",
