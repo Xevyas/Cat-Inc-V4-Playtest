@@ -953,6 +953,37 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0087Categories = Object.freeze([
+    Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Base offline production has increased from 10% to 25%.",
+        "Visitor arrival pacing is smoother in the early and late game, and Recruiter bonuses now shorten the countdown correctly.",
+        "Catch targets now remain available longer across all difficulty levels."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Book learning now uses a tactile paw-and-slingshot interaction with clearer aiming and feedback.",
+        "The Stylish mobile interface has cleaner secondary navigation and keeps the active Focus boost visible.",
+        "Cat assignment dialogs now show each Cat's profession.",
+        "Camp structures can now display subtle directional animations, beginning with the Small Fountain.",
+        "Bernardo now appears as the game's browser icon, and Cat Face expressions preserve their illustrated identity more consistently.",
+        "The Sawmill now uses refreshed artwork with improved grounding shadows."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Decoration effects now persist correctly after reloading a save.",
+        "Camp system fences now block movement and prevent Cats from selecting adjacent Junk through a fence."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0086Categories = Object.freeze([
     Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
     Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1073,7 +1104,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0086",
+    baseVersion: "0.0087",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1086,6 +1117,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0087",
+      date: "2026-09-06",
+      categories: release0087Categories
+    }),
     Object.freeze({
       version: "0.0086",
       date: "2026-09-05",

@@ -67,17 +67,17 @@
       "alternative": false
     },
     {
+      "id": "cat-faces-luna-v2",
+      "name": "Luna V2",
+      "runtimePath": "img/Cat faces/luna-v2.png",
+      "revision": 3,
+      "alternative": false
+    },
+    {
       "id": "cat-faces-mochi",
       "name": "Mochi",
       "runtimePath": "img/Cat faces/Mochi_Final.png",
       "revision": 5,
-      "alternative": false
-    },
-    {
-      "id": "cat-faces-mochi-v2",
-      "name": "Mochi V2",
-      "runtimePath": "img/Cat faces/mochi-v2.png",
-      "revision": 1,
       "alternative": false
     },
     {

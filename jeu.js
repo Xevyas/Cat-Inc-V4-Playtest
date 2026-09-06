@@ -35,6 +35,9 @@ const GAME_CHANGELOG = changelogData.releases;
 const campPrototypeApi = globalThis.CatInc.camp;
 const campCapabilitiesApi = globalThis.CatInc.campCapabilities;
 const campGameplayData = globalThis.CatInc.data.campGameplay;
+const CAMP_GENERAL_RULES = campGameplayData.generalRules;
+const CAMP_RECRUITMENT_RULES = CAMP_GENERAL_RULES.recruitment;
+const CAMP_AFK_RULES = CAMP_GENERAL_RULES.afk;
 const campTemplateData = globalThis.CatInc.data.campTemplates;
 const incrementorLawApi = globalThis.CatInc.incrementorLaw;
 const perksV2Api = globalThis.CatInc.perksV2;
@@ -672,6 +675,19 @@ function multiplicateurRecruitPerksV2() {
   return perksV2Api
     ? perksV2Api.recruitSpeedMultiplier(progressionPerksV2())
     : 1;
+}
+
+function libelleRecruitPerksV2(multiplicateur) {
+  if (!perksV2Api || multiplicateur <= 1) return null;
+  const progression = progressionPerksV2();
+  const noeud = perksV2Api.nodesForJob("gang-leader").find(function(node) {
+    return perksV2Api.isEffective(progression, node.id)
+      && node.effects.some(function(effect) {
+        return effect.effectId === "gangLeaderRecruitSpeed"
+          && Number(effect.parameters.factor) === multiplicateur;
+      });
+  });
+  return noeud ? noeud.name : null;
 }
 
 function foodManagementDisponible() {
@@ -1827,8 +1843,8 @@ const ENGINEER_JOB_ID = "camp-engineer";
 const ENGINEER_TRAINING_DURATIONS = [7200, 14400, 28800, 43200, 57600, 72000, 86400];
 const ENGINEER_RANKS = Object.freeze({
   "camp-engineer": Object.freeze({
-    1: Object.freeze({ maxLevel: Infinity, help: "AFK Timer Bonus by 6 minutes per level", type: "afk-cap-minutes", value: 6 }),
-    2: Object.freeze({ maxLevel: 100, help: "Increase AFK Ratio by 0.5% per level", type: "afk-ratio-percent", value: 0.5 })
+    1: Object.freeze({ maxLevel: Infinity, help: "AFK Timer Bonus by " + CAMP_AFK_RULES.engineerRank1CapMinutesPerLevel + " minutes per level", type: "afk-cap-minutes", value: CAMP_AFK_RULES.engineerRank1CapMinutesPerLevel }),
+    2: Object.freeze({ maxLevel: 100, help: "Increase AFK Ratio by " + CAMP_AFK_RULES.engineerRank2RatioPercentPerLevel + "% per level", type: "afk-ratio-percent", value: CAMP_AFK_RULES.engineerRank2RatioPercentPerLevel })
   })
 });
 
@@ -2155,7 +2171,7 @@ globalThis.CatInc.campLevel = Object.freeze({
 });
 
 const CAMP_APPEAL_RULES = Object.freeze({
-  recruitmentSpeedBase: 1.10,
+  recruitmentSpeedBase: CAMP_RECRUITMENT_RULES.appealSpeedPerPoint,
   trailType: "road",
   trailMultiplier: 1.10,
   decimalPrecision: 6,
@@ -2759,15 +2775,21 @@ function niveauDifficulteRecrutement() {
 
 function dureeReferenceRecrutementV3(nombreChatsPresents) {
   const n = Math.max(0, Math.floor(Number(nombreChatsPresents) || 0));
-  if (n <= 10) return 5 * Math.pow(3, n);
-  if (n <= 15) return 5 * Math.pow(3, 10) * Math.pow(2, n - 10);
-  return 5 * Math.pow(3, 10) * Math.pow(2, 5) * Math.pow(1.5, n - 15);
+  const rules = CAMP_RECRUITMENT_RULES;
+  if (n <= rules.earlyMaxCats) return rules.curveBaseSeconds * Math.pow(rules.earlyGrowth, n);
+  if (n <= rules.middleMaxCats) return rules.curveBaseSeconds
+    * Math.pow(rules.earlyGrowth, rules.earlyMaxCats)
+    * Math.pow(rules.middleGrowth, n - rules.earlyMaxCats);
+  return rules.curveBaseSeconds
+    * Math.pow(rules.earlyGrowth, rules.earlyMaxCats)
+    * Math.pow(rules.middleGrowth, rules.middleMaxCats - rules.earlyMaxCats)
+    * Math.pow(rules.lateGrowth, n - rules.middleMaxCats);
 }
 
 function dureeReferenceRecrutementCamp(nombreChatsPresents) {
   const n = Math.max(0, Math.floor(Number(nombreChatsPresents) || 0));
-  if (n === 3) return 60;
-  if (n === 4) return 2 * 60;
+  const authored = CAMP_RECRUITMENT_RULES.authoredBaseSeconds[String(n)];
+  if (Number.isFinite(authored)) return authored;
   return dureeReferenceRecrutementV3(n);
 }
 
@@ -2784,18 +2806,28 @@ function calculRecrutementCamp() {
   const attractivite = scoreAttractiviteCamp();
   const tempsReference = dureeReferenceRecrutementCamp(etat.chatons);
   const multiplicateurAppeal = multiplicateurVitesseAppealCamp(attractivite.total);
+  const multiplicateurRecruiter = multiplicateurRecruitPerksV2();
   const modificateursDureeArrivee = appealCampDebloque() ? [{
     id: "appeal",
     label: "Appeal " + attractivite.total,
     value: "Recruit Speed ×" + multiplicateurAppeal.toFixed(2)
   }] : [];
+  const libelleRecruiter = libelleRecruitPerksV2(multiplicateurRecruiter);
+  if (libelleRecruiter) {
+    modificateursDureeArrivee.push({
+      id: "gangLeaderRecruitSpeed",
+      label: libelleRecruiter,
+      value: "Recruit Speed ×" + multiplicateurRecruiter.toFixed(2)
+    });
+  }
   return {
     niveau: niveau,
     attractivite: attractivite,
     tempsReference: tempsReference,
     multiplicateurAppeal: multiplicateurAppeal,
+    multiplicateurRecruiter: multiplicateurRecruiter,
     modificateursDureeArrivee: modificateursDureeArrivee,
-    dureeArrivee: tempsReference / multiplicateurAppeal
+    dureeArrivee: tempsReference / (multiplicateurAppeal * multiplicateurRecruiter)
   };
 }
 
@@ -6646,6 +6678,7 @@ function terminerApprentissagePerk() {
   }
   if (result.ok) {
     etat.perksV2 = result.progress;
+    synchroniserDureeArriveeCamp();
     if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
     if (action.perkId === "exploratorAutoAssign") exploTabDirty = true;
     const kitty = etat.kittiesData[action.kittyIndex];
@@ -8906,6 +8939,7 @@ function renduModalExplo() {
     html += '<span class="explo-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
     html += '<div class="explo-modal-kitty-info">';
     html += '<span class="explo-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
+    html += '<span class="explo-modal-kitty-profession">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
     html += '<span class="explo-modal-kitty-power">&#x26A1; Exploration Power ' + kittyEP(i) + '</span>';
     var halvesTime = scoutingHalveTime(i);
     if (halvesTime) html += '<span class="explo-modal-kitty-effect">&#x23F1; Halves mission time</span>';
@@ -10108,7 +10142,27 @@ function apprendreLivre(itemId) {
 let livreMiniJeuItemId = null;
 let livreMiniJeuMots = [];
 let livreMiniJeuTrous = [];
+let livreMiniJeuTrousVerrouilles = [];
 let livreMiniJeuMessage = "";
+let livreMiniJeuTrouClavier = 0;
+let livreMiniJeuGeste = null;
+let livreMiniJeuMouvement = null;
+let livreMiniJeuPositions = new Map();
+let livreMiniJeuRejets = [];
+
+const LIVRE_LANCEMENT_VITESSE_MIN = 260;
+const LIVRE_LANCEMENT_VITESSE_MAX = 720;
+const LIVRE_LANCEMENT_DISTANCE_MAX = 92;
+const LIVRE_AIMANTATION_RAYON = 38;
+const LIVRE_FRAPPE_CONTACT_SECONDES = 0.24;
+const LIVRE_REPOS = [
+  {x: 18, y: 18, angle: -3},
+  {x: 50, y: 13, angle: 2},
+  {x: 82, y: 19, angle: -1},
+  {x: 18, y: 81, angle: 2},
+  {x: 50, y: 87, angle: -2},
+  {x: 82, y: 80, angle: 3}
+];
 
 function melangerMotsLivre(mots) {
   const melanges = mots.map(function(mot, index) { return { id: index, mot: mot }; });
@@ -10130,7 +10184,15 @@ function ouvrirMiniJeuLivre(itemId) {
   livreMiniJeuItemId = itemId;
   livreMiniJeuMots = melangerMotsLivre(jeu.answers);
   livreMiniJeuTrous = jeu.answers.map(function() { return null; });
+  livreMiniJeuTrousVerrouilles = jeu.answers.map(function() { return false; });
   livreMiniJeuMessage = "";
+  livreMiniJeuTrouClavier = 0;
+  livreMiniJeuGeste = null;
+  livreMiniJeuMouvement = null;
+  livreMiniJeuPositions = new Map(livreMiniJeuMots.map(function(entree) {
+    return [entree.id, {x: 0, y: 0}];
+  }));
+  livreMiniJeuRejets = [];
   renduMiniJeuLivre();
   ouvrirDialogueModal("book-learning-modal", {
     dismissible: true,
@@ -10141,26 +10203,63 @@ function ouvrirMiniJeuLivre(itemId) {
 }
 
 function fermerMiniJeuLivre() {
+  if (livreMiniJeuGeste && livreMiniJeuGeste.element) {
+    const element = livreMiniJeuGeste.element;
+    if (element.hasPointerCapture && element.hasPointerCapture(livreMiniJeuGeste.pointerId)) {
+      element.releasePointerCapture(livreMiniJeuGeste.pointerId);
+    }
+  }
   fermerDialogueModal("book-learning-modal");
   fermerSessionMiniJeu("book");
   livreMiniJeuItemId = null;
   livreMiniJeuMots = [];
   livreMiniJeuTrous = [];
+  livreMiniJeuTrousVerrouilles = [];
   livreMiniJeuMessage = "";
+  livreMiniJeuTrouClavier = 0;
+  livreMiniJeuGeste = null;
+  livreMiniJeuMouvement = null;
+  livreMiniJeuPositions = new Map();
+  livreMiniJeuRejets = [];
 }
 
-function placerMotMiniJeuLivre(motId) {
+function selectionnerTrouMiniJeuLivre(trouIndex) {
+  if (trouIndex < 0 || trouIndex >= livreMiniJeuTrous.length) return;
+  if (livreMiniJeuTrousVerrouilles[trouIndex] || livreMiniJeuTrous[trouIndex] !== null) return;
+  livreMiniJeuTrouClavier = trouIndex;
+  livreMiniJeuMessage = "Blank " + (trouIndex + 1) + " selected for keyboard placement.";
+  renduMiniJeuLivre();
+}
+
+function placerMotMiniJeuLivre(motId, trouIndex) {
   if (livreMiniJeuTrous.includes(motId)) return;
-  const premierTrou = livreMiniJeuTrous.indexOf(null);
-  if (premierTrou < 0) return;
-  livreMiniJeuTrous[premierTrou] = motId;
+  const cible = Number.isInteger(trouIndex) ? trouIndex : livreMiniJeuTrous.findIndex(function(valeur, index) {
+    return valeur === null && !livreMiniJeuTrousVerrouilles[index];
+  });
+  if (cible < 0 || cible >= livreMiniJeuTrous.length || livreMiniJeuTrous[cible] !== null || livreMiniJeuTrousVerrouilles[cible]) return;
+  livreMiniJeuTrous[cible] = motId;
+  livreMiniJeuTrouClavier = livreMiniJeuTrous.findIndex(function(valeur, index) {
+    return valeur === null && !livreMiniJeuTrousVerrouilles[index];
+  });
   livreMiniJeuMessage = "";
   renduMiniJeuLivre();
 }
 
+function activerMotMiniJeuLivreClavier(event, motId) {
+  if (!event || (event.key !== "Enter" && event.key !== " ")) return;
+  event.preventDefault();
+  const cibleSelectionnee = livreMiniJeuTrous[livreMiniJeuTrouClavier] === null
+    && !livreMiniJeuTrousVerrouilles[livreMiniJeuTrouClavier]
+    ? livreMiniJeuTrouClavier
+    : undefined;
+  placerMotMiniJeuLivre(motId, cibleSelectionnee);
+}
+
 function retirerMotMiniJeuLivre(trouIndex) {
   if (trouIndex < 0 || trouIndex >= livreMiniJeuTrous.length) return;
+  if (livreMiniJeuTrousVerrouilles[trouIndex]) return;
   livreMiniJeuTrous[trouIndex] = null;
+  livreMiniJeuTrouClavier = trouIndex;
   livreMiniJeuMessage = "";
   renduMiniJeuLivre();
 }
@@ -10168,6 +10267,301 @@ function retirerMotMiniJeuLivre(trouIndex) {
 function motMiniJeuLivre(motId) {
   const entree = livreMiniJeuMots.find(function(mot) { return mot.id === motId; });
   return entree ? entree.mot : "";
+}
+
+function calculerLancementMiniJeuLivre(pullX, pullY, fallbackX, fallbackY) {
+  let x = Number(pullX) || 0;
+  let y = Number(pullY) || 0;
+  let distance = Math.hypot(x, y);
+  if (distance < 4) {
+    x = Number(fallbackX) || 0;
+    y = Number(fallbackY) || -1;
+    distance = Math.max(1, Math.hypot(x, y));
+  }
+  const force = Math.max(0, Math.min(1, distance / LIVRE_LANCEMENT_DISTANCE_MAX));
+  const vitesse = LIVRE_LANCEMENT_VITESSE_MIN
+    + (LIVRE_LANCEMENT_VITESSE_MAX - LIVRE_LANCEMENT_VITESSE_MIN) * force;
+  return {vx: -x / distance * vitesse, vy: -y / distance * vitesse, vitesse: vitesse};
+}
+
+function trouverTrouAimanteMiniJeuLivre(clientX, clientY, rayon) {
+  const trous = Array.from(document.querySelectorAll(".book-learning-blank[data-blank-index]"));
+  let meilleure = null;
+  trous.forEach(function(trou) {
+    const index = Number(trou.dataset.blankIndex);
+    if (livreMiniJeuTrous[index] !== null || livreMiniJeuTrousVerrouilles[index]) return;
+    const rect = trou.getBoundingClientRect();
+    const distance = Math.hypot(clientX - (rect.left + rect.width / 2), clientY - (rect.top + rect.height / 2));
+    if (distance <= rayon && (!meilleure || distance < meilleure.distance || (distance === meilleure.distance && index < meilleure.index))) {
+      meilleure = {index: index, distance: distance};
+    }
+  });
+  return meilleure ? meilleure.index : -1;
+}
+
+function positionnerPatteMiniJeuLivre(clientX, clientY, angle, etatPatte) {
+  const board = document.getElementById("book-learning-board");
+  const patte = document.getElementById("book-learning-paw");
+  if (!board || !patte) return;
+  const rect = board.getBoundingClientRect();
+  patte.style.left = (clientX - rect.left) + "px";
+  patte.style.top = (clientY - rect.top) + "px";
+  patte.style.setProperty("--book-paw-angle", angle + "rad");
+  patte.classList.toggle("book-learning-paw-hold", etatPatte === "hold");
+  if (etatPatte === "swat") {
+    patte.classList.remove("book-learning-paw-swat");
+    void patte.offsetWidth;
+    patte.classList.add("book-learning-paw-swat");
+  } else {
+    patte.classList.remove("book-learning-paw-swat");
+  }
+}
+
+function masquerPatteMiniJeuLivre() {
+  const patte = document.getElementById("book-learning-paw");
+  if (patte) patte.classList.remove("book-learning-paw-hold", "book-learning-paw-swat");
+}
+
+function reposerMotMiniJeuLivre(element) {
+  if (element) {
+    const motId = Number(element.dataset.wordId);
+    const mouvement = livreMiniJeuMouvement && livreMiniJeuMouvement.element === element
+      ? livreMiniJeuMouvement
+      : livreMiniJeuPositions.get(motId);
+    const position = mouvement && Number.isFinite(mouvement.x) && Number.isFinite(mouvement.y)
+      ? {x: mouvement.x, y: mouvement.y}
+      : {x: 0, y: 0};
+    livreMiniJeuPositions.set(motId, position);
+    element.style.setProperty("--scrap-dx", position.x + "px");
+    element.style.setProperty("--scrap-dy", position.y + "px");
+    element.style.setProperty("--aim-dx", "0px");
+    element.style.setProperty("--aim-dy", "0px");
+    element.classList.remove("book-learning-word-grabbed", "book-learning-word-moving");
+    element.dataset.scrapState = "free";
+  }
+  livreMiniJeuMouvement = null;
+}
+
+function resoudreLancementReduitMiniJeuLivre(mouvement) {
+  const vitesse = Math.max(1, Math.hypot(mouvement.vx, mouvement.vy));
+  const rect = mouvement.element.getBoundingClientRect();
+  const destinationX = rect.left + rect.width / 2 + mouvement.vx / vitesse * 190;
+  const destinationY = rect.top + rect.height / 2 + mouvement.vy / vitesse * 190;
+  const cible = trouverTrouAimanteMiniJeuLivre(destinationX, destinationY, LIVRE_AIMANTATION_RAYON + 18);
+  if (cible >= 0) {
+    livreMiniJeuPositions.set(mouvement.motId, {x: mouvement.x, y: mouvement.y});
+    livreMiniJeuMouvement = null;
+    placerMotMiniJeuLivre(mouvement.motId, cible);
+  } else {
+    reposerMotMiniJeuLivre(mouvement.element);
+  }
+}
+
+function animerLancementMiniJeuLivre() {
+  demarrerAnimationMiniJeu("book", function(dt) {
+    const mouvement = livreMiniJeuMouvement;
+    const board = document.getElementById("book-learning-board");
+    if (!mouvement || !board || !mouvement.element || !mouvement.element.isConnected) return false;
+    if (mouvement.phase === "swat") {
+      mouvement.elapsed += dt;
+      if (mouvement.elapsed < LIVRE_FRAPPE_CONTACT_SECONDES) return true;
+      mouvement.phase = "moving";
+      mouvement.element.classList.add("book-learning-word-moving");
+      mouvement.element.dataset.scrapState = "moving";
+      if (mouvement.reduced) {
+        resoudreLancementReduitMiniJeuLivre(mouvement);
+        return false;
+      }
+    }
+    mouvement.x += mouvement.vx * dt;
+    mouvement.y += mouvement.vy * dt;
+    const friction = Math.exp(-2.2 * dt);
+    mouvement.vx *= friction;
+    mouvement.vy *= friction;
+    mouvement.element.style.setProperty("--scrap-dx", mouvement.x + "px");
+    mouvement.element.style.setProperty("--scrap-dy", mouvement.y + "px");
+
+    const rect = mouvement.element.getBoundingClientRect();
+    const centreX = rect.left + rect.width / 2;
+    const centreY = rect.top + rect.height / 2;
+    const cible = trouverTrouAimanteMiniJeuLivre(centreX, centreY, LIVRE_AIMANTATION_RAYON);
+    if (cible >= 0) {
+      livreMiniJeuPositions.set(mouvement.motId, {x: mouvement.x, y: mouvement.y});
+      livreMiniJeuMouvement = null;
+      placerMotMiniJeuLivre(mouvement.motId, cible);
+      return false;
+    }
+
+    const boardRect = board.getBoundingClientRect();
+    const horsPlateau = centreX < boardRect.left + 8 || centreX > boardRect.right - 8
+      || centreY < boardRect.top + 8 || centreY > boardRect.bottom - 8;
+    if (horsPlateau) {
+      mouvement.x += Math.max(0, boardRect.left + 10 - rect.left)
+        + Math.min(0, boardRect.right - 10 - rect.right);
+      mouvement.y += Math.max(0, boardRect.top + 10 - rect.top)
+        + Math.min(0, boardRect.bottom - 10 - rect.bottom);
+      mouvement.element.style.setProperty("--scrap-dx", mouvement.x + "px");
+      mouvement.element.style.setProperty("--scrap-dy", mouvement.y + "px");
+    }
+    if (horsPlateau || Math.hypot(mouvement.vx, mouvement.vy) < 48) {
+      reposerMotMiniJeuLivre(mouvement.element);
+      return false;
+    }
+    return true;
+  });
+}
+
+function commencerTirMiniJeuLivre(event, motId) {
+  if (!event || event.button !== 0 || livreMiniJeuGeste || livreMiniJeuMouvement || livreMiniJeuRejets.length || !miniJeuRuntimeActif("book")) return;
+  const element = event.currentTarget;
+  const board = document.getElementById("book-learning-board");
+  if (!element || !board || livreMiniJeuTrous.includes(motId)) return;
+  const rect = element.getBoundingClientRect();
+  const boardRect = board.getBoundingClientRect();
+  livreMiniJeuGeste = {
+    pointerId: event.pointerId,
+    motId: motId,
+    element: element,
+    startX: event.clientX,
+    startY: event.clientY,
+    x: 0,
+    y: 0,
+    minX: boardRect.left + rect.width / 2 + 10 - (rect.left + rect.width / 2),
+    maxX: boardRect.right - rect.width / 2 - 10 - (rect.left + rect.width / 2),
+    minY: boardRect.top + rect.height / 2 + 10 - (rect.top + rect.height / 2),
+    maxY: boardRect.bottom - rect.height / 2 - 10 - (rect.top + rect.height / 2),
+    fallbackX: rect.left + rect.width / 2 - (boardRect.left + boardRect.width / 2),
+    fallbackY: rect.top + rect.height / 2 - (boardRect.top + boardRect.height / 2)
+  };
+  element.setPointerCapture(event.pointerId);
+  element.classList.add("book-learning-word-grabbed");
+  element.dataset.scrapState = "grabbed";
+  element.style.setProperty("--aim-dx", "0px");
+  element.style.setProperty("--aim-dy", "0px");
+  element.style.setProperty("--aim-power", "12px");
+  element.style.setProperty("--aim-angle", "-1.5708rad");
+  positionnerPatteMiniJeuLivre(rect.left + rect.width / 2, rect.top + rect.height / 2, 0, "hold");
+  event.preventDefault();
+}
+
+function deplacerTirMiniJeuLivre(event) {
+  const geste = livreMiniJeuGeste;
+  if (!geste || event.pointerId !== geste.pointerId) return;
+  const dx = event.clientX - geste.startX;
+  const dy = event.clientY - geste.startY;
+  const distance = Math.hypot(dx, dy);
+  const echelle = distance > LIVRE_LANCEMENT_DISTANCE_MAX ? LIVRE_LANCEMENT_DISTANCE_MAX / distance : 1;
+  geste.x = dx * echelle;
+  geste.y = dy * echelle;
+  const aimX = Math.max(geste.minX, Math.min(geste.maxX, geste.x));
+  const aimY = Math.max(geste.minY, Math.min(geste.maxY, geste.y));
+  const force = Math.hypot(geste.x, geste.y);
+  const rect = geste.element.getBoundingClientRect();
+  geste.element.style.setProperty("--aim-dx", aimX + "px");
+  geste.element.style.setProperty("--aim-dy", aimY + "px");
+  geste.element.style.setProperty("--aim-power", Math.max(12, force) + "px");
+  geste.element.style.setProperty("--aim-angle", Math.atan2(-geste.y, -geste.x) + "rad");
+  positionnerPatteMiniJeuLivre(
+    rect.left + rect.width / 2 + aimX,
+    rect.top + rect.height / 2 + aimY,
+    Math.atan2(-geste.y, -geste.x),
+    "hold"
+  );
+  event.preventDefault();
+}
+
+function terminerTirMiniJeuLivre(event, annule) {
+  const geste = livreMiniJeuGeste;
+  if (!geste || event.pointerId !== geste.pointerId) return;
+  livreMiniJeuGeste = null;
+  if (geste.element.hasPointerCapture && geste.element.hasPointerCapture(geste.pointerId)) {
+    geste.element.releasePointerCapture(geste.pointerId);
+  }
+  geste.element.classList.remove("book-learning-word-grabbed");
+  if (annule) {
+    masquerPatteMiniJeuLivre();
+    reposerMotMiniJeuLivre(geste.element);
+    return;
+  }
+  const lancement = calculerLancementMiniJeuLivre(geste.x, geste.y, geste.fallbackX, geste.fallbackY);
+  const rect = geste.element.getBoundingClientRect();
+  positionnerPatteMiniJeuLivre(
+    rect.left + rect.width / 2,
+    rect.top + rect.height / 2,
+    Math.atan2(lancement.vy, lancement.vx),
+    "swat"
+  );
+  geste.element.style.setProperty("--aim-dx", "0px");
+  geste.element.style.setProperty("--aim-dy", "0px");
+  const position = livreMiniJeuPositions.get(geste.motId) || {x: 0, y: 0};
+  geste.element.dataset.scrapState = "committed";
+  livreMiniJeuMouvement = {
+    motId: geste.motId,
+    element: geste.element,
+    x: position.x,
+    y: position.y,
+    vx: lancement.vx,
+    vy: lancement.vy,
+    phase: "swat",
+    elapsed: 0,
+    reduced: Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  };
+  animerLancementMiniJeuLivre();
+}
+
+function demarrerRejetsMiniJeuLivre(rejets) {
+  const board = document.getElementById("book-learning-board");
+  if (!board || !rejets.length) return;
+  const boardRect = board.getBoundingClientRect();
+  livreMiniJeuRejets = rejets.map(function(rejet, ordre) {
+    const element = document.querySelector('.book-learning-word[data-word-id="' + rejet.motId + '"]');
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    const position = livreMiniJeuPositions.get(rejet.motId) || {x: 0, y: 0};
+    const centreX = rejet.rect.left + rejet.rect.width / 2;
+    const centreY = rejet.rect.top + rejet.rect.height / 2;
+    const angle = (-145 + ordre * 58) * Math.PI / 180;
+    const cibleX = Math.max(
+      boardRect.left + rect.width / 2 + 12,
+      Math.min(boardRect.right - rect.width / 2 - 12, centreX + Math.cos(angle) * 108)
+    );
+    const cibleY = Math.max(
+      boardRect.top + rect.height / 2 + 12,
+      Math.min(boardRect.bottom - rect.height / 2 - 12, centreY + Math.sin(angle) * 108)
+    );
+    const departX = position.x + centreX - (rect.left + rect.width / 2);
+    const departY = position.y + centreY - (rect.top + rect.height / 2);
+    const finX = position.x + cibleX - (rect.left + rect.width / 2);
+    const finY = position.y + cibleY - (rect.top + rect.height / 2);
+    livreMiniJeuPositions.set(rejet.motId, {x: finX, y: finY});
+    element.style.setProperty("--scrap-dx", departX + "px");
+    element.style.setProperty("--scrap-dy", departY + "px");
+    element.classList.add("book-learning-word-rejected");
+    element.dataset.scrapState = "rejected";
+    return {element: element, departX: departX, departY: departY, finX: finX, finY: finY};
+  }).filter(Boolean);
+  if (!livreMiniJeuRejets.length) return;
+
+  let elapsed = 0;
+  demarrerAnimationMiniJeu("book", function(dt) {
+    if (!livreMiniJeuRejets.length) return false;
+    elapsed += dt;
+    const progression = Math.max(0, Math.min(1, (elapsed - 0.12) / 0.34));
+    const eased = 1 - Math.pow(1 - progression, 3);
+    livreMiniJeuRejets.forEach(function(rejet) {
+      const x = rejet.departX + (rejet.finX - rejet.departX) * eased;
+      const y = rejet.departY + (rejet.finY - rejet.departY) * eased;
+      rejet.element.style.setProperty("--scrap-dx", x + "px");
+      rejet.element.style.setProperty("--scrap-dy", y + "px");
+    });
+    if (progression < 1) return true;
+    livreMiniJeuRejets.forEach(function(rejet) {
+      rejet.element.classList.remove("book-learning-word-rejected");
+      rejet.element.dataset.scrapState = "free";
+    });
+    livreMiniJeuRejets = [];
+    return false;
+  });
 }
 
 function renduMiniJeuLivre() {
@@ -10187,9 +10581,15 @@ function renduMiniJeuLivre() {
     if (index >= jeu.answers.length) return;
     const motId = livreMiniJeuTrous[index];
     const mot = motId === null ? "" : motMiniJeuLivre(motId);
-    phraseHtml += '<button class="book-learning-blank' + (mot ? " book-learning-blank-filled" : "") + '"' +
-      ' aria-label="Blank ' + (index + 1) + (mot ? ": " + echapperAttributHtml(mot) + ". Click to remove." : ": empty") + '"' +
-      (mot ? ' onclick="retirerMotMiniJeuLivre(' + index + ')"' : ' disabled') + '>' +
+    const verrouille = Boolean(livreMiniJeuTrousVerrouilles[index]);
+    const selectionne = !mot && index === livreMiniJeuTrouClavier;
+    phraseHtml += '<button class="book-learning-blank' + (mot ? " book-learning-blank-filled" : "") +
+      (verrouille ? " book-learning-blank-locked" : "") + '"' +
+      ' data-blank-index="' + index + '" aria-label="Blank ' + (index + 1) +
+      (verrouille ? ": " + echapperAttributHtml(mot) + ". Correct and locked." :
+        (mot ? ": " + echapperAttributHtml(mot) + ". Activate to remove." : ": empty. Activate to select.")) + '"' +
+      (verrouille ? ' disabled' : (mot ? ' onclick="retirerMotMiniJeuLivre(' + index + ')"' :
+        ' aria-pressed="' + (selectionne ? "true" : "false") + '" onclick="selectionnerTrouMiniJeuLivre(' + index + ')"')) + '>' +
       (mot ? echapperAttributHtml(mot) : "___") + '</button>';
   });
   phraseEl.innerHTML = phraseHtml;
@@ -10197,7 +10597,19 @@ function renduMiniJeuLivre() {
   motsEl.innerHTML = livreMiniJeuMots.filter(function(entree) {
     return !livreMiniJeuTrous.includes(entree.id);
   }).map(function(entree) {
-    return '<button class="book-learning-word" onclick="placerMotMiniJeuLivre(' + entree.id + ')">' + echapperAttributHtml(entree.mot) + '</button>';
+    const repos = LIVRE_REPOS[livreMiniJeuMots.indexOf(entree) % LIVRE_REPOS.length];
+    const position = livreMiniJeuPositions.get(entree.id) || {x: 0, y: 0};
+    return '<button class="book-learning-word" data-word-id="' + entree.id + '" data-scrap-state="free"' +
+      ' style="--scrap-left:' + repos.x + '%;--scrap-top:' + repos.y + '%;--scrap-angle:' + repos.angle +
+      'deg;--scrap-dx:' + position.x + 'px;--scrap-dy:' + position.y + 'px;--aim-dx:0px;--aim-dy:0px;--aim-power:12px;--aim-angle:-1.5708rad"' +
+      ' aria-label="Paper scrap: ' + echapperAttributHtml(entree.mot) + '. Pull and release to launch, or press Enter to place in the selected blank."' +
+      ' onpointerdown="commencerTirMiniJeuLivre(event,' + entree.id + ')"' +
+      ' onpointermove="deplacerTirMiniJeuLivre(event)"' +
+      ' onpointerup="terminerTirMiniJeuLivre(event,false)"' +
+      ' onpointercancel="terminerTirMiniJeuLivre(event,true)"' +
+      ' onkeydown="activerMotMiniJeuLivreClavier(event,' + entree.id + ')"><span class="book-learning-word-label">' +
+      echapperAttributHtml(entree.mot) + '</span><span class="book-learning-arrow" aria-hidden="true"></span>' +
+      '<span class="book-learning-aim" aria-hidden="true"></span></button>';
   }).join("");
 
   feedbackEl.textContent = livreMiniJeuMessage;
@@ -10214,9 +10626,22 @@ function verifierMiniJeuLivre() {
     return motMiniJeuLivre(motId) === jeu.answers[index];
   });
   if (!correcte) {
-    livreMiniJeuTrous = jeu.answers.map(function() { return null; });
-    livreMiniJeuMessage = "Incorrect. Try again.";
+    const rejets = [];
+    livreMiniJeuTrous.forEach(function(motId, index) {
+      if (motMiniJeuLivre(motId) === jeu.answers[index]) {
+        livreMiniJeuTrousVerrouilles[index] = true;
+      } else {
+        const trou = document.querySelector('.book-learning-blank[data-blank-index="' + index + '"]');
+        if (trou) rejets.push({motId: motId, rect: trou.getBoundingClientRect()});
+        livreMiniJeuTrous[index] = null;
+      }
+    });
+    livreMiniJeuTrouClavier = livreMiniJeuTrous.findIndex(function(motId, index) {
+      return motId === null && !livreMiniJeuTrousVerrouilles[index];
+    });
+    livreMiniJeuMessage = "Some words are right — place the remaining scraps.";
     renduMiniJeuLivre();
+    demarrerRejetsMiniJeuLivre(rejets);
     return;
   }
 
@@ -10816,7 +11241,8 @@ function renduModalJC() {
         html += '<div class="jc-modal-kitty' + (unavailable ? ' jc-modal-kitty-disabled' : '') + '"'
           + (unavailable ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for engineering training") + ' onclick="selectionnerIngenieurLaboratoire(' + entry.index + ')"') + '>';
         html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
-        html += '<div class="jc-modal-kitty-info"><span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span><span class="jc-modal-kitty-tier">Stray Cat · Level ' + (k.niveau || 0) + (status ? ' — ' + echapperAttributHtml(status) : '') + '</span></div>';
+        html += '<div class="jc-modal-kitty-info"><span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span><span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span></div>';
+        if (status) html += '<div class="jc-modal-kitty-bonus"><span class="jc-modal-kitty-status">' + echapperAttributHtml(status) + '</span></div>';
         html += '</div>';
       });
     }
@@ -10834,7 +11260,6 @@ function renduModalJC() {
       stray.forEach(function(entry) {
         const idx = entry.kittyIndex;
         const k        = etat.kittiesData[idx];
-        const tier     = TIERS_KITTIES[k.tier] || "Kitty";
         const busy     = kittyIsUnavailableForNewAssignment(idx);
         const enWorker = kittyIsInWorkerSlot(idx);
         const forcable = busy && enWorker && !kittyHasNonReplaceableAction(idx) && !kittyIsInExplorationStaging(idx);
@@ -10843,8 +11268,9 @@ function renduModalJC() {
                 (busy ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for job training") + ' onclick="selectionnerKittyFormation(' + idx + ')"') + '>';
         html += '<div class="jc-modal-kitty-info">';
         html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
-        html += '<span class="jc-modal-kitty-tier">' + tier + (busyLbl ? ' — ' + busyLbl : '') + '</span>';
+        html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
         html += '</div>';
+        if (busyLbl) html += '<div class="jc-modal-kitty-bonus"><span class="jc-modal-kitty-status">' + echapperAttributHtml(busyLbl) + '</span></div>';
         if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + '" onclick="forcerKittyFormation(' + idx + ');event.stopPropagation()">Force</button>';
         html += '</div>';
       });
@@ -10874,7 +11300,6 @@ function renduModalJC() {
         eligibles.forEach(function(entry) {
           const idx = entry.kittyIndex;
           const k = etat.kittiesData[idx];
-          const m = METIERS[k.metier];
           const bonus = managerSpeedMultiplier(k, famille).toFixed(2);
           const autreFamille = dejaMgr[idx];
           const enWorker    = kittyIsInWorkerSlot(idx);
@@ -10886,14 +11311,15 @@ function renduModalJC() {
           const inExplorationStaging = kittyIsInExplorationStaging(idx);
           const forcable = (enWorker || !!autreFamille) && !kittyHasNonReplaceableAction(idx) && !inExplorationStaging;
           const occupe   = kittyIsUnavailableForNewAssignment(idx);
-          const statutTxt = occupe ? " — " + kittyAllocationLabel(idx).text : "";
+          const statutTxt = occupe ? kittyAllocationLabel(idx).text : "";
           html += '<div class="jc-modal-kitty' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
                   (occupe ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " as manager") + ' onclick="assignerManager(\'' + famille + '\',' + idx + ')"') + '>';
           html += '<div class="jc-modal-kitty-info">';
           html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
-          html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(m ? m.emoji + " " + m.nom : k.metier) + statutTxt + '</span>';
+          html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
           html += '</div>';
           html += '<div class="jc-modal-kitty-bonus">';
+          if (statutTxt) html += '<span class="jc-modal-kitty-status">' + echapperAttributHtml(statutTxt) + '</span>';
           html += '<div class="jc-modal-kitty-bonus-ligne">×' + bonus + ' <span class="jc-modal-kitty-bonus-label">production speed</span></div>';
           html += '</div>';
           if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + ' as manager" onclick="forcerManager(\'' + famille + '\',' + idx + ');event.stopPropagation()">Force</button>';
@@ -10910,16 +11336,11 @@ function renduModalJC() {
       avecMetier.forEach(function(entry) {
         const idx = entry.i;
         const k = entry.k;
-        const m = METIERS[k.metier];
-        const _mlvl = jobLevelInfo(k.metier);
         html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
         html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
         html += '<div class="jc-modal-kitty-info">';
         html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
-        html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(m ? m.emoji + ' ' + m.nom : k.metier) + '</span>';
-        html += '</div>';
-        html += '<div class="jc-modal-kitty-bonus">';
-        html += '<div class="jc-modal-kitty-bonus-ligne">Lv. <span class="jc-modal-kitty-bonus-label">' + _mlvl.cur + ' / ' + _mlvl.max + '</span></div>';
+        html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
         html += '</div>';
         html += '</div>';
       });
@@ -11534,9 +11955,10 @@ function renduModalWorker() {
           + ' onclick="assignerWorkerSlot(' + i + ')"',
       iconHtml: kittyIconHtml(k),
       name: k.nom,
-      secondaryHtml: status
-        ? '<span class="worker-modal-kitty-status">' + status + '</span>' : "",
-      contextHtml: '<div class="worker-modal-kitty-bonus-ligne"><span>×'
+      secondaryText: libelleProfessionNiveauKitty(k),
+      contextHtml: (status
+        ? '<span class="worker-modal-kitty-status">' + echapperAttributHtml(status) + '</span>' : '')
+        + '<div class="worker-modal-kitty-bonus-ligne"><span>×'
         + kittyGatherProductionMultiplier(k).toFixed(2)
         + ' <span class="worker-modal-kitty-bonus-label">Gather Prod</span></span><span>×'
         + kittyProcessProductionMultiplier(k).toFixed(2)
@@ -12330,9 +12752,9 @@ setInterval(sauvegarder, 30000);
 // Offline progression is deliberately centralised here so the balance can be
 // tuned later without changing each individual timer. The cap applies to
 // real time away from the game; only the configured ratio is simulated.
-const VITESSE_HORS_LIGNE  = 0.1;
-const MAX_AFK_SECONDS     = 10 * 60 * 60;
-const ABSENCE_MIN_MS      = 60000; // ignore gaps shorter than 1 minute
+const VITESSE_HORS_LIGNE  = CAMP_AFK_RULES.baseRatio;
+const MAX_AFK_SECONDS     = CAMP_AFK_RULES.baseMaxSeconds;
+const ABSENCE_MIN_MS      = CAMP_AFK_RULES.minimumAbsenceSeconds * 1000;
 const AFK_RESUME_RELOAD_KEY = V4_STORAGE_NAMESPACE + ".afkResumeReload";
 const VERSION_MANIFEST_PATH = "version.json";
 let afkReloadProgramme = false;
@@ -12356,7 +12778,7 @@ function ratioAfkHorsLigne() {
     const niveau = Math.min(niveauMaxChat(kitty), Math.max(0, Number(kitty.niveau) || 0));
     return total + niveau * info.value;
   }, 0);
-  return Math.min(1, VITESSE_HORS_LIGNE + bonusPercent / 100);
+  return Math.min(CAMP_AFK_RULES.maxRatio, VITESSE_HORS_LIGNE + bonusPercent / 100);
 }
 
 function tempsSimuleHorsLigne(ecouleReelMs) {
@@ -15780,9 +16202,18 @@ function layoutCampAvecReservations(layout) {
   });
 }
 
+function evaluerConnexionsCampPrototype(layout, terrain) {
+  const terrainEffectif = terrain || campPrototypeTerrain;
+  return campPrototypeApi.evaluerConnexionsLayout(
+    layout,
+    terrainEffectif,
+    aretesCloturesSystemeCampPrototype(new Set(terrainEffectif.claimedZoneIds || []))
+  );
+}
+
 function connexionsCampPrototypeActuelles() {
   if (!campPrototypeConnexionsCache) {
-    campPrototypeConnexionsCache = campPrototypeApi.evaluerConnexionsLayout(
+    campPrototypeConnexionsCache = evaluerConnexionsCampPrototype(
       layoutCampAvecReservations(campPrototypeLayout),
       campPrototypeTerrain
     );
@@ -16073,12 +16504,34 @@ function cellulesAdjacentesRectangleCamp(cible) {
   return Array.from(voisines.values());
 }
 
-function cibleAccessibleDepuisCamp(cible) {
-  if (!cible) return false;
-  const atteignables = new Set(connexionsCampPrototypeActuelles().reachableCellKeys || []);
-  return cellulesAdjacentesRectangleCamp(cible).some(function(cellule) {
-    return atteignables.has(campPrototypeApi.cleCellule(cellule.x, cellule.y));
+function cibleAccessibleAvecConnexionsCamp(cible, connexions) {
+  if (!cible || !connexions) return false;
+  const cellulesCible = cible.cells || campPrototypeApi.cellulesRectangle(cible);
+  const clesCible = new Set(cellulesCible.map(function(cellule) {
+    return campPrototypeApi.cleCellule(cellule.x, cellule.y);
+  }));
+  const atteignables = new Set(connexions.reachableCellKeys || []);
+  const transitionsBloquees = new Set(connexions.blockedTransitionKeys || []);
+  return cellulesCible.some(function(celluleCible) {
+    return [
+      {x: celluleCible.x, y: celluleCible.y - 1},
+      {x: celluleCible.x + 1, y: celluleCible.y},
+      {x: celluleCible.x, y: celluleCible.y + 1},
+      {x: celluleCible.x - 1, y: celluleCible.y}
+    ].some(function(celluleAdjacente) {
+      const cleAdjacente = campPrototypeApi.cleCellule(celluleAdjacente.x, celluleAdjacente.y);
+      return campPrototypeApi.celluleDansGrille(celluleAdjacente.x, celluleAdjacente.y)
+        && !clesCible.has(cleAdjacente)
+        && atteignables.has(cleAdjacente)
+        && !transitionsBloquees.has(
+          campPrototypeApi.cleTransitionCellules(celluleCible, celluleAdjacente)
+        );
+    });
   });
+}
+
+function cibleAccessibleDepuisCamp(cible) {
+  return cibleAccessibleAvecConnexionsCamp(cible, connexionsCampPrototypeActuelles());
 }
 
 function cibleAccessiblePourNettoyageCamp(cible) {
@@ -16091,13 +16544,11 @@ function cibleAccessiblePourNettoyageCamp(cible) {
     return !type || (type.category !== "building" && type.category !== "house");
   });
   if (layoutSansBatimentsJoueur.length === campPrototypeLayout.length) return false;
-  const atteignables = new Set(campPrototypeApi.evaluerConnexionsLayout(
+  const connexions = evaluerConnexionsCampPrototype(
     layoutSansBatimentsJoueur,
     campPrototypeTerrain
-  ).reachableCellKeys || []);
-  return cellulesAdjacentesRectangleCamp(cible).some(function(cellule) {
-    return atteignables.has(campPrototypeApi.cleCellule(cellule.x, cellule.y));
-  });
+  );
+  return cibleAccessibleAvecConnexionsCamp(cible, connexions);
 }
 
 function itemAccessibleDepuisCamp(item) {
@@ -16133,19 +16584,15 @@ function decorationAccessibleDepuisCamp(item) {
     const entryType = typeCampPrototype(entry.type);
     return entry.uid === item.uid || Boolean(entryType && entryType.category === "junk");
   });
-  const atteignables = new Set(
-    campPrototypeApi.evaluerConnexionsLayout(layoutBloquant, campPrototypeTerrain).reachableCellKeys || []
-  );
+  const connexions = evaluerConnexionsCampPrototype(layoutBloquant, campPrototypeTerrain);
   const dimensions = dimensionsCampPrototype(item.type, item.rotation, item.tier);
-  return cellulesAdjacentesRectangleCamp({
+  return cibleAccessibleAvecConnexionsCamp({
     x: item.x,
     y: item.y,
     width: dimensions.width,
     height: dimensions.height,
     cells: campPrototypeApi.cellulesOccupeesItem(item)
-  }).some(function(cellule) {
-    return atteignables.has(campPrototypeApi.cleCellule(cellule.x, cellule.y));
-  });
+  }, connexions);
 }
 
 function niveauMinimumCibleDemolition(cible) {
@@ -16606,7 +17053,7 @@ function evaluerPlacementCampPrototype(placement) {
           y: placement.y,
           rotation: placement.rotation
         }]);
-    const connexionsProspectives = campPrototypeApi.evaluerConnexionsLayout(
+    const connexionsProspectives = evaluerConnexionsCampPrototype(
       layoutProspectif,
       campPrototypeTerrain
     );
@@ -17403,6 +17850,38 @@ function assetCampPrototypePourRotation(type, rotation, functionalTier) {
   );
 }
 
+function animationCampPrototypePourRotation(type, rotation, functionalTier) {
+  if (!type) return "";
+  const direction = type.category === "junk" || type.canonicalOrientation === "down"
+    ? "down"
+    : {
+      0: "down", 90: "right", 180: "up", 270: "left"
+    }[campPrototypeApi.normaliserRotation(rotation)];
+  const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
+    type.id,
+    Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
+  );
+  return runtimeVisual && runtimeVisual.animation && direction
+    ? runtimeVisual.animation.sprites[direction] || ""
+    : "";
+}
+
+function ombreAnimationCampPrototypePourRotation(type, rotation, functionalTier) {
+  if (!type) return "";
+  const direction = type.category === "junk" || type.canonicalOrientation === "down"
+    ? "down"
+    : {
+      0: "down", 90: "right", 180: "up", 270: "left"
+    }[campPrototypeApi.normaliserRotation(rotation)];
+  const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
+    type.id,
+    Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
+  );
+  return runtimeVisual && runtimeVisual.animation && direction
+    ? runtimeVisual.animation.dynamicShadowSprites?.[direction] || ""
+    : "";
+}
+
 function groundingCampPrototypePourRotation(type, rotation, functionalTier) {
   if (!type) return "";
   const direction = type.category === "junk" || type.canonicalOrientation === "down"
@@ -17583,6 +18062,40 @@ function remplirItemCampPrototype(element, type, rotation, functionalTier, item)
     image.style.transform = "translate(-50%, -50%)";
     element.classList.add("camp-prototype-item-has-sprite");
     element.appendChild(image);
+    const dynamicShadowSrc = ombreAnimationCampPrototypePourRotation(
+      type, dimensions.rotation, functionalTier
+    );
+    if (dynamicShadowSrc) {
+      const dynamicShadow = document.createElement("img");
+      dynamicShadow.className = "camp-prototype-animation-shadow";
+      dynamicShadow.src = dynamicShadowSrc;
+      dynamicShadow.alt = "";
+      dynamicShadow.loading = "lazy";
+      dynamicShadow.decoding = "async";
+      dynamicShadow.draggable = false;
+      dynamicShadow.setAttribute("aria-hidden", "true");
+      dynamicShadow.style.width = "100%";
+      dynamicShadow.style.height = "100%";
+      dynamicShadow.style.transform = "translate(-50%, -50%)";
+      element.appendChild(dynamicShadow);
+    }
+    const animationSrc = animationCampPrototypePourRotation(
+      type, dimensions.rotation, functionalTier
+    );
+    if (animationSrc) {
+      const animation = document.createElement("img");
+      animation.className = "camp-prototype-animation-overlay";
+      animation.src = animationSrc;
+      animation.alt = "";
+      animation.loading = "lazy";
+      animation.decoding = "async";
+      animation.draggable = false;
+      animation.setAttribute("aria-hidden", "true");
+      animation.style.width = "100%";
+      animation.style.height = "100%";
+      animation.style.transform = "translate(-50%, -50%)";
+      element.appendChild(animation);
+    }
     const label = document.createElement("span");
     label.className = "camp-prototype-accessible-label";
     label.textContent = type.label;
@@ -18030,6 +18543,11 @@ function nomRoleChaton(kitty) {
   if (!kitty) return "Cat";
   if (kitty.metier === "shop-owner") return "Shop Owner";
   return kitty.metier && METIERS[kitty.metier] ? METIERS[kitty.metier].nom : "Cat";
+}
+
+function libelleProfessionNiveauKitty(kitty) {
+  const profession = kitty && kitty.metier ? nomRoleChaton(kitty) : "Stray Cat";
+  return profession + " · Lvl. " + (Number(kitty && kitty.niveau) || 0);
 }
 
 function carteSlotMaisonCamp(item, slotIdx, kittyIndex) {
@@ -20266,7 +20784,7 @@ function rendreCampTaskPanel(options) {
           : attributsActivationClavier(rowLabel),
         iconHtml: kittyIconHtml(kitty),
         name: kitty.nom,
-        secondaryText: "Level " + (kitty.niveau || 0),
+        secondaryText: libelleProfessionNiveauKitty(kitty),
         contextText: status,
         onSelect: !disabled && !forcable
           ? function() { campTaskPanelSelectKitty(kittyIndex); } : null,
@@ -20471,7 +20989,7 @@ function renduModalAllocationMaisonCamp() {
     }
     row.innerHTML = '<span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
-      + '</strong><small>Level ' + (kitty.niveau || 0) + '</small></span>'
+      + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty)) + '</small></span>'
       + '<span class="camp-demolition-kitty-status">' + echapperAttributHtml(status) + '</span>';
     contenu.appendChild(row);
   });
@@ -20543,7 +21061,6 @@ function renduModalConstructionMaisonCamp() {
     if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
     const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const status = busy ? kittyAllocationLabel(kittyIndex).text : "Available";
-    const tier = TIERS_KITTIES[kitty.tier] || "Kitty";
     html += '<div class="camp-demolition-kitty'
       + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (busy
@@ -20552,7 +21069,7 @@ function renduModalConstructionMaisonCamp() {
           + ' onclick="selectionnerKittyConstructionMaisonCamp(' + kittyIndex + ')"')
       + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
-      + '</strong><small>' + echapperAttributHtml(tier) + ' · Level ' + (kitty.niveau || 0)
+      + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty))
       + '</small></span><span class="camp-demolition-kitty-status">'
       + echapperAttributHtml(status) + '</span></div>';
   });
@@ -20769,7 +21286,7 @@ function renduModalConstructionBatimentCamp() {
         + ' onclick="selectionnerKittyConstructionBatimentCamp(' + kittyIndex + ')"') + '>'
       + '<span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
-      + '</strong><small>Level ' + (kitty.niveau || 0) + '</small></span>'
+      + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty)) + '</small></span>'
       + '<span class="camp-demolition-kitty-status">' + echapperAttributHtml(status) + '</span></div>';
   });
   contenu.innerHTML = html || '<p class="camp-demolition-empty">No Cat is available to build this facility.</p>';
@@ -21056,7 +21573,7 @@ function renduModalAmeliorationCamp() {
         + ' onclick="selectionnerKittyAmeliorationCamp(' + kittyIndex + ')"') + '>'
       + '<span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
-      + '</strong><small>Level ' + (kitty.niveau || 0) + '</small></span>'
+      + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty)) + '</small></span>'
       + '<span class="camp-demolition-kitty-status">' + echapperAttributHtml(status) + '</span></div>';
   });
   contenu.innerHTML = html || '<p class="camp-demolition-empty">No Cat is available for this upgrade.</p>';
@@ -21195,7 +21712,6 @@ function renduModalReparationCamp() {
     const status = busy
       ? kittyAllocationLabel(kittyIndex).text
       : (coutAbordable ? "Available" : "Needs " + libelleCoutReparationCamp(buildingId));
-    const tier = TIERS_KITTIES[kitty.tier] || "Kitty";
     html += '<div class="camp-demolition-kitty'
       + (disabled ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (disabled
@@ -21204,7 +21720,7 @@ function renduModalReparationCamp() {
           + ' onclick="selectionnerKittyReparationCamp(' + kittyIndex + ')"')
       + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
-      + '</strong><small>' + echapperAttributHtml(tier) + ' · Level ' + (kitty.niveau || 0)
+      + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty))
       + '</small></span><span class="camp-demolition-kitty-status">'
       + echapperAttributHtml(status) + '</span></div>';
   });
@@ -21357,7 +21873,6 @@ function renduModalDemolitionCamp() {
     const status = busy
       ? kittyAllocationLabel(kittyIndex).text
       : (levelTooLow ? "Requires level " + minLevel : selected ? "Selected" : "Available");
-    const tier = TIERS_KITTIES[kitty.tier] || "Kitty";
     html += '<div class="camp-demolition-kitty' + (disabled ? ' camp-demolition-kitty-disabled' : '') + (selected ? ' camp-demolition-kitty-selected' : '') + '"'
       + (disabled
         ? ' aria-disabled="true"'
@@ -21365,7 +21880,7 @@ function renduModalDemolitionCamp() {
           + ' onclick="selectionnerKittyDemolitionCamp(' + kittyIndex + ')"')
       + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
-      + '</strong><small>' + echapperAttributHtml(tier) + ' · Level ' + (kitty.niveau || 0)
+      + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty))
       + '</small></span><span class="camp-demolition-kitty-status">'
       + echapperAttributHtml(status) + '</span></div>';
   });
@@ -22719,7 +23234,7 @@ function contexteConnexionsAfficheesCampPrototype() {
       };
     });
     return {
-      evaluation: campPrototypeApi.evaluerConnexionsLayout(
+      evaluation: evaluerConnexionsCampPrototype(
         layoutAffiche,
         campPrototypeTerrain
       ),
@@ -22738,7 +23253,7 @@ function contexteConnexionsAfficheesCampPrototype() {
     rotation: placement.rotation
   }]);
   return {
-    evaluation: campPrototypeApi.evaluerConnexionsLayout(
+    evaluation: evaluerConnexionsCampPrototype(
       layoutAffiche,
       campPrototypeTerrain
     ),
@@ -25898,7 +26413,7 @@ var _recruitTrackWidth = 0;
 
 function multiplicateurVitesseMiniJeuRecruit() {
   const difficultyMultiplier = 1 + (Math.max(1, _recruitDifficulty) - 1) * 0.1;
-  return difficultyMultiplier * multiplicateurRecruitPerksV2();
+  return difficultyMultiplier;
 }
 
 function choisirDialogueRecruit() {
@@ -27400,7 +27915,7 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
       const storages = candidats("storage", "canonical-upgrade-storage", layoutAvecBox);
       for (let storageIndex = 0; storageIndex < storages.length; storageIndex += 1) {
         const storage = storages[storageIndex];
-        const evaluation = campPrototypeApi.evaluerConnexionsLayout(
+        const evaluation = evaluerConnexionsCampPrototype(
           layoutAvecBox.concat([storage]), campPrototypeTerrain
         );
         if (!(evaluation.byItem[box.uid] && evaluation.byItem[box.uid].active)
@@ -27415,7 +27930,7 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
   };
   const placerItemConnecteTest = function(typeId, uid) {
     const rotations = [0, 90, 180, 270];
-    const connexionsAvant = campPrototypeApi.evaluerConnexionsLayout(campPrototypeLayout, campPrototypeTerrain);
+    const connexionsAvant = evaluerConnexionsCampPrototype(campPrototypeLayout, campPrototypeTerrain);
     const uidsActifsAConserver = Object.keys(connexionsAvant.byItem).filter(function(itemUid) {
       return connexionsAvant.byItem[itemUid] && connexionsAvant.byItem[itemUid].active;
     });
@@ -27427,7 +27942,7 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
             campPrototypeLayout, typeId, x, y, null, rotation, campPrototypeTerrain
           ).valide) continue;
           const candidate = {uid: uid, type: typeId, x: x, y: y, rotation: rotation, tier: 1, construit: true};
-          const evaluation = campPrototypeApi.evaluerConnexionsLayout(
+          const evaluation = evaluerConnexionsCampPrototype(
             campPrototypeLayout.concat([candidate]), campPrototypeTerrain
           );
           if (!(evaluation.byItem[uid] && evaluation.byItem[uid].active)

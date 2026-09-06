@@ -2313,51 +2313,51 @@
       "placeable": true,
       "tiers": {
         "1": {
-          "liveRevision": 5,
+          "liveRevision": 7,
           "revisions": {
-            "5": {
+            "7": {
               "name": "Sawmill",
               "tier": 1,
-              "revision": 5,
+              "revision": 7,
               "status": "live",
               "width": 2,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/down.png",
-                "right": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/right.png",
-                "up": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/up.png",
-                "left": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/left.png"
+                "down": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/left.png"
               },
               "groundingSprites": {
-                "down": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/grounding-down.png",
-                "right": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/grounding-right.png",
-                "up": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/grounding-up.png",
-                "left": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-5/grounding-left.png"
+                "down": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/sawmill/tier-1/revision-7/grounding-left.png"
               },
               "groundingBounds": {
                 "down": {
-                  "x": -0.5,
-                  "y": -0.5,
-                  "width": 3.0,
-                  "height": 2.0
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 3.0
                 },
                 "right": {
-                  "x": -0.5,
-                  "y": -0.5,
-                  "width": 2.0,
-                  "height": 3.0
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 4.0
                 },
                 "up": {
-                  "x": -0.5,
-                  "y": -0.5,
-                  "width": 3.0,
-                  "height": 2.0
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 3.0
                 },
                 "left": {
-                  "x": -0.5,
-                  "y": -0.5,
-                  "width": 2.0,
-                  "height": 3.0
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 4.0
                 }
               },
               "access": {

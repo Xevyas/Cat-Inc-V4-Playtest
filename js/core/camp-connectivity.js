@@ -18,6 +18,12 @@
     return entier(x) + ":" + entier(y);
   }
 
+  function cleTransitionCellules(a, b) {
+    const cleA = cleCellule(a && a.x, a && a.y);
+    const cleB = cleCellule(b && b.x, b && b.y);
+    return cleA < cleB ? cleA + "|" + cleB : cleB + "|" + cleA;
+  }
+
   function celluleDansGrille(x, y, width, height) {
     return Number.isInteger(x)
       && Number.isInteger(y)
@@ -138,8 +144,9 @@
     });
   }
 
-  function cellulesAtteignables(cellulesPraticables, origines, width, height) {
+  function cellulesAtteignables(cellulesPraticables, origines, width, height, transitionsBloquees) {
     const atteignables = new Set();
+    const bloquees = transitionsBloquees instanceof Set ? transitionsBloquees : new Set();
     const file = [];
     (Array.isArray(origines) ? origines : []).forEach(function(cellule) {
       const x = entier(cellule && cellule.x);
@@ -164,7 +171,11 @@
       ].forEach(function(voisine) {
         if (!celluleDansGrille(voisine.x, voisine.y, width, height)) return;
         const cle = cleCellule(voisine.x, voisine.y);
-        if (!cellulesPraticables.has(cle) || atteignables.has(cle)) return;
+        if (
+          !cellulesPraticables.has(cle)
+          || atteignables.has(cle)
+          || bloquees.has(cleTransitionCellules(cellule, voisine))
+        ) return;
         atteignables.add(cle);
         file.push(voisine);
       });
@@ -184,6 +195,9 @@
       ? config.walkableCellKeys
       : []);
     const praticables = new Set(praticablesInitiales);
+    const transitionsBloquees = new Set(Array.isArray(config.blockedTransitionKeys)
+      ? config.blockedTransitionKeys
+      : []);
 
     layout.forEach(function(item) {
       const type = item && itemTypes[item.type];
@@ -197,7 +211,8 @@
       praticables,
       config.originCells,
       width,
-      height
+      height,
+      transitionsBloquees
     );
     const byItem = {};
 
@@ -235,7 +250,8 @@
             praticablesItem,
             config.originCells,
             width,
-            height
+            height,
+            transitionsBloquees
           );
         }
       }
@@ -282,6 +298,7 @@
 
     return {
       reachableCellKeys: Array.from(atteignables),
+      blockedTransitionKeys: Array.from(transitionsBloquees),
       byItem: byItem
     };
   }
@@ -296,6 +313,7 @@
     cellulesOccupeesItem: cellulesOccupeesItem,
     cellulesReserveesItem: cellulesReserveesItem,
     portsItem: portsItem,
+    cleTransitionCellules: cleTransitionCellules,
     evaluerConnexions: evaluerConnexions
   });
 })(typeof window !== "undefined" ? window : globalThis);

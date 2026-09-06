@@ -33,6 +33,29 @@
     "growth": 1.5,
     "appealPerLevel": 1
   },
+  "generalRules": {
+    "recruitment": {
+      "authoredBaseSeconds": {
+        "3": 60,
+        "4": 120
+      },
+      "curveBaseSeconds": 5,
+      "earlyMaxCats": 10,
+      "earlyGrowth": 2.5,
+      "middleMaxCats": 15,
+      "middleGrowth": 2,
+      "lateGrowth": 1.7,
+      "appealSpeedPerPoint": 1.1
+    },
+    "afk": {
+      "minimumAbsenceSeconds": 60,
+      "baseRatio": 0.25,
+      "baseMaxSeconds": 36000,
+      "engineerRank1CapMinutesPerLevel": 6,
+      "engineerRank2RatioPercentPerLevel": 0.5,
+      "maxRatio": 1
+    }
+  },
   "purrsuasion": {
     "rounds": 3,
     "scores": {
@@ -178,36 +201,36 @@
     "difficulties": [
       {
         "difficulty": 1,
-        "minDelaySeconds": 2.2,
-        "maxDelaySeconds": 3,
+        "minDelaySeconds": 4,
+        "maxDelaySeconds": 6,
         "accuracyPercent": 60,
         "minGapPercent": 30
       },
       {
         "difficulty": 2,
-        "minDelaySeconds": 1.9,
-        "maxDelaySeconds": 2.6,
+        "minDelaySeconds": 3,
+        "maxDelaySeconds": 5,
         "accuracyPercent": 70,
         "minGapPercent": 22
       },
       {
         "difficulty": 3,
-        "minDelaySeconds": 1.6,
-        "maxDelaySeconds": 2.3,
+        "minDelaySeconds": 4,
+        "maxDelaySeconds": 4,
         "accuracyPercent": 78,
         "minGapPercent": 16
       },
       {
         "difficulty": 4,
-        "minDelaySeconds": 1.35,
-        "maxDelaySeconds": 2,
+        "minDelaySeconds": 2.5,
+        "maxDelaySeconds": 3.5,
         "accuracyPercent": 85,
         "minGapPercent": 11
       },
       {
         "difficulty": 5,
-        "minDelaySeconds": 1.15,
-        "maxDelaySeconds": 1.8,
+        "minDelaySeconds": 2,
+        "maxDelaySeconds": 3,
         "accuracyPercent": 90,
         "minGapPercent": 7.5
       }

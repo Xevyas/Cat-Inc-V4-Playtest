@@ -391,12 +391,28 @@
         revision.groundingSprites[direction], revision
       );
     });
+    const animation = revision.animation && revision.animation.mode === "overlay-apng"
+      ? {
+          mode: revision.animation.mode,
+          frameCount: revision.animation.frameCount,
+          frameDurationMs: revision.animation.frameDurationMs,
+          sprites: Object.keys(revision.animation.sprites || {}).reduce(function(paths, direction) {
+            paths[direction] = runtimeSpritePath(revision.animation.sprites[direction], revision);
+            return paths;
+          }, {}),
+          dynamicShadowSprites: Object.keys(revision.animation.dynamicShadowSprites || {}).reduce(function(paths, direction) {
+            paths[direction] = runtimeSpritePath(revision.animation.dynamicShadowSprites[direction], revision);
+            return paths;
+          }, {})
+        }
+      : null;
     return {
       tier: revision.tier,
       revision: revision.revision,
       sprites: sprites,
       groundingSprites: groundingSprites,
       groundingBounds: revision.groundingBounds || null,
+      animation: animation,
       width: revision.width,
       height: revision.height,
       occupiedCells: revision.occupiedCells
@@ -1577,11 +1593,12 @@
         tier: tier
       };
       if (type.rotatable) normalise.rotation = rotation;
-      if (type.category === "house" || type.category === "building") {
-        // Building saves predate the explicit `construit` flag. Preserve an
-        // in-progress false value, while treating older completed layouts as
-        // built so reload reconciliation does not regress them.
-        normalise.construit = type.category === "building"
+      if (type.category === "house" || type.category === "building"
+          || type.category === "decoration") {
+        // Building and Decoration saves predate the explicit `construit` flag.
+        // Preserve an in-progress false value, while treating older completed
+        // layouts as built so reload reconciliation does not regress them.
+        normalise.construit = type.category === "building" || type.category === "decoration"
           ? item.construit !== false
           : item.construit === true;
         if (Number.isInteger(item.lawRank) && item.lawRank > 0) normalise.lawRank = item.lawRank;
@@ -1892,15 +1909,27 @@
     };
   }
 
-  function evaluerConnexionsLayout(layout, terrain) {
+  function evaluerConnexionsLayout(layout, terrain, blockedEdges) {
     const terrainNormalise = normaliserTerrain(terrain);
+    const blockedTransitionKeys = (Array.isArray(blockedEdges) ? blockedEdges : []).map(function(edge) {
+      if (!edge || (edge.orientation !== "vertical" && edge.orientation !== "horizontal")) return null;
+      const first = edge.orientation === "vertical"
+        ? {x: Number(edge.x) - 1, y: Number(edge.y)}
+        : {x: Number(edge.x), y: Number(edge.y) - 1};
+      const second = edge.orientation === "vertical"
+        ? {x: Number(edge.x), y: Number(edge.y)}
+        : {x: Number(edge.x), y: Number(edge.y)};
+      if (!celluleDansGrille(first.x, first.y) || !celluleDansGrille(second.x, second.y)) return null;
+      return campConnectivity.cleTransitionCellules(first, second);
+    }).filter(Boolean);
     return campConnectivity.evaluerConnexions({
       gridWidth: GRID_WIDTH,
       gridHeight: GRID_HEIGHT,
       layout: Array.isArray(layout) ? layout : [],
       itemTypes: ITEM_TYPES,
       walkableCellKeys: terrainNormalise.clearedCells,
-      originCells: CONNECTION_ORIGIN_CELLS
+      originCells: CONNECTION_ORIGIN_CELLS,
+      blockedTransitionKeys: blockedTransitionKeys
     });
   }
 
@@ -2054,6 +2083,7 @@
     normaliserRotation: normaliserRotation,
     celluleDansGrille: celluleDansGrille,
     cleCellule: cleCellule,
+    cleTransitionCellules: campConnectivity.cleTransitionCellules,
     terrainTypeIdPourCellule: terrainTypeIdPourCellule,
     terrainVisuelPourType: terrainVisuelPourType,
     terrainVisuelPourCellule: terrainVisuelPourCellule,

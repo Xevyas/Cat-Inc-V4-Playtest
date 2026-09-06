@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>🐱 Cat Inc</title>
+  <title>Cat Inc</title>
+  <link rel="icon" type="image/png" href="img/Cat faces/Bernardo.png" />
   <!-- The curtain can paint without waiting for runtime CSS, fonts or scripts. -->
   <style>
     #boot-curtain { position: fixed; inset: 0; z-index: 2147483647; display: grid;
@@ -1555,17 +1556,18 @@
   <!-- MODAL BOOK LEARNING MINI-GAME -->
   <div id="book-learning-modal" class="explo-modal book-learning-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="book-learning-title" aria-describedby="book-learning-instructions" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerMiniJeuLivre()"></div>
-    <div class="book-learning-panel" role="document" tabindex="-1">
+    <div id="book-learning-board" class="book-learning-panel" role="document" tabindex="-1">
       <button class="explo-modal-close book-learning-close" aria-label="Close book lesson" onclick="fermerMiniJeuLivre()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       <div class="book-learning-content">
         <h2 id="book-learning-title">Learn from the School Guide</h2>
-        <p id="book-learning-instructions">Complete the sentence with the correct words.</p>
+        <p id="book-learning-instructions">Pull a paper scrap, release it, and let Bernardo bat it into a blank.</p>
         <div id="book-learning-phrase" class="book-learning-phrase"></div>
-        <div class="book-learning-bank-label">WORDS</div>
-        <div id="book-learning-words" class="book-learning-words" aria-label="Words to place"></div>
         <div id="book-learning-feedback" class="book-learning-feedback" role="status" aria-live="polite"></div>
         <button id="book-learning-check" class="btn-inv-action book-learning-check" onclick="verifierMiniJeuLivre()" disabled>Check answer</button>
       </div>
+      <div class="book-learning-bank-label" aria-hidden="true">PAPER SCRAPS</div>
+      <div id="book-learning-words" class="book-learning-words" aria-label="Paper scraps to launch"></div>
+      <div id="book-learning-paw" class="book-learning-paw" aria-hidden="true"><img src="img/interface/Bernardo Paw Slingshot.png?v=0.0001" alt=""></div>
     </div>
   </div>
 
