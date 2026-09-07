@@ -1,0 +1,65 @@
+/* Stylish Straight inherits the complete Stylish visual system. This layer
+   owns only the authored surface geometry. */
+body[data-ui-theme="stylish"][data-ui-shape="straight"] {
+  --stylish-straight-card-radius: 12px;
+  --stylish-straight-sheet-radius: 16px;
+}
+
+/* The shared illustrated masks become one native, regular contour. The
+   existing element stays transparent so fill and edge cannot double up. */
+body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
+  #contenu-gang .kitty-carte,
+  #contenu-gang .management-detail,
+  #contenu-inventaire > .bag-sheet,
+  .work-sheet,
+  #contenu-facilities #section-job-center,
+  #contenu-explorations,
+  #contenu-explorations #section-explo-map
+)::before {
+  inset: 0;
+  box-sizing: border-box;
+  background: var(--surface-fill);
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--stylish-straight-surface-radius, var(--stylish-straight-sheet-radius));
+  mask: none;
+}
+body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
+  #contenu-gang .kitty-carte,
+  #contenu-gang .management-detail,
+  #contenu-inventaire > .bag-sheet,
+  .work-sheet,
+  #contenu-facilities #section-job-center,
+  #contenu-explorations,
+  #contenu-explorations #section-explo-map
+)::after {
+  content: none;
+}
+
+body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
+  #contenu-gang .kitty-carte,
+  #contenu-gang .detail-nom,
+  #contenu-gang .detail-section-titre,
+  #contenu-gang .detail-job-header,
+  #contenu-work .work-recipe-slot-top:not(.work-recipe-slot-top-empty),
+  #contenu-work .work-recipe-selected,
+  #contenu-work .work-recipe-resource,
+  #contenu-facilities .jc-slot-empty,
+  #contenu-facilities .jc-slot-filled,
+  #contenu-facilities .tc-cat-picker,
+  #contenu-facilities #section-laboratory,
+  #contenu-explorations > .exploration-mobile-zone-header
+) {
+  --stylish-straight-surface-radius: var(--stylish-straight-card-radius);
+  border-radius: var(--stylish-straight-card-radius);
+}
+body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
+  #contenu-gang .management-detail,
+  #contenu-inventaire > .bag-sheet,
+  .work-sheet,
+  #contenu-facilities #section-job-center,
+  #contenu-explorations,
+  #contenu-explorations #section-explo-map
+) {
+  --stylish-straight-surface-radius: var(--stylish-straight-sheet-radius);
+  border-radius: var(--stylish-straight-sheet-radius);
+}
