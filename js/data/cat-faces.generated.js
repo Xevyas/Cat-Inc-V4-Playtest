@@ -81,6 +81,13 @@
       "alternative": false
     },
     {
+      "id": "cat-faces-mochi-v2",
+      "name": "Mochi V2",
+      "runtimePath": "img/Cat faces/mochi-v2.png",
+      "revision": 3,
+      "alternative": false
+    },
+    {
       "id": "cat-faces-naya",
       "name": "Naya",
       "runtimePath": "img/Cat faces/naya.png",

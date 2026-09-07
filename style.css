@@ -12265,12 +12265,14 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
 }
 .book-learning-close {
   position: absolute;
-  z-index: 2;
-  top: 19%;
-  right: 11%;
-  background: rgba(255, 250, 235, 0.86);
+  z-index: 8;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 250, 235, 0.94);
   border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(68, 35, 20, 0.22);
 }
+.book-learning-close img { width: 20px; height: 20px; }
 .book-learning-content {
   position: relative;
   z-index: 2;
@@ -13558,21 +13560,36 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   .pinfo-columns { grid-template-columns: 1fr; }
 
   .book-learning-panel {
-    width: 96vw;
-    height: min(96vw, 90vh);
+    box-sizing: border-box;
+    width: 100%;
+    height: calc(100vh - var(--hauteur-navigation-mobile) - 16px);
+    max-height: 100%;
     aspect-ratio: auto;
     background-size: contain;
     background-position: center;
+    border: 1px solid rgba(139, 91, 48, 0.24);
+    border-radius: 18px;
+    background-color: rgba(249, 239, 214, 0.96);
   }
-  .book-learning-close { top: 9%; right: 4%; }
+  @supports (height: 100dvh) {
+    .book-learning-panel {
+      height: calc(100dvh - var(--hauteur-navigation-mobile) - 16px);
+    }
+  }
+  .book-learning-modal {
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: max(8px, env(safe-area-inset-top, 0px)) 8px
+      calc(var(--hauteur-navigation-mobile) + 8px);
+  }
+  .book-learning-close { top: 8px; right: 8px; }
   .book-learning-content {
     width: 76%;
-    max-height: 54%;
+    max-height: min(54%, 390px);
     margin-top: 4%;
     padding: 10px 8px;
   }
   .book-learning-content h2 { font-size: 0.88rem; }
-  .book-learning-content > p { margin-bottom: 8px; font-size: 0.66rem; }
   .book-learning-phrase { font-size: 0.78rem; line-height: 2.35; }
   .book-learning-blank { min-width: 64px; min-height: 30px; padding: 3px 6px; }
   .book-learning-word { min-width: 62px; max-width: 104px; min-height: 38px; padding: 6px 8px; font-size: 0.68rem; }

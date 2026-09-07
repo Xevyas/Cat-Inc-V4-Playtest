@@ -953,6 +953,22 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0088Categories = Object.freeze([
+    Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "The Stylish Straight interface theme offers a cleaner, more geometric alternative across the game.",
+        "Book learning now uses more of the available screen on mobile devices.",
+        "Camp capacity labels now identify their source more clearly.",
+        "Mochi's shocked expression has been refreshed with the Cat Face V2 artwork."
+      ])
+    }),
+    Object.freeze({ label: "Bug Fixes", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0087Categories = Object.freeze([
     Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
     Object.freeze({
@@ -1104,7 +1120,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0087",
+    baseVersion: "0.0088",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1117,6 +1133,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0088",
+      date: "2026-09-07",
+      categories: release0088Categories
+    }),
     Object.freeze({
       version: "0.0087",
       date: "2026-09-06",

@@ -6,14 +6,17 @@
 const gameConfigData = globalThis.CatInc.data.config;
 const CONFIG = gameConfigData.CONFIG;
 
-// Static game content lives in js/data/content.js.
+// Exploration authoring lives in its Studio-managed generated domain.
+const explorationData = globalThis.CatInc.data.exploration;
+
+// Other static game content lives in js/data/content.js.
 const gameContentData = globalThis.CatInc.data.content;
 const LIVRE_ICONE = gameContentData.LIVRE_ICONE;
 const RESOURCE_INFO = gameContentData.RESOURCE_INFO;
 const ITEMS = gameContentData.ITEMS;
 const METIERS = gameContentData.METIERS;
-const ZONES_CARTE = gameContentData.ZONES_CARTE;
-const REGIONS = gameContentData.REGIONS;
+const ZONES_CARTE = explorationData.regions.startingNeighbourhood.zones;
+const REGIONS = explorationData.regions;
 
 function zonesRegion() {
   return REGIONS[etat.regionCourante].zones;
@@ -1571,7 +1574,7 @@ function sourcesCapaciteLogementCamp() {
   const capaciteGenerique = Math.max(0, total - capacitePlacee);
   if (capaciteGenerique > 0) {
     sources.unshift({
-      label: sources.length ? "Base Camp and legacy housing" : "Base Camp",
+      label: "Base Camp",
       count: 1,
       value: capaciteGenerique
     });
@@ -3630,9 +3633,14 @@ function gererVolumeAudio(canal, rawValue) {
 }
 function appliquerThemeInterface() {
   const themeStocke = saveCore.normaliserUiTheme(etat.uiTheme);
+  const themeVisuel = themeStocke === "basic" ? "basic" : "stylish";
   etat.uiTheme = themeStocke;
   if (typeof document !== "undefined") {
-    if (document.body) document.body.dataset.uiTheme = themeStocke;
+    if (document.body) {
+      document.body.dataset.uiTheme = themeVisuel;
+      if (themeStocke === "stylish-straight") document.body.dataset.uiShape = "straight";
+      else delete document.body.dataset.uiShape;
+    }
     const settingsInput = document.getElementById("settings-ui-theme");
     if (settingsInput) {
       settingsInput.value = themeStocke;
@@ -3643,9 +3651,11 @@ function appliquerThemeInterface() {
     const quickToggle = document.getElementById("ui-theme-quick-toggle");
     if (quickToggle) {
       quickToggle.hidden = false;
-      const nextTheme = themeStocke === "stylish" ? "basic" : "stylish";
-      const nextThemeLabel = nextTheme === "stylish" ? "Stylish" : "Basic";
-      const currentThemeLabel = themeStocke === "stylish" ? "Stylish" : "Basic";
+      const themeCycle = ["basic", "stylish", "stylish-straight"];
+      const themeLabels = {basic: "Basic", stylish: "Stylish", "stylish-straight": "Stylish Straight"};
+      const nextTheme = themeCycle[(themeCycle.indexOf(themeStocke) + 1) % themeCycle.length];
+      const nextThemeLabel = themeLabels[nextTheme];
+      const currentThemeLabel = themeLabels[themeStocke];
       const actionLabel = "Switch to " + nextThemeLabel + " (" + currentThemeLabel + " is active)";
       quickToggle.dataset.currentTheme = themeStocke;
       quickToggle.setAttribute("aria-label", actionLabel);
@@ -3666,7 +3676,9 @@ function gererThemeInterface(value) {
   sauvegarder();
 }
 function basculerThemeInterfaceRapide() {
-  gererThemeInterface(etat.uiTheme === "stylish" ? "basic" : "stylish");
+  const themeCycle = ["basic", "stylish", "stylish-straight"];
+  const currentIndex = themeCycle.indexOf(saveCore.normaliserUiTheme(etat.uiTheme));
+  gererThemeInterface(themeCycle[(currentIndex + 1) % themeCycle.length]);
 }
 function basculerAffichageTempsAjuste(checked) {
   etat.afficherTempsAjusteRecrutement = checked;
@@ -10200,9 +10212,11 @@ function ouvrirMiniJeuLivre(itemId) {
     focusSelector: ".book-learning-word",
     returnFocusSelector: '#inv-item-card-' + itemId
   });
+  window.addEventListener("resize", recadrerMotsMiniJeuLivre);
 }
 
 function fermerMiniJeuLivre() {
+  window.removeEventListener("resize", recadrerMotsMiniJeuLivre);
   if (livreMiniJeuGeste && livreMiniJeuGeste.element) {
     const element = livreMiniJeuGeste.element;
     if (element.hasPointerCapture && element.hasPointerCapture(livreMiniJeuGeste.pointerId)) {
@@ -10221,6 +10235,25 @@ function fermerMiniJeuLivre() {
   livreMiniJeuMouvement = null;
   livreMiniJeuPositions = new Map();
   livreMiniJeuRejets = [];
+}
+
+function recadrerMotsMiniJeuLivre() {
+  if (!miniJeuRuntimeActif("book") || livreMiniJeuGeste || livreMiniJeuMouvement || livreMiniJeuRejets.length) return;
+  const board = document.getElementById("book-learning-board");
+  if (!board) return;
+  const boardRect = board.getBoundingClientRect();
+  document.querySelectorAll('.book-learning-word[data-scrap-state="free"]').forEach(function(element) {
+    const motId = Number(element.dataset.wordId);
+    const rect = element.getBoundingClientRect();
+    const position = livreMiniJeuPositions.get(motId) || {x: 0, y: 0};
+    const x = position.x + Math.max(0, boardRect.left + 10 - rect.left)
+      + Math.min(0, boardRect.right - 10 - rect.right);
+    const y = position.y + Math.max(0, boardRect.top + 10 - rect.top)
+      + Math.min(0, boardRect.bottom - 10 - rect.bottom);
+    livreMiniJeuPositions.set(motId, {x: x, y: y});
+    element.style.setProperty("--scrap-dx", x + "px");
+    element.style.setProperty("--scrap-dy", y + "px");
+  });
 }
 
 function selectionnerTrouMiniJeuLivre(trouIndex) {

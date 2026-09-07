@@ -196,7 +196,7 @@
     },
     "unlockLevelStep": 10,
     "rewardPerDifficulty": 1,
-    "roundSeconds": 5,
+    "roundSeconds": 7,
     "cooldownHours": 3,
     "difficulties": [
       {

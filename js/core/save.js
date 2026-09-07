@@ -195,7 +195,7 @@ function normaliserProfilCampSauvegarde(value) {
 }
 
 function normaliserUiTheme(value) {
-  return value === "basic" ? "basic" : "stylish";
+  return value === "basic" || value === "stylish-straight" ? value : "stylish";
 }
 
 function donneesSauvegardeReconnaissables(d) {

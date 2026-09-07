@@ -376,42 +376,9 @@ const METIERS = {
   "camp-engineer": { id: "camp-engineer", nom: "Camp Engineer", emoji: "🔧", famille: "engineering", familleNom: "Passive camp systems", duree: 3600, engineer: true }
 };
 
-const DESC_NEIGHBOR    = "Looks like our humans but nextdoor. They probably throw useful items as well.";
-const DESC_GARDEN      = "Untamed grass, nobody tending it. Smells like mice have been through.";
-const DESC_PARKING     = "A wide open area full of parked cars. Lots of shadows. Quiet at night.";
-
-const ZONES_CARTE = {
-  "D1": { id: "D1", nom: "Home",                    col: 3, row: 1, type: "home",     icone: "🏠", difficulte: 0,  duree: 0,   slots: 0, description: "" },
-  "C1": { id: "C1", nom: "Left neighbor",            col: 2, row: 1, type: "neighbor", icone: "🏡", difficulte: 10, duree: 600,  slots: 2, description: DESC_NEIGHBOR },
-  "E1": { id: "E1", nom: "Right neighbor",           col: 4, row: 1, type: "neighbor", icone: "🏡", difficulte: 10, duree: 600,  slots: 2, description: DESC_NEIGHBOR },
-  "B1": { id: "B1", nom: "Empty Garden",             col: 1, row: 1, type: "other",    icone: "🌿", difficulte: 20, duree: 1200, slots: 2, description: DESC_GARDEN },
-  "A1": { id: "A1", nom: "House under construction", col: 0, row: 1, type: "chantier", icone: "🏗️", difficulte: 30, duree: 1500, slots: 2, description: "Humans are building something here. Lots of wood and scrap material piling up. Empty at night." },
-  "F1": { id: "F1", nom: "Empty Garden",             col: 5, row: 1, type: "other",    icone: "🌿", difficulte: 20, duree: 1200, slots: 2, description: DESC_GARDEN },
-  "G1": { id: "G1", nom: "Squatted House",           col: 6, row: 1, type: "neighbor", icone: "🏚️", difficulte: 30, duree: 1500, slots: 2, description: "Something feels off about this place. No usual human signs. Saw a light through the boards at night once." },
-  // Row 2 — full-width street
-  "residentialStreet": { id: "residentialStreet", nom: "Residential Bloc Street", col: 0, row: 2, colSpan: 7, rowSpan: 1, type: "street", icone: "🛣️", difficulte: 30, duree: 1800, slots: 2, description: "The street in front of the houses. Bins come out on Thursdays. Dogs in the morning — Be careful." },
-  "commercialStreet":  { id: "commercialStreet",  nom: "Commercial Street",       col: 3, row: 3, colSpan: 1, rowSpan: 2, type: "street", icone: "🛣️", difficulte: 40, duree: 2400, slots: 2, description: "A busy road. Cars and trucks, engines idling. Smells like petrol. I don't like it." },
-  // Row 3-4 multi-cell zones
-  "gasStation":    { id: "gasStation",    nom: "Gas Station",     col: 0, row: 3, colSpan: 2, rowSpan: 2, type: "shop",   icone: "⛽", difficulte: 50, duree: 3000, slots: 2, description: "That brightly lit corner that never closes. Cars are stopping in front and leaving a few minutes after. Weird place." },
-  "parkingLeft":   { id: "parkingLeft",   nom: "Parking",         col: 2, row: 3, colSpan: 1, rowSpan: 2, type: "other",  icone: "🅿️", difficulte: 40, duree: 2400, slots: 2, description: DESC_PARKING },
-  "parkingRight":  { id: "parkingRight",  nom: "Parking",         col: 4, row: 3, colSpan: 1, rowSpan: 2, type: "other",  icone: "🅿️", difficulte: 40, duree: 2400, slots: 2, description: DESC_PARKING },
-  "supermarket":   { id: "supermarket",   nom: "Supermarket",     col: 5, row: 3, colSpan: 2, rowSpan: 2, type: "shop",   icone: "🛒", difficulte: 50, duree: 3000, slots: 2, description: "The glass building where humans carry out lots of plastic bags. Smells great with loads of unidentified smells. I need to get in there." },
-  // Row 5 — full-width Forest Entrance
-  "forestEntrance": { id: "forestEntrance", nom: "Forest Entrance", col: 0, row: 5, colSpan: 7, rowSpan: 1, type: "forest", icone: "🌲", difficulte: 60, duree: 3600, slots: 2, description: "Where the street ends and the trees begin. Nature seems to have resisted human greediness. At least for now..." },
-};
-
-// ── Regions ────────────────────────────────────────────────────────────────
-// Each region has its own zone grid. ZONES_CARTE is the starting neighbourhood.
-// zonesRegion() resolves the active region's zones; use it for new region-aware code.
-const REGIONS = {
-  startingNeighbourhood: {
-    id:     "startingNeighbourhood",
-    nom:    "Starting Neighbourhood",
-    mapImg: "img/Maps/Starting Neighbourhood.webp",
-    zones:  ZONES_CARTE,
-  },
-};
-
+const explorationData = CatInc.data.exploration;
+const ZONES_CARTE = explorationData.regions.startingNeighbourhood.zones;
+const REGIONS = explorationData.regions;
 const TIERS_KITTIES = [
   "Kitten", "Great Kitten", "Cat", "Great Cat",
   "General Cat", "Emperor Cat", "Godly Cat"
