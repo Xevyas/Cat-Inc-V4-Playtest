@@ -12,7 +12,7 @@
   ].join(",");
   const MANUAL_CONTROL_SELECTOR = [
     "input", "select", "textarea", "[contenteditable='true']", "[role='slider']",
-    ".recruit-pitch-btn", "[data-touch-activation='manual']"
+    "[data-touch-activation='manual']"
   ].join(",");
   const TAP_MOVE_TOLERANCE = 8;
   const PAN_AWARE_TAP_MOVE_TOLERANCE = 16;

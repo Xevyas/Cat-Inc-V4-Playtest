@@ -121,7 +121,7 @@
   </div>
   <!-- Body stylesheets block the following runtime, while the preceding,
        self-contained curtain is already paintable. -->
-  <link rel="stylesheet" href="style.css?v=0.0171" />
+  <link rel="stylesheet" href="style.css?v=0.0172" />
   <link rel="stylesheet" href="style-stylish.css?v=0.0001" />
   <link rel="stylesheet" href="style-stylish-straight.css?v=0.0001" />
 
@@ -490,7 +490,7 @@
   <section class="ressources" aria-label="Resources">
     <div class="ressources-fixes">
       <button id="bird-debug-btn" onclick="montrerOiseau()" title="[DEV] Force bird spawn" aria-label="Force a bird spawn for testing" class="bird-debug-btn"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
-      <button id="purrsuasion-v2-debug-btn" type="button" onclick="ouvrirPurrsuasionV2Setup()" title="[DEV] Open Purrsuasion V2 POC" aria-label="Open Purrsuasion V2 proof of concept" class="purrsuasion-v2-debug-btn" style="display:none">P2</button>
+      <button id="purrsuasion-v2-debug-btn" type="button" onclick="ouvrirPurrsuasionV2Setup()" title="[DEV] Open Purrsuasion POC" aria-label="Open Purrsuasion proof of concept" class="purrsuasion-v2-debug-btn" style="display:none">P</button>
     </div>
     <div class="ressources-liste" id="ressources-liste">
     <div class="ressource" id="row-cardboard-planks" data-resource-key="cardboardPlanks" data-family="wood" data-tooltip="Cardboard Planks" data-tier="T1" style="display:none">
@@ -1424,50 +1424,11 @@
     </div>
   </div>
 
-  <!-- RECRUITMENT MINI-GAME: PURRSUASION -->
-  <div id="recruit-minijeu" class="bird-minijeu-overlay recruit-minijeu" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recruit-minijeu-titre" aria-describedby="recruit-minijeu-desc" style="display:none">
-    <div class="bird-minijeu-overlay-dismiss" aria-hidden="true" onclick="echouerMiniJeuRecruit('closed')"></div>
-    <div class="recruit-minijeu-carte" role="document" tabindex="-1">
-      <div class="recruit-title-row">
-        <h3 id="recruit-minijeu-titre">Purrsuasion</h3>
-        <span id="recruit-difficulty" class="recruit-difficulty">Difficulty 1 · Cursor speed ×1.00</span>
-      </div>
-      <p id="recruit-minijeu-desc">Build enough trust without overwhelming the visitor.</p>
-      <div class="recruit-scene">
-        <div id="recruit-visitor-speech" class="recruit-speech recruit-speech-visitor" aria-label="Visitor says: I'm alone and I haven't eaten in days.">I'm alone... and I haven't eaten in days.</div>
-        <div class="recruit-portrait-wrap recruit-portrait-visitor">
-          <img id="recruit-target-portrait" class="recruit-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
-          <span id="recruit-target-name">Visitor</span>
-        </div>
-        <div class="recruit-portrait-wrap recruit-portrait-bernardo">
-          <img class="recruit-portrait" data-bernardo-cat-face alt="">
-          <span>Bernardo</span>
-        </div>
-        <div id="recruit-bernardo-speech" class="recruit-speech recruit-speech-bernardo" aria-label="Bernardo says: We have plenty of food. Join us, and you'll never go hungry again.">We have plenty of food. Join us, and you'll never go hungry again.</div>
-      </div>
-      <div class="recruit-status-row">
-        <span>TRUST</span>
-        <span id="recruit-time-left">10.0s</span>
-      </div>
-      <div id="recruit-trust-track" class="recruit-trust-track" role="progressbar" aria-label="Visitor trust" aria-valuemin="0" aria-valuemax="100" aria-valuenow="18">
-        <div class="recruit-zone recruit-zone-low"></div>
-        <div class="recruit-zone recruit-zone-good"></div>
-        <div class="recruit-zone recruit-zone-high"></div>
-        <div id="recruit-trust-fill" class="recruit-trust-fill" style="width:100%;transform:scaleX(.18)"></div>
-        <div id="recruit-trust-marker" class="recruit-trust-marker" style="left:0"></div>
-      </div>
-      <div class="recruit-zone-labels" aria-hidden="true"><span>NOT CONVINCED</span><span>INTERESTED</span><span>TOO PUSHY</span></div>
-      <div id="recruit-hold-progress" class="recruit-hold-progress" role="status" aria-live="polite">Keep their interest: 0.0 / 2.0s</div>
-      <button id="recruit-pitch-btn" class="recruit-pitch-btn" type="button" onpointerdown="commencerPitchRecruit(event)" onpointerup="arreterPitchRecruit(event)" onpointercancel="arreterPitchRecruit(event)" onkeydown="gererClavierPitchRecruit(event,true)" onkeyup="gererClavierPitchRecruit(event,false)">HOLD TO START YOUR PITCH</button>
-      <button class="bird-skip-btn" type="button" onclick="echouerMiniJeuRecruit('gave-up')">Give up</button>
-    </div>
-  </div>
-
-  <!-- DEBUG-ONLY PURRSUASION V2 PROOF OF CONCEPT -->
+  <!-- DEBUG-ONLY PURRSUASION PROOF OF CONCEPT -->
   <div id="purrsuasion-v2-setup" class="bird-minijeu-overlay purrsuasion-v2-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="purrsuasion-v2-setup-title" style="display:none">
     <div class="purrsuasion-v2-card purrsuasion-v2-setup-card" role="document" tabindex="-1">
       <span class="reflex-game-tag">DEBUG POC · NO SAVE</span>
-      <h3 id="purrsuasion-v2-setup-title">Purrsuasion V2</h3>
+      <h3 id="purrsuasion-v2-setup-title">Purrsuasion</h3>
       <p>Choose the incoming Cat to simulate. Three conversations decide whether Bernardo wins them over.</p>
       <label class="purrsuasion-v2-cat-picker" for="purrsuasion-v2-cat-select">Incoming Cat
         <select id="purrsuasion-v2-cat-select" onchange="mettreAJourPurrsuasionV2Setup()"></select>
@@ -1477,7 +1438,7 @@
         <button id="purrsuasion-v2-help-btn" aria-label="Recruitment details" class="interface-details-control purrsuasion-v2-help" type="button" aria-expanded="false" aria-controls="purrsuasion-v2-difficulty-panel" onclick="basculerAidePurrsuasionV2()"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
       </div>
       <div id="purrsuasion-v2-difficulty-panel" class="purrsuasion-v2-difficulty-panel" hidden></div>
-      <button id="purrsuasion-v2-start" class="recruit-pitch-btn" type="button" onclick="lancerPurrsuasionV2()">START NEGOTIATION</button>
+      <button id="purrsuasion-v2-start" class="purrsuasion-v2-action" type="button" onclick="lancerPurrsuasionV2()">START NEGOTIATION</button>
       <button class="bird-skip-btn" type="button" onclick="fermerPurrsuasionV2Setup()">Close POC</button>
     </div>
   </div>
@@ -1485,7 +1446,7 @@
   <div id="purrsuasion-v2-game" class="bird-minijeu-overlay purrsuasion-v2-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="purrsuasion-v2-title" style="display:none">
     <div id="purrsuasion-v2-card" class="purrsuasion-v2-card" role="document" tabindex="-1">
       <div class="recruit-title-row">
-        <h3 id="purrsuasion-v2-title">Purrsuasion V2</h3>
+        <h3 id="purrsuasion-v2-title">Purrsuasion</h3>
         <span id="purrsuasion-v2-round-badge" class="recruit-difficulty">Round 1 / 3 · 0 pts</span>
       </div>
       <div class="purrsuasion-v2-progress">
@@ -1530,14 +1491,14 @@
         </div>
         <div class="purrsuasion-v2-legend">Gold +3 · Silver +2 · Bronze +1</div>
       </div>
-      <button id="purrsuasion-v2-stop" class="recruit-pitch-btn" type="button" onclick="arreterRoulettePurrsuasionV2()" hidden>STOP THE PAW</button>
+      <button id="purrsuasion-v2-stop" class="purrsuasion-v2-action" data-touch-activation="reflex-release" type="button" onclick="arreterRoulettePurrsuasionV2()" hidden>STOP THE PAW</button>
       <div id="purrsuasion-v2-callout" class="purrsuasion-v2-callout" role="status" hidden>
         <strong id="purrsuasion-v2-result-copy"></strong>
         <span id="purrsuasion-v2-award" class="purrsuasion-v2-award"></span>
         <span id="purrsuasion-v2-reward" class="purrsuasion-v2-reward" aria-hidden="true"></span>
       </div>
       <div id="purrsuasion-v2-feedback" class="purrsuasion-v2-feedback" role="status" aria-live="polite"></div>
-      <button id="purrsuasion-v2-next" class="recruit-pitch-btn" type="button" onclick="continuerPurrsuasionV2()" hidden>NEXT ROUND</button>
+      <button id="purrsuasion-v2-next" class="purrsuasion-v2-action" type="button" onclick="continuerPurrsuasionV2()" hidden>NEXT ROUND</button>
       <button id="purrsuasion-v2-leave" class="bird-skip-btn" type="button" onclick="abandonnerPurrsuasionV2()">Leave POC</button>
     </div>
   </div>
@@ -1608,13 +1569,13 @@
   <script src="js/ui/camp.js?v=0.0031"></script>
   <script src="js/ui/dialogs.js?v=0.0002"></script>
   <script src="js/ui/guidance.js?v=0.0003"></script>
-  <script src="js/ui/touch-activation.js?v=0.0008"></script>
+  <script src="js/ui/touch-activation.js?v=0.0009"></script>
   <script src="js/ui/logs.js?v=0.0001"></script>
   <script src="js/ui/notifications.js?v=0.0001"></script>
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0003"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0002"></script>
-  <script src="jeu.js?v=0.0198"></script>
+  <script src="jeu.js?v=0.0199"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

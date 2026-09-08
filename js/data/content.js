@@ -379,6 +379,99 @@ const METIERS = {
 const explorationData = CatInc.data.exploration;
 const ZONES_CARTE = explorationData.regions.startingNeighbourhood.zones;
 const REGIONS = explorationData.regions;
+
+function explorationCellKey(cell) {
+  return cell.x + "," + cell.y;
+}
+
+function explorationZoneCells(zone) {
+  return zone && Array.isArray(zone.occupiedCells)
+    ? zone.occupiedCells.map(function(cell) { return { x: cell.x, y: cell.y }; })
+    : [];
+}
+
+function explorationRegionById(regions, regionId) {
+  return regions && Object.prototype.hasOwnProperty.call(regions, regionId) ? regions[regionId] : null;
+}
+
+function explorationZoneById(regions, zoneId, regionId) {
+  if (regionId) {
+    const region = explorationRegionById(regions, regionId);
+    return region && region.zones && Object.prototype.hasOwnProperty.call(region.zones, zoneId)
+      ? region.zones[zoneId] : null;
+  }
+  for (const region of Object.values(regions || {})) {
+    if (region.zones && Object.prototype.hasOwnProperty.call(region.zones, zoneId)) return region.zones[zoneId];
+  }
+  return null;
+}
+
+function explorationZoneCellIndex(region) {
+  const index = Object.create(null);
+  Object.values(region && region.zones || {}).forEach(function(zone) {
+    explorationZoneCells(zone).forEach(function(cell) { index[explorationCellKey(cell)] = zone.id; });
+  });
+  return index;
+}
+
+function explorationZonesAdjacent(first, second) {
+  const secondCells = new Set(explorationZoneCells(second).map(explorationCellKey));
+  return explorationZoneCells(first).some(function(cell) {
+    return secondCells.has((cell.x - 1) + "," + cell.y)
+      || secondCells.has((cell.x + 1) + "," + cell.y)
+      || secondCells.has(cell.x + "," + (cell.y - 1))
+      || secondCells.has(cell.x + "," + (cell.y + 1));
+  });
+}
+
+function validateExplorationRegion(region) {
+  if (!region || !Number.isInteger(region.columns) || region.columns < 1
+      || !Number.isInteger(region.rows) || region.rows < 1 || !region.zones) {
+    return { ok: false, reason: "Region dimensions and zones are required." };
+  }
+  const occupied = new Set();
+  for (const zone of Object.values(region.zones)) {
+    const cells = explorationZoneCells(zone);
+    if (!cells.length) return { ok: false, reason: "Every zone needs occupied cells." };
+    const own = new Set();
+    for (const cell of cells) {
+      if (!Number.isInteger(cell.x) || !Number.isInteger(cell.y)
+          || cell.x < 0 || cell.x >= region.columns || cell.y < 1 || cell.y > region.rows) {
+        return { ok: false, reason: "Zone cells must be integer coordinates inside the region." };
+      }
+      const key = explorationCellKey(cell);
+      if (own.has(key) || occupied.has(key)) return { ok: false, reason: "Zone cells must be unique." };
+      own.add(key);
+      occupied.add(key);
+    }
+    const first = cells[0];
+    const visited = new Set([explorationCellKey(first)]);
+    const pending = [first];
+    while (pending.length) {
+      const cell = pending.pop();
+      [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(function(offset) {
+        const key = (cell.x + offset[0]) + "," + (cell.y + offset[1]);
+        if (own.has(key) && !visited.has(key)) {
+          visited.add(key);
+          const parts = key.split(",");
+          pending.push({ x: Number(parts[0]), y: Number(parts[1]) });
+        }
+      });
+    }
+    if (visited.size !== own.size) return { ok: false, reason: "Zone cells must be orthogonally connected." };
+  }
+  return { ok: true };
+}
+
+const explorationGeometry = Object.freeze({
+  cellKey: explorationCellKey,
+  zoneCells: explorationZoneCells,
+  regionById: explorationRegionById,
+  zoneById: explorationZoneById,
+  zoneCellIndex: explorationZoneCellIndex,
+  zonesAdjacent: explorationZonesAdjacent,
+  validateRegion: validateExplorationRegion
+});
 const TIERS_KITTIES = [
   "Kitten", "Great Kitten", "Cat", "Great Cat",
   "General Cat", "Emperor Cat", "Godly Cat"
@@ -447,6 +540,7 @@ const CAT_FACES_ALEATOIRES = Object.freeze(LIVE_ALTERNATIVE_CAT_FACES.length
     METIERS: METIERS,
     ZONES_CARTE: ZONES_CARTE,
     REGIONS: REGIONS,
+    explorationGeometry: explorationGeometry,
     TIERS_KITTIES: TIERS_KITTIES,
     NOMS_KITTIES: NOMS_KITTIES,
     KITTY_ICON: KITTY_ICON,

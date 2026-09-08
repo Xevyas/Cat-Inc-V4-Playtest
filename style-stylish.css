@@ -1171,7 +1171,8 @@ body[data-ui-theme="stylish"] #contenu-explorations .carte-grille-conteneur {
   filter: drop-shadow(0 7px 10px rgba(75, 48, 23, .12));
 }
 body[data-ui-theme="stylish"] #contenu-explorations .carte-selectionnee {
-  box-shadow: inset 0 0 0 3px #98612d;
+  --carte-selection-outline: #98612d;
+  box-shadow: none;
 }
 body[data-ui-theme="stylish"] #contenu-explorations > .exploration-mobile-zone-header {
   border-color: #cfbc99;

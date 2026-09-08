@@ -296,8 +296,10 @@
   });
 
   register("world.reveal", function(input) {
-    const region = CatInc.data.content.REGIONS[state().regionCourante];
-    const zone = region && region.zones && region.zones[input.zoneId];
+    const zones = runtime.currentExplorationZones
+      ? runtime.currentExplorationZones()
+      : CatInc.data.content.REGIONS[state().regionCourante].zones;
+    const zone = zones && zones[input.zoneId];
     if (!zone) return fail("Select a zone from the current canonical region.");
     if (!Array.isArray(state().zonesExplorees)) state().zonesExplorees = [];
     if (!state().zonesExplorees.includes(zone.id)) state().zonesExplorees.push(zone.id);
@@ -306,13 +308,20 @@
   });
 
   register("world.revealAll", function() {
-    const region = CatInc.data.content.REGIONS[state().regionCourante];
-    if (!region || !region.zones) return fail("Current region is invalid.");
+    const zones = runtime.currentExplorationZones
+      ? runtime.currentExplorationZones()
+      : CatInc.data.content.REGIONS[state().regionCourante].zones;
+    if (!zones) return fail("Current region is invalid.");
     const explored = new Set(Array.isArray(state().zonesExplorees) ? state().zonesExplorees : []);
-    Object.keys(region.zones).forEach(function(id) { explored.add(id); });
+    Object.keys(zones).forEach(function(id) { explored.add(id); });
     state().zonesExplorees = Array.from(explored);
     if (runtime.markExplorationDirty) runtime.markExplorationDirty();
-    return pass("Marked all zones in " + region.nom + " explored without granting rewards.");
+    return pass("Marked all zones in the current region explored without granting rewards.");
+  });
+
+  register("world.selectRegion", function(input) {
+    if (!runtime.selectExplorationRegion) return fail("Exploration region selection is unavailable.");
+    return runtime.selectExplorationRegion(input.regionId);
   });
 
   register("camp.ready", function() {
@@ -394,9 +403,21 @@
       .map(function(node) { return { id: node.id, label: node.name }; }));
   }
   function refreshWorld() {
+    const regionSelect = root.document.getElementById("dev-region-id");
+    if (regionSelect && runtime.explorationRegionOptions) {
+      const current = runtime.currentExplorationRegionId && runtime.currentExplorationRegionId();
+      regionSelect.innerHTML = optionsHtml(runtime.explorationRegionOptions());
+      if (current) regionSelect.value = current;
+    }
     const select = root.document.getElementById("dev-zone-id");
-    const region = state() && CatInc.data.content.REGIONS[state().regionCourante];
-    if (select && region) select.innerHTML = optionsHtml(Object.keys(region.zones).map(function(id) { return { id: id, label: region.zones[id].nom + " (" + id + ")" }; }));
+    const currentRegionId = runtime.currentExplorationRegionId
+      ? runtime.currentExplorationRegionId()
+      : state() && state().regionCourante;
+    const regions = CatInc.data.content.REGIONS;
+    const region = regions[currentRegionId]
+      || (currentRegionId === "devIrregularRegion" && runtime.explorationRegionOptions ? { zones: {} } : null);
+    const activeZones = runtime.currentExplorationZones ? runtime.currentExplorationZones() : region && region.zones;
+    if (select && activeZones) select.innerHTML = optionsHtml(Object.keys(activeZones).map(function(id) { return { id: id, label: activeZones[id].nom + " (" + id + ")" }; }));
   }
   function refreshJobs() {
     const select = root.document.getElementById("dev-cat-id");
@@ -487,7 +508,7 @@
       + '<p class="dev-state">DEV STATE · real DEV namespace</p><section><h3>Quick QA</h3><button data-dev-action="scenario.perks">Perks QA</button><button data-dev-action="scenario.houseT3">House T3 QA</button><button data-dev-action="scenario.exploration">Exploration QA</button></section>'
       + '<section><h3>Resources</h3><select id="dev-resource-id" aria-label="Resource">' + optionsHtml(resourceCatalog()) + '</select><input id="dev-resource-amount" type="number" min="0" step="1" value="100" aria-label="Resource amount"><div class="dev-row"><button data-dev-resource-add="10">+10</button><button data-dev-resource-add="100">+100</button><button id="dev-resource-set">Set amount</button></div></section>'
       + '<section><h3>Cats / Jobs / Perks</h3><label>Job tree<select id="dev-perk-job">' + optionsHtml(jobs) + '</select></label><label>Perk<select id="dev-perk-id"></select></label><button data-dev-perk="perk.learn">Learn selected perk DEV</button><button data-dev-perk="perk.learnClosure">Learn + prerequisite closure</button><button id="dev-perk-reset" class="dev-danger">Reset purchased perks for tree</button><div class="dev-row"><button data-dev-tier-perk="builderReinforcedCardboardBox">Grant Reinforced Cardboard Box</button><button data-dev-tier-perk="builderMasterWoodCathouse">Grant Master Wood Cathouse</button></div><label>Cat<select id="dev-cat-id"></select></label><label>Normal job<select id="dev-job-id">' + optionsHtml(normalJobs) + '</select></label><button id="dev-job-grant">Grant available job DEV</button></section>'
-      + '<section><h3>World</h3><select id="dev-zone-id" aria-label="Current-region zone"></select><button id="dev-zone-reveal">Reveal / mark explored</button><button data-dev-action="world.revealAll">Reveal all zones in current region</button></section>'
+      + '<section><h3>World</h3><label>Region<select id="dev-region-id" aria-label="Exploration region"></select></label><button id="dev-region-show">Show region (transient)</button><select id="dev-zone-id" aria-label="Current-region zone"></select><button id="dev-zone-reveal">Reveal / mark explored</button><button data-dev-action="world.revealAll">Reveal all zones in current region</button></section>'
       + '<section><h3>Camp / Time</h3><button data-dev-action="camp.ready">Make active Camp actions ready to claim</button><button data-dev-action="time.readyPerkLearning">Make active Perk learning ready</button><p>Construction, repair, Tier Upgrade, compatible junk clearing, and Perk learning use their existing DEV completion seams. Results are never fabricated.</p></section>'
       + '<section id="dev-support-section"></section>'
       + '<output id="dev-tools-summary" aria-live="polite"></output></aside>';
@@ -505,6 +526,7 @@
     root.document.querySelectorAll("[data-dev-tier-perk]").forEach(function(button) { button.addEventListener("click", function() { runFromUi("perk.learnClosure", { jobId: "builder", perkId: button.dataset.devTierPerk }); }); });
     root.document.getElementById("dev-job-grant").addEventListener("click", function() { runFromUi("job.grant", { kittyIndex: Number(root.document.getElementById("dev-cat-id").value), jobId: root.document.getElementById("dev-job-id").value }); });
     root.document.getElementById("dev-zone-reveal").addEventListener("click", function() { runFromUi("world.reveal", { zoneId: root.document.getElementById("dev-zone-id").value }); });
+    root.document.getElementById("dev-region-show").addEventListener("click", function() { runFromUi("world.selectRegion", { regionId: root.document.getElementById("dev-region-id").value }); });
     refreshPerks(); refreshWorld(); refreshJobs(); renderSupportSection(); updateSupportIndicator();
     root.document.body.dataset.devToolkit = "true";
     return true;

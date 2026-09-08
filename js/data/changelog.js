@@ -953,6 +953,27 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0090Categories = Object.freeze([
+    Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Exploration zones now use clearer unified shapes when they span several map cells.",
+        "Story conversations now give Mochi and Luna more expressive portrait treatments.",
+        "The Camp Profile avatar is larger and easier to read on mobile."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Purrsuasion interactions are now more reliable on iOS, and the obsolete legacy version has been removed.",
+        "The intended Cat Inc display font now ships correctly with Playtest updates."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0089Categories = Object.freeze([
     Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
     Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1133,7 +1154,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0089",
+    baseVersion: "0.0090",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1146,6 +1167,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0090",
+      date: "2026-09-08",
+      categories: release0090Categories
+    }),
     Object.freeze({
       version: "0.0089",
       date: "2026-09-07",

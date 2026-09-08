@@ -8,11 +8,25 @@
     normalizeProgress: function() { return { version: 2, learned: [] }; }
   });
 
+  function regionsExploration() {
+    return CatInc.data && CatInc.data.exploration && CatInc.data.exploration.regions || {};
+  }
+
+  function zoneExplorationExiste(zoneId) {
+    return Object.values(regionsExploration()).some(function(region) {
+      return region.zones && Object.prototype.hasOwnProperty.call(region.zones, zoneId);
+    });
+  }
+
   function normaliserExplorationRetries(value, etat) {
     const result = { zones: {}, campaigns: {} };
     const data = CatInc.data || {};
+    const zoneCatalog = {};
+    Object.values(regionsExploration()).forEach(function(region) {
+      Object.keys(region.zones || {}).forEach(function(id) { zoneCatalog[id] = true; });
+    });
     const catalogs = {
-      zones: data.content && data.content.ZONES_CARTE,
+      zones: zoneCatalog,
       campaigns: data.config && data.config.CONFIG.campaigns
     };
     ["zones", "campaigns"].forEach(function(kind) {
@@ -1369,10 +1383,18 @@ function analyserSauvegardeBrute(raw) {
   if (Object.prototype.hasOwnProperty.call(etat.dailyQuests, "scoutingCannedCatFood")) {
     delete etat.dailyQuests.scoutingCannedCatFood;
   }
-  etat.regionCourante      = d.regionCourante      || "startingNeighbourhood";
+  const regions = regionsExploration();
+  etat.regionCourante = Object.prototype.hasOwnProperty.call(regions, d.regionCourante)
+    ? d.regionCourante
+    : (Object.prototype.hasOwnProperty.call(regions, "startingNeighbourhood")
+      ? "startingNeighbourhood"
+      : Object.keys(regions)[0]);
   etat.zonesExplorees      = d.zonesExplorees      || ["D1"];
   if (!etat.zonesExplorees.includes("D1")) etat.zonesExplorees.push("D1");
   etat.exploZoneEnCours    = d.exploZoneEnCours    || null;
+  if (etat.exploZoneEnCours && !zoneExplorationExiste(etat.exploZoneEnCours.zoneId)) {
+    etat.exploZoneEnCours = null;
+  }
   etat.resultatsExplorationZones = d.resultatsExplorationZones || {};
   etat.resultatsCampaigns  = d.resultatsCampaigns  || {};
   etat.explorationRetries = normaliserExplorationRetries(d.explorationRetries, etat);

@@ -17,9 +17,65 @@ const ITEMS = gameContentData.ITEMS;
 const METIERS = gameContentData.METIERS;
 const ZONES_CARTE = explorationData.regions.startingNeighbourhood.zones;
 const REGIONS = explorationData.regions;
+const explorationGeometry = gameContentData.explorationGeometry;
+let explorationDevRegions = null;
+let explorationDevRegionId = null;
+
+function regionsExploration() {
+  return explorationDevRegions || REGIONS;
+}
+
+function regionParId(regionId) {
+  return explorationGeometry.regionById(regionsExploration(), regionId);
+}
+
+function idRegionExplorationCourante() {
+  return explorationDevRegionId || etat.regionCourante;
+}
 
 function zonesRegion() {
-  return REGIONS[etat.regionCourante].zones;
+  const region = regionParId(idRegionExplorationCourante());
+  return region ? region.zones : {};
+}
+
+function zoneParId(zoneId) {
+  return explorationGeometry.zoneById(regionsExploration(), zoneId, idRegionExplorationCourante());
+}
+
+function zoneEstExploree(zoneId) {
+  return Boolean(explorationDevRegionId && Object.prototype.hasOwnProperty.call(zonesRegion(), zoneId))
+    || etat.zonesExplorees.includes(zoneId);
+}
+
+function regionPreuveExplorationDev() {
+  return {
+    id: "devIrregularRegion",
+    nom: "DEV Irregular Region",
+    mapImg: "",
+    columns: 6,
+    rows: 6,
+    zones: {
+      "devIrregularRegion.corridor": {
+        id: "devIrregularRegion.corridor", nom: "Narrow Corridor", gridLabel: "A1",
+        occupiedCells: [{x: 0, y: 1}, {x: 0, y: 2}, {x: 0, y: 3}, {x: 0, y: 4}],
+        type: "street", icone: "🛤️", difficulte: 1, duree: 1, slots: 1, description: "A narrow proof path."
+      },
+      "devIrregularRegion.turn": {
+        id: "devIrregularRegion.turn", nom: "L Turn", gridLabel: "A5",
+        occupiedCells: [{x: 0, y: 5}, {x: 1, y: 5}, {x: 2, y: 5}, {x: 2, y: 6}],
+        type: "street", icone: "↳", difficulte: 1, duree: 1, slots: 1, description: "One connected L-shaped zone."
+      },
+      "devIrregularRegion.square": {
+        id: "devIrregularRegion.square", nom: "Market Square", gridLabel: "D4",
+        occupiedCells: [
+          {x: 3, y: 4}, {x: 4, y: 4}, {x: 5, y: 4},
+          {x: 3, y: 5}, {x: 5, y: 5},
+          {x: 3, y: 6}, {x: 4, y: 6}, {x: 5, y: 6}
+        ],
+        type: "shop", icone: "🧺", difficulte: 1, duree: 1, slots: 1, description: "One large zone surrounding a non-playable hole."
+      }
+    }
+  };
 }
 
 const TIERS_KITTIES = gameContentData.TIERS_KITTIES;
@@ -932,7 +988,7 @@ function autoAssignExplo(type, id) {
     if (!exploKittiesSelectionnees[id]) exploKittiesSelectionnees[id] = new Array(nbSlots).fill(null);
     slots = exploKittiesSelectionnees[id];
   } else if (type === 'zone') {
-    var zone = ZONES_CARTE[id];
+    var zone = zoneParId(id);
     if (!zone) return;
     difficulte = zone.difficulte; nbSlots = zone.slots;
     if (!carteExploSlots[id]) carteExploSlots[id] = new Array(nbSlots).fill(null);
@@ -1257,7 +1313,7 @@ function kittyAllocationLabel(kittyIdx) {
   // Zone exploration (running)
   if (etat.exploZoneEnCours && etat.exploZoneEnCours.kittyIndices.includes(kittyIdx)) {
     var explorationZoneId = etat.exploZoneEnCours.zoneId;
-    var z = ZONES_CARTE[explorationZoneId];
+    var z = zoneParId(explorationZoneId);
     var explorationZoneRevealed = Array.isArray(etat.zonesExplorees) && etat.zonesExplorees.includes(explorationZoneId);
     var explorationZoneLabel = explorationZoneRevealed && z ? explorationZoneId : null;
     return { text: missionZoneLabel("Exploration", explorationZoneLabel), cls: "kitty-statut-explo" };
@@ -1267,7 +1323,7 @@ function kittyAllocationLabel(kittyIdx) {
     return (carteExploSlots[zoneId] || []).includes(kittyIdx);
   });
   if (stagedZone) {
-    var zs = ZONES_CARTE[stagedZone];
+    var zs = zoneParId(stagedZone);
     var stagedZoneRevealed = Array.isArray(etat.zonesExplorees) && etat.zonesExplorees.includes(stagedZone);
     var stagedZoneLabel = stagedZoneRevealed && zs ? stagedZone : null;
     return { text: missionZoneLabel("Exploration", stagedZoneLabel), cls: "kitty-statut-explo" };
@@ -7818,7 +7874,7 @@ function synchroniserNavigationExplorationMobile() {
   const entete = document.getElementById("exploration-mobile-zone-header");
   if (!contenu || !entete) return;
 
-  const zone = carteZoneSelectionnee ? ZONES_CARTE[carteZoneSelectionnee] : null;
+  const zone = carteZoneSelectionnee ? zoneParId(carteZoneSelectionnee) : null;
   const mobile = estExplorationMobile();
   const zoneOuverte = mobile && explorationMobileVue === "zone" && !!zone;
   const inspecteurOuvert = !!zone && (!mobile || zoneOuverte);
@@ -7828,7 +7884,7 @@ function synchroniserNavigationExplorationMobile() {
   entete.setAttribute("aria-hidden", inspecteurOuvert ? "false" : "true");
 
   if (!zone) return;
-  const exploree = zone.type === "home" || etat.zonesExplorees.includes(zone.id);
+  const exploree = zone.type === "home" || zoneEstExploree(zone.id);
   const campagnes = campagnesAfficheesPourZone(zone.id);
   const scoutings = scoutingsAffichesPourZone(zone.id);
   const titre = document.getElementById("exploration-mobile-zone-title");
@@ -7839,7 +7895,7 @@ function synchroniserNavigationExplorationMobile() {
   const boutonCampaigns = document.getElementById("exploration-mobile-campaigns-tab");
   const boutonScoutings = document.getElementById("exploration-mobile-scoutings-tab");
 
-  ecrireTexte(coordonnee, exploree ? zone.id : "");
+  ecrireTexte(coordonnee, exploree ? zone.gridLabel : "");
   if (coordonnee) coordonnee.style.display = exploree ? "" : "none";
   ecrireTexte(titre, exploree ? zone.nom : "Unknown zone");
   ecrireTexte(statut, exploree ? "Explored" : (explorateurPresent() ? "Available" : "Locked"));
@@ -7862,9 +7918,9 @@ function synchroniserNavigationExplorationMobile() {
 }
 
 function ouvrirZoneExplorationMobile() {
-  if (!estExplorationMobile() || !carteZoneSelectionnee || !ZONES_CARTE[carteZoneSelectionnee]) return;
-  const zone = ZONES_CARTE[carteZoneSelectionnee];
-  const exploree = zone.type === "home" || etat.zonesExplorees.includes(zone.id);
+  if (!estExplorationMobile() || !carteZoneSelectionnee || !zoneParId(carteZoneSelectionnee)) return;
+  const zone = zoneParId(carteZoneSelectionnee);
+  const exploree = zone.type === "home" || zoneEstExploree(zone.id);
   if (exploree) {
     const campagnes = campagnesAfficheesPourZone(zone.id);
     const scoutings = scoutingsAffichesPourZone(zone.id);
@@ -8039,8 +8095,8 @@ function renderCampaignCards() {
     return;
   }
 
-  const zone     = ZONES_CARTE[zoneId];
-  const exploree = etat.zonesExplorees.includes(zoneId);
+  const zone     = zoneParId(zoneId);
+  const exploree = zoneEstExploree(zoneId);
   let html = "";
 
   // ── Zone exploration mission (shown in its own panel when zone is not yet explored, non-home) ──
@@ -8342,33 +8398,13 @@ function renderCampaignCards() {
 
 // ── Carte d'exploration ──────────────────────────────────────
 
-// Returns all [col, row] pairs occupied by a zone (handles colSpan/rowSpan and multi-part zones).
+// Returns all [column, row] pairs occupied by one canonical gameplay zone.
 function getZoneCells(zone) {
-  function partCells(p) {
-    const cs = p.colSpan || 1, rs = p.rowSpan || 1;
-    const out = [];
-    for (let dc = 0; dc < cs; dc++)
-      for (let dr = 0; dr < rs; dr++)
-        out.push([p.col + dc, p.row + dr]);
-    return out;
-  }
-  if (zone.parts) {
-    const all = [];
-    zone.parts.forEach(function(p) { partCells(p).forEach(function(c) { all.push(c); }); });
-    return all;
-  }
-  return partCells(zone);
+  return explorationGeometry.zoneCells(zone).map(function(cell) { return [cell.x, cell.y]; });
 }
 
-// Returns the CSS grid-column/row placement string for one rectangular part.
-// topGameRow is the highest-numbered game row the part occupies (= part.row + rowSpan - 1).
-function getPartGridStyle(part, ROWS) {
-  const cs = part.colSpan || 1, rs = part.rowSpan || 1;
-  const topGameRow  = part.row + rs - 1;
-  const cssRowStart = ROWS - topGameRow + 1;
-  const cssColStart = part.col + 2; // column 1 is the row-label
-  return 'grid-column:' + cssColStart + '/' + (cssColStart + cs)
-       + ';grid-row:'   + cssRowStart + '/' + (cssRowStart + rs);
+function getCellGridStyle(cell, rows) {
+  return 'grid-column:' + (cell.x + 2) + ';grid-row:' + (rows - cell.y + 1);
 }
 
 // Single rollback switch for the decorative fog drift. The static fog remains
@@ -8384,19 +8420,13 @@ const MAP_FOG_SECONDARY_DURATION_MS = 140000;
 // Fog of war: a zone is revealed if it's Home, already explored, or any of its
 // cells is orthogonally adjacent to any cell of an already-explored zone.
 function zoneEstVisible(zoneId) {
-  const zone = ZONES_CARTE[zoneId];
+  const zone = zoneParId(zoneId);
   if (!zone) return false;
   if (zone.type === "home") return true;
-  if (etat.zonesExplorees.includes(zoneId)) return true;
-  const myCells = getZoneCells(zone);
-  return Object.values(ZONES_CARTE).some(function(z) {
-    if (!etat.zonesExplorees.includes(z.id)) return false;
-    const expCells = getZoneCells(z);
-    return myCells.some(function(mc) {
-      return expCells.some(function(ec) {
-        return Math.abs(ec[0] - mc[0]) + Math.abs(ec[1] - mc[1]) === 1;
-      });
-    });
+  if (zoneEstExploree(zoneId)) return true;
+  return Object.values(zonesRegion()).some(function(z) {
+    if (!zoneEstExploree(z.id)) return false;
+    return explorationGeometry.zonesAdjacent(zone, z);
   });
 }
 
@@ -8411,11 +8441,11 @@ function renduCarteGrille() {
     const secondaryPhaseMs = Date.now() % MAP_FOG_SECONDARY_DURATION_MS;
     el.style.setProperty('--fog-secondary-animation-delay', '-' + secondaryPhaseMs + 'ms');
   }
-  const ROWS = 5, COLS = 7, LETTERS = "ABCDEFG";
+  const region = regionParId(idRegionExplorationCourante()) || {};
+  const ROWS = region.rows || 1, COLS = region.columns || 1;
   const explorateurOk = explorateurPresent();
-
-  const region = REGIONS[etat.regionCourante] || {};
   const mapImg = region.mapImg || null;
+  el.style.setProperty('--map-columns', COLS);
 
   function renduFogGlobal() {
     const unit = 100;
@@ -8423,19 +8453,17 @@ function renduCarteGrille() {
     const mapHeight = ROWS * unit;
     let mask = '<rect x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" fill="white" shape-rendering="crispEdges"></rect>';
 
-    Object.values(ZONES_CARTE).forEach(function(zone) {
-      const revealed = zone.type === "home" || etat.zonesExplorees.includes(zone.id);
+    Object.values(zonesRegion()).forEach(function(zone) {
+      const revealed = zone.type === "home" || zoneEstExploree(zone.id);
       if (!revealed) return;
-      (zone.parts || [zone]).forEach(function(part) {
-        const x = part.col * unit;
-        const y = (ROWS + 1 - part.row - (part.rowSpan || 1)) * unit;
-        const width = (part.colSpan || 1) * unit;
-        const height = (part.rowSpan || 1) * unit;
-        mask += '<rect x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" fill="black" shape-rendering="crispEdges"></rect>';
+      explorationGeometry.zoneCells(zone).forEach(function(cell) {
+        const x = cell.x * unit;
+        const y = (ROWS - cell.y) * unit;
+        mask += '<rect x="' + x + '" y="' + y + '" width="' + unit + '" height="' + unit + '" fill="black" shape-rendering="crispEdges"></rect>';
       });
     });
 
-    return '<svg class="carte-fog-global" viewBox="0 0 ' + mapWidth + ' ' + mapHeight + '" preserveAspectRatio="none" aria-hidden="true">'
+    return '<svg class="carte-fog-global" style="grid-column:2/' + (COLS + 2) + ';grid-row:1/' + (ROWS + 1) + ';width:calc(var(--map-cell)*' + COLS + ');height:calc(var(--map-cell)*' + ROWS + ')" viewBox="0 0 ' + mapWidth + ' ' + mapHeight + '" preserveAspectRatio="none" aria-hidden="true">'
       + '<defs><mask id="carte-fog-global-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '">'
       + mask
       + '</mask>'
@@ -8458,14 +8486,14 @@ function renduCarteGrille() {
 
   // Build cell → zone map (supports multi-part zones).
   const cellMap = {};
-  Object.values(ZONES_CARTE).forEach(function(z) {
+  Object.values(zonesRegion()).forEach(function(z) {
     getZoneCells(z).forEach(function(c) { cellMap[c[0] + ',' + c[1]] = z.id; });
   });
 
   const rendered = new Set();
   let html = "";
   if (mapImg) {
-    html += '<div class="carte-map-artwork" style="grid-column:2 / 9;grid-row:1 / 6;background-image:url(\'' + mapImg + '\')" aria-hidden="true"></div>';
+    html += '<div class="carte-map-artwork" style="grid-column:2/' + (COLS + 2) + ';grid-row:1/' + (ROWS + 1) + ';background-image:url(\'' + mapImg + '\')" aria-hidden="true"></div>';
   }
 
   for (let row = ROWS; row >= 1; row--) {
@@ -8477,24 +8505,25 @@ function renduCarteGrille() {
       const cssCol  = ci + 2;
 
       if (!zoneId) {
-        html += '<div class="carte-cellule carte-fog" style="grid-column:' + cssCol + ';grid-row:' + cssRow + '"></div>';
+        html += '<div class="carte-cellule carte-hors-jeu" aria-hidden="true" style="grid-column:' + cssCol + ';grid-row:' + cssRow + '"></div>';
         continue;
       }
       if (rendered.has(zoneId)) continue;
       rendered.add(zoneId);
 
-      const zone  = ZONES_CARTE[zoneId];
-      const parts = zone.parts || [zone]; // single-rect zones act as their own part
+      const zone  = zoneParId(zoneId);
+      const parts = explorationGeometry.zoneCells(zone);
+      const zoneCellKeys = new Set(parts.map(explorationGeometry.cellKey));
       const isMulti = getZoneCells(zone).length > 1;
 
       if (!zoneEstVisible(zoneId)) {
         parts.forEach(function(p) {
-          html += '<div class="carte-cellule carte-fog" style="' + getPartGridStyle(p, ROWS) + '"></div>';
+          html += '<div class="carte-cellule carte-fog" style="' + getCellGridStyle(p, ROWS) + '"></div>';
         });
         continue;
       }
 
-      const exploree   = etat.zonesExplorees.includes(zoneId);
+      const exploree   = zoneEstExploree(zoneId);
       const inProgress = !!(etat.exploZoneEnCours && etat.exploZoneEnCours.zoneId === zoneId);
       const revealReady = !!(etat.resultatsExplorationZones[zoneId] && etat.resultatsExplorationZones[zoneId].success);
       const campaignRewardReady = Object.keys(etat.resultatsCampaigns).some(function(campaignId) {
@@ -8514,6 +8543,10 @@ function renduCarteGrille() {
       parts.forEach(function(p, pi) {
         const isPrimary = pi === 0;
         let cls = "carte-cellule carte-" + zone.type;
+        if (!zoneCellKeys.has(explorationGeometry.cellKey({x: p.x, y: p.y + 1}))) cls += " carte-bord-haut";
+        if (!zoneCellKeys.has(explorationGeometry.cellKey({x: p.x + 1, y: p.y}))) cls += " carte-bord-droite";
+        if (!zoneCellKeys.has(explorationGeometry.cellKey({x: p.x, y: p.y - 1}))) cls += " carte-bord-bas";
+        if (!zoneCellKeys.has(explorationGeometry.cellKey({x: p.x - 1, y: p.y}))) cls += " carte-bord-gauche";
         if (mapImg)     cls += " carte-avec-image";
         if (isMulti)    cls += " carte-multicel";
         if (!isPrimary) cls += " carte-part-secondary";
@@ -8521,7 +8554,7 @@ function renduCarteGrille() {
         if (selected)   cls += " carte-selectionnee";
         if (locked)     cls += " carte-verrouillee";
 
-        html += '<div class="' + cls + '" style="' + getPartGridStyle(p, ROWS) + '" data-zone-part-id="' + zoneId + '"'
+        html += '<div class="' + cls + '" style="' + getCellGridStyle(p, ROWS) + '" data-zone-part-id="' + zoneId + '"'
           + (isPrimary
             ? attributsActivationClavier(zone.nom + ", " + zoneEtatLabel) + ' data-zone-id="' + zoneId + '" aria-pressed="' + (selected ? "true" : "false") + '"'
             : ' aria-hidden="true"')
@@ -8564,9 +8597,9 @@ function renduCarteDetail() {
     el.innerHTML = '<p class="carte-hint">Click a zone to see details.</p>';
     return;
   }
-  const zone    = ZONES_CARTE[zoneId];
+  const zone    = zoneParId(zoneId);
   if (!zone) { el.innerHTML = ""; return; }
-  const exploree   = etat.zonesExplorees.includes(zoneId);
+  const exploree   = zoneEstExploree(zoneId);
   const inProgress = !!(etat.exploZoneEnCours && etat.exploZoneEnCours.zoneId === zoneId);
   let html = '<div class="carte-detail-panneau">';
   html += '<div class="carte-detail-titre">' + zone.icone + ' ' + zone.nom + '</div>';
@@ -8657,8 +8690,13 @@ function renduCarte(u) {
       '<div class="carte-zone-info" id="carte-zone-info"></div>';
     const clEl = document.getElementById("carte-col-lbls");
     if (clEl) {
+      const region = regionParId(idRegionExplorationCourante());
+      const columns = region ? region.columns : 1;
+      clEl.style.setProperty('--map-columns', columns);
       let h = '<div></div>';
-      "ABCDEFG".split("").forEach(function(l) { h += '<div class="carte-col-lbl">' + l + '</div>'; });
+      for (let column = 0; column < columns; column++) {
+        h += '<div class="carte-col-lbl">' + String.fromCharCode(65 + column) + '</div>';
+      }
       clEl.innerHTML = h;
     }
     carteDirty = false;
@@ -8675,7 +8713,7 @@ function renduZoneInfo() {
   // Build a cache key covering everything that affects this panel's content.
   // Timer elements (barre-explo-zone, timer-explo-zone) are updated via direct DOM — they
   // don't need a full rebuild, so we intentionally exclude running timers from the key.
-  const exploree = zoneId ? etat.zonesExplorees.includes(zoneId) : false;
+  const exploree = zoneId ? zoneEstExploree(zoneId) : false;
   const completedCamps = zoneId
     ? Object.keys(CONFIG.campaigns).filter(function(id) {
         return CONFIG.campaigns[id].zone === zoneId && etat.campaignsCompletees.includes(id);
@@ -8708,7 +8746,7 @@ function renduZoneInfo() {
   _zoneInfoKey = key;
 
   if (!zoneId) { el.innerHTML = '<p class="explo-vide">Select a zone to see its details.</p>'; return; }
-  const zone = ZONES_CARTE[zoneId];
+  const zone = zoneParId(zoneId);
   if (!zone) { el.innerHTML = ""; return; }
 
   let html = '<div class="zone-info-titre">' + (exploree ? zone.nom : 'Unknown zone') + '</div>';
@@ -8988,7 +9026,7 @@ function selectionnerKittySlot(kittyIndex) {
 
   if (exploModalOuvert.zoneId) {
     const { zoneId, slotIndex } = exploModalOuvert;
-    const z = ZONES_CARTE[zoneId];
+    const z = zoneParId(zoneId);
     if (!z) { fermerModalExplo(); return; }
     if (slotIndex === 0 && !estExplorateurDeZone(kittyIndex)) {
       afficherNotification("An Explorator is required in the first slot.");
@@ -9047,7 +9085,7 @@ function retirerKittySlot(campId, slotIndex) {
 // ── Zone exploration ─────────────────────────────────────────
 
 function explorationRetryFailures(kind, id) {
-  const catalog = kind === "zones" ? ZONES_CARTE : (kind === "campaigns" ? CONFIG.campaigns : null);
+  const catalog = kind === "zones" ? zonesRegion() : (kind === "campaigns" ? CONFIG.campaigns : null);
   if (!catalog || !Object.prototype.hasOwnProperty.call(catalog, id)) return 0;
   const completed = (kind === "zones" ? etat.zonesExplorees : etat.campaignsCompletees) || [];
   const pending = (kind === "zones" ? etat.resultatsExplorationZones : etat.resultatsCampaigns) || {};
@@ -9083,7 +9121,7 @@ function actualiserSelectionCarte() {
 }
 
 function clicZoneCarte(zoneId) {
-  const z = ZONES_CARTE[zoneId];
+  const z = zoneParId(zoneId);
   if (!z) return;
   if (z.type !== "home" && !explorateurPresent()) {
     afficherNotification("🧭 Train an Explorator in the Job Center to unlock this zone.");
@@ -9122,8 +9160,8 @@ function lancerExploZone() {
   if (!autoriserActionTableOperationsCamp()) return;
   const zoneId = carteZoneSelectionnee;
   if (!zoneId || etat.exploZoneEnCours || etat.resultatsExplorationZones[zoneId]) return;
-  const z = ZONES_CARTE[zoneId];
-  if (!z || etat.zonesExplorees.includes(zoneId)) return;
+  const z = zoneParId(zoneId);
+  if (!z || zoneEstExploree(zoneId)) return;
   const slots = carteExploSlots[zoneId] || [];
   if (!slots.every(function(k) { return k !== null; })) return;
   if (new Set(slots).size !== slots.length || slots.some(function(ki) {
@@ -9149,7 +9187,7 @@ function terminerExploZone() {
   if (!etat.exploZoneEnCours) return;
   const mission = etat.exploZoneEnCours;
   const zoneId = mission.zoneId;
-  const z = ZONES_CARTE[zoneId];
+  const z = zoneParId(zoneId);
   const power = Number.isFinite(mission.power) ? mission.power : explorationRetryPower("zones", zoneId, mission.kittyIndices.reduce(function(s, i) {
     return s + kittyEP(i);
   }, 0));
@@ -9182,7 +9220,7 @@ function kittyDisponiblePourNouvelleMission(kittyIndex) {
 function revelerZoneExploree(zoneId) {
   if (!autoriserActionTableOperationsCamp()) return;
   const resultat = etat.resultatsExplorationZones[zoneId];
-  const zone = ZONES_CARTE[zoneId];
+  const zone = zoneParId(zoneId);
   if (!resultat || !resultat.success || !zone) return;
   if (typeof jouerSonRevelationExploration === "function") jouerSonRevelationExploration();
   delete etat.resultatsExplorationZones[zoneId];
@@ -9196,7 +9234,7 @@ function revelerZoneExploree(zoneId) {
 
 function reessayerExploZone(zoneId) {
   const resultat = etat.resultatsExplorationZones[zoneId];
-  const zone = ZONES_CARTE[zoneId];
+  const zone = zoneParId(zoneId);
   if (!resultat || resultat.success || !zone) return;
   delete etat.resultatsExplorationZones[zoneId];
   carteExploSlots[zoneId] = new Array(zone.slots).fill(null);
@@ -26430,111 +26468,7 @@ document.addEventListener("keydown", function(e) {
 // 13c. RECRUITMENT MINI-GAME: PURRSUASION
 // ════════════════════════════════════════════════════════════
 
-// The legacy hold-and-release Recruit constants and dialogue pool were retired
-// when the Studio-backed Purrsuasion V2 became the production Recruit engine.
 var _recruitMiniJeuActif = false;
-var _recruitPitchActif = false;
-var _recruitTimerDemarre = false;
-var _recruitTrust = 18;
-var _recruitGoodTime = 0;
-var _recruitTimeLeft = 0;
-var _recruitNom = "";
-var _recruitDifficulty = 1;
-var _recruitSpeedMultiplier = 1;
-var _recruitDialoguePrecedent = -1;
-var _recruitTrackWidth = 0;
-
-function multiplicateurVitesseMiniJeuRecruit() {
-  const difficultyMultiplier = 1 + (Math.max(1, _recruitDifficulty) - 1) * 0.1;
-  return difficultyMultiplier;
-}
-
-function choisirDialogueRecruit() {
-  return null;
-}
-
-function arreterAnimationMiniJeuRecruit() {
-  arreterAnimationMiniJeu("recruit");
-}
-
-function mettreAJourMiniJeuRecruit() {
-  const track = document.getElementById("recruit-trust-track");
-  const fill = document.getElementById("recruit-trust-fill");
-  const marker = document.getElementById("recruit-trust-marker");
-  const time = document.getElementById("recruit-time-left");
-  const progress = document.getElementById("recruit-hold-progress");
-  const pct = Math.max(0, Math.min(100, _recruitTrust));
-  if (fill) {
-    fill.style.width = "100%";
-    fill.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")";
-  }
-  if (marker) {
-    marker.style.left = "0";
-    positionnerCurseurMiniJeu(marker, _recruitTrackWidth, pct);
-  }
-  if (track) track.setAttribute("aria-valuenow", Math.round(pct));
-  if (time) time.textContent = Math.max(0, _recruitTimeLeft).toFixed(1) + "s";
-  if (progress) progress.textContent = "Keep their interest: " + Math.min(RECRUIT_HOLD_TARGET, _recruitGoodTime).toFixed(1) + " / " + RECRUIT_HOLD_TARGET.toFixed(1) + "s";
-}
-
-function definirPitchRecruitActif(actif) {
-  _recruitPitchActif = Boolean(actif) && _recruitMiniJeuActif;
-  const bouton = document.getElementById("recruit-pitch-btn");
-  if (bouton) bouton.classList.toggle("pitch-active", _recruitPitchActif);
-}
-
-function demarrerTimerMiniJeuRecruit() {
-  if (_recruitTimerDemarre || !_recruitMiniJeuActif) return;
-  _recruitTimerDemarre = true;
-  const bouton = document.getElementById("recruit-pitch-btn");
-  if (bouton) bouton.textContent = "HOLD TO MAKE YOUR PITCH";
-  demarrerAnimationMiniJeu("recruit", function(dt, frameInfo) {
-    if (!_recruitMiniJeuActif) return false;
-    if (frameInfo.layoutChanged) {
-      const track = document.getElementById("recruit-trust-track");
-      _recruitTrackWidth = track ? track.clientWidth : 0;
-    }
-    _recruitTimeLeft -= dt;
-    _recruitSpeedMultiplier = multiplicateurVitesseMiniJeuRecruit();
-    const vitesse = (_recruitPitchActif ? RECRUIT_RISE_SPEED : -RECRUIT_FALL_SPEED)
-      * _recruitSpeedMultiplier;
-    _recruitTrust += vitesse * dt;
-    _recruitTrust = Math.max(0, _recruitTrust);
-    if (_recruitTrust >= RECRUIT_GOOD_MIN && _recruitTrust < RECRUIT_GOOD_MAX) _recruitGoodTime += dt;
-    mettreAJourMiniJeuRecruit();
-
-    if (_recruitTrust >= RECRUIT_GOOD_MAX) {
-      echouerMiniJeuRecruit("too-pushy");
-      return false;
-    }
-    if (_recruitGoodTime >= RECRUIT_HOLD_TARGET) {
-      reussirMiniJeuRecruit();
-      return false;
-    }
-    if (_recruitTimeLeft <= 0) {
-      echouerMiniJeuRecruit("timeout");
-      return false;
-    }
-    return true;
-  });
-}
-
-function commencerPitchRecruit(event) {
-  if (event) event.preventDefault();
-  demarrerTimerMiniJeuRecruit();
-  definirPitchRecruitActif(true);
-}
-
-function arreterPitchRecruit(event) {
-  if (event) event.preventDefault();
-  definirPitchRecruitActif(false);
-}
-
-function gererClavierPitchRecruit(event, actif) {
-  if (event.key !== " " && event.key !== "Enter") return;
-  event.preventDefault();
-  definirPitchRecruitActif(actif);
-}
 
 function ouvrirMiniJeuRecruit() {
   if (etat.chatons < 3 || !recrutementDepuisCampDebloque()
@@ -26542,28 +26476,9 @@ function ouvrirMiniJeuRecruit() {
   return lancerPurrsuasionV2Production();
 }
 
-function echouerMiniJeuRecruit(raison) {
-  if (!_recruitMiniJeuActif) return;
-  _recruitMiniJeuActif = false;
-  definirPitchRecruitActif(false);
-  arreterAnimationMiniJeuRecruit();
-  fermerDialogueModal("recruit-minijeu");
-  fermerSessionMiniJeu("recruit");
-  const visage = assurerVisageProchainChat();
-  demarrerRechargeCatch();
-  ajouterLog("event", "Failed to recruit " + _recruitNom + ".");
-  sauvegarder();
-  rendu();
-  ouvrirPopupRecruitResult(false, _recruitNom, visage);
-}
-
 function reussirMiniJeuRecruit() {
   if (!_recruitMiniJeuActif) return;
   _recruitMiniJeuActif = false;
-  definirPitchRecruitActif(false);
-  arreterAnimationMiniJeuRecruit();
-  fermerDialogueModal("recruit-minijeu");
-  fermerSessionMiniJeu("recruit");
   const confirmeCinquiemePourChemin = etat.chatons === 4
     && firstBoxTutorialBoiteDejaConstruite()
     && !progressionCamp().quickDialoguesSeen.includes("firstBox");
@@ -26651,15 +26566,8 @@ function fermerPopupRecruitResult() {
   renduStories();
 }
 
-document.addEventListener("pointerup", function() { definirPitchRecruitActif(false); });
-window.addEventListener("blur", function() { definirPitchRecruitActif(false); });
-document.addEventListener("selectstart", function(event) {
-  var target = event.target;
-  if (target && target.closest && target.closest(".recruit-minijeu-carte")) event.preventDefault();
-});
-
 // ════════════════════════════════════════════════════════════
-// 13c-bis. DEBUG-ONLY PURRSUASION V2 PROOF OF CONCEPT
+// 13c-bis. DEBUG-ONLY PURRSUASION PROOF OF CONCEPT
 // ════════════════════════════════════════════════════════════
 
 const PURRSUASION_V2_PROFILES = campGameplayData.purrsuasion.profiles;
@@ -27080,7 +26988,6 @@ function finaliserPurrsuasionV2Production(success) {
   const nom = _purrsuasionV2.visitorName;
   const visage = assurerVisageProchainChat();
   fermerPurrsuasionV2();
-  _recruitNom = nom;
   if (success) reussirMiniJeuRecruit();
   else {
     _recruitMiniJeuActif = false;
@@ -27499,6 +27406,33 @@ if (globalThis.CatInc.devTools) {
       carteDirty = true;
       exploTabDirty = true;
       _zoneInfoKey = null;
+    },
+    explorationRegionOptions: function() {
+      return Object.values(REGIONS).map(function(region) { return { id: region.id, label: region.nom }; }).concat([
+        { id: "devIrregularRegion", label: "DEV Irregular Region (fixture)" }
+      ]);
+    },
+    currentExplorationRegionId: idRegionExplorationCourante,
+    currentExplorationZones: zonesRegion,
+    selectExplorationRegion: function(regionId) {
+      if (regionId === "devIrregularRegion") {
+        const fixture = regionPreuveExplorationDev();
+        const validation = explorationGeometry.validateRegion(fixture);
+        if (!validation.ok) return validation;
+        explorationDevRegions = Object.assign({}, REGIONS, { devIrregularRegion: fixture });
+        explorationDevRegionId = fixture.id;
+      } else if (Object.prototype.hasOwnProperty.call(REGIONS, regionId)) {
+        explorationDevRegions = null;
+        explorationDevRegionId = regionId === etat.regionCourante ? null : regionId;
+      } else {
+        return { ok: false, reason: "Select a canonical region or the isolated DEV fixture." };
+      }
+      carteZoneSelectionnee = null;
+      explorationMobileVue = "map";
+      carteDirty = true;
+      exploTabDirty = true;
+      _zoneInfoKey = null;
+      return { ok: true, summary: "Showing " + regionParId(idRegionExplorationCourante()).nom + ". Player progress was not changed." };
     },
     advancedTrainingStatus: function() {
       return batimentFonctionnelCamp("jobCenter", 2).available

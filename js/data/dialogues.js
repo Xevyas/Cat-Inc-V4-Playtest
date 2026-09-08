@@ -1281,18 +1281,14 @@ function characterFromLine(line) {
   }
 
   function createPortrait(character) {
+    if (!character.portrait) return null;
     const portrait = document.createElement("span");
     portrait.className = "story-beat-portrait";
     portrait.setAttribute("aria-hidden", "true");
-    if (character.portrait) {
-      const image = document.createElement("img");
-      image.src = character.portrait;
-      image.alt = "";
-      portrait.appendChild(image);
-    } else {
-      portrait.classList.add("story-beat-portrait-initials");
-      portrait.textContent = character.initials || character.name.slice(0, 1);
-    }
+    const image = document.createElement("img");
+    image.src = character.portrait;
+    image.alt = "";
+    portrait.appendChild(image);
     return portrait;
   }
 
@@ -1328,11 +1324,11 @@ function characterFromLine(line) {
     bubble.appendChild(content);
     const portrait = createPortrait(character);
     if (character.side === "left") {
-      line.appendChild(portrait);
+      if (portrait) line.appendChild(portrait);
       line.appendChild(bubble);
     } else {
       line.appendChild(bubble);
-      line.appendChild(portrait);
+      if (portrait) line.appendChild(portrait);
     }
   }
 

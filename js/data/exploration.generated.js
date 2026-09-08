@@ -8,7 +8,7 @@
     return Object.freeze(value);
   }
   CatInc.data.exploration = deepFreeze({
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "regions": {
     "startingNeighbourhood": {
       "id": "startingNeighbourhood",
@@ -18,186 +18,328 @@
         "D1": {
           "id": "D1",
           "nom": "Home",
-          "col": 3,
-          "row": 1,
           "type": "home",
           "icone": "🏠",
           "difficulte": 0,
           "duree": 0,
           "slots": 0,
-          "description": ""
+          "description": "",
+          "gridLabel": "D1",
+          "occupiedCells": [
+            {
+              "x": 3,
+              "y": 1
+            }
+          ]
         },
         "C1": {
           "id": "C1",
           "nom": "Left neighbor",
-          "col": 2,
-          "row": 1,
           "type": "neighbor",
           "icone": "🏡",
           "difficulte": 10,
           "duree": 600,
           "slots": 2,
-          "description": "Looks like our humans but nextdoor. They probably throw useful items as well."
+          "description": "Looks like our humans but nextdoor. They probably throw useful items as well.",
+          "gridLabel": "C1",
+          "occupiedCells": [
+            {
+              "x": 2,
+              "y": 1
+            }
+          ]
         },
         "E1": {
           "id": "E1",
           "nom": "Right neighbor",
-          "col": 4,
-          "row": 1,
           "type": "neighbor",
           "icone": "🏡",
           "difficulte": 10,
           "duree": 600,
           "slots": 2,
-          "description": "Looks like our humans but nextdoor. They probably throw useful items as well."
+          "description": "Looks like our humans but nextdoor. They probably throw useful items as well.",
+          "gridLabel": "E1",
+          "occupiedCells": [
+            {
+              "x": 4,
+              "y": 1
+            }
+          ]
         },
         "B1": {
           "id": "B1",
           "nom": "Empty Garden",
-          "col": 1,
-          "row": 1,
           "type": "other",
           "icone": "🌿",
           "difficulte": 20,
           "duree": 1200,
           "slots": 2,
-          "description": "Untamed grass, nobody tending it. Smells like mice have been through."
+          "description": "Untamed grass, nobody tending it. Smells like mice have been through.",
+          "gridLabel": "B1",
+          "occupiedCells": [
+            {
+              "x": 1,
+              "y": 1
+            }
+          ]
         },
         "A1": {
           "id": "A1",
           "nom": "House under construction",
-          "col": 0,
-          "row": 1,
           "type": "chantier",
           "icone": "🏗️",
           "difficulte": 30,
           "duree": 1500,
           "slots": 2,
-          "description": "Humans are building something here. Lots of wood and scrap material piling up. Empty at night."
+          "description": "Humans are building something here. Lots of wood and scrap material piling up. Empty at night.",
+          "gridLabel": "A1",
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 1
+            }
+          ]
         },
         "F1": {
           "id": "F1",
           "nom": "Empty Garden",
-          "col": 5,
-          "row": 1,
           "type": "other",
           "icone": "🌿",
           "difficulte": 20,
           "duree": 1200,
           "slots": 2,
-          "description": "Untamed grass, nobody tending it. Smells like mice have been through."
+          "description": "Untamed grass, nobody tending it. Smells like mice have been through.",
+          "gridLabel": "F1",
+          "occupiedCells": [
+            {
+              "x": 5,
+              "y": 1
+            }
+          ]
         },
         "G1": {
           "id": "G1",
           "nom": "Squatted House",
-          "col": 6,
-          "row": 1,
           "type": "neighbor",
           "icone": "🏚️",
           "difficulte": 30,
           "duree": 1500,
           "slots": 2,
-          "description": "Something feels off about this place. No usual human signs. Saw a light through the boards at night once."
+          "description": "Something feels off about this place. No usual human signs. Saw a light through the boards at night once.",
+          "gridLabel": "G1",
+          "occupiedCells": [
+            {
+              "x": 6,
+              "y": 1
+            }
+          ]
         },
         "residentialStreet": {
           "id": "residentialStreet",
           "nom": "Residential Bloc Street",
-          "col": 0,
-          "row": 2,
-          "colSpan": 7,
-          "rowSpan": 1,
           "type": "street",
           "icone": "🛣️",
           "difficulte": 30,
           "duree": 1800,
           "slots": 2,
-          "description": "The street in front of the houses. Bins come out on Thursdays. Dogs in the morning — Be careful."
+          "description": "The street in front of the houses. Bins come out on Thursdays. Dogs in the morning — Be careful.",
+          "gridLabel": "A2",
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 2
+            },
+            {
+              "x": 1,
+              "y": 2
+            },
+            {
+              "x": 2,
+              "y": 2
+            },
+            {
+              "x": 3,
+              "y": 2
+            },
+            {
+              "x": 4,
+              "y": 2
+            },
+            {
+              "x": 5,
+              "y": 2
+            },
+            {
+              "x": 6,
+              "y": 2
+            }
+          ]
         },
         "commercialStreet": {
           "id": "commercialStreet",
           "nom": "Commercial Street",
-          "col": 3,
-          "row": 3,
-          "colSpan": 1,
-          "rowSpan": 2,
           "type": "street",
           "icone": "🛣️",
           "difficulte": 40,
           "duree": 2400,
           "slots": 2,
-          "description": "A busy road. Cars and trucks, engines idling. Smells like petrol. I don't like it."
+          "description": "A busy road. Cars and trucks, engines idling. Smells like petrol. I don't like it.",
+          "gridLabel": "D3",
+          "occupiedCells": [
+            {
+              "x": 3,
+              "y": 3
+            },
+            {
+              "x": 3,
+              "y": 4
+            }
+          ]
         },
         "gasStation": {
           "id": "gasStation",
           "nom": "Gas Station",
-          "col": 0,
-          "row": 3,
-          "colSpan": 2,
-          "rowSpan": 2,
           "type": "shop",
           "icone": "⛽",
           "difficulte": 50,
           "duree": 3000,
           "slots": 2,
-          "description": "That brightly lit corner that never closes. Cars are stopping in front and leaving a few minutes after. Weird place."
+          "description": "That brightly lit corner that never closes. Cars are stopping in front and leaving a few minutes after. Weird place.",
+          "gridLabel": "A3",
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 3
+            },
+            {
+              "x": 0,
+              "y": 4
+            },
+            {
+              "x": 1,
+              "y": 3
+            },
+            {
+              "x": 1,
+              "y": 4
+            }
+          ]
         },
         "parkingLeft": {
           "id": "parkingLeft",
           "nom": "Parking",
-          "col": 2,
-          "row": 3,
-          "colSpan": 1,
-          "rowSpan": 2,
           "type": "other",
           "icone": "🅿️",
           "difficulte": 40,
           "duree": 2400,
           "slots": 2,
-          "description": "A wide open area full of parked cars. Lots of shadows. Quiet at night."
+          "description": "A wide open area full of parked cars. Lots of shadows. Quiet at night.",
+          "gridLabel": "C3",
+          "occupiedCells": [
+            {
+              "x": 2,
+              "y": 3
+            },
+            {
+              "x": 2,
+              "y": 4
+            }
+          ]
         },
         "parkingRight": {
           "id": "parkingRight",
           "nom": "Parking",
-          "col": 4,
-          "row": 3,
-          "colSpan": 1,
-          "rowSpan": 2,
           "type": "other",
           "icone": "🅿️",
           "difficulte": 40,
           "duree": 2400,
           "slots": 2,
-          "description": "A wide open area full of parked cars. Lots of shadows. Quiet at night."
+          "description": "A wide open area full of parked cars. Lots of shadows. Quiet at night.",
+          "gridLabel": "E3",
+          "occupiedCells": [
+            {
+              "x": 4,
+              "y": 3
+            },
+            {
+              "x": 4,
+              "y": 4
+            }
+          ]
         },
         "supermarket": {
           "id": "supermarket",
           "nom": "Supermarket",
-          "col": 5,
-          "row": 3,
-          "colSpan": 2,
-          "rowSpan": 2,
           "type": "shop",
           "icone": "🛒",
           "difficulte": 50,
           "duree": 3000,
           "slots": 2,
-          "description": "The glass building where humans carry out lots of plastic bags. Smells great with loads of unidentified smells. I need to get in there."
+          "description": "The glass building where humans carry out lots of plastic bags. Smells great with loads of unidentified smells. I need to get in there.",
+          "gridLabel": "F3",
+          "occupiedCells": [
+            {
+              "x": 5,
+              "y": 3
+            },
+            {
+              "x": 5,
+              "y": 4
+            },
+            {
+              "x": 6,
+              "y": 3
+            },
+            {
+              "x": 6,
+              "y": 4
+            }
+          ]
         },
         "forestEntrance": {
           "id": "forestEntrance",
           "nom": "Forest Entrance",
-          "col": 0,
-          "row": 5,
-          "colSpan": 7,
-          "rowSpan": 1,
           "type": "forest",
           "icone": "🌲",
           "difficulte": 60,
           "duree": 3600,
           "slots": 2,
-          "description": "Where the street ends and the trees begin. Nature seems to have resisted human greediness. At least for now..."
+          "description": "Where the street ends and the trees begin. Nature seems to have resisted human greediness. At least for now...",
+          "gridLabel": "A5",
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 5
+            },
+            {
+              "x": 1,
+              "y": 5
+            },
+            {
+              "x": 2,
+              "y": 5
+            },
+            {
+              "x": 3,
+              "y": 5
+            },
+            {
+              "x": 4,
+              "y": 5
+            },
+            {
+              "x": 5,
+              "y": 5
+            },
+            {
+              "x": 6,
+              "y": 5
+            }
+          ]
         }
-      }
+      },
+      "columns": 7,
+      "rows": 5
     }
   },
   "campaigns": {
