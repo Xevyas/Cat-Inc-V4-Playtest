@@ -4,11 +4,17 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
   const GENERATED_PURRSUASION = CatInc.data.dialogueCatalog && CatInc.data.dialogueCatalog.purrsuasion;
+  function liveCatFaceSource(faceId) {
+    const items = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
+      ? CatInc.data.liveCatFaces.items : [];
+    const face = items.find(function(item) { return item.id === faceId; });
+    return face ? face.runtimePath + "?v=live-r" + face.revision : "";
+  }
 
   const LEGACY_CHARACTERS = Object.freeze({
     bernard: Object.freeze({ id: "bernardo", name: "Bernardo", side: "left", portrait: "img/Cat faces/Bernardo.png" }),
-    mochi: Object.freeze({ id: "mochi", name: "Mochi", side: "right", portrait: "img/Cat faces/Mochi_Final.png" }),
-    luna: Object.freeze({ id: "luna", name: "Luna", side: "right", portrait: "img/Cat faces/Luna_Final.png" }),
+    mochi: Object.freeze({ id: "mochi", name: "Mochi", side: "right", portrait: liveCatFaceSource("cat-faces-mochi-v2") }),
+    luna: Object.freeze({ id: "luna", name: "Luna", side: "right", portrait: liveCatFaceSource("cat-faces-luna-v2") }),
     incrementor: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor.png" }),
     incrementorAmused: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor-amused.png" }),
     incrementorLaugh: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor-laugh.png" }),
@@ -21,7 +27,7 @@
   const LEGACY_SCENES = Object.freeze([
     Object.freeze({ id: "ecran-intro", name: "Introduction", flag: "introVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Intro.webp", alt: "A child reaches toward Bernardo while their mother holds their hand." }) }),
     Object.freeze({ id: "ecran-story-1", name: "Bernardo's plan begins", flag: "story1Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." }) }),
-    Object.freeze({ id: "ecran-story-2", name: "Mochi joins the gang", flag: "story2Vue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Mochi_Final.png", alt: "Portrait of Mochi." }) }),
+    Object.freeze({ id: "ecran-story-2", name: "Mochi joins the gang", flag: "story2Vue", asset: Object.freeze({ type: "icon", src: liveCatFaceSource("cat-faces-mochi-v2"), alt: "Portrait of Mochi." }) }),
     Object.freeze({ id: "ecran-story-3", name: "The adventure begins", flag: "story3Vue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.webp", alt: "Bernardo addresses two other kittens in the garden." }) }),
     Object.freeze({ id: "ecran-story-camp-intro", name: "A garden to rebuild", flag: "storyCampIntroVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 3.webp", alt: "Bernardo, Mochi and Luna inspect their cluttered new garden." }) }),
     Object.freeze({ id: "ecran-story-camp-full", name: "Room for one more", flag: "storyCampFullVue", asset: Object.freeze({ type: "icon", src: "img/Buildings/Cardboard Box_Final.png", alt: "A Cardboard Box shelter." }) }),

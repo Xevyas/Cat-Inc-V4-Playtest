@@ -21,14 +21,14 @@
       "id": "mochi",
       "name": "Mochi",
       "side": "right",
-      "portrait": "img/Cat faces/Mochi_Final.png",
+      "portrait": "img/Cat faces/mochi-v2.png",
       "speakerKey": "mochi"
     },
     "luna": {
       "id": "luna",
       "name": "Luna",
       "side": "right",
-      "portrait": "img/Cat faces/Luna_Final.png",
+      "portrait": "img/Cat faces/luna-v2.png",
       "speakerKey": "luna"
     },
     "cannelle": {
@@ -114,40 +114,31 @@
       "presetId": "sleepy",
       "presetRevision": 1
     },
-    "mochiPresetChewingCatnip": {
+    "mochiPresetShocked": {
       "id": "mochi",
-      "name": "Mochi · Chewing catnip",
+      "name": "Mochi · Shocked",
       "side": "right",
-      "portrait": "img/Cat faces/Presets/cat-faces-mochi/chewing-catnip.png",
+      "portrait": "img/Cat faces/Presets/cat-faces-mochi-v2/shocked.png",
       "speakerKey": "mochi",
-      "presetId": "chewing-catnip",
-      "presetRevision": 1
-    },
-    "mochiPresetSurprised": {
-      "id": "mochi",
-      "name": "Mochi · Surprised",
-      "side": "right",
-      "portrait": "img/Cat faces/Presets/cat-faces-mochi/surprised.png",
-      "speakerKey": "mochi",
-      "presetId": "surprised",
-      "presetRevision": 1
+      "presetId": "shocked",
+      "presetRevision": 2
     },
     "mochiPresetAngry": {
       "id": "mochi",
-      "name": "Mochi · Angry",
+      "name": "Mochi · angry",
       "side": "right",
-      "portrait": "img/Cat faces/Presets/cat-faces-mochi/angry.png",
+      "portrait": "img/Cat faces/Presets/cat-faces-mochi-v2/angry.png",
       "speakerKey": "mochi",
       "presetId": "angry",
       "presetRevision": 1
     },
-    "lunaPresetAmused": {
+    "lunaPresetShocked": {
       "id": "luna",
-      "name": "Luna · Amused",
+      "name": "Luna · shocked",
       "side": "right",
-      "portrait": "img/Cat faces/Presets/cat-faces-luna/amused.png",
+      "portrait": "img/Cat faces/Presets/cat-faces-luna-v2/shocked.png",
       "speakerKey": "luna",
-      "presetId": "amused",
+      "presetId": "shocked",
       "presetRevision": 1
     },
     "incrementorPresetAmusedMockery": {
@@ -698,7 +689,7 @@
           ],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "\u003cem\u003eMeow?\u003c/em\u003e \u003cspan class=\"intro-traduit\"\u003e(Luna too? That means the whole gang will be together!)\u003c/span\u003e"
         },
         {
@@ -713,7 +704,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/Cat faces/Mochi_Final.png",
+        "src": "img/Cat faces/mochi-v2.png",
         "alt": "Portrait of Mochi."
       }
     },
@@ -903,7 +894,7 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "We cannot leave them out there."
         },
         {
@@ -958,7 +949,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Especially when the leader finds a warm place to do it from."
         },
         {
@@ -993,7 +984,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "At least this plan makes your talking useful."
         },
         {
@@ -1104,7 +1095,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Mochi, I already told you that eating snacks all day would catch up with you..."
         },
         {
@@ -1250,7 +1241,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Good. I already dislike his laugh."
         },
         {
@@ -1291,14 +1282,14 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "Bernardo! The humans cut trees into pieces we can carry. That was very thoughtful of them."
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "I don't think they prepared those logs for us Mochi, but good catch."
         },
         {
@@ -1319,7 +1310,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Until the humans ask for it back, which may be difficult once it becomes a house."
         },
         {
@@ -1425,7 +1416,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Mostly things that should not be food."
         },
         {
@@ -1547,14 +1538,14 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "They left without saying goodbye. Did we do something wrong?"
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "They finally noticed that we turned their garden into a starting society."
         },
         {
@@ -1700,7 +1691,7 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "A flat square thing that smells like dust and humans was found in expedition."
         },
         {
@@ -1721,7 +1712,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "You have never looked happier."
         },
         {
@@ -1797,7 +1788,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "You read an entire book and kept the page with the biggest title."
         },
         {
@@ -1811,7 +1802,7 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "Have I heard Chief Eating Officer?"
         },
         {
@@ -1846,7 +1837,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "That was a very polished no."
         }
       ],
@@ -1880,14 +1871,14 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "Our first meal is ready ! And it still needs a quality tester. I volunteer."
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Of course you do."
         },
         {
@@ -1915,7 +1906,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Your courage continues to amaze us."
         }
       ],
@@ -1977,14 +1968,14 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "Will our team get matching scarves?"
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "He heard team and immediately planned a parade."
         },
         {
@@ -2012,7 +2003,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "I couldn't be less sure about anything else."
         },
         {
@@ -2245,14 +2236,14 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "Is it dangerous?"
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Worse. It has feathers."
         },
         {
@@ -2280,7 +2271,7 @@
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
-          "portraitClass": "lunaPresetAmused",
+          "portraitClass": "luna",
           "html": "Please keep explaining stealth out loud. The bird may learn things."
         },
         {
@@ -2303,7 +2294,7 @@
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
-          "portraitClass": "mochiPresetSurprised",
+          "portraitClass": "mochiPresetShocked",
           "html": "Was that the signal?"
         },
         {

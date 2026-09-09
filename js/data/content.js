@@ -507,12 +507,22 @@ const CHECK_ICON = '<img src="img/interface/✅_Final.png?v=0.0026" class="check
 const LIVE_BERNARDO_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
   ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-bernardo"; })
   : null;
+const LIVE_MOCHI_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
+  ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-mochi-v2"; })
+  : null;
+const LIVE_LUNA_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
+  ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-luna-v2"; })
+  : null;
 const CAT_FACES = {
   bernardo: LIVE_BERNARDO_FACE
     ? LIVE_BERNARDO_FACE.runtimePath + "?v=live-r" + LIVE_BERNARDO_FACE.revision
     : "",
-  mochi:    "img/Cat faces/Mochi_Final.png?v=0.0026",
-  luna:     "img/Cat faces/Luna_Final.png?v=0.0026",
+  mochi: LIVE_MOCHI_FACE
+    ? LIVE_MOCHI_FACE.runtimePath + "?v=live-r" + LIVE_MOCHI_FACE.revision
+    : "",
+  luna: LIVE_LUNA_FACE
+    ? LIVE_LUNA_FACE.runtimePath + "?v=live-r" + LIVE_LUNA_FACE.revision
+    : "",
   alt1:     "img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026",
   alt2:     "img/Cat faces/Alternative Kitty face 2_Final.png?v=0.0026",
   alt3:     "img/Cat faces/Alternative Kitty face 3_Final.png?v=0.0026",

@@ -440,7 +440,18 @@ function normaliserVisageChaton(kitty) {
 
 function kittyIconHtml(kitty) {
   if (!kitty || !kitty.visage) return KITTY_ICON;
-  return '<img src="' + echapperAttributHtml(kitty.visage) + '" class="kitty-icon" alt="' + echapperAttributHtml(kitty.nom) + '">';
+  const framing = CatInc.ui.catFaceFraming.variablesForSource(kitty.visage);
+  const framingHtml = framing
+    ? ' cat-face-runtime-framed" data-cat-face-source="' + echapperAttributHtml(kitty.visage)
+      + '" style="--cat-face-frame-scale:' + framing.scale
+      + ';--cat-face-frame-x:' + framing.x + '%;--cat-face-frame-y:' + framing.y + '%"'
+    : '"';
+  return '<img src="' + echapperAttributHtml(kitty.visage) + '" class="kitty-icon' + framingHtml
+    + ' alt="' + echapperAttributHtml(kitty.nom) + '">';
+}
+
+function portraitSelectionKittyHtml(kitty, className) {
+  return '<span class="cat-selector-portrait ' + className + '">' + kittyIconHtml(kitty) + '</span>';
 }
 
 function recetteChoisieCount(recipeId) {
@@ -2583,11 +2594,20 @@ function sourceVisageChatLive(face) {
   return face ? face.runtimePath + "?v=live-r" + face.revision : "";
 }
 
+function definirSourceImageRuntime(image, source) {
+  if (!image) return false;
+  const framing = CatInc.ui && CatInc.ui.catFaceFraming;
+  if (framing) return framing.setSource(image, source);
+  if (image.getAttribute("src") === source) return false;
+  image.setAttribute("src", source);
+  return true;
+}
+
 function actualiserPortraitsBernardoCanoniques() {
   const src = sourceVisageChatLive(visageChatLiveParId("cat-faces-bernardo"));
   if (!src) return;
   document.querySelectorAll("[data-bernardo-cat-face]").forEach(function(image) {
-    if (image.getAttribute("src") !== src) image.setAttribute("src", src);
+    definirSourceImageRuntime(image, src);
   });
 }
 
@@ -2643,7 +2663,7 @@ function appliquerImageProfilCamp(image, selected) {
   const src = selected
     ? selected.face.runtimePath + "?v=live-r" + selected.face.revision
     : CAMP_PROFILE_NEUTRAL_AVATAR;
-  if (image.getAttribute("src") !== src) image.setAttribute("src", src);
+  definirSourceImageRuntime(image, src);
   image.alt = selected ? selected.kitty.nom : "";
 }
 
@@ -4756,7 +4776,7 @@ function renduSequence() {
   // their progress physically on the Camp map instead.
   ecrireStyle(domParId("conteneur-barre-sequence"), "display", recruit ? "none" : "block");
   setBarreProgress("barre-sequence", progressionSequence());
-  if (marker && marker.getAttribute("src") !== prochainVisage) marker.setAttribute("src", prochainVisage);
+  definirSourceImageRuntime(marker, prochainVisage);
   if (marker && marker.getAttribute("alt") !== prochainNom) marker.setAttribute("alt", prochainNom);
   ecrireTexte(domParId("info-sequence-timer"), campPlein
     ? etat.chatons + " / " + capaciteLogementCamp() + " places"
@@ -4801,7 +4821,7 @@ function renduVisiteurCampRecrutement() {
   }
   const visage = assurerVisageProchainChat();
   const portrait = document.getElementById("camp-recruit-visitor-face");
-  if (portrait && portrait.getAttribute("src") !== visage) portrait.setAttribute("src", visage);
+  definirSourceImageRuntime(portrait, visage);
   const prochainNom = nomProchainChat();
   if (portrait && portrait.getAttribute("alt") !== prochainNom) portrait.setAttribute("alt", prochainNom);
   const enCours = etat.sequenceEnCours && tempsRestantSequence() > 0;
@@ -8986,7 +9006,7 @@ function renduModalExplo() {
 
     html += '<div class="explo-modal-kitty' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for this exploration") + ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
-    html += '<span class="explo-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
+    html += portraitSelectionKittyHtml(k, "explo-modal-kitty-emoji");
     html += '<div class="explo-modal-kitty-info">';
     html += '<span class="explo-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
     html += '<span class="explo-modal-kitty-profession">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
@@ -11311,7 +11331,7 @@ function renduModalJC() {
         const status = unavailable ? kittyAllocationLabel(entry.index).text : "";
         html += '<div class="jc-modal-kitty' + (unavailable ? ' jc-modal-kitty-disabled' : '') + '"'
           + (unavailable ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for engineering training") + ' onclick="selectionnerIngenieurLaboratoire(' + entry.index + ')"') + '>';
-        html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
+        html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
         html += '<div class="jc-modal-kitty-info"><span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span><span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span></div>';
         if (status) html += '<div class="jc-modal-kitty-bonus"><span class="jc-modal-kitty-status">' + echapperAttributHtml(status) + '</span></div>';
         html += '</div>';
@@ -11337,6 +11357,7 @@ function renduModalJC() {
         const busyLbl  = busy ? kittyAllocationLabel(idx).text : "";
         html += '<div class="jc-modal-kitty' + (busy ? ' jc-modal-kitty-disabled' : '') + '"' +
                 (busy ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for job training") + ' onclick="selectionnerKittyFormation(' + idx + ')"') + '>';
+        html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
         html += '<div class="jc-modal-kitty-info">';
         html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
         html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
@@ -11385,6 +11406,7 @@ function renduModalJC() {
           const statutTxt = occupe ? kittyAllocationLabel(idx).text : "";
           html += '<div class="jc-modal-kitty' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
                   (occupe ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " as manager") + ' onclick="assignerManager(\'' + famille + '\',' + idx + ')"') + '>';
+          html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
           html += '<div class="jc-modal-kitty-info">';
           html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
           html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
@@ -11408,7 +11430,7 @@ function renduModalJC() {
         const idx = entry.i;
         const k = entry.k;
         html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
-        html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
+        html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
         html += '<div class="jc-modal-kitty-info">';
         html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
         html += '<span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
@@ -11915,7 +11937,7 @@ function htmlLigneAffectationKitty(options) {
   return '<div class="' + rowClass + '"'
     + attributsDonneesLigneAffectationKitty(config.data)
     + (config.attributes || "") + '>'
-    + '<span class="worker-modal-kitty-emoji">' + (config.iconHtml || "") + '</span>'
+    + '<span class="cat-selector-portrait worker-modal-kitty-emoji">' + (config.iconHtml || "") + '</span>'
     + '<div class="worker-modal-kitty-info">'
     + '<span class="worker-modal-kitty-nom">' + echapperAttributHtml(config.name || "") + '</span>'
     + secondaryHtml + '</div>'
@@ -14250,15 +14272,19 @@ function afficherCiblePrologue() {
   target.classList.add("prologue-cat-target-" + cat.position);
   const src = assurerVisageProchainChat();
   const appliquerCadrage = function() {
-    face.classList.remove("camp-cat-face-normalized");
+    face.classList.remove("cat-face-runtime-framed");
+    delete face.dataset.catFaceSource;
     ["width", "height", "left", "top", "transform"].forEach(function(property) {
       face.style[property] = "";
     });
     normaliserImageVisageCamp(face);
   };
-  if (face.getAttribute("src") !== src) {
+  const sourceActuelle = CatInc.ui && CatInc.ui.catFaceFraming
+    ? CatInc.ui.catFaceFraming.originalSource(face)
+    : face.getAttribute("src");
+  if (sourceActuelle !== src) {
     face.addEventListener("load", appliquerCadrage, { once: true });
-    face.setAttribute("src", src);
+    definirSourceImageRuntime(face, src);
   } else {
     appliquerCadrage();
   }
@@ -20196,7 +20222,7 @@ function renduBoutiqueMarketStall() {
   const availability = disponibiliteBoutiqueMarketStall();
   const level = cannelle ? Math.max(0, Number(cannelle.niveau) || 0) : 0;
   const portrait = document.getElementById("market-stall-shop-portrait");
-  if (portrait) portrait.src = cannelle && cannelle.visage || CAT_FACES.cannelle;
+  definirSourceImageRuntime(portrait, cannelle && cannelle.visage || CAT_FACES.cannelle);
   ecrireTexte(document.getElementById("market-stall-shop-level"), level);
   ecrireTexte(document.getElementById("market-stall-shop-tier-hint"),
     "New items at Level " + SHOP_DATA.nextMerchandiseLevel(level));
@@ -21058,7 +21084,7 @@ function renduModalAllocationMaisonCamp() {
     } else if (selected) {
       row.setAttribute("aria-current", "true");
     }
-    row.innerHTML = '<span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+    row.innerHTML = portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
       + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty)) + '</small></span>'
       + '<span class="camp-demolition-kitty-status">' + echapperAttributHtml(status) + '</span>';
@@ -21138,7 +21164,7 @@ function renduModalConstructionMaisonCamp() {
         ? ' aria-disabled="true"'
         : attributsActivationClavier("Assign " + kitty.nom + " to build " + type.label)
           + ' onclick="selectionnerKittyConstructionMaisonCamp(' + kittyIndex + ')"')
-      + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+      + '>' + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
       + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty))
       + '</small></span><span class="camp-demolition-kitty-status">'
@@ -21355,7 +21381,7 @@ function renduModalConstructionBatimentCamp() {
     html += '<div class="camp-demolition-kitty' + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (busy ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + kitty.nom + " to build " + type.label)
         + ' onclick="selectionnerKittyConstructionBatimentCamp(' + kittyIndex + ')"') + '>'
-      + '<span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+      + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
       + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty)) + '</small></span>'
       + '<span class="camp-demolition-kitty-status">' + echapperAttributHtml(status) + '</span></div>';
@@ -21642,7 +21668,7 @@ function renduModalAmeliorationCamp() {
     html += '<div class="camp-demolition-kitty' + (disabled ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + kitty.nom + " to upgrade " + type.label)
         + ' onclick="selectionnerKittyAmeliorationCamp(' + kittyIndex + ')"') + '>'
-      + '<span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+      + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
       + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty)) + '</small></span>'
       + '<span class="camp-demolition-kitty-status">' + echapperAttributHtml(status) + '</span></div>';
@@ -21789,7 +21815,7 @@ function renduModalReparationCamp() {
         ? ' aria-disabled="true"'
         : attributsActivationClavier("Assign " + kitty.nom + " to repair " + type.label)
           + ' onclick="selectionnerKittyReparationCamp(' + kittyIndex + ')"')
-      + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+      + '>' + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
       + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty))
       + '</small></span><span class="camp-demolition-kitty-status">'
@@ -21949,7 +21975,7 @@ function renduModalDemolitionCamp() {
         ? ' aria-disabled="true"'
         : attributsActivationClavier("Assign " + kitty.nom + " to demolish " + obstacle.label)
           + ' onclick="selectionnerKittyDemolitionCamp(' + kittyIndex + ')"')
-      + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+      + '>' + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
       + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
       + '</strong><small>' + echapperAttributHtml(libelleProfessionNiveauKitty(kitty))
       + '</small></span><span class="camp-demolition-kitty-status">'
@@ -24097,79 +24123,14 @@ function indexerPresencesChatsCamp() {
   return presences;
 }
 
-const campPortraitMetricsCache = new Map();
-
-function appliquerCadrageVisageCamp(image, metrics) {
-  if (!image || !metrics) return;
-  image.classList.add("camp-cat-face-normalized");
-  image.style.width = metrics.width + "%";
-  image.style.height = metrics.height + "%";
-  image.style.left = "50%";
-  image.style.top = "50%";
-  image.style.transform = "translate(-" + metrics.centerX + "%, -" + metrics.centerY + "%)";
-}
-
-function mesurerPixelsVisageCamp(image) {
-  const largeurSource = image.naturalWidth;
-  const hauteurSource = image.naturalHeight;
-  if (!largeurSource || !hauteurSource) return null;
-  const limite = 256;
-  const ratio = Math.min(1, limite / Math.max(largeurSource, hauteurSource));
-  const largeur = Math.max(1, Math.round(largeurSource * ratio));
-  const hauteur = Math.max(1, Math.round(hauteurSource * ratio));
-  const canvas = document.createElement("canvas");
-  canvas.width = largeur;
-  canvas.height = hauteur;
-  const contexte = canvas.getContext("2d", { willReadFrequently: true });
-  if (!contexte) return null;
-  contexte.drawImage(image, 0, 0, largeur, hauteur);
-  const pixels = contexte.getImageData(0, 0, largeur, hauteur).data;
-  let gauche = largeur;
-  let droite = -1;
-  let haut = hauteur;
-  let bas = -1;
-  for (let y = 0; y < hauteur; y += 1) {
-    for (let x = 0; x < largeur; x += 1) {
-      if (pixels[(y * largeur + x) * 4 + 3] <= 12) continue;
-      gauche = Math.min(gauche, x);
-      droite = Math.max(droite, x);
-      haut = Math.min(haut, y);
-      bas = Math.max(bas, y);
-    }
-  }
-  if (droite < gauche || bas < haut) return null;
-  const largeurVisible = droite - gauche + 1;
-  const hauteurVisible = bas - haut + 1;
-  const dimensionVisible = Math.max(largeurVisible, hauteurVisible);
-  const remplissage = 84;
-  return {
-    width: Number((remplissage * largeur / dimensionVisible).toFixed(3)),
-    height: Number((remplissage * hauteur / dimensionVisible).toFixed(3)),
-    centerX: Number((((gauche + droite + 1) / 2) / largeur * 100).toFixed(3)),
-    centerY: Number((((haut + bas + 1) / 2) / hauteur * 100).toFixed(3))
-  };
-}
-
 function normaliserImageVisageCamp(image) {
-  if (!image) return;
-  const appliquer = function() {
-    const src = image.currentSrc || image.src;
-    let metrics = campPortraitMetricsCache.get(src);
-    if (!metrics) {
-      try {
-        metrics = mesurerPixelsVisageCamp(image);
-      } catch (erreur) {
-        metrics = null;
-      }
-      if (metrics) campPortraitMetricsCache.set(src, metrics);
-    }
-    if (metrics) appliquerCadrageVisageCamp(image, metrics);
-  };
-  if (image.complete && image.naturalWidth) {
-    requestAnimationFrame(appliquer);
-  } else {
-    image.addEventListener("load", appliquer, { once: true });
-  }
+  if (image) image.classList.add("camp-cat-face-normalized");
+  const framing = CatInc.ui && CatInc.ui.catFaceFraming;
+  if (framing) framing.frameImage(image);
+}
+
+function normaliserImageVisage(image) {
+  normaliserImageVisageCamp(image);
 }
 
 function configurerTimerTacheCamp(timer, tache) {
@@ -26392,7 +26353,7 @@ function ouvrirMiniJeuCatch() {
   const icone = document.getElementById("cat-catch-target-icone");
   if (titre) titre.textContent = "Catch " + _catCatchNom + "!";
   if (icone) {
-    icone.src = visage;
+    definirSourceImageRuntime(icone, visage);
     icone.alt = _catCatchNom + " target";
   }
 
@@ -26518,7 +26479,7 @@ function ouvrirPopupRecruitResult(reussi, nom, visage) {
   if (card) card.classList.toggle("recruit-result-failed", !reussi);
   if (title) title.textContent = reussi ? "Recruitment successful!" : "Recruitment failed";
   if (portrait) {
-    portrait.src = visage;
+    definirSourceImageRuntime(portrait, visage);
     portrait.alt = nom + " portrait";
   }
   if (badge) {
@@ -26723,7 +26684,7 @@ function demarrerPurrsuasionV2(profile, debug) {
   const leave = document.getElementById("purrsuasion-v2-leave");
   if (visitorName) visitorName.textContent = _purrsuasionV2.visitorName;
   if (visitorPortrait) {
-    if (!debug) visitorPortrait.src = assurerVisageProchainChat();
+    if (!debug) definirSourceImageRuntime(visitorPortrait, assurerVisageProchainChat());
     visitorPortrait.alt = _purrsuasionV2.visitorName;
   }
   if (leave) leave.textContent = debug ? "Leave POC" : "Give up";

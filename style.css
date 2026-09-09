@@ -6722,15 +6722,25 @@ body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
   border-radius: 50%;
   pointer-events: none;
 }
-.camp-resident-cat img.camp-cat-face-normalized,
-.camp-location-cat img.camp-cat-face-normalized,
-.camp-supervisor-bernardo img.camp-cat-face-normalized {
-  position: absolute;
+.cat-face-runtime-framed {
   max-width: none;
   max-height: none;
   padding: 0;
-  object-fit: fill;
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: translate(var(--cat-face-frame-x, 0), var(--cat-face-frame-y, 0))
+    scale(var(--cat-face-frame-scale, 1)) !important;
+  transform-origin: center;
   pointer-events: none;
+}
+.cat-face-runtime-framed,
+.cat-selector-portrait .kitty-icon {
+  transition: none !important;
+  animation: none !important;
+}
+.kitty-icon.cat-face-runtime-framed {
+  width: 100% !important;
+  height: 100% !important;
 }
 .camp-prototype-item .camp-location-cat-more,
 .camp-prototype-obstacle .camp-location-cat-more {
@@ -7805,6 +7815,13 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 .kitty-photo-tier-4 { background: #f09595; border-color: #e24b4a; }
 .kitty-photo-tier-5 { background: #ef9f27; border-color: #ba7517; }
 .kitty-photo-tier-6 { background: conic-gradient(#ef9f27, #e24b4a, #7f77dd, #ef9f27); border-color: #ba7517; border-width: 2.5px; }
+
+#contenu-gang .kitty-photo {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 
 .kitty-carte-active {
   border-color: var(--couleur-accent);
