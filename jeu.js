@@ -5424,6 +5424,11 @@ function raisonPauseRecette(pair, capacite, stockage) {
       : "");
 }
 
+function raisonPauseResumeWork(pair, capacite, stockage) {
+  if ((!capacite || capacite.available) && stockage && stockage.plein) return "Storage full";
+  return raisonPauseRecette(pair, capacite, stockage);
+}
+
 function renduWorkSupervision(summary, unlockedFamilies) {
   const stateParts = ["stylish"];
   const html = unlockedFamilies.map(function(familyId) {
@@ -5432,7 +5437,7 @@ function renduWorkSupervision(summary, unlockedFamilies) {
       const pair = paireRecette(slot.recipeId);
       const kitty = pair && slot.kittyIndex !== null ? etat.kittiesData[slot.kittyIndex] : null;
       const stockage = pair ? etatStockageRessource(pair.procRes) : null;
-      const pause = pair ? raisonPauseRecette(pair, capaciteRecetteWork(pair, unlocks()), stockage) : "";
+      const pause = pair ? raisonPauseResumeWork(pair, capaciteRecetteWork(pair, unlocks()), stockage) : "";
       const status = !pair ? "Empty slot" : pause ? "Paused · " + pause : !kitty ? "Waiting for a Cat" : phaseActiveRecette(slot) === "processing" ? "Processing" : "Gathering";
       const rate = kitty && !pause ? libelleNombreDecimal(tauxProductionSlotRecette(pair, slot) * 60, 2) + "/min" : "";
       stateParts.push(familyId, slotIdx, slot.recipeId, slot.kittyIndex, slot.phase, pause, rate, pair ? Number(etat[pair.procRes]) || 0 : 0);

@@ -620,9 +620,20 @@ body[data-ui-theme="stylish"] #contenu-inventaire :is(button, [role="button"]):f
   outline-offset: 2px;
 }
 @media (max-width: 768px) {
-  body[data-ui-theme="stylish"] #contenu-inventaire > .bag-sheet { height: calc(100dvh - 180px - var(--hauteur-sous-onglets-mobile)); padding: 12px; }
+  body[data-ui-theme="stylish"] #contenu-inventaire[aria-hidden="false"] {
+    display: flex !important;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  body[data-ui-theme="stylish"] #contenu-inventaire > .bag-sheet {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    padding: 12px;
+  }
   body[data-ui-theme="stylish"] #contenu-inventaire .inv-knowledge-catalogue { grid-template-columns: minmax(0, 1fr); }
-  body[data-ui-theme="stylish"] #contenu-inventaire { margin: 6px auto; padding: 0 6px calc(var(--hauteur-sous-onglets-mobile) + 8px); }
+  body[data-ui-theme="stylish"] #contenu-inventaire { margin: 0 auto; padding: 0 6px calc(var(--hauteur-sous-onglets-mobile) + 8px); }
   body[data-ui-theme="stylish"] #contenu-inventaire > .bag-sheet > .grille {
     display: block;
     padding: 6px;
@@ -664,7 +675,7 @@ body[data-ui-theme="stylish"] #contenu-inventaire :is(button, [role="button"]):f
 }
 @media (max-width: 360px) {
   /* Leave room for the existing two-line Camp summary in the narrow HUD. */
-  body[data-ui-theme="stylish"] #contenu-inventaire { margin-top: 16px; }
+  body[data-ui-theme="stylish"] #contenu-inventaire { padding-top: 10px; }
 }
 
 /* Focused chapters begin directly with their index; help remains Basic-only. */
@@ -782,9 +793,10 @@ body[data-ui-theme="stylish"] #contenu-work .work-summary-header h2 {
   margin: 0;
   font-size: 1.05rem;
 }
-body[data-ui-theme="stylish"] #contenu-work .work-summary-all { gap: 26px; }
+body[data-ui-theme="stylish"] #contenu-work .work-summary-all { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+body[data-ui-theme="stylish"] #contenu-work .work-summary-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
 body[data-ui-theme="stylish"] #contenu-work .work-supervision-slot {
-  grid-template-columns: minmax(0, 1fr) 80px;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: 36px 20px 32px;
   align-content: start;
   align-items: center;
@@ -808,6 +820,9 @@ body[data-ui-theme="stylish"] #contenu-work .work-supervision-slot.is-empty { co
 body[data-ui-theme="stylish"] #contenu-work .work-summary-worker { grid-column: 1; grid-row: 2; }
 body[data-ui-theme="stylish"] #contenu-work .work-summary-icon-empty { flex: 0 0 32px; width: 32px; height: 32px; }
 body[data-ui-theme="stylish"] #contenu-work .work-supervision-slot.is-paused .work-summary-status { color: #a95227; }
+@media (max-width: 300px) {
+  body[data-ui-theme="stylish"] #contenu-work .work-summary-list { grid-template-columns: minmax(0, 1fr); }
+}
 body[data-ui-theme="stylish"] #contenu-work .work-recipe-family-header { padding: 0; }
 body[data-ui-theme="stylish"] #contenu-work .work-recipe-family-header > div:first-child { display: none; }
 body[data-ui-theme="stylish"] #contenu-work .work-recipe-manager-card { grid-template-columns: minmax(0, 1fr); padding: 0; gap: 6px; }
@@ -1744,4 +1759,158 @@ body[data-ui-theme="stylish"] :is(
 @media (max-width: 340px) {
   body[data-ui-theme="stylish"] #contenu-facilities .jc-metiers { grid-template-columns: minmax(0, 1fr); }
   body[data-ui-theme="stylish"] #contenu-logs .logs-heading p { font-size: .62rem; }
+}
+
+/* #165: one warm paper shell, shared by the mobile and desktop runtime chrome. */
+body[data-ui-theme="stylish"] {
+  --shell-paper: #fff6df;
+  --shell-honey: #e8bd62;
+  --shell-ink: #593d28;
+  --shell-ink-muted: #80684e;
+  --shell-edge: rgba(111, 72, 39, .3);
+  --shell-shadow: rgba(74, 46, 25, .16);
+}
+
+body[data-ui-theme="stylish"] #top-bar {
+  border-bottom-color: var(--shell-edge);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .3), transparent 28%),
+    var(--shell-paper);
+  box-shadow: 0 3px 10px var(--shell-shadow);
+}
+body[data-ui-theme="stylish"] #top-bar .header,
+body[data-ui-theme="stylish"] #top-bar .ressources,
+body[data-ui-theme="stylish"] #top-bar .ressources-fixes {
+  background: transparent;
+}
+body[data-ui-theme="stylish"] #top-bar .ressources {
+  border-color: var(--shell-edge);
+}
+body[data-ui-theme="stylish"] #top-bar :is(.ressources-fixes, .ressource, .ressources-theme-toggle, .ressources-gerer) {
+  border-color: rgba(111, 72, 39, .18);
+}
+body[data-ui-theme="stylish"] #top-bar .ressource {
+  background: transparent;
+}
+body[data-ui-theme="stylish"] #top-bar :is(.ressources-theme-toggle, .ressources-gerer) {
+  background: rgba(244, 227, 189, .42);
+  color: var(--shell-ink-muted);
+}
+body[data-ui-theme="stylish"] #top-bar :is(.ressources-theme-toggle, .ressources-gerer):hover {
+  background: rgba(232, 189, 98, .34);
+  color: var(--shell-ink);
+}
+body[data-ui-theme="stylish"] #top-bar :is(.ressource, .ressources-theme-toggle, .ressources-gerer):focus-visible {
+  outline-color: #8d5b2c;
+}
+
+/* The whole control is the Camp badge; the transparent Cat Face is no longer
+   clipped or framed as a separate circular medallion. */
+body[data-ui-theme="stylish"] .camp-profile-summary {
+  grid-template-columns: 42px minmax(0, 1fr);
+  border-color: rgba(112, 70, 31, .46);
+  border-radius: 19px 13px 17px 11px / 14px 19px 12px 18px;
+  background: linear-gradient(135deg, #fff1c9 0%, #edc66f 72%, #e6b454 100%);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .72), 0 2px 7px rgba(83, 49, 20, .2);
+  color: var(--shell-ink);
+}
+body[data-ui-theme="stylish"] .camp-profile-summary:hover {
+  background: linear-gradient(135deg, #fff7dc 0%, #f0cd7d 72%, #e7b454 100%);
+}
+body[data-ui-theme="stylish"] .camp-profile-summary:focus-visible {
+  outline-color: #815126;
+  outline-offset: 2px;
+}
+body[data-ui-theme="stylish"] .camp-profile-summary .camp-profile-avatar {
+  width: 38px;
+  height: 38px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body[data-ui-theme="stylish"] .camp-profile-summary .camp-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+body[data-ui-theme="stylish"] .camp-profile-summary .camp-profile-metrics {
+  color: #6f542e;
+}
+
+/* A quiet paper rail with one painted bookmark. Pseudo-elements provide the
+   projection, so tab dimensions and the shared hit targets never move. */
+body[data-ui-theme="stylish"] .barre-onglets {
+  overflow: visible;
+  border-color: var(--shell-edge);
+  background: var(--shell-paper);
+  box-shadow: 0 -3px 12px var(--shell-shadow);
+}
+body[data-ui-theme="stylish"] .onglet {
+  isolation: isolate;
+  overflow: visible;
+  border-color: transparent;
+  background: transparent;
+  color: var(--shell-ink-muted);
+  transition: color 120ms;
+}
+body[data-ui-theme="stylish"] .onglet::before {
+  content: "";
+  position: absolute;
+  inset: 7px 2px 1px;
+  z-index: -1;
+  border: 1px solid rgba(122, 84, 48, .12);
+  border-radius: 9px 9px 3px 3px;
+  background: rgba(244, 227, 189, .34);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .55);
+  pointer-events: none;
+}
+body[data-ui-theme="stylish"] .onglet:hover::before {
+  background: rgba(232, 189, 98, .25);
+}
+body[data-ui-theme="stylish"] .onglet-actif {
+  border-color: transparent;
+  background: transparent;
+  color: #8e4e20;
+}
+body[data-ui-theme="stylish"] .onglet-actif::before {
+  inset: -6px 1px 1px;
+  border-color: rgba(130, 77, 31, .45);
+  border-radius: 12px 12px 4px 4px;
+  background: linear-gradient(180deg, #ffe9ae, var(--shell-honey));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .72), 0 -3px 8px rgba(92, 52, 22, .2);
+}
+body[data-ui-theme="stylish"] .onglet:focus-visible {
+  outline-color: #815126;
+  outline-offset: -2px;
+}
+body[data-ui-theme="stylish"] .onglet-actif:is(.onglet-nouveau, .onglet-alerte, .onglet-formation-alerte)::after {
+  border-color: var(--shell-honey);
+}
+
+@media (min-width: 769px) {
+  body[data-ui-theme="stylish"] .barre-onglets {
+    border-right-color: var(--shell-edge);
+    box-shadow: 3px 0 12px var(--shell-shadow);
+  }
+  body[data-ui-theme="stylish"] .onglet::before {
+    inset: 2px 7px 2px 2px;
+    border-radius: 9px 3px 3px 9px;
+  }
+  body[data-ui-theme="stylish"] .onglet-actif::before {
+    inset: 1px -6px 1px 1px;
+    border-radius: 12px 5px 5px 12px;
+    background: linear-gradient(90deg, #ffe9ae, var(--shell-honey));
+    box-shadow: inset 0 1px rgba(255, 255, 255, .72), 3px 0 8px rgba(92, 52, 22, .2);
+  }
+}
+
+@media (max-width: 768px) {
+  body[data-ui-theme="stylish"] .camp-profile-summary {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+  body[data-ui-theme="stylish"] .camp-profile-summary .camp-profile-avatar {
+    width: 30px;
+    height: 30px;
+  }
 }

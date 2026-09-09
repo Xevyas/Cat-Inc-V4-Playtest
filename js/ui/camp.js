@@ -68,8 +68,15 @@
     revision: Number(runtimeQueryValue("campAssetRevision"))
   } : null;
 
+  function runtimeAssetFamily(typeId) {
+    return (RUNTIME_MANIFEST.assets && RUNTIME_MANIFEST.assets[typeId])
+      || (RUNTIME_MANIFEST.environmentAssets && RUNTIME_MANIFEST.environmentAssets[typeId])
+      || (RUNTIME_MANIFEST.edgeAssets && RUNTIME_MANIFEST.edgeAssets[typeId])
+      || null;
+  }
+
   function runtimeRevision(typeId, preferredTier, allowedFallbackTier) {
-    const family = RUNTIME_MANIFEST.assets && RUNTIME_MANIFEST.assets[typeId];
+    const family = runtimeAssetFamily(typeId);
     if (!family || !family.tiers) return null;
     let tierNumber = Number.isInteger(preferredTier) && preferredTier > 0
       ? preferredTier
@@ -118,8 +125,7 @@
   }
 
   function runtimeReviewRevision(typeId, preferredTier) {
-    const family = RUNTIME_MANIFEST.assets
-      && RUNTIME_MANIFEST.assets[typeId];
+    const family = runtimeAssetFamily(typeId);
     const tier = family && family.tiers
       && family.tiers[String(preferredTier || 1)];
     if (!tier || !Number.isInteger(tier.liveRevision)) return null;
@@ -281,7 +287,7 @@
   function runtimeItem(typeId, fallback) {
     const revision = runtimeRevision(typeId, 1);
     if (!revision) return Object.freeze(fallback);
-    const family = RUNTIME_MANIFEST.assets && RUNTIME_MANIFEST.assets[typeId];
+    const family = runtimeAssetFamily(typeId);
     const tierFootprints = {};
     const tierAccess = {};
     Object.keys(family && family.tiers || {}).forEach(function(tierNumber) {
@@ -420,8 +426,7 @@
   }
 
   function runtimeEnvironmentRevision(typeId, preferredTier) {
-    const registry = RUNTIME_MANIFEST.edgeAssets || RUNTIME_MANIFEST.environmentAssets || {};
-    const family = registry[typeId];
+    const family = runtimeAssetFamily(typeId);
     if (!family || !family.tiers) return null;
     const tierNumber = Number.isInteger(preferredTier) && preferredTier > 0
       ? preferredTier

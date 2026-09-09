@@ -3090,7 +3090,69 @@
       }
     }
   },
-  "environmentAssets": {},
+  "environmentAssets": {
+    "tree": {
+      "assetId": "garden-tree",
+      "name": "Garden Tree",
+      "category": "environment",
+      "placeable": false,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "name": "Garden Tree",
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png",
+                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png",
+                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png"
+              },
+              "spriteBounds": {
+                "down": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                },
+                "right": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                },
+                "up": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                },
+                "left": {
+                  "canvasWidth": 400,
+                  "canvasHeight": 400,
+                  "left": 72,
+                  "top": 64,
+                  "right": 331,
+                  "bottom": 331
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "edgeAssets": {
     "campBoundaryFence": {
       "assetId": "camp-boundary-fence",

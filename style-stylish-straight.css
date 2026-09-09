@@ -63,3 +63,13 @@ body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
   --stylish-straight-surface-radius: var(--stylish-straight-sheet-radius);
   border-radius: var(--stylish-straight-sheet-radius);
 }
+
+/* #165: Straight changes only authored contour geometry; shell materials and
+   hierarchy continue to come from the shared Stylish layer. */
+body[data-ui-theme="stylish"][data-ui-shape="straight"] .camp-profile-summary {
+  border-radius: var(--stylish-straight-card-radius);
+}
+body[data-ui-theme="stylish"][data-ui-shape="straight"] .onglet::before,
+body[data-ui-theme="stylish"][data-ui-shape="straight"] .onglet-actif::before {
+  border-radius: 7px;
+}
