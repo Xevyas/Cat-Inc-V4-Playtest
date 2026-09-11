@@ -893,20 +893,22 @@
     </div>
     <div class="grille grille-2col" id="facilities-grid">
       <section class="panneau panneau-buildings jobs-page" id="section-job-center" style="display:none">
-        <div class="work-filtres jobs-workspace-tabs">
-          <div class="work-filtres-btns" role="tablist" aria-label="Jobs workspaces">
-            <button id="jobs-workspace-tab-training" class="btn-filtre-work btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="jobs-training-panel" onclick="selectionnerJobsWorkspace('training')">Training</button>
-            <button id="jobs-workspace-tab-specialization" class="btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-advanced-training" tabindex="-1" onclick="selectionnerJobsWorkspace('specialization')">Specialization</button>
+        <div class="jobs-page-scroll">
+          <div class="work-filtres jobs-workspace-tabs">
+            <div class="work-filtres-btns" role="tablist" aria-label="Jobs workspaces">
+              <button id="jobs-workspace-tab-training" class="btn-filtre-work btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="jobs-training-panel" onclick="selectionnerJobsWorkspace('training')">Training</button>
+              <button id="jobs-workspace-tab-specialization" class="btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-advanced-training" tabindex="-1" onclick="selectionnerJobsWorkspace('specialization')">Specialization</button>
+            </div>
           </div>
+          <section class="jobs-function-section" id="jobs-training-panel" role="tabpanel" aria-labelledby="jobs-workspace-tab-training">
+            <h3 class="jobs-function-title panneau-titre-aide" id="jobs-training-heading">Training <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Job training" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train an unassigned Cat for one of the gang's available Jobs.</span></span></h3>
+            <div id="jc-interface" style="display:none"></div>
+          </section>
+          <section class="jobs-function-section jobs-specialization-section" id="section-advanced-training" role="tabpanel" aria-labelledby="jobs-workspace-tab-specialization" hidden>
+            <p class="jobs-function-copy" id="advanced-training-intro-copy">Upgrade the Job Center to Tier 2 to unlock Specialization.</p>
+            <div id="tc-interface" class="tc-interface" style="display:none"></div>
+          </section>
         </div>
-        <section class="jobs-function-section" id="jobs-training-panel" role="tabpanel" aria-labelledby="jobs-workspace-tab-training">
-          <h3 class="jobs-function-title panneau-titre-aide" id="jobs-training-heading">Training <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Job training" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train an unassigned Cat for one of the gang's available Jobs.</span></span></h3>
-          <div id="jc-interface" style="display:none"></div>
-        </section>
-        <section class="jobs-function-section jobs-specialization-section" id="section-advanced-training" role="tabpanel" aria-labelledby="jobs-workspace-tab-specialization" hidden>
-          <p class="jobs-function-copy" id="advanced-training-intro-copy">Upgrade the Job Center to Tier 2 to unlock Specialization.</p>
-          <div id="tc-interface" class="tc-interface" style="display:none"></div>
-        </section>
       </section>
       <section class="panneau panneau-buildings" id="section-laboratory" style="display:none">
         <h2 class="panneau-titre panneau-titre-aide">Laboratory <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Laboratory" aria-expanded="false" aria-controls="laboratory-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="laboratory-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Study engineering and discover entirely new forms of boosts.</span></span></h2>

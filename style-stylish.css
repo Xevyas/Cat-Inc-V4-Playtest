@@ -1948,7 +1948,19 @@ body[data-ui-theme="stylish"] .onglet-actif:is(.onglet-nouveau, .onglet-alerte, 
   }
   body[data-ui-theme="stylish"] #contenu-facilities #section-job-center {
     height: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
+  body[data-ui-theme="stylish"] #contenu-facilities .jobs-page-scroll {
+    display: block;
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+    padding: 14px 12px 32px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scroll-padding-bottom: 32px;
   }
   body[data-ui-theme="stylish"] #contenu-facilities #facilities-grid {
     height: 100%;
