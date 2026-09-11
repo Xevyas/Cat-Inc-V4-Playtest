@@ -494,6 +494,22 @@
       setSupportMessage(result.ok ? result.summary : "Rejected: " + result.reason);
     });
   }
+  function startUiTuner() {
+    if (!authorized() || !root.document) return;
+    if (CatInc.uiTuner && CatInc.uiTuner.start) { CatInc.uiTuner.start(); return; }
+    let loader = root.document.getElementById("dev-ui-tuner-loader");
+    if (loader) return;
+    loader = root.document.createElement("script");
+    loader.id = "dev-ui-tuner-loader";
+    loader.src = "tools/ui-tuner-client.js?v=0.0001";
+    loader.addEventListener("load", function() { if (CatInc.uiTuner) CatInc.uiTuner.start(); });
+    loader.addEventListener("error", function() {
+      lastSummary = "UI Tuner client unavailable. Start the trusted local UI Tuner server.";
+      renderSummary();
+      loader.remove();
+    });
+    root.document.head.appendChild(loader);
+  }
   function mount() {
     if (!authorized() || !root.document || root.document.getElementById("dev-tools-toggle")) return false;
     const jobs = Array.from(new Set(perkCatalog().map(function(node) { return node.jobId; }))).map(function(id) {
@@ -505,7 +521,7 @@
     wrap.id = "dev-tools-root";
     wrap.innerHTML = '<button id="dev-tools-toggle" type="button" aria-controls="dev-tools-panel" aria-expanded="false">DEV</button>'
       + '<aside id="dev-tools-panel" aria-label="DEV QA Toolkit" aria-hidden="true"><header><strong>DEV QA Toolkit</strong><button id="dev-tools-close" type="button" aria-label="Close DEV Toolkit">×</button></header>'
-      + '<p class="dev-state">DEV STATE · real DEV namespace</p><section><h3>Quick QA</h3><button data-dev-action="scenario.perks">Perks QA</button><button data-dev-action="scenario.houseT3">House T3 QA</button><button data-dev-action="scenario.exploration">Exploration QA</button></section>'
+      + '<p class="dev-state">DEV STATE · real DEV namespace</p><section><h3>UI tuning</h3><button id="dev-ui-tuner-start" type="button">Edit UI</button><p>Inspect named shared rules. Safe values save to their canonical DEV source; structural changes remain code-only.</p></section><section><h3>Quick QA</h3><button data-dev-action="scenario.perks">Perks QA</button><button data-dev-action="scenario.houseT3">House T3 QA</button><button data-dev-action="scenario.exploration">Exploration QA</button></section>'
       + '<section><h3>Resources</h3><select id="dev-resource-id" aria-label="Resource">' + optionsHtml(resourceCatalog()) + '</select><input id="dev-resource-amount" type="number" min="0" step="1" value="100" aria-label="Resource amount"><div class="dev-row"><button data-dev-resource-add="10">+10</button><button data-dev-resource-add="100">+100</button><button id="dev-resource-set">Set amount</button></div></section>'
       + '<section><h3>Cats / Jobs / Perks</h3><label>Job tree<select id="dev-perk-job">' + optionsHtml(jobs) + '</select></label><label>Perk<select id="dev-perk-id"></select></label><button data-dev-perk="perk.learn">Learn selected perk DEV</button><button data-dev-perk="perk.learnClosure">Learn + prerequisite closure</button><button id="dev-perk-reset" class="dev-danger">Reset purchased perks for tree</button><div class="dev-row"><button data-dev-tier-perk="builderReinforcedCardboardBox">Grant Reinforced Cardboard Box</button><button data-dev-tier-perk="builderMasterWoodCathouse">Grant Master Wood Cathouse</button></div><label>Cat<select id="dev-cat-id"></select></label><label>Normal job<select id="dev-job-id">' + optionsHtml(normalJobs) + '</select></label><button id="dev-job-grant">Grant available job DEV</button></section>'
       + '<section><h3>World</h3><label>Region<select id="dev-region-id" aria-label="Exploration region"></select></label><button id="dev-region-show">Show region (transient)</button><select id="dev-zone-id" aria-label="Current-region zone"></select><button id="dev-zone-reveal">Reveal / mark explored</button><button data-dev-action="world.revealAll">Reveal all zones in current region</button></section>'
@@ -517,6 +533,10 @@
     function setOpen(open) { panel.setAttribute("aria-hidden", open ? "false" : "true"); root.document.getElementById("dev-tools-toggle").setAttribute("aria-expanded", open ? "true" : "false"); if (open) { refreshWorld(); refreshJobs(); renderSummary(); } }
     root.document.getElementById("dev-tools-toggle").addEventListener("click", function() { setOpen(panel.getAttribute("aria-hidden") === "true"); });
     root.document.getElementById("dev-tools-close").addEventListener("click", function() { setOpen(false); });
+    root.document.getElementById("dev-ui-tuner-start").addEventListener("click", function() {
+      setOpen(false);
+      startUiTuner();
+    });
     root.document.getElementById("dev-perk-job").addEventListener("change", refreshPerks);
     root.document.querySelectorAll("[data-dev-action]").forEach(function(button) { button.addEventListener("click", function() { runFromUi(button.dataset.devAction); }); });
     root.document.querySelectorAll("[data-dev-resource-add]").forEach(function(button) { button.addEventListener("click", function() { runFromUi("resource.add", { resourceId: root.document.getElementById("dev-resource-id").value, amount: button.dataset.devResourceAdd }); }); });

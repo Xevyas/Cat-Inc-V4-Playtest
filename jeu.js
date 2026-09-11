@@ -454,6 +454,12 @@ function portraitSelectionKittyHtml(kitty, className) {
   return '<span class="cat-selector-portrait ' + className + '">' + kittyIconHtml(kitty) + '</span>';
 }
 
+const CAT_ASSIGNMENT_MODAL_TITLE = "Choose a cat";
+
+function afficherTitreModalAffectationChat(elementId) {
+  ecrireTexte(document.getElementById(elementId), CAT_ASSIGNMENT_MODAL_TITLE);
+}
+
 function recetteChoisieCount(recipeId) {
   return Object.values(etat.workRecipeSlots || {}).reduce(function(total, slots) {
     return total + slots.filter(function(slot) { return slot.recipeId === recipeId; }).length;
@@ -869,32 +875,30 @@ function kittyEligiblePourAffectationOrdinaire(kittyOuIndex) {
 
 function ordonnerCandidatsAffectationChats(candidats) {
   const liste = Array.isArray(candidats) ? candidats : [];
-  const scoreValide = function(candidate) {
-    return candidate && typeof candidate.effectivenessScore === "number"
-      && Number.isFinite(candidate.effectivenessScore);
-  };
-  const groupesAvecScores = [false, true].reduce(function(resultat, disponible) {
-    const groupe = liste.filter(function(candidate) {
-      return Boolean(candidate && candidate.availableForCurrentAction) === disponible;
-    });
-    resultat[String(disponible)] = groupe.length > 0 && groupe.every(scoreValide);
-    return resultat;
-  }, {});
   return liste.slice().sort(function(a, b) {
     const disponibiliteA = a && a.availableForCurrentAction ? 1 : 0;
     const disponibiliteB = b && b.availableForCurrentAction ? 1 : 0;
     if (disponibiliteA !== disponibiliteB) return disponibiliteB - disponibiliteA;
     const indexA = a && Number.isInteger(a.kittyIndex) ? a.kittyIndex : Number.MAX_SAFE_INTEGER;
     const indexB = b && Number.isInteger(b.kittyIndex) ? b.kittyIndex : Number.MAX_SAFE_INTEGER;
-    if (groupesAvecScores[String(Boolean(disponibiliteA))]
-        && a.effectivenessScore !== b.effectivenessScore) {
-      return b.effectivenessScore - a.effectivenessScore;
-    }
     const niveauA = etat.kittiesData[indexA] ? Number(etat.kittiesData[indexA].niveau) || 0 : 0;
     const niveauB = etat.kittiesData[indexB] ? Number(etat.kittiesData[indexB].niveau) || 0 : 0;
     if (niveauA !== niveauB) return niveauB - niveauA;
     return indexA - indexB;
   });
+}
+
+function candidatsKittyAffectation(filtre) {
+  return ordonnerCandidatsAffectationChats((etat.kittiesData || []).reduce(function(resultat, kitty, kittyIndex) {
+    if (!filtre || filtre(kitty, kittyIndex)) {
+      resultat.push({
+        kitty: kitty,
+        kittyIndex: kittyIndex,
+        availableForCurrentAction: true
+      });
+    }
+    return resultat;
+  }, []));
 }
 
 function kittyPeutExecuterTacheCamp(kittyIndex, minLevel) {
@@ -3464,6 +3468,7 @@ let preferencesAncienneSauvegarde = null;
 let rattrapageAfkEnCours = false;
 let suspensionAfkConfirmee = false;
 let suspensionAfkDebutTs = null;
+let migrationOrdrePremiereVueStoriesAPersister = false;
 
 function jouerSonAffectation() {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
@@ -3604,6 +3609,7 @@ function charger() {
     assignerVisageChaton: assignerVisageChaton,
     normaliserVisageChaton: normaliserVisageChaton
   });
+  migrationOrdrePremiereVueStoriesAPersister = !Array.isArray(analyse.data.storySeenOrder);
   remplacerEtat(etat, nouvelEtat);
   workStructureInitialisee = false;
   if (typeof normaliserOccupationsChatons === "function" && normaliserOccupationsChatons()) sauvegarder();
@@ -6406,6 +6412,12 @@ function validerFormationIngenieur() {
 
 // ── 9f-ii. Job Center Tier 2 specialization
 const PERK_LEARNING_MS_PER_CAT_FOOD = 60 * 60 * 1000;
+const SPHERE_DESKTOP_SCALE = 1;
+const SPHERE_MOBILE_SCALE_DEFAULT = 0.60;
+const SPHERE_MOBILE_SCALE_MIN = 0.55;
+const SPHERE_MOBILE_SCALE_MAX = 0.90;
+const SPHERE_MOBILE_SCALE_STEP = 0.05;
+let sphereMobileScale = SPHERE_MOBILE_SCALE_DEFAULT;
 
 function dureeApprentissagePerkMs(node) {
   const cout = node && Number(node.costs && node.costs.cannedCatFood);
@@ -6545,13 +6557,14 @@ function renduSphereGrid(jobId) {
 
   var canvasWidth = Math.max(580, Math.max.apply(null, def.spheres.map(function(s) { return s.x; })) + 60);
   var canvasHeight = Math.max(580, Math.max.apply(null, def.spheres.map(function(s) { return s.y; })) + 60);
-  var responsiveScale = typeof matchMedia === 'function' && matchMedia('(max-width: 768px)').matches ? 0.72 : 1;
+  var sphereMobile = typeof matchMedia === 'function' && matchMedia('(max-width: 768px)').matches;
+  var responsiveScale = sphereMobile ? sphereMobileScale : SPHERE_DESKTOP_SCALE;
   var renderedWidth = Math.round(canvasWidth * responsiveScale);
   var renderedHeight = Math.round(canvasHeight * responsiveScale);
 
   var parts = [];
   var sphereFogClass = SPHERE_FOG_MOTION_ENABLED ? ' sphere-fog-motion' : '';
-  parts.push('<svg width="' + renderedWidth + '" height="' + renderedHeight + '" viewBox="0 0 ' + canvasWidth + ' ' + canvasHeight + '" data-render-scale="' + responsiveScale + '" xmlns="http://www.w3.org/2000/svg" class="sphere-svg" aria-label="Specialization Perk tree">');
+  parts.push('<svg width="' + renderedWidth + '" height="' + renderedHeight + '" viewBox="0 0 ' + canvasWidth + ' ' + canvasHeight + '" data-canvas-width="' + canvasWidth + '" data-canvas-height="' + canvasHeight + '" data-render-scale="' + responsiveScale + '" xmlns="http://www.w3.org/2000/svg" class="sphere-svg" aria-label="Specialization Perk tree">');
 
   // Read-only edges are derived from the canonical prerequisite IDs.
   def.prerequisiteEdges.forEach(function(conn) {
@@ -6616,7 +6629,13 @@ function renduSphereGrid(jobId) {
 
   parts.push('</svg>');
 
-  containerEl.innerHTML = '<div class="sphere-tree-viewport sphere-fog-workspace' + sphereFogClass + '"><div class="sphere-tree-scroll" tabindex="0" aria-label="Scrollable Specialization Perk tree">' + parts.join('') + '</div></div>'
+  var zoomControls = sphereMobile
+    ? '<div class="sphere-tree-zoom" role="group" aria-label="Perk tree zoom" onpointerdown="event.stopPropagation()">'
+      + '<button id="sphere-tree-zoom-out" type="button" aria-label="Zoom out Perk tree" onclick="ajusterZoomSphereMobile(-1);event.stopPropagation()">−</button>'
+      + '<button id="sphere-tree-zoom-in" type="button" aria-label="Zoom in Perk tree" onclick="ajusterZoomSphereMobile(1);event.stopPropagation()">+</button>'
+      + '</div>'
+    : '';
+  containerEl.innerHTML = '<div class="sphere-tree-viewport sphere-fog-workspace' + sphereFogClass + '">' + zoomControls + '<div class="sphere-tree-scroll" tabindex="0" aria-label="Scrollable Specialization Perk tree">' + parts.join('') + '</div></div>'
     + '<div class="sphere-detail-panel" id="sphere-detail-panel">'
     + '<div class="sphere-detail-nom" id="sphere-detail-nom">Select a perk to see its description.</div>'
     + '<div class="sphere-detail-desc" id="sphere-detail-desc"></div>'
@@ -6625,6 +6644,41 @@ function renduSphereGrid(jobId) {
     _sphereSelectionnee = null;
     clickerSphere(selectionPreservee);
   }
+  actualiserCommandesZoomSphere();
+}
+
+function actualiserCommandesZoomSphere() {
+  var moins = document.getElementById('sphere-tree-zoom-out');
+  var plus = document.getElementById('sphere-tree-zoom-in');
+  var pourcentage = Math.round(sphereMobileScale * 100);
+  if (moins) {
+    moins.disabled = sphereMobileScale <= SPHERE_MOBILE_SCALE_MIN;
+    moins.setAttribute('aria-label', 'Zoom out Perk tree, currently ' + pourcentage + ' percent');
+  }
+  if (plus) {
+    plus.disabled = sphereMobileScale >= SPHERE_MOBILE_SCALE_MAX;
+    plus.setAttribute('aria-label', 'Zoom in Perk tree, currently ' + pourcentage + ' percent');
+  }
+}
+
+function ajusterZoomSphereMobile(direction) {
+  if (typeof matchMedia !== 'function' || !matchMedia('(max-width: 768px)').matches) return false;
+  var scroll = document.querySelector('.sphere-tree-scroll');
+  var svg = scroll && scroll.querySelector('.sphere-svg');
+  if (!scroll || !svg) return false;
+  var nextScale = Math.round((sphereMobileScale + Math.sign(Number(direction) || 0) * SPHERE_MOBILE_SCALE_STEP) * 100) / 100;
+  nextScale = Math.max(SPHERE_MOBILE_SCALE_MIN, Math.min(SPHERE_MOBILE_SCALE_MAX, nextScale));
+  if (nextScale === sphereMobileScale) return false;
+  var previousLeft = scroll.scrollLeft;
+  var previousTop = scroll.scrollTop;
+  sphereMobileScale = nextScale;
+  svg.setAttribute('width', String(Math.round(Number(svg.dataset.canvasWidth) * nextScale)));
+  svg.setAttribute('height', String(Math.round(Number(svg.dataset.canvasHeight) * nextScale)));
+  svg.dataset.renderScale = String(nextScale);
+  scroll.scrollLeft = Math.min(previousLeft, Math.max(0, scroll.scrollWidth - scroll.clientWidth));
+  scroll.scrollTop = Math.min(previousTop, Math.max(0, scroll.scrollHeight - scroll.clientHeight));
+  actualiserCommandesZoomSphere();
+  return true;
 }
 
 function clickerSphere(sphereId) {
@@ -8994,7 +9048,6 @@ function renduModalExplo() {
       return Object.assign(entry, {
         kittyIndex: i,
         availableForCurrentAction: !disabled,
-        effectivenessScore: exploModalOuvert.scoutingId ? undefined : kittyEP(i),
         disabled: disabled,
         forcable: validExplorator && !onExplo && !inOtherSlot && !inTraining && !isLearning
           && !inDemolition && !onZoneExplo && !inZoneSlot && !onScouting && (inWorker || isManager),
@@ -9009,18 +9062,20 @@ function renduModalExplo() {
     const forcable = entry.forcable;
     const statusLabel = entry.statusLabel;
 
-    html += '<div class="explo-modal-kitty' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
+    html += '<div class="explo-modal-kitty cat-assignment-row' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for this exploration") + ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
     html += portraitSelectionKittyHtml(k, "explo-modal-kitty-emoji");
     html += '<div class="explo-modal-kitty-info">';
     html += '<span class="explo-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
     html += '<span class="explo-modal-kitty-profession">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span>';
-    html += '<span class="explo-modal-kitty-power">&#x26A1; Exploration Power ' + kittyEP(i) + '</span>';
+    html += '</div>';
+    html += '<div class="explo-modal-kitty-context">';
+    html += '<span class="explo-modal-kitty-power">&#x26A1; Explo Power ' + kittyEP(i) + '</span>';
     var halvesTime = scoutingHalveTime(i);
     if (halvesTime) html += '<span class="explo-modal-kitty-effect">&#x23F1; Halves mission time</span>';
-    if (statusLabel) html += '<span class="explo-modal-kitty-status">' + statusLabel + '</span>';
     html += '</div>';
     if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + '" onclick="forcerKittySlot(' + i + ');event.stopPropagation()">Force</button>';
+    if (statusLabel) html += '<span class="explo-modal-kitty-status">' + echapperAttributHtml(statusLabel) + '</span>';
     html += '</div>';
   });
 
@@ -11312,13 +11367,12 @@ function fermerModalJC() {
 
 function renduModalJC() {
   if (!jcModalOuvert) return;
-  const titreEl = document.getElementById("jc-modal-titre");
   const contenuEl = document.getElementById("jc-modal-contenu");
   if (!contenuEl) return;
+  afficherTitreModalAffectationChat("jc-modal-titre");
   let html = "";
 
   if (jcModalOuvert.mode === "engineer") {
-    if (titreEl) titreEl.textContent = "Choose a Stray Cat for engineering training";
     const roster = ordonnerCandidatsAffectationChats(laboratoireKittysRoster().map(function(entry) {
       const unavailable = kittyIsUnavailableForNewAssignment(entry.index);
       return Object.assign({}, entry, {
@@ -11334,7 +11388,7 @@ function renduModalJC() {
         const k = entry.kitty;
         const unavailable = entry.unavailable;
         const status = unavailable ? kittyAllocationLabel(entry.index).text : "";
-        html += '<div class="jc-modal-kitty' + (unavailable ? ' jc-modal-kitty-disabled' : '') + '"'
+        html += '<div class="jc-modal-kitty cat-assignment-row' + (unavailable ? ' jc-modal-kitty-disabled' : '') + '"'
           + (unavailable ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for engineering training") + ' onclick="selectionnerIngenieurLaboratoire(' + entry.index + ')"') + '>';
         html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
         html += '<div class="jc-modal-kitty-info"><span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span><span class="jc-modal-kitty-tier">' + echapperAttributHtml(libelleProfessionNiveauKitty(k)) + '</span></div>';
@@ -11343,7 +11397,6 @@ function renduModalJC() {
       });
     }
   } else if (jcModalOuvert.mode === "formation") {
-    if (titreEl) titreEl.innerHTML = KITTY_ICON + " Choose a Stray Cat";
     const stray = ordonnerCandidatsAffectationChats(kittysSansMetier().map(function(idx) {
       return {
         kittyIndex: idx,
@@ -11360,7 +11413,7 @@ function renduModalJC() {
         const enWorker = kittyIsInWorkerSlot(idx);
         const forcable = busy && enWorker && !kittyHasNonReplaceableAction(idx) && !kittyIsInExplorationStaging(idx);
         const busyLbl  = busy ? kittyAllocationLabel(idx).text : "";
-        html += '<div class="jc-modal-kitty' + (busy ? ' jc-modal-kitty-disabled' : '') + '"' +
+        html += '<div class="jc-modal-kitty cat-assignment-row' + (busy ? ' jc-modal-kitty-disabled' : '') + '"' +
                 (busy ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for job training") + ' onclick="selectionnerKittyFormation(' + idx + ')"') + '>';
         html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
         html += '<div class="jc-modal-kitty-info">';
@@ -11375,7 +11428,6 @@ function renduModalJC() {
   } else if (jcModalOuvert.mode === "manager") {
     const famille = jcModalOuvert.famille;
     const metiersEligibles = METIER_PAR_FAMILLE[famille] || [];
-    if (titreEl) titreEl.textContent = "👤 Assign a Manager";
     const dejaMgr = {};
     Object.keys(etat.managers).forEach(function(f) {
       if (etat.managers[f] !== null && etat.managers[f] !== undefined) dejaMgr[etat.managers[f]] = f;
@@ -11386,7 +11438,6 @@ function renduModalJC() {
           acc.push({
             kittyIndex: i,
             availableForCurrentAction: !kittyIsUnavailableForNewAssignment(i),
-            effectivenessScore: managerSpeedMultiplier(k, famille)
           });
         }
         return acc;
@@ -11409,7 +11460,7 @@ function renduModalJC() {
           const forcable = (enWorker || !!autreFamille) && !kittyHasNonReplaceableAction(idx) && !inExplorationStaging;
           const occupe   = kittyIsUnavailableForNewAssignment(idx);
           const statutTxt = occupe ? kittyAllocationLabel(idx).text : "";
-          html += '<div class="jc-modal-kitty' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
+          html += '<div class="jc-modal-kitty cat-assignment-row' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
                   (occupe ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " as manager") + ' onclick="assignerManager(\'' + famille + '\',' + idx + ')"') + '>';
           html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
           html += '<div class="jc-modal-kitty-info">';
@@ -11426,15 +11477,19 @@ function renduModalJC() {
       }
     }
   } else if (jcModalOuvert.mode === "spec") {
-    if (titreEl) titreEl.textContent = "🎓 Select a cat to specialize";
-    const avecMetier = advancedTrainingKitties();
+    const avecMetier = ordonnerCandidatsAffectationChats(advancedTrainingKitties().map(function(entry) {
+      return Object.assign({}, entry, {
+        kittyIndex: entry.i,
+        availableForCurrentAction: true
+      });
+    }));
     if (avecMetier.length === 0) {
       html = '<p class="jc-modal-vide">No cats have a job yet.</p>';
     } else {
       avecMetier.forEach(function(entry) {
         const idx = entry.i;
         const k = entry.k;
-        html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
+        html += '<div class="jc-modal-kitty cat-assignment-row"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
         html += portraitSelectionKittyHtml(k, "jc-modal-kitty-emoji");
         html += '<div class="jc-modal-kitty-info">';
         html += '<span class="jc-modal-kitty-nom">' + echapperAttributHtml(k.nom) + '</span>';
@@ -11922,7 +11977,7 @@ function attributsDonneesLigneAffectationKitty(data) {
 function htmlLigneAffectationKitty(options) {
   const config = options || {};
   const disabled = config.disabled === true;
-  const rowClass = "worker-modal-kitty"
+  const rowClass = "worker-modal-kitty cat-assignment-row"
     + (disabled ? " worker-modal-kitty-disabled" : "")
     + (config.className ? " " + config.className : "");
   const force = config.force;
@@ -12003,7 +12058,7 @@ function renduModalWorker() {
   const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
   const pair = slot && paireRecette(slot.recipeId);
   if (!pair) return;
-  ecrireTexte(domParId("worker-modal-titre"), "Assign a Cat to " + pair.procLabel);
+  afficherTitreModalAffectationChat("worker-modal-titre");
   let html = "";
   const ordre = etat.kittiesData
     .map(function(k, i) { return { k: k, i: i }; })
@@ -12015,9 +12070,6 @@ function renduModalWorker() {
       return Object.assign(entry, {
         kittyIndex: i,
         availableForCurrentAction: !occupied && !inExplorationStaging,
-        effectivenessScore: tauxPerformanceRecettePourKitty(
-          pair, entry.k, workerModalOuvert.familyId, workerModalOuvert.slotIdx
-        ),
         occupied: occupied,
         inExplorationStaging: inExplorationStaging
       });
@@ -14323,6 +14375,15 @@ function marquerStoryVue(flag) {
   return true;
 }
 
+function enregistrerPremiereVueStory(storyId) {
+  if (!STORIES.some(function(story) { return story.id === storyId; })) return false;
+  if (!Array.isArray(etat.storySeenOrder)) etat.storySeenOrder = [];
+  if (etat.storySeenOrder.includes(storyId)) return false;
+  etat.storySeenOrder.push(storyId);
+  sauvegarder();
+  return true;
+}
+
 function appealIntroEnAttente() {
   const progression = progressionCamp();
   return etat.chatons >= 7
@@ -14381,7 +14442,11 @@ function renduStories() {
   if (!conteneur) return;
   conteneur.innerHTML = "";
   let affichees = 0;
-  STORIES.forEach(function(story) {
+  const storiesParId = new Map(STORIES.map(function(story) { return [story.id, story]; }));
+  const ordrePremiereVue = Array.isArray(etat.storySeenOrder) ? etat.storySeenOrder : [];
+  ordrePremiereVue.forEach(function(storyId) {
+    const story = storiesParId.get(storyId);
+    if (!story) return;
     if (!storyEstVue(story.flag)) return;
     if (story.id === "ecran-story-explorator") preparerStoryExplorator();
     affichees++;
@@ -14766,7 +14831,11 @@ function afficherModal(id, options) {
     }
   }
   if (!storyData) el.setAttribute("aria-label", id === "ecran-absence" ? "While you were away" : "Cat Inc story");
-  ouvrirDialogueModal(el, { focusSelector: ".intro-boite" });
+  const ouverte = ouvrirDialogueModal(el, { focusSelector: ".intro-boite" });
+  if (storyData && (!options || options.replayDepuisLogs !== true)
+      && ouverte !== false && el.getAttribute("aria-hidden") === "false") {
+    enregistrerPremiereVueStory(storyData.id);
+  }
 }
 
 function terminerStoryReplayDepuisLogs(modal) {
@@ -17936,7 +18005,7 @@ function assetCampPrototypePourRotation(type, rotation, functionalTier) {
     270: "left"
   }[rotationNormalisee];
   const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
-    type.id,
+    type.runtimeAssetId || type.id,
     Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
   );
   if (runtimeVisual && direction && runtimeVisual.sprites[direction]) {
@@ -17960,12 +18029,40 @@ function animationCampPrototypePourRotation(type, rotation, functionalTier) {
       0: "down", 90: "right", 180: "up", 270: "left"
     }[campPrototypeApi.normaliserRotation(rotation)];
   const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
-    type.id,
+    type.runtimeAssetId || type.id,
     Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
   );
   return runtimeVisual && runtimeVisual.animation && direction
     ? runtimeVisual.animation.sprites[direction] || ""
     : "";
+}
+
+function enregistrementAnimationCampPrototypePourRotation(type, rotation, functionalTier) {
+  if (!type) return null;
+  const direction = type.category === "junk" || type.canonicalOrientation === "down"
+    ? "down"
+    : {
+      0: "down", 90: "right", 180: "up", 270: "left"
+    }[campPrototypeApi.normaliserRotation(rotation)];
+  const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
+    type.runtimeAssetId || type.id,
+    Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
+  );
+  return runtimeVisual && runtimeVisual.animation && direction
+    ? runtimeVisual.animation.registration?.[direction] || null
+    : null;
+}
+
+function appliquerEnregistrementAnimationCampPrototype(element, registration) {
+  if (!element || !registration) return;
+  const baseWidth = Number(registration.baseWidth);
+  const baseHeight = Number(registration.baseHeight);
+  if (!(baseWidth > 0) || !(baseHeight > 0)) return;
+  element.style.left = (Number(registration.offsetX) / baseWidth * 100) + "%";
+  element.style.top = (Number(registration.offsetY) / baseHeight * 100) + "%";
+  element.style.width = (Number(registration.width) / baseWidth * 100) + "%";
+  element.style.height = (Number(registration.height) / baseHeight * 100) + "%";
+  element.style.transform = "none";
 }
 
 function ombreAnimationCampPrototypePourRotation(type, rotation, functionalTier) {
@@ -17976,7 +18073,7 @@ function ombreAnimationCampPrototypePourRotation(type, rotation, functionalTier)
       0: "down", 90: "right", 180: "up", 270: "left"
     }[campPrototypeApi.normaliserRotation(rotation)];
   const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
-    type.id,
+    type.runtimeAssetId || type.id,
     Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
   );
   return runtimeVisual && runtimeVisual.animation && direction
@@ -18167,6 +18264,9 @@ function remplirItemCampPrototype(element, type, rotation, functionalTier, item)
     const dynamicShadowSrc = ombreAnimationCampPrototypePourRotation(
       type, dimensions.rotation, functionalTier
     );
+    const animationRegistration = enregistrementAnimationCampPrototypePourRotation(
+      type, dimensions.rotation, functionalTier
+    );
     if (dynamicShadowSrc) {
       const dynamicShadow = document.createElement("img");
       dynamicShadow.className = "camp-prototype-animation-shadow";
@@ -18179,6 +18279,7 @@ function remplirItemCampPrototype(element, type, rotation, functionalTier, item)
       dynamicShadow.style.width = "100%";
       dynamicShadow.style.height = "100%";
       dynamicShadow.style.transform = "translate(-50%, -50%)";
+      appliquerEnregistrementAnimationCampPrototype(dynamicShadow, animationRegistration);
       element.appendChild(dynamicShadow);
     }
     const animationSrc = animationCampPrototypePourRotation(
@@ -18196,6 +18297,7 @@ function remplirItemCampPrototype(element, type, rotation, functionalTier, item)
       animation.style.width = "100%";
       animation.style.height = "100%";
       animation.style.transform = "translate(-50%, -50%)";
+      appliquerEnregistrementAnimationCampPrototype(animation, animationRegistration);
       element.appendChild(animation);
     }
     const label = document.createElement("span");
@@ -20722,7 +20824,7 @@ function rendreCampTaskPanel(options) {
   }
   const ancienPicker = document.querySelector(".camp-task-cat-picker-layer");
   if (ancienPicker) ancienPicker.remove();
-  ecrireTexte(title, definition.actionLabel);
+  ecrireTexte(title, CAT_ASSIGNMENT_MODAL_TITLE);
   summary.innerHTML = "";
   summary.classList.add("camp-task-panel-summary");
   summary.className = String(summary.className || "").split(/\s+/).filter(function(className) {
@@ -20815,14 +20917,14 @@ function rendreCampTaskPanel(options) {
       rendreCampTaskPanel({ focusSelector: '[data-camp-task-slot="' + slot + '"]' });
     });
     const picker = document.createElement("section");
-    picker.className = "camp-task-cat-picker";
+    picker.className = "camp-task-cat-picker cat-assignment-picker-shell";
     picker.setAttribute("role", "dialog");
     picker.setAttribute("aria-label", "Choose a Cat for slot " + (state.activeSlot + 1));
     const pickerHeader = document.createElement("div");
     pickerHeader.className = "camp-task-cat-picker-header";
     const listLabel = document.createElement("strong");
     listLabel.className = "camp-task-cats-label";
-    listLabel.textContent = "Assign a Cat";
+    listLabel.textContent = CAT_ASSIGNMENT_MODAL_TITLE;
     pickerHeader.appendChild(listLabel);
     const closePicker = document.createElement("button");
     closePicker.type = "button";
@@ -20836,6 +20938,9 @@ function rendreCampTaskPanel(options) {
     });
     pickerHeader.appendChild(closePicker);
     picker.appendChild(pickerHeader);
+    const pickerList = document.createElement("div");
+    pickerList.className = "cat-assignment-list";
+    picker.appendChild(pickerList);
     let eligibleCount = 0;
     const candidatsCamp = (etat.kittiesData || []).map(function(kitty, kittyIndex) {
       if (!kittyEligiblePourAffectationOrdinaire(kitty)) return null;
@@ -20852,7 +20957,6 @@ function rendreCampTaskPanel(options) {
         kitty: kitty,
         kittyIndex: kittyIndex,
         availableForCurrentAction: !busy && !disabled,
-        effectivenessScore: multiplicateurVitesseActionCampKitty(kitty),
         selectedSlot: selectedSlot,
         busy: busy,
         forcable: forcable,
@@ -20899,13 +21003,13 @@ function rendreCampTaskPanel(options) {
             ? function() { campTaskPanelSelectKitty(kittyIndex); } : null
         } : null
       });
-      if (row) picker.appendChild(row);
+      if (row) pickerList.appendChild(row);
     });
     if (!eligibleCount) {
       const empty = document.createElement("p");
       empty.className = "camp-demolition-empty";
       empty.textContent = "No eligible Cat is available for this task.";
-      picker.appendChild(empty);
+      pickerList.appendChild(empty);
     }
     pickerLayer.appendChild(picker);
     document.getElementById(state.modalId).appendChild(pickerLayer);
@@ -21050,10 +21154,7 @@ function renduModalAllocationMaisonCamp() {
   const type = item && typeCampPrototype(item.type);
   const contenu = document.getElementById("camp-house-allocation-modal-kitties");
   if (!item || !type || !contenu) return;
-  ecrireTexte(
-    document.getElementById("camp-house-allocation-modal-title"),
-    type.label
-  );
+  afficherTitreModalAffectationChat("camp-house-allocation-modal-title");
   const resume = document.getElementById("camp-house-allocation-modal-summary");
   const occupant = campPrototypeAllocationHouseOccupantIndex === null
     ? null : etat.kittiesData[campPrototypeAllocationHouseOccupantIndex];
@@ -21062,8 +21163,11 @@ function renduModalAllocationMaisonCamp() {
     : "Choose a Cat for this empty place. Housing does not interrupt their current activity.";
   const assignments = housingAssignmentsCamp();
   contenu.innerHTML = "";
-  (etat.kittiesData || []).forEach(function(kitty, kittyIndex) {
-    if (!kitty || estBernardoSuperviseur(kitty)) return;
+  candidatsKittyAffectation(function(kitty) {
+    return kitty && !estBernardoSuperviseur(kitty);
+  }).forEach(function(entry) {
+    const kitty = entry.kitty;
+    const kittyIndex = entry.kittyIndex;
     const assignedElsewhere = assignments[String(kittyIndex)]
       && assignments[String(kittyIndex)] !== houseUid;
     const selected = campPrototypeAllocationHouseOccupantIndex !== null
@@ -21074,7 +21178,7 @@ function renduModalAllocationMaisonCamp() {
       : (assignedElsewhere ? "Housed elsewhere · " + activity : activity);
     const disabled = selected;
     const row = document.createElement("div");
-    row.className = "camp-demolition-kitty" + (disabled ? " camp-demolition-kitty-disabled" : "");
+    row.className = "camp-demolition-kitty cat-assignment-row" + (disabled ? " camp-demolition-kitty-disabled" : "");
     if (!disabled) {
       row.setAttribute("role", "button");
       row.tabIndex = 0;
@@ -21140,10 +21244,7 @@ function renduModalConstructionMaisonCamp() {
   const duree = devis && devis.duration;
   const cout = devis && devis.costs;
   if (!type || !contenu || !duree || !devis || !cout) return;
-  ecrireTexte(
-    document.getElementById("camp-house-construction-modal-title"),
-    "Assign a Cat to build " + type.label
-  );
+  afficherTitreModalAffectationChat("camp-house-construction-modal-title");
   const resume = document.getElementById("camp-house-construction-modal-summary");
   if (resume) {
     resume.textContent = "";
@@ -21159,11 +21260,12 @@ function renduModalConstructionMaisonCamp() {
     resume.appendChild(document.createTextNode(" Cardboard Plank" + (cout.cardboardPlanks === 1 ? "" : "s")));
   }
   let html = "";
-  etat.kittiesData.forEach(function(kitty, kittyIndex) {
-    if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
+  candidatsKittyAffectation(kittyEligiblePourAffectationOrdinaire).forEach(function(entry) {
+    const kitty = entry.kitty;
+    const kittyIndex = entry.kittyIndex;
     const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const status = busy ? kittyAllocationLabel(kittyIndex).text : "Available";
-    html += '<div class="camp-demolition-kitty'
+    html += '<div class="camp-demolition-kitty cat-assignment-row'
       + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (busy
         ? ' aria-disabled="true"'
@@ -21374,16 +21476,16 @@ function renduModalConstructionBatimentCamp() {
   const config = devis && devis.config;
   const contenu = document.getElementById("camp-building-construction-modal-kitties");
   if (!type || !config || !contenu) return;
-  ecrireTexte(document.getElementById("camp-building-construction-modal-title"),
-    "Assign a Cat to build " + type.label);
+  afficherTitreModalAffectationChat("camp-building-construction-modal-title");
   ecrireTexte(document.getElementById("camp-building-construction-modal-summary"),
     coutConstructionBatimentCampTexte(typeId) + " · 1 Cat · " + formaterTemps(devis.duration));
   let html = "";
-  etat.kittiesData.forEach(function(kitty, kittyIndex) {
-    if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
+  candidatsKittyAffectation(kittyEligiblePourAffectationOrdinaire).forEach(function(entry) {
+    const kitty = entry.kitty;
+    const kittyIndex = entry.kittyIndex;
     const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const status = busy ? kittyAllocationLabel(kittyIndex).text : "Available";
-    html += '<div class="camp-demolition-kitty' + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
+    html += '<div class="camp-demolition-kitty cat-assignment-row' + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (busy ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + kitty.nom + " to build " + type.label)
         + ' onclick="selectionnerKittyConstructionBatimentCamp(' + kittyIndex + ')"') + '>'
       + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
@@ -21659,18 +21761,18 @@ function renduModalAmeliorationCamp() {
   const contenu = document.getElementById("camp-upgrade-modal-kitties");
   if (!item || !type || !upgrade || !contenu) return;
   const ressourcesOk = ressourcesAmeliorationCampSuffisantes(upgrade);
-  ecrireTexte(document.getElementById("camp-upgrade-modal-title"),
-    "Upgrade " + type.label + " to Tier " + upgrade.targetTier);
+  afficherTitreModalAffectationChat("camp-upgrade-modal-title");
   ecrireTexte(document.getElementById("camp-upgrade-modal-summary"),
     coutAmeliorationCampTexte(upgrade) + " · 1 Cat · " + formaterTemps(upgrade.duration)
       + (ressourcesOk ? "" : " · Not enough resources"));
   let html = "";
-  etat.kittiesData.forEach(function(kitty, kittyIndex) {
-    if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
+  candidatsKittyAffectation(kittyEligiblePourAffectationOrdinaire).forEach(function(entry) {
+    const kitty = entry.kitty;
+    const kittyIndex = entry.kittyIndex;
     const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const disabled = busy || !ressourcesOk;
     const status = !ressourcesOk ? "Resources missing" : (busy ? kittyAllocationLabel(kittyIndex).text : "Available");
-    html += '<div class="camp-demolition-kitty' + (disabled ? ' camp-demolition-kitty-disabled' : '') + '"'
+    html += '<div class="camp-demolition-kitty cat-assignment-row' + (disabled ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + kitty.nom + " to upgrade " + type.label)
         + ' onclick="selectionnerKittyAmeliorationCamp(' + kittyIndex + ')"') + '>'
       + portraitSelectionKittyHtml(kitty, "camp-demolition-kitty-icon")
@@ -21798,23 +21900,21 @@ function renduModalReparationCamp() {
   const duree = repairDefinition && repairDefinition.duration;
   const coutAbordable = reparationCampAbordable(buildingId);
   if (!type || !contenu || !duree) return;
-  ecrireTexte(
-    document.getElementById("camp-repair-modal-title"),
-    "Assign a Cat to repair " + type.label
-  );
+  afficherTitreModalAffectationChat("camp-repair-modal-title");
   ecrireTexte(
     document.getElementById("camp-repair-modal-summary"),
     "Repair time · " + formaterTemps(duree) + " · Cost · " + libelleCoutReparationCamp(buildingId)
   );
   let html = "";
-  etat.kittiesData.forEach(function(kitty, kittyIndex) {
-    if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
+  candidatsKittyAffectation(kittyEligiblePourAffectationOrdinaire).forEach(function(entry) {
+    const kitty = entry.kitty;
+    const kittyIndex = entry.kittyIndex;
     const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const disabled = busy || !coutAbordable;
     const status = busy
       ? kittyAllocationLabel(kittyIndex).text
       : (coutAbordable ? "Available" : "Needs " + libelleCoutReparationCamp(buildingId));
-    html += '<div class="camp-demolition-kitty'
+    html += '<div class="camp-demolition-kitty cat-assignment-row'
       + (disabled ? ' camp-demolition-kitty-disabled' : '') + '"'
       + (disabled
         ? ' aria-disabled="true"'
@@ -21955,10 +22055,7 @@ function renduModalDemolitionCamp() {
   const duree = campPrototypeApi.dureeDemolitionObstacle(obstacle);
   const minLevel = niveauMinimumCibleDemolition(obstacle);
   const requiredCats = Math.max(1, Number(obstacle.requiredCats) || 1);
-  ecrireTexte(
-    document.getElementById("camp-demolition-modal-title"),
-    "Assign " + requiredCats + " Cat" + (requiredCats > 1 ? "s" : "") + " to demolish " + obstacle.label
-  );
+  afficherTitreModalAffectationChat("camp-demolition-modal-title");
   ecrireTexte(
     document.getElementById("camp-demolition-modal-summary"),
     obstacle.cells.length + (obstacle.cells.length === 1 ? " cell" : " cells")
@@ -21966,8 +22063,9 @@ function renduModalDemolitionCamp() {
       + " · " + (obstacle.requiredCats || 1) + " Cat" + ((obstacle.requiredCats || 1) > 1 ? "s" : "")
   );
   let html = "";
-  etat.kittiesData.forEach(function(kitty, kittyIndex) {
-    if (!kittyEligiblePourAffectationOrdinaire(kitty)) return;
+  candidatsKittyAffectation(kittyEligiblePourAffectationOrdinaire).forEach(function(entry) {
+    const kitty = entry.kitty;
+    const kittyIndex = entry.kittyIndex;
     const busy = kittyIsUnavailableForNewAssignment(kittyIndex);
     const levelTooLow = (Number(kitty.niveau) || 0) < minLevel;
     const selected = campPrototypeDemolitionSelection.includes(kittyIndex);
@@ -21975,7 +22073,7 @@ function renduModalDemolitionCamp() {
     const status = busy
       ? kittyAllocationLabel(kittyIndex).text
       : (levelTooLow ? "Requires level " + minLevel : selected ? "Selected" : "Available");
-    html += '<div class="camp-demolition-kitty' + (disabled ? ' camp-demolition-kitty-disabled' : '') + (selected ? ' camp-demolition-kitty-selected' : '') + '"'
+    html += '<div class="camp-demolition-kitty cat-assignment-row' + (disabled ? ' camp-demolition-kitty-disabled' : '') + (selected ? ' camp-demolition-kitty-selected' : '') + '"'
       + (disabled
         ? ' aria-disabled="true"'
         : attributsActivationClavier("Assign " + kitty.nom + " to demolish " + obstacle.label)
@@ -27318,6 +27416,7 @@ mobileInputDiagnostic.configure({
 });
 initialiserCampPrototype();
 normaliserFormuleRecrutementCamp();
+if (partieExistante && migrationOrdrePremiereVueStoriesAPersister) sauvegarder();
 if (globalThis.CatInc.devTools) {
   globalThis.CatInc.devTools.configure({
     getState: function() { return etat; },
@@ -27965,6 +28064,30 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
       sawmillUid: "camp-initial-sawmill"
     });
   };
+  const preparerAppealTierDeuxTest = function() {
+    const base = preparerUpgradesCanoniquesTest();
+    const initialZone = templateCampActif().zones.find(function(zone) { return zone.initial; });
+    const clearedCells = campPrototypeTerrain.clearedCells.slice();
+    if (initialZone) {
+      for (let y = initialZone.y; y < initialZone.y + initialZone.height; y += 1) {
+        for (let x = initialZone.x; x < initialZone.x + initialZone.width; x += 1) {
+          clearedCells.push(x + ":" + y);
+        }
+      }
+      campPrototypeTerrain = campPrototypeApi.normaliserTerrain(Object.assign(
+        {}, campPrototypeTerrain, {clearedCells: clearedCells}
+      ));
+    }
+    etat.kittiesData[1].niveau = 0;
+    const cathouse = placerItemConnecteTest(
+      "woodCathouse", "canonical-upgrade-wood-cathouse"
+    );
+    if (!cathouse) throw new Error("Appeal Tier 2 browser test could not place its Wood Cathouse fixture.");
+    synchroniserEtatCampDepuisPrototype();
+    sauvegarderCampPrototype();
+    renduCampPrototype();
+    return Object.freeze(Object.assign({}, base, {woodCathouseUid: cathouse.uid}));
+  };
   const preparerMaisonsCampTest = function() {
     const base = preparerUpgradesCanoniquesTest();
     const zoneInitiale = templateCampActif().zones.find(function(zone) { return zone.initial; });
@@ -28149,6 +28272,7 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
       });
     },
     prepareCanonicalUpgrades: preparerUpgradesCanoniquesTest,
+    prepareAppealTierTwo: preparerAppealTierDeuxTest,
     prepareHousePanel: preparerMaisonsCampTest,
     prepareJobsPolish: preparerJobsCampTest,
     prepareNeighborPolish: preparerVoisinPolishTest,
@@ -28210,6 +28334,27 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
       terminerIntroAppeal();
       renduCampPrototype();
       return progressionCamp().appealUnlocked === true;
+    },
+    placeCanonicalWoodCathouse: function() {
+      const uid = "canonical-upgrade-future-wood-cathouse";
+      const initialZone = templateCampActif().zones.find(function(zone) { return zone.initial; });
+      const clearedCells = campPrototypeTerrain.clearedCells.slice();
+      if (initialZone) {
+        for (let y = initialZone.y; y < initialZone.y + initialZone.height; y += 1) {
+          for (let x = initialZone.x; x < initialZone.x + initialZone.width; x += 1) {
+            clearedCells.push(x + ":" + y);
+          }
+        }
+        campPrototypeTerrain = campPrototypeApi.normaliserTerrain(Object.assign(
+          {}, campPrototypeTerrain, {clearedCells: clearedCells}
+        ));
+      }
+      const item = placerItemConnecteTest("woodCathouse", uid);
+      if (!item) return null;
+      synchroniserEtatCampDepuisPrototype();
+      sauvegarderCampPrototype();
+      renduCampPrototype();
+      return uid;
     },
     finishCanonicalUpgradeTimer: function(uid) {
       const job = ameliorationCampPourItem(uid);

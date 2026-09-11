@@ -576,8 +576,8 @@
         }
       ],
       "asset": {
-        "type": "illustration",
-        "src": "img/Story scenes/Intro.webp",
+        "type": "icon",
+        "src": "img/Cat faces/Bernardo.png",
         "alt": "A child reaches toward Bernardo while their mother holds their hand."
       }
     },
@@ -787,7 +787,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/Story scenes/Story 3.webp",
+        "src": "img/Cat faces/luna-v2.png",
         "alt": "Bernardo addresses two other kittens in the garden."
       }
     },
@@ -861,7 +861,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/Story scenes/Story 3.webp",
+        "src": "img/interface/camp.png",
         "alt": "Bernardo, Mochi and Luna inspect their cluttered new garden."
       }
     },
@@ -1585,7 +1585,12 @@
           "portraitClass": null,
           "html": "The house is finally empty. Search the house in the Explorations tab."
         }
-      ]
+      ],
+      "asset": {
+        "type": "illustration",
+        "src": "img/interface/warning.png",
+        "alt": "warning"
+      }
     },
     {
       "id": "ecran-story-left-house",
@@ -1605,14 +1610,14 @@
           "speakerClass": null,
           "speakerName": null,
           "portraitClass": null,
-          "html": "The neighbors on the left peek through their curtains and see the camp growing in the garden next door."
+          "html": "The neighbors peek through their curtains as another shelter rises in the garden next door."
         },
         {
           "classes": [],
           "speakerClass": "mere",
           "speakerName": "Mother",
           "portraitClass": "mere",
-          "html": "There are more cats every day. They are building shelters now."
+          "html": "There are even more cats now. They have taken over the whole garden."
         },
         {
           "classes": [],
@@ -1628,44 +1633,49 @@
           "speakerClass": null,
           "speakerName": null,
           "portraitClass": null,
-          "html": "They leave in a hurry, leaving their house empty and ready to be explored."
+          "html": "The neighbors leave in a hurry and forget to close a window."
         },
         {
           "classes": [],
           "speakerClass": "mochi",
           "speakerName": "Mochi",
           "portraitClass": "mochi",
-          "html": "Another car is leaving. Are we becoming popular?"
+          "html": "Another car is leaving. Do humans always move away when our camp improves?"
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "In a very specific, property-emptying way."
+          "html": "Only the observant ones."
         },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
-          "portraitClass": "bernard",
-          "html": "Their house is unattended now, so we should respect their decision by making sure nothing useful goes to waste."
+          "portraitClass": "bernardPresetHappy",
+          "html": "They have entrusted us with another unattended house. We must make sure nothing useful goes to waste."
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "Your respect is touching."
+          "html": "They ran away from us, Bernardo."
         },
         {
           "classes": [],
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernard",
-          "html": "Leadership often is."
+          "html": "Yes, their trust is expressed in unusual ways."
         }
-      ]
+      ],
+      "asset": {
+        "type": "illustration",
+        "src": "img/interface/warning.png",
+        "alt": "warning"
+      }
     },
     {
       "id": "ecran-story-6a",
@@ -1842,8 +1852,8 @@
         }
       ],
       "asset": {
-        "type": "illustration",
-        "src": "img/Story scenes/Story 6b.webp",
+        "type": "icon",
+        "src": "img/interface/job.png",
         "alt": "Bernardo studies charts and diagrams in an open book."
       }
     },

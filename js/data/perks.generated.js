@@ -1888,7 +1888,7 @@
       "granted": false,
       "available": true,
       "prerequisites": [
-        "builderConstructionSpecialist"
+        "builderReinforcedCardboardBox"
       ],
       "costs": {
         "cannedCatFood": 4

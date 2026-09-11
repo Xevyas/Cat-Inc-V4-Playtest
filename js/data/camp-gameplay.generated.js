@@ -689,6 +689,10 @@
             "appeal": 1,
             "campXp": 3
           },
+          "unlock": {
+            "kind": "runtime-rule",
+            "id": "appealUnlocked"
+          },
           "costGrowth": 1.7,
           "durationGrowth": 1.4
         },

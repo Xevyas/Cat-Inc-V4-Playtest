@@ -402,6 +402,7 @@
           mode: revision.animation.mode,
           frameCount: revision.animation.frameCount,
           frameDurationMs: revision.animation.frameDurationMs,
+          registration: revision.animation.registration || null,
           sprites: Object.keys(revision.animation.sprites || {}).reduce(function(paths, direction) {
             paths[direction] = runtimeSpritePath(revision.animation.sprites[direction], revision);
             return paths;

@@ -107,7 +107,7 @@ function creerEtatInitial() {
   avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
   volumeMusique:           0,
-  uiTheme:                 "stylish",
+  uiTheme:                 "stylish-straight",
   campCatPortraitScale:    1,
   hideCampCatIcons:          false,
   // Resources hidden from the compact top rail. An empty list means every
@@ -192,6 +192,7 @@ function creerEtatInitial() {
   objectifsComplis: [],
   logs:          [],
   storiesVues:  [],
+  storySeenOrder: [],
   releaseNotesSeenVersion: "",
   ongletsVisites: ["gang", "logs"],
   learningEnCours: null,   // { itemId, kittyIndex, startTs, duree } in ms (Study or legacy direct learning)

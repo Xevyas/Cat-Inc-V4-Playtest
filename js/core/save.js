@@ -196,9 +196,10 @@ function normaliserLayoutStickersSauvegarde(layout) {
 
 function normaliserProfilCampSauvegarde(value) {
   const source = estObjetSauvegarde(value) ? value : {};
-  const name = typeof source.name === "string"
-    ? source.name.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 32)
+  const cleanName = typeof source.name === "string"
+    ? source.name.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim()
     : "";
+  const name = Array.from(cleanName).slice(0, 12).join("").trim();
   const avatar = typeof source.avatarCatFaceId === "string"
     ? source.avatarCatFaceId.trim()
     : "";
@@ -209,7 +210,7 @@ function normaliserProfilCampSauvegarde(value) {
 }
 
 function normaliserUiTheme(value) {
-  return value === "basic" || value === "stylish-straight" ? value : "stylish";
+  return value === "basic" || value === "stylish" ? value : "stylish-straight";
 }
 
 function donneesSauvegardeReconnaissables(d) {
@@ -284,7 +285,7 @@ function validerStructureSauvegarde(d) {
 
   const champsTableaux = [
     "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies",
-    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "ongletsVisites", "resourceBarHidden",
+    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden",
     "batimentsCampRepares"
   ];
 
@@ -409,7 +410,7 @@ function validerStructureSauvegarde(d) {
     return "Invalid cathouse history.";
   }
 
-  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "ongletsVisites", "resourceBarHidden"];
+  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden"];
   for (const cle of champsTableauxDeChaines) {
     if (d[cle] && !d[cle].every(function(valeur) { return typeof valeur === "string"; })) {
       return "Invalid entries in field: " + cle + ".";
@@ -1114,6 +1115,7 @@ function analyserSauvegardeBrute(raw) {
     objectifsComplis: etat.objectifsComplis,
     logs:          etat.logs,
     storiesVues:   etat.storiesVues,
+    storySeenOrder: etat.storySeenOrder,
     releaseNotesSeenVersion: etat.releaseNotesSeenVersion,
     ongletsVisites: etat.ongletsVisites
   };
@@ -1454,6 +1456,21 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("storySaladVue", !!d.premiereSaladeFaite);
     ajouterStory("storySeminarVue", itemsAppris.includes("seminarGuide"));
     etat.storiesVues = storiesInferees;
+  }
+  const storyScenes = CatInc.data && CatInc.data.dialogues
+    && Array.isArray(CatInc.data.dialogues.scenes) ? CatInc.data.dialogues.scenes : [];
+  const canonicalStoryIds = new Set(storyScenes.map(function(scene) { return scene.id; }));
+  if (Array.isArray(d.storySeenOrder)) {
+    etat.storySeenOrder = Array.from(new Set(d.storySeenOrder.filter(function(storyId) {
+      return canonicalStoryIds.size === 0 || canonicalStoryIds.has(storyId);
+    })));
+  } else {
+    // Exact chronology was not stored by older current-version saves. Seed a
+    // deterministic catalogue-order fallback once; future real displays append
+    // their canonical scene IDs to this durable player-history authority.
+    etat.storySeenOrder = storyScenes.filter(function(scene) {
+      return etat.storiesVues.includes(scene.flag);
+    }).map(function(scene) { return scene.id; });
   }
   if (Array.isArray(d.ongletsVisites)) {
     etat.ongletsVisites = Array.from(new Set(d.ongletsVisites.filter(function(id) {

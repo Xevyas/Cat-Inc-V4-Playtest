@@ -102,7 +102,7 @@
     .ecran-intro[data-dialogue-hydrated="true"] .story-continue-hint { color: rgba(92, 67, 44, .86); }
   </style>
 </head>
-<body data-ui-theme="stylish">
+<body data-ui-theme="stylish" data-ui-shape="straight">
   <div id="boot-curtain" role="status" aria-live="polite">
     <strong>Cat Inc</strong>
     <p id="boot-message">Loading…</p>
@@ -114,8 +114,8 @@
   </div>
   <!-- Body stylesheets block the following runtime, while the preceding,
        self-contained curtain is already paintable. -->
-  <link rel="stylesheet" href="style.css?v=0.0172" />
-  <link rel="stylesheet" href="style-stylish.css?v=0.0001" />
+  <link rel="stylesheet" href="style.css?v=0.0176" />
+  <link rel="stylesheet" href="style-stylish.css?v=0.0002" />
   <link rel="stylesheet" href="style-stylish-straight.css?v=0.0001" />
 
   <!-- INTRO -->
@@ -547,7 +547,7 @@
       </div>
     </div>
     </div>
-    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="stylish" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Basic (Stylish is active)" title="Switch to Basic (Stylish is active)" hidden>
+    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="stylish-straight" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Basic (Stylish Straight is active)" title="Switch to Basic (Stylish Straight is active)" hidden>
       <span class="ressources-theme-toggle-icone" aria-hidden="true">Aa</span>
       <span id="ui-theme-quick-label" class="ressources-theme-toggle-label">Basic</span>
     </button>
@@ -574,7 +574,7 @@
           <span class="camp-profile-avatar camp-profile-avatar-large"><img id="camp-profile-panel-avatar" src="img/interface/Gang_Final.png?v=0.0029" alt=""></span>
           <form class="camp-profile-name-form" onsubmit="enregistrerNomProfilCamp(event)">
             <label for="camp-profile-name-input">Camp name</label>
-            <span><input id="camp-profile-name-input" name="campName" type="text" maxlength="32" autocomplete="off" required><button type="submit">Save</button></span>
+            <span><input id="camp-profile-name-input" name="campName" type="text" maxlength="12" autocomplete="off" required><button type="submit">Save</button></span>
             <small id="camp-profile-name-status" role="status" aria-live="polite"></small>
           </form>
         </div>
@@ -685,6 +685,7 @@
         <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite"></p>
         <div class="camp-prototype-viewport">
           <div class="camp-prototype-map camp-prototype-map-preparing camp-neighbor-red-unknown camp-neighbor-green-unknown" data-camp-visible-columns="1" data-camp-visible-start="1">
+          <div class="camp-prototype-world-crop">
           <div id="camp-prototype-board" class="camp-prototype-board" tabindex="0" role="application" aria-label="Base Camp map, with three fixed rear-house facades above three equal 6 by 8 gardens">
           <div class="camp-prototype-environment" aria-hidden="true">
             <div class="camp-prototype-houses">
@@ -758,10 +759,6 @@
           <div id="camp-prototype-items" class="camp-prototype-items"></div>
           <div id="camp-task-ui-layer" class="camp-task-ui-layer" aria-hidden="true"></div>
           <button id="bird-btn" class="camp-bird-perch" type="button" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
-           <div class="camp-prototype-neighbor-fog" aria-hidden="true">
-             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-red" data-camp-fog-zone="redGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
-             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
-           </div>
            <div id="camp-prototype-fences" class="camp-prototype-fences" aria-hidden="true"></div>
            <span class="camp-recruit-arrival-control">
              <button id="camp-recruit-arrival-status" class="camp-recruit-arrival-status" type="button" aria-expanded="false" aria-controls="camp-recruit-arrival-details" aria-label="Show visitor arrival timing details" onclick="toggleDetailsDureeArriveeCamp(event)" hidden></button>
@@ -800,6 +797,11 @@
                <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
              </div>
              <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
+           </div>
+          </div>
+           <div class="camp-prototype-neighbor-fog" aria-hidden="true">
+             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-red" data-camp-fog-zone="redGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
+             <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
            </div>
         </div>
        </div>
@@ -1178,79 +1180,79 @@
   </div>
 
   <!-- MODAL JOB CENTER -->
-  <div id="jc-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="jc-modal-titre" style="display:none">
+  <div id="jc-modal" class="explo-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="jc-modal-titre" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalJC()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="jc-modal-titre">🐱 Choose a cat</span>
+        <span class="explo-modal-titre" id="jc-modal-titre">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close cat selection" onclick="fermerModalJC()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
-      <div id="jc-modal-contenu"></div>
+      <div id="jc-modal-contenu" class="cat-assignment-list"></div>
     </div>
   </div>
 
   <!-- MODAL WORKER SELECTION -->
-  <div id="worker-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="worker-modal-titre" style="display:none">
+  <div id="worker-modal" class="explo-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="worker-modal-titre" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalWorker()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="worker-modal-titre">🐱 Assign a cat</span>
+        <span class="explo-modal-titre" id="worker-modal-titre">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close worker selection" onclick="fermerModalWorker()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
-      <div id="worker-modal-kitties"></div>
+      <div id="worker-modal-kitties" class="cat-assignment-list"></div>
     </div>
   </div>
 
   <!-- MODAL CAMP DEMOLITION -->
-  <div id="camp-demolition-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-demolition-modal-title" style="display:none">
+  <div id="camp-demolition-modal" class="explo-modal camp-demolition-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-demolition-modal-title" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalDemolitionCamp()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-demolition-modal-title">Assign a Cat</span>
+        <span class="explo-modal-titre" id="camp-demolition-modal-title">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close demolition assignment" onclick="fermerModalDemolitionCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="camp-demolition-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-demolition-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      <div id="camp-demolition-modal-kitties" class="camp-demolition-modal-kitties cat-assignment-list"></div>
     </div>
   </div>
 
   <!-- MODAL CAMP BUILDING REPAIR -->
-  <div id="camp-repair-modal" class="explo-modal camp-demolition-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-repair-modal-title" style="display:none">
+  <div id="camp-repair-modal" class="explo-modal camp-demolition-modal cat-assignment-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-repair-modal-title" style="display:none">
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-repair-modal-title">Assign a Cat</span>
+        <span class="explo-modal-titre" id="camp-repair-modal-title">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close repair assignment"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div class="overlay-manager-content">
         <p id="camp-repair-modal-summary" class="camp-demolition-modal-summary"></p>
-        <div id="camp-repair-modal-kitties" class="camp-demolition-modal-kitties"></div>
+        <div id="camp-repair-modal-kitties" class="camp-demolition-modal-kitties cat-assignment-list"></div>
       </div>
     </div>
   </div>
 
   <!-- MODAL CAMP BUILDING UPGRADE -->
-  <div id="camp-upgrade-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-upgrade-modal-title" style="display:none">
+  <div id="camp-upgrade-modal" class="explo-modal camp-demolition-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-upgrade-modal-title" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalAmeliorationCamp()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-upgrade-modal-title">Upgrade building</span>
+        <span class="explo-modal-titre" id="camp-upgrade-modal-title">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close building upgrade" onclick="fermerModalAmeliorationCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="camp-upgrade-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-upgrade-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      <div id="camp-upgrade-modal-kitties" class="camp-demolition-modal-kitties cat-assignment-list"></div>
     </div>
   </div>
 
   <!-- MODAL CAMP BUILDING CONSTRUCTION -->
-  <div id="camp-building-construction-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-building-construction-modal-title" style="display:none">
+  <div id="camp-building-construction-modal" class="explo-modal camp-demolition-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-building-construction-modal-title" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalConstructionBatimentCamp()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-building-construction-modal-title">Build in Camp</span>
+        <span class="explo-modal-titre" id="camp-building-construction-modal-title">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close building construction" onclick="fermerModalConstructionBatimentCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="camp-building-construction-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-building-construction-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      <div id="camp-building-construction-modal-kitties" class="camp-demolition-modal-kitties cat-assignment-list"></div>
     </div>
   </div>
 
@@ -1315,28 +1317,28 @@
   </div>
 
   <!-- MODAL CAMP HOUSE CONSTRUCTION -->
-  <div id="camp-house-construction-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-house-construction-modal-title" style="display:none">
+  <div id="camp-house-construction-modal" class="explo-modal camp-demolition-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-house-construction-modal-title" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalConstructionMaisonCamp()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-house-construction-modal-title">Assign a Cat</span>
+        <span class="explo-modal-titre" id="camp-house-construction-modal-title">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close house construction assignment" onclick="fermerModalConstructionMaisonCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="camp-house-construction-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-house-construction-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      <div id="camp-house-construction-modal-kitties" class="camp-demolition-modal-kitties cat-assignment-list"></div>
     </div>
   </div>
 
   <!-- MODAL CAMP HOUSE ALLOCATION -->
-  <div id="camp-house-allocation-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-house-allocation-modal-title" style="display:none">
+  <div id="camp-house-allocation-modal" class="explo-modal camp-demolition-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-house-allocation-modal-title" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalAllocationMaisonCamp()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-house-allocation-modal-title">Allocate a Cat</span>
+        <span class="explo-modal-titre" id="camp-house-allocation-modal-title">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close house allocation" onclick="fermerModalAllocationMaisonCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="camp-house-allocation-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-house-allocation-modal-kitties" class="camp-demolition-modal-kitties"></div>
+      <div id="camp-house-allocation-modal-kitties" class="camp-demolition-modal-kitties cat-assignment-list"></div>
     </div>
   </div>
 
@@ -1369,14 +1371,14 @@
   </div>
 
   <!-- MODAL EXPLORATION KITTY SELECTION -->
-  <div id="explo-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="explo-modal-titre" style="display:none">
+  <div id="explo-modal" class="explo-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="explo-modal-titre" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalExplo()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="explo-modal-titre">🐱 Choose a cat</span>
+        <span class="explo-modal-titre" id="explo-modal-titre">Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close exploration selection" onclick="fermerModalExplo()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
-      <div id="explo-modal-kitties"></div>
+      <div id="explo-modal-kitties" class="cat-assignment-list"></div>
     </div>
   </div>
 
@@ -1407,7 +1409,9 @@
       <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>DON'T MISS!</span></div>
       <div class="bird-track">
         <div class="bird-target cat-catch-target">
-          <img id="cat-catch-target-icone" class="bird-target-icone cat-catch-target-icone" alt="Bernardo target">
+          <span class="cat-catch-target-portrait">
+            <img id="cat-catch-target-icone" class="cat-catch-target-icone" alt="Bernardo target">
+          </span>
         </div>
         <div id="cat-catch-cursor" class="bird-cursor"></div>
       </div>
@@ -1480,7 +1484,9 @@
           <span class="purrsuasion-v2-dial-zone purrsuasion-v2-band-silver"></span>
           <span class="purrsuasion-v2-dial-zone purrsuasion-v2-band-gold"></span>
           <div id="purrsuasion-v2-cursor" class="purrsuasion-v2-cursor" aria-hidden="true"></div>
-          <img class="purrsuasion-v2-dial-bernardo" data-bernardo-cat-face alt="Bernardo">
+          <span class="purrsuasion-v2-dial-bernardo-position">
+            <img class="purrsuasion-v2-dial-bernardo" data-bernardo-cat-face alt="Bernardo">
+          </span>
         </div>
         <div class="purrsuasion-v2-legend">Gold +3 · Silver +2 · Bronze +1</div>
       </div>
@@ -1569,7 +1575,7 @@
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0003"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0002"></script>
-  <script src="jeu.js?v=0.0200"></script>
+  <script src="jeu.js?v=0.0202"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

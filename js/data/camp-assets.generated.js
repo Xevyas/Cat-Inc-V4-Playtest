@@ -2441,6 +2441,20 @@
                   "width": 3.0,
                   "height": 3.0
                 }
+              },
+              "animation": {
+                "revision": 1,
+                "status": "live",
+                "baseRevision": 5,
+                "mode": "overlay-apng",
+                "frameCount": 5,
+                "frameDurationMs": 250,
+                "sprites": {
+                  "down": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-left.png"
+                }
               }
             }
           }
@@ -3019,26 +3033,26 @@
           }
         },
         "2": {
-          "liveRevision": 3,
+          "liveRevision": 7,
           "revisions": {
-            "3": {
+            "7": {
               "name": "Wood Cathouse",
               "tier": 2,
-              "revision": 3,
+              "revision": 7,
               "status": "live",
               "width": 1,
               "height": 1,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/down.png",
-                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/right.png",
-                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/up.png",
-                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/left.png"
+                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/left.png"
               },
               "groundingSprites": {
-                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/grounding-down.png",
-                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/grounding-right.png",
-                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/grounding-up.png",
-                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-3/grounding-left.png"
+                "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/revision-7/grounding-left.png"
               },
               "groundingBounds": {
                 "down": {
@@ -3064,6 +3078,54 @@
                   "y": -1.0,
                   "width": 3.0,
                   "height": 3.0
+                }
+              },
+              "animation": {
+                "revision": 2,
+                "status": "live",
+                "baseRevision": 7,
+                "mode": "overlay-apng",
+                "frameCount": 6,
+                "frameDurationMs": 200,
+                "sprites": {
+                  "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-left.png"
+                },
+                "registration": {
+                  "down": {
+                    "width": 85,
+                    "height": 113,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 214,
+                    "offsetY": -95
+                  },
+                  "right": {
+                    "width": 66,
+                    "height": 120,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 116,
+                    "offsetY": -131
+                  },
+                  "up": {
+                    "width": 86,
+                    "height": 108,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 59,
+                    "offsetY": -47
+                  },
+                  "left": {
+                    "width": 68,
+                    "height": 115,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 178,
+                    "offsetY": -20
+                  }
                 }
               },
               "access": {

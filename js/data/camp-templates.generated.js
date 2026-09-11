@@ -262,7 +262,12 @@
           "typeId": "stoneBlockPile",
           "x": 0,
           "y": 4,
-          "zoneId": "redGarden"
+          "zoneId": "redGarden",
+          "reward": {
+            "resourceId": "rockBricks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "redGarden:2:4",
@@ -311,7 +316,12 @@
           "typeId": "stoneBlockPile",
           "x": 2,
           "y": 6,
-          "zoneId": "redGarden"
+          "zoneId": "redGarden",
+          "reward": {
+            "resourceId": "rockBricks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "redGarden:4:6",
@@ -360,7 +370,12 @@
           "typeId": "stoneBlockPile",
           "x": 4,
           "y": 8,
-          "zoneId": "redGarden"
+          "zoneId": "redGarden",
+          "reward": {
+            "resourceId": "rockBricks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "redGarden:0:9",
@@ -388,7 +403,12 @@
           "typeId": "stoneBlockPile",
           "x": 0,
           "y": 10,
-          "zoneId": "redGarden"
+          "zoneId": "redGarden",
+          "reward": {
+            "resourceId": "rockBricks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "redGarden:2:10",
