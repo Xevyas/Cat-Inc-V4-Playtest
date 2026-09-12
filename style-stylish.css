@@ -16,17 +16,69 @@ body[data-ui-theme="stylish"][data-onglet-actif="work"] :is(#worker-modal, #jc-m
   text-transform: none;
 }
 
-body[data-ui-theme="stylish"] #contenu-gang,
-body[data-ui-theme="stylish"] #contenu-inventaire,
-body[data-ui-theme="stylish"] #contenu-work,
-body[data-ui-theme="stylish"] #contenu-facilities,
-body[data-ui-theme="stylish"] #contenu-explorations,
-body[data-ui-theme="stylish"] #contenu-logs {
+body[data-ui-theme="stylish"] {
   --stylish-paper-main: #fff8e9;
   --stylish-paper-card: #fffaf0;
   --stylish-ink: #513b2b;
   --stylish-ink-muted: #79664f;
   --stylish-honey: #98612d;
+  --stylish-edge: #896746;
+  --stylish-separator: #cfbc99;
+  --stylish-overlay: rgba(61, 43, 31, .45);
+  --runtime-zoom-surface: var(--stylish-paper-card);
+  --runtime-daily-quests-surface: var(--stylish-paper-main);
+  --runtime-daily-quest-row-surface: var(--stylish-paper-card);
+}
+
+/* Cat Ink is the single runtime utility language. Narrative dialogue keeps its
+   authored story surface unless it explicitly opts into this system class. */
+body[data-ui-theme="stylish"] :is(
+  .explo-modal-panneau,
+  .system-utility-panel,
+  .camp-quick-dialogue,
+  .bird-minijeu-carte,
+  .bird-success-carte,
+  .recruit-result-card
+) {
+  background: var(--stylish-paper-main);
+  border-color: var(--stylish-edge);
+  color: var(--stylish-ink);
+}
+body[data-ui-theme="stylish"] .explo-modal-panneau {
+  border: 1px solid var(--stylish-edge);
+}
+body[data-ui-theme="stylish"] .system-utility-panel {
+  border: 1px solid var(--stylish-edge);
+}
+body[data-ui-theme="stylish"] :is(.explo-modal-overlay, .overlay-manager-backdrop) {
+  background: var(--stylish-overlay);
+}
+body[data-ui-theme="stylish"] :is(.explo-modal-titre, .system-utility-panel h2, .bird-minijeu-titre) {
+  color: var(--stylish-honey);
+}
+body[data-ui-theme="stylish"] :is(.system-utility-panel, .bird-minijeu-carte, .bird-success-carte) :is(p, .bird-minijeu-desc, .bird-success-msg) {
+  color: var(--stylish-ink);
+}
+body[data-ui-theme="stylish"] .daily-quests-hud {
+  border-color: var(--stylish-edge);
+  color: var(--stylish-ink);
+}
+body[data-ui-theme="stylish"] .daily-quests-header { background: var(--stylish-honey); }
+body[data-ui-theme="stylish"] .daily-quest-row { border-color: var(--stylish-separator); }
+body[data-ui-theme="stylish"] .daily-quest-done {
+  border-color: #718e58;
+  background: var(--stylish-paper-card);
+}
+body[data-ui-theme="stylish"] .daily-quests-reward { border-top-color: var(--stylish-separator); }
+body[data-ui-theme="stylish"] :is(.camp-prototype-zoom, .sphere-tree-zoom) {
+  border-color: var(--stylish-separator);
+}
+body[data-ui-theme="stylish"] .camp-quick-dialogue {
+  border: 1px solid var(--stylish-edge);
+}
+body[data-ui-theme="stylish"] .camp-quick-dialogue :is(strong, p) { color: var(--stylish-ink); }
+body[data-ui-theme="stylish"] :is(.bird-minijeu-carte, .bird-success-carte) {
+  border: 1px solid var(--stylish-edge);
 }
 
 /* Retain native border space and hitboxes, but paint only the shaped surface.
@@ -262,7 +314,7 @@ body[data-ui-theme="stylish"] #contenu-gang .detail-identity-meta {
   min-block-size: 2lh;
   padding-inline: 16px;
 }
-body[data-ui-theme="stylish"] #contenu-gang .kitty-role-icon { display: none; }
+body[data-ui-theme="stylish"] #contenu-gang .kitty-role-icon { display: inline-flex; align-items: center; }
 body[data-ui-theme="stylish"] #contenu-gang #detail-experience .barre {
   background: linear-gradient(90deg, #718e58, #a4bc83);
 }
@@ -307,6 +359,7 @@ body[data-ui-theme="stylish"] #contenu-gang .detail-job-header {
   border: 0;
 }
 body[data-ui-theme="stylish"] #contenu-gang .detail-job-header > :is(.detail-section-titre, .detail-job-nom) {
+  align-self: center;
   padding: 0;
   background: transparent;
   font-size: .85rem;

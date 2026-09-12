@@ -716,9 +716,10 @@ body.prologue-actif #dev-controls {
 .prologue-capture-stage::after { right: -18vmax; bottom: -20vmax; }
 .prologue-paw-trail {
   position: absolute;
-  color: rgba(88, 71, 52, .16);
-  font-size: clamp(28px, 5vw, 62px);
-  letter-spacing: 18px;
+  width: clamp(28px, 5vw, 62px);
+  height: clamp(28px, 5vw, 62px);
+  object-fit: contain;
+  opacity: .2;
   transform: rotate(-26deg);
 }
 .prologue-paw-trail-a { left: 14%; top: 58%; }
@@ -3738,46 +3739,6 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 .ressources-liste::-webkit-scrollbar { height: 4px; }
 .ressources-liste::-webkit-scrollbar-thumb { border-radius: 999px; background: #dbcab5; }
 
-.ressources-theme-toggle {
-  display: inline-flex;
-  flex: 0 0 58px;
-  min-width: 58px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  padding: 4px 5px;
-  color: #725d4c;
-  border: 0;
-  border-left: 1px solid #e8ddd0;
-  background: #fffaf3;
-  cursor: pointer;
-  z-index: 2;
-}
-.ressources-theme-toggle[hidden],
-.settings-theme-row[hidden] { display: none !important; }
-.ressources-theme-toggle:hover { color: var(--couleur-accent); background: #fff3e5; }
-.ressources-theme-toggle:focus-visible { outline: 3px solid rgba(212, 98, 42, .48); outline-offset: -3px; }
-.ressources-theme-toggle[data-current-theme="stylish"] {
-  color: #805022;
-  background: #f7ead7;
-  box-shadow: inset 0 0 0 1px rgba(128, 80, 34, .15);
-}
-.ressources-theme-toggle-icone {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: .78rem;
-  font-weight: 800;
-  line-height: 1;
-  transform: rotate(-2deg);
-}
-.ressources-theme-toggle-label {
-  font-size: .47rem;
-  font-weight: 900;
-  letter-spacing: .02em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
 .ressources-gerer {
   display: inline-flex;
   flex: 0 0 62px;
@@ -6626,6 +6587,17 @@ body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
   -webkit-user-drag: none;
 }
 .camp-prototype-animation-shadow { z-index: 1; }
+.camp-animation-toggle-action span { font-size: 1.25rem; line-height: 1; }
+.camp-prototype-interaction-menu .camp-production-actions .camp-animation-toggle-action,
+.camp-prototype-interaction-menu .camp-house-actions .camp-animation-toggle-action {
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  height: 48px;
+  padding: 0;
+  border-width: 2px;
+  border-radius: 10px;
+}
 @media (prefers-reduced-motion: reduce) {
   .camp-prototype-animation-overlay,
   .camp-prototype-animation-shadow { display: none; }
@@ -7178,6 +7150,14 @@ body.camp-prototype-editing .camp-location-cats {
   background: #fff0dd;
   color: #8c3909;
   box-shadow: 0 0 0 3px rgba(189, 74, 8, .2), 0 5px 14px rgba(61, 42, 28, .2);
+}
+
+@media (max-width: 600px) {
+  .camp-prototype-edit-dock > button {
+    width: 52px;
+    height: 52px;
+    font-size: .44rem;
+  }
 }
 
 .camp-prototype-trail-exit {
@@ -8084,7 +8064,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 
 .detail-job-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 14px;
   padding-bottom: 8px;
   border-bottom: 1px solid #f0e8dc;
@@ -8120,6 +8100,8 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 
 .detail-job-nom {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.75rem;
   font-weight: 900;
   color: var(--couleur-accent);
@@ -8546,7 +8528,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 .pair-side-verrouille { pointer-events: none; }
 .pair-side-verrouille > * { opacity: 0.25; }
 .pair-side-verrouille::after {
-  content: "🔒 " attr(data-lock-reason);
+  content: attr(data-lock-reason);
   position: absolute;
   inset: 0;
   display: flex;
@@ -9182,7 +9164,15 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 .work-input-status.is-idle { color: #735f4d; background: #f0ebe3; }
 .work-input-status.is-ok { color: #25643b; background: #e0f2e5; }
-.work-input-status.is-ok::before { content: "✓"; margin-right: 6px; font-weight: 900; }
+.work-input-status.is-ok::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: url("img/interface/✅_Final.png?v=0.0026") center / contain no-repeat;
+}
 .work-input-status.is-warning { color: #8a3e00; background: #ffebbf; }
 .work-input-status.is-warning::before { content: ""; display: inline-block; width: 20px; height: 20px; flex: 0 0 20px; background: var(--interface-warning) center / contain no-repeat; margin-right: 6px; }
 .work-input-status.is-paused { color: #8b2922; background: #f8dedb; }
@@ -10183,6 +10173,13 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
 }
 .settings-toggle-row input[type="checkbox"]:checked + .settings-toggle-switch { background: var(--couleur-accent); }
 .settings-toggle-row input[type="checkbox"]:checked + .settings-toggle-switch::after { transform: translateX(17px); }
+.settings-toggle-row > span:first-child small {
+  display: block;
+  margin-top: 2px;
+  color: var(--couleur-texte-secondaire, #666);
+  font-size: 0.78em;
+  font-weight: var(--font-weight-regular);
+}
 
 /* ── Feedback ────────────────────────────────────────────*/
 .plus-un {
@@ -11537,23 +11534,28 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   z-index: 5;
 }
 
+/* Zone-level markers use one geometry-derived anchor for every shape and
+   state. The layer spans the map without changing cell hit targets. */
+.carte-zone-state-layer {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  pointer-events: none;
+  z-index: 7;
+}
+.carte-zone-state-layer > .carte-zone-state-marker {
+  position: absolute;
+  left: var(--zone-marker-x);
+  top: var(--zone-marker-y);
+  transform: translate(-50%, -50%);
+}
+
 /* Multi-cell zones: slightly larger icon and name */
 .carte-multicel .carte-icone { font-size: 1.3rem; }
 .carte-multicel .carte-nom   { font-size: 0.65rem; }
 /* Forest entrance is 1 row tall but 7 columns wide — use row layout */
 .carte-forest.carte-multicel { flex-direction: row; gap: 6px; justify-content: flex-start; padding-left: 8px; }
 .carte-forest.carte-multicel .carte-nom { white-space: nowrap; font-size: 0.6rem; }
-/* The unrevealed Forest Entrance spans the whole top row. Its discovery
-   marker must be centered across that full zone, not aligned to its left edge
-   by the revealed-zone row layout. */
-.carte-forest.carte-multicel.carte-inexploree .carte-badge-inconnu,
-.carte-forest.carte-multicel.carte-inexploree .carte-icone {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
 .carte-inexploree { box-shadow: none; }
 .carte-selectionnee {
   --carte-selection-outline: var(--couleur-accent);
@@ -15166,7 +15168,6 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   .ressource-icone[src] { width: 29px; height: 29px; }
   .ressource-chiffres { flex-direction: column; align-items: flex-start; gap: 1px; }
   .ressources .ressource-taux { max-width: 7ch; }
-  .ressources-theme-toggle { flex-basis: 56px; min-width: 56px; }
   .ressources-gerer { flex-basis: 46px; min-width: 46px; padding: 4px; }
   .ressources-gerer-label { display: none; }
 
@@ -15566,7 +15567,6 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
     padding: 2px 3px;
   }
   .ressources .ressource-taux { display: none; }
-  .ressources-theme-toggle { display: none; }
   .ressources-gerer { height: 48px; }
 
   body[data-onglet-actif="camp"].camp-recruitment-unlocked #top-bar {
@@ -15711,6 +15711,7 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 .market-stall-shop-header > span { display:grid; gap:3px; }
 .market-stall-shop-header strong { font-size:1.08rem; }
 .market-stall-shop-header small { color:var(--texte-secondaire,#685b50); }
+.market-stall-shop-header small .interface-icon { width:1.5em; height:1.5em; }
 .market-stall-shop-portrait { width:54px; height:54px; object-fit:contain; border-radius:50%; background:#fff8e8; }
 .market-stall-shop-tier-hint,.market-stall-shop-status { margin:8px 0; font-size:.8rem; }
 .market-stall-shop-stock { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin:8px 0; font-size:.8rem; }
@@ -15728,6 +15729,22 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 #market-stall-shop-mini-game-help { min-width:34px; border-left:1px solid rgba(105,71,35,.26); font-size:.92rem; font-weight:900; }
 .market-stall-shop-mini-game small { font-size:.68rem; font-weight:600; opacity:.72; }
 .market-stall-shop-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.market-stall-shop-grid.market-stall-shop-trade-active { display:block; }
+.market-stall-trade { max-width:620px; margin:0 auto; padding:14px; border:1px solid rgba(90,65,45,.22); border-radius:12px; background:rgba(255,250,238,.92); display:grid; gap:12px; }
+.market-stall-trade-kicker { margin:0; color:#713810; font-size:.78rem; font-weight:900; letter-spacing:.14em; text-align:center; }
+.market-stall-trade-selectors { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; }
+.market-stall-trade-selectors label { min-width:0; display:grid; gap:5px; font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+.market-stall-trade-selectors select { width:100%; min-height:44px; padding:8px; border:1px solid #b9956f; border-radius:9px; background:#fffaf2; color:inherit; font:inherit; text-transform:none; letter-spacing:0; }
+.market-stall-trade-selectors small { color:var(--texte-secondaire,#685b50); font-weight:600; text-transform:none; letter-spacing:0; }
+.market-stall-trade-arrow { font-size:1.55rem; font-weight:900; }
+.market-stall-trade-rate { text-align:center; font-size:1.35rem; }
+.market-stall-trade-quantity { display:flex; align-items:center; justify-content:center; gap:8px; }
+.market-stall-trade-quantity button { min-width:44px; min-height:44px; }
+.market-stall-trade-quantity strong { min-width:92px; text-align:center; }
+.market-stall-trade-quantity .market-stall-trade-max { min-width:58px; }
+.market-stall-trade-summary { display:grid; gap:5px; padding:10px 12px; border-radius:9px; background:#f6ead7; }
+.market-stall-trade-note { min-height:1.2em; margin:0; color:var(--texte-secondaire,#685b50); font-size:.8rem; text-align:center; }
+#market-stall-trade-submit { min-height:46px; font-weight:900; }
 .market-stall-shop-slot { position:relative; height:176px; min-width:0; padding:10px; border:1px solid rgba(90,65,45,.22); border-radius:11px; background:rgba(255,250,238,.92); display:flex; flex-direction:column; gap:5px; box-sizing:border-box; text-align:center; font-size:.86rem; }
 .market-stall-shop-slot > strong { min-height:2.5em; display:flex; align-items:flex-start; justify-content:center; }
 .market-stall-shop-preview { min-height:0; flex:1; display:flex; align-items:center; justify-content:center; }
@@ -15749,6 +15766,10 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
   .market-stall-shop-tabs { width:100%; }
   .market-stall-shop-mini-game { width:100%; min-width:112px; padding-inline:8px; }
   .market-stall-shop-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+  .market-stall-trade { padding:10px; gap:10px; }
+  .market-stall-trade-selectors { grid-template-columns:1fr; gap:7px; }
+  .market-stall-trade-arrow { transform:rotate(90deg); justify-self:center; line-height:.8; }
+  .market-stall-trade-quantity { flex-wrap:wrap; }
   .market-stall-shop-slot { height:184px; padding:7px; font-size:.78rem; overflow-wrap:anywhere; }
   .market-stall-shop-preview img { width:min(84px,88%); height:min(84px,100%); }
   .market-stall-shop-slot > .market-stall-shop-product-help { width:36px; height:36px; min-width:36px; min-height:36px; top:4px; right:4px; }
@@ -16009,6 +16030,54 @@ body[data-ui-tuner-active="true"]{cursor:crosshair!important}body[data-ui-tuner-
   --interface-details: url("img/interface/details.png");
   --interface-cross: url("img/interface/Red Cross_Final.png");
 }
+.interface-icon {
+  display: inline-block;
+  width: 1.35em;
+  height: 1.35em;
+  object-fit: contain;
+  vertical-align: -0.28em;
+  flex: 0 0 auto;
+}
+.interface-icon-inline { margin-right: 0.25em; }
+.kitty-nom,
+.explo-modal-kitty-nom,
+.jc-modal-kitty-nom,
+.worker-modal-kitty-nom,
+.camp-demolition-kitty-copy strong {
+  align-items: center;
+}
+.job-icon.cat-name-job-icon {
+  width: 1.15em;
+  height: 1.15em;
+  margin-left: 0.35em;
+  vertical-align: middle;
+}
+.kitty-nom:has(.cat-name-job-icon),
+.explo-modal-kitty-nom:has(.cat-name-job-icon),
+.jc-modal-kitty-nom:has(.cat-name-job-icon),
+.worker-modal-kitty-nom:has(.cat-name-job-icon),
+.camp-demolition-kitty-copy strong:has(.cat-name-job-icon) {
+  display: inline-flex;
+}
+.work-boost-tab-badge .interface-icon { width: 1.25em; height: 1.25em; }
+.job-icon { width: 1.7em; height: 1.7em; }
+.jc-metier-btn .job-icon,
+.jc-job-info-title .job-icon,
+.kitty-role-icon .job-icon,
+.tc-cat-job .job-icon,
+.detail-job-nom .job-icon { margin-right: 0.35em; }
+.carte-zone-state-marker .interface-icon,
+.carte-badge-result .interface-icon { width: 22px; height: 22px; vertical-align: middle; }
+.zone-info-status-dot {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  border: 1px solid rgba(67, 55, 44, .35);
+  border-radius: 50%;
+  vertical-align: 0.02em;
+}
+.zone-info-status-dot.is-active { background: var(--couleur-verte); }
+.zone-info-status-dot.is-idle { background: #ddd5cb; }
 .interface-symbol {
   display: inline-block;
   width: 20px;

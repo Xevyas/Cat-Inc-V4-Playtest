@@ -246,6 +246,7 @@
       "minGapFloorPercent": 4
     }
   },
+  "uniqueItems": {},
   "definitions": {
     "cardboardBox": {
       "assetId": "cardboard-box",
@@ -379,7 +380,7 @@
         "baseCosts": {
           "cardboardPlanks": 3
         },
-        "growth": 1.5,
+        "growth": 1.7,
         "authoredRanks": {
           "1": {
             "cardboardPlanks": 3
@@ -493,7 +494,7 @@
       "effects": {},
       "upgradeTiers": {
         "2": {
-          "durationSeconds": 600,
+          "durationSeconds": 900,
           "costs": {
             "cardboardPlanks": 5,
             "pebbleBricks": 2
@@ -519,7 +520,7 @@
       "effects": {},
       "upgradeTiers": {
         "2": {
-          "durationSeconds": 900,
+          "durationSeconds": 1800,
           "costs": {
             "basicWoodPlanks": 5,
             "pebbleBricks": 5
@@ -545,7 +546,7 @@
       "effects": {},
       "upgradeTiers": {
         "2": {
-          "durationSeconds": 900,
+          "durationSeconds": 2700,
           "costs": {
             "basicWoodPlanks": 10,
             "pebbleBricks": 10
@@ -773,6 +774,61 @@
         "authoredRanks": {
           "1": {
             "basicWoodPlanks": 10
+          }
+        },
+        "rounding": "ceil",
+        "refundRate": 0.5,
+        "durationGrowth": 1.4
+      }
+    },
+    "stoneStorageShed": {
+      "assetId": "stone-storage-shed",
+      "name": "Stone Storage Shed",
+      "category": "building",
+      "repeatable": true,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "unlock": {
+        "kind": "runtime-rule",
+        "id": "sturdyHousePlansLearned"
+      },
+      "effects": {
+        "storageCapacity": 20,
+        "campXp": 3
+      },
+      "upgradeTiers": {
+        "2": {
+          "durationSeconds": 3600,
+          "costs": {
+            "rockBricks": 15
+          },
+          "effects": {
+            "campXp": 5,
+            "storageCapacity": 30,
+            "appeal": 1
+          },
+          "costGrowth": 1.7,
+          "durationGrowth": 1.4
+        }
+      },
+      "simulation": {
+        "ranks": 12
+      },
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 1800
+      },
+      "law": {
+        "family": "stone-storage-shed",
+        "baseCosts": {
+          "rockBricks": 5
+        },
+        "growth": 1.7,
+        "authoredRanks": {
+          "1": {
+            "rockBricks": 5
           }
         },
         "rounding": "ceil",

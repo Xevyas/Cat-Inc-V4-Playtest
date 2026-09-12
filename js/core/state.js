@@ -38,6 +38,9 @@ function makeCampState() {
     housingAssignments: {},
     groundRewards: {},
     upgrades: {},
+    // Stable gameplay identities. Placement is derived from camp.layout so a
+    // unique item can never be both an inventory entry and a second object.
+    uniqueItems: {},
     progression: {
       introCompleted: false,
       junkClearingUnlocked: false,
@@ -107,9 +110,9 @@ function creerEtatInitial() {
   avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
   volumeMusique:           0,
-  uiTheme:                 "stylish-straight",
   campCatPortraitScale:    1,
   hideCampCatIcons:          false,
+  campAnimationsEnabled:   true,
   // Resources hidden from the compact top rail. An empty list means every
   // unlocked resource is displayed by default.
   resourceBarHidden:       [],

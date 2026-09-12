@@ -123,14 +123,14 @@
     <div class="intro-boite">
       <div class="intro-dialogue">
       </div>
-      <button id="bouton-intro" class="bouton-intro">Start the adventure 🐾</button>
+      <button id="bouton-intro" class="bouton-intro">Start the adventure</button>
     </div>
   </div>
 
   <!-- FIRST THREE CATS: a HUD-free prologue between story beats and catches -->
   <div id="prologue-capture-stage" class="prologue-capture-stage" aria-hidden="true" hidden>
-    <span class="prologue-paw-trail prologue-paw-trail-a" aria-hidden="true">🐾</span>
-    <span class="prologue-paw-trail prologue-paw-trail-b" aria-hidden="true">🐾</span>
+    <img class="prologue-paw-trail prologue-paw-trail-a" src="img/interface/cat-paw.png" alt="">
+    <img class="prologue-paw-trail prologue-paw-trail-b" src="img/interface/cat-paw.png" alt="">
     <button id="prologue-cat-target" class="prologue-cat-target" type="button" onclick="cliquerCiblePrologue()" aria-label="Catch Bernardo">
       <span class="prologue-cat-pulse" aria-hidden="true"></span>
       <span class="prologue-cat-portrait"><img id="prologue-cat-face" alt=""></span>
@@ -139,7 +139,7 @@
 
   <!-- MANDATORY SAVE RESTART: Camp progression update -->
   <div id="save-upgrade-modal" class="ecran-intro save-upgrade-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="save-upgrade-title" aria-describedby="save-upgrade-copy" style="display:none">
-    <div class="intro-boite save-upgrade-box" role="document" tabindex="-1">
+    <div class="intro-boite system-utility-panel save-upgrade-box" role="document" tabindex="-1">
       <img class="save-upgrade-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc">
       <div class="intro-dialogue">
         <h2 id="save-upgrade-title" class="save-upgrade-title">A new Camp progression</h2>
@@ -230,7 +230,7 @@
 
   <!-- MANUAL FOCUS EXPLANATION : shown after the player presses Try -->
   <div id="manual-focus-explainer-modal" class="ecran-intro manual-focus-explainer-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="manual-focus-explainer-title" aria-describedby="manual-focus-explainer-copy" style="display:none">
-    <div class="intro-boite manual-focus-explainer-box" role="document" tabindex="-1">
+    <div class="intro-boite system-utility-panel manual-focus-explainer-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">One worker at a time</p>
         <h2 id="manual-focus-explainer-title" class="manual-focus-explainer-title">How Manual Focus works</h2>
@@ -243,7 +243,7 @@
 
   <!-- CAMP FULL : first attempt to welcome a waiting visitor without capacity -->
   <div id="ecran-story-camp-full" class="ecran-intro" role="dialog" aria-modal="true" aria-label="No room for another Cat" aria-hidden="true" style="display:none">
-    <div class="intro-boite">
+    <div class="intro-boite system-utility-panel">
       <div class="intro-dialogue"></div>
       <button class="bouton-intro" type="button" onclick="fermerModal('ecran-story-camp-full')">Build more shelter</button>
     </div>
@@ -384,7 +384,7 @@
 
   <!-- RELEASE NOTES : shown once for each published game version -->
   <div id="ecran-release-notes" class="ecran-intro release-notes-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="release-notes-title" aria-describedby="release-notes-copy" style="display:none">
-    <div class="intro-boite release-notes-box" role="document" tabindex="-1">
+    <div class="intro-boite system-utility-panel release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
         <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0079 · August 31, 2026</h2>
@@ -398,7 +398,7 @@
 
   <!-- OFFLINE PROGRESS SUMMARY -->
   <div id="ecran-absence" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
-    <div class="intro-boite">
+    <div class="intro-boite system-utility-panel">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">While you were away</p>
         <div id="absence-contenu" class="absence-contenu"></div>
@@ -466,7 +466,7 @@
         <div id="bird-cursor" class="bird-cursor"></div>
       </div>
       <div class="reflex-zone-labels" aria-hidden="true"><span>TOO EARLY</span><span>CATCH!</span><span>TOO LATE</span></div>
-      <button class="bird-catch-btn" data-touch-activation="reflex-release" onclick="clickerBird()">CATCH! 🐾</button>
+      <button class="bird-catch-btn" data-touch-activation="reflex-release" onclick="clickerBird()">CATCH!</button>
       <button class="bird-skip-btn" onclick="skipBird()">Let it fly away</button>
     </div>
   </div>
@@ -547,10 +547,6 @@
       </div>
     </div>
     </div>
-    <button id="ui-theme-quick-toggle" class="ressources-theme-toggle" type="button" data-current-theme="stylish-straight" onclick="basculerThemeInterfaceRapide()" aria-label="Switch to Basic (Stylish Straight is active)" title="Switch to Basic (Stylish Straight is active)" hidden>
-      <span class="ressources-theme-toggle-icone" aria-hidden="true">Aa</span>
-      <span id="ui-theme-quick-label" class="ressources-theme-toggle-label">Basic</span>
-    </button>
     <button class="ressources-gerer" type="button" onclick="ouvrirGestionRessources()" aria-label="Choose resources shown in the top bar" aria-haspopup="dialog" aria-controls="resource-bar-modal">
       <span class="ressources-gerer-icone" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       <span class="ressources-gerer-label">Manage</span>
@@ -646,7 +642,7 @@
   </div>
 
   <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none">
-    <span class="work-boost-label">⚡ <span id="work-boost-copy">Work Boost</span> — <span id="work-boost-countdown"></span></span>
+    <span class="work-boost-label"><img class="interface-icon interface-icon-inline" src="img/interface/power.png" alt=""> <span id="work-boost-copy">Work Boost</span> — <span id="work-boost-countdown"></span></span>
   </div>
 
   <aside id="camp-quick-dialogue" class="camp-quick-dialogue" role="status" aria-live="polite" data-touch-activation-root="true" onclick="continuerDialogueRapideCamp(event)" hidden>
@@ -655,7 +651,7 @@
       <strong>Bernardo</strong>
       <p id="camp-quick-dialogue-copy"></p>
     </div>
-    <button id="camp-quick-dialogue-continue" type="button" aria-label="Continue" onclick="continuerDialogueRapideCamp(event)">✓</button>
+    <button id="camp-quick-dialogue-continue" type="button" aria-label="Continue" onclick="continuerDialogueRapideCamp(event)"><img class="interface-icon" src="img/interface/✅_Final.png?v=0.0026" alt=""></button>
   </aside>
 
   <!-- SCROLLABLE CONTENT AREA -->
@@ -815,7 +811,7 @@
         <div id="camp-prototype-palette" class="camp-prototype-palette" role="toolbar" aria-label="Prototype camp items"></div>
       </section>
       <button id="camp-prototype-trail-exit" class="camp-prototype-trail-exit" type="button" aria-label="Finish Trail editing" onclick="quitterEditionCampPrototype()" hidden>
-        <span aria-hidden="true">✓</span>
+        <img class="interface-icon" src="img/interface/✅_Final.png?v=0.0026" alt="">
         <strong>Done</strong>
       </button>
       <nav class="camp-prototype-edit-dock" aria-label="Camp construction categories">
@@ -830,6 +826,10 @@
         <button type="button" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
           <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png" alt="">
           <span>Decor</span>
+        </button>
+        <button type="button" data-camp-category="unique-item" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('unique-item')" hidden>
+          <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/old-radio/tier-1/revision-2/down.png" alt="">
+          <span>Unique Items</span>
         </button>
         <button type="button" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
           <img class="camp-prototype-category-icon-image" src="img/Maps/Camp%20Runtime/Paths/Basic%20Trail_Camp_TopDown_Watercolor_Game_v1.png" alt="">
@@ -868,7 +868,7 @@
           <button class="btn-filtre-work" id="filtre-work-rock" aria-pressed="false" onclick="filtrerWork('rock')"><span>Rocks</span><span class="work-family-warning" id="work-warning-rock" hidden></span></button>
         </div>
       </div>
-      <button class="btn-unaffect-all" id="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all Cats</button>
+      <button class="btn-unaffect-all" id="btn-unaffect-all" onclick="deallouerTous()">Unassign all Cats</button>
     </div>
     <p id="camp-sawmill-tutorial-work-status" class="camp-sawmill-tutorial-work-status" role="status" aria-live="polite" hidden></p>
     <div id="work-discovery-hint" class="work-discovery-hint" role="note">
@@ -1116,16 +1116,6 @@
         <button class="settings-btn" onclick="document.getElementById('import-fichier').click()">Import save (.txt)</button>
         <input type="file" id="import-fichier" accept=".txt" style="display:none" onchange="importerSauvegarde(event)">
         <div class="settings-separateur"></div>
-        <div class="settings-audio-title">Interface</div>
-        <label class="settings-volume-row settings-theme-row" hidden>
-          <span>Interface style</span>
-          <select id="settings-ui-theme" aria-label="Interface style" onchange="gererThemeInterface(this.value)">
-            <option value="basic">Basic</option>
-            <option value="stylish">Stylish</option>
-            <option value="stylish-straight">Stylish Straight</option>
-          </select>
-        </label>
-        <div class="settings-separateur"></div>
         <div class="settings-audio-title">Audio</div>
         <label class="settings-volume-row">
           <span>Sound effects</span>
@@ -1157,6 +1147,11 @@
         <label class="settings-toggle-row">
           <span>Hide Cat icons in Camp</span>
           <input type="checkbox" id="toggle-camp-cat-icons" onchange="basculerIconesChatsCamp(this.checked)">
+          <span class="settings-toggle-switch"></span>
+        </label>
+        <label class="settings-toggle-row">
+          <span>Camp animations<small>Animate buildings and decorations in Camp.</small></span>
+          <input type="checkbox" id="toggle-camp-animations" onchange="basculerAnimationsCamp(this.checked)" checked>
           <span class="settings-toggle-switch"></span>
         </label>
         <div class="settings-separateur"></div>
@@ -1263,7 +1258,7 @@
     <div class="explo-modal-panneau market-stall-shop-panel" role="document" tabindex="-1">
       <div class="explo-modal-header market-stall-shop-header">
         <img id="market-stall-shop-portrait" class="market-stall-shop-portrait" src="" alt="Cannelle">
-        <span><strong id="market-stall-shop-title">Cannelle</strong><small>Shop Owner · Level <span id="market-stall-shop-level">0</span></small></span>
+        <span><strong id="market-stall-shop-title">Cannelle</strong><small><img class="interface-icon" src="img/interface/shop-owner.png" alt=""> Shop Owner · Level <span id="market-stall-shop-level">0</span></small></span>
         <button class="explo-modal-close" aria-label="Close Cannelle's shop"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p id="market-stall-shop-tier-hint" class="market-stall-shop-tier-hint">New items at Level 10</p>
@@ -1389,12 +1384,12 @@
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerPopupButinsScoutingZone()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="scouting-reward-summary-title">🎁 Scouting rewards</span>
+        <span class="explo-modal-titre" id="scouting-reward-summary-title"><img class="interface-icon interface-icon-inline" src="img/interface/reward.png" alt=""> Scouting rewards</span>
         <button class="explo-modal-close" aria-label="Close scouting reward summary" onclick="fermerPopupButinsScoutingZone()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="scouting-reward-summary-content"></div>
       <div class="scouting-reward-summary-actions">
-        <button id="scouting-reward-summary-claim" type="button" class="explo-result-action explo-result-reward" onclick="recupererButinsScoutingZoneDepuisPopup()">🎁 Claim scouting rewards</button>
+        <button id="scouting-reward-summary-claim" type="button" class="explo-result-action explo-result-reward" onclick="recupererButinsScoutingZoneDepuisPopup()"><img class="interface-icon interface-icon-inline" src="img/interface/reward.png" alt=""> Claim scouting rewards</button>
       </div>
     </div>
   </div>
@@ -1418,7 +1413,7 @@
         <div id="cat-catch-cursor" class="bird-cursor"></div>
       </div>
       <div class="reflex-zone-labels reflex-zone-labels-cat" aria-hidden="true"><span>TOO EARLY</span><span>CATCH!</span><span>TOO LATE</span></div>
-      <button class="bird-catch-btn cat-catch-action" onclick="clickerCatCatch()">CATCH! 🐾</button>
+      <button class="bird-catch-btn cat-catch-action" onclick="clickerCatCatch()">CATCH!</button>
       <button class="bird-skip-btn" onclick="echouerMiniJeuCatch()">Give up</button>
     </div>
   </div>
@@ -1428,7 +1423,7 @@
     <div class="purrsuasion-v2-card purrsuasion-v2-setup-card" role="document" tabindex="-1">
       <span class="reflex-game-tag">DEBUG POC · NO SAVE</span>
       <h3 id="purrsuasion-v2-setup-title">Purrsuasion</h3>
-      <p>Choose the incoming Cat to simulate. Three conversations decide whether Bernardo wins them over.</p>
+          <p>Choose the incoming Cat to simulate. Up to three conversations decide whether Bernardo wins them over.</p>
       <label class="purrsuasion-v2-cat-picker" for="purrsuasion-v2-cat-select">Incoming Cat
         <select id="purrsuasion-v2-cat-select" onchange="mettreAJourPurrsuasionV2Setup()"></select>
       </label>
@@ -1577,7 +1572,7 @@
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0003"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0002"></script>
-  <script src="jeu.js?v=0.0202"></script>
+  <script src="jeu.js?v=0.0203"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

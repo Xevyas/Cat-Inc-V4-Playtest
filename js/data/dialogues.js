@@ -1370,7 +1370,9 @@ function characterFromLine(line) {
     const scene = SCENES.find(function(item) { return item.id === modal.id; });
     const closeButton = modal.querySelector(".bouton-intro");
     if (scene && closeButton && scene.closeButton && scene.closeButton.label) {
-      closeButton.textContent = scene.closeButton.label;
+      closeButton.textContent = typeof root.retirerEmojisInterface === "function"
+        ? root.retirerEmojisInterface(scene.closeButton.label)
+        : String(scene.closeButton.label).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\u200D]/gu, "").trim();
     }
     renderSceneSource(modal, dialogue);
     dialogue.classList.add("story-conversation");

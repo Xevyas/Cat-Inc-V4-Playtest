@@ -136,6 +136,23 @@
       && definition.build && definition.build.entryMode === "build"
       && CatInc.incrementorLaw && CatInc.incrementorLaw.definition(typeId));
   }
+  const CAMP_LEGACY_BUILDING_CONSTRUCTION_IDS = ["operationsTable"];
+  function canonicalCampBuildingConstructionEligible(typeId) {
+    const definition = CatInc.data && CatInc.data.campGameplay
+      && CatInc.data.campGameplay.definitions && CatInc.data.campGameplay.definitions[typeId];
+    const build = definition && definition.build;
+    const hasFixedCosts = build && estObjetSauvegarde(build.costs)
+      && Object.keys(build.costs).length > 0;
+    const hasIncrementorCosts = definition && definition.repeatable === true
+      && definition.law && estObjetSauvegarde(definition.law.baseCosts)
+      && Object.keys(definition.law.baseCosts).length > 0;
+    return Boolean(definition
+      && ["building", "decoration"].includes(definition.category)
+      && build && build.entryMode === "build"
+      && definition.unlock && definition.unlock.kind !== "not-wired"
+      && (hasFixedCosts || hasIncrementorCosts))
+      || CAMP_LEGACY_BUILDING_CONSTRUCTION_IDS.includes(typeId);
+  }
   function campPaidCostsValid(paidCosts) {
     return estObjetSauvegarde(paidCosts)
       && Object.keys(paidCosts).length > 0
@@ -190,6 +207,8 @@ function normaliserLayoutStickersSauvegarde(layout) {
     const sticker = normaliserStickerSelectionSauvegarde(copy.sticker);
     if (sticker) copy.sticker = sticker;
     else delete copy.sticker;
+    if (copy.animationDisabled === true) copy.animationDisabled = true;
+    else delete copy.animationDisabled;
     return copy;
   });
 }
@@ -210,7 +229,7 @@ function normaliserProfilCampSauvegarde(value) {
 }
 
 function normaliserUiTheme(value) {
-  return value === "basic" || value === "stylish" ? value : "stylish-straight";
+  return "stylish-straight";
 }
 
 function donneesSauvegardeReconnaissables(d) {
@@ -398,7 +417,7 @@ function validerStructureSauvegarde(d) {
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
     "jobCenterDebloque", "jobCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
-    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons", "cannelleBargainRulesSeen"
+    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons", "campAnimationsEnabled", "cannelleBargainRulesSeen"
   ];
   // Accepted only so pre-removal saves remain valid; migration intentionally ignores it.
   const champsBooleensLegacy = ["tutorialCompletionPopupSeen"];
@@ -457,6 +476,7 @@ function validerStructureSauvegarde(d) {
         || !estObjetSauvegarde(camp.houseConstructions)
         || (camp.housingAssignments !== undefined && !estObjetSauvegarde(camp.housingAssignments))
         || (camp.groundRewards !== undefined && !estObjetSauvegarde(camp.groundRewards))
+        || (camp.uniqueItems !== undefined && !estObjetSauvegarde(camp.uniqueItems))
         || !estObjetSauvegarde(camp.upgrades)
         || !estObjetSauvegarde(camp.progression)) {
       return "Invalid Camp job data.";
@@ -681,16 +701,12 @@ function validerStructureSauvegarde(d) {
           ));
       });
     if (!groundRewardsValides) return "Invalid Camp ground reward data.";
-    const buildingConstructionIds = [
-      "operationsTable", "jobCenter", "laboratory", "storage",
-      "marketStall", "smallFountain", "cardboardLitterbox"
-    ];
     const constructionsBatimentsValides = Object.keys(camp.constructions).length <= 128
       && Object.keys(camp.constructions).every(function(uid) {
         const construction = camp.constructions[uid];
         return typeof uid === "string" && uid.length > 0 && uid.length <= 160 && !/[<>]/.test(uid)
           && estObjetSauvegarde(construction)
-          && buildingConstructionIds.includes(construction.type)
+          && canonicalCampBuildingConstructionEligible(construction.type)
           && indexKittyValide(construction.kittyIndex, false)
           && typeof construction.startTs === "number" && Number.isFinite(construction.startTs) && construction.startTs >= 0
            && typeof construction.duration === "number" && Number.isFinite(construction.duration) && construction.duration > 0
@@ -1006,7 +1022,8 @@ function analyserSauvegardeBrute(raw) {
     data = {
       ...data,
       campProfile: normaliserProfilCampSauvegarde(data.campProfile),
-      uiTheme: normaliserUiTheme(data.uiTheme)
+      uiTheme: normaliserUiTheme(data.uiTheme),
+      campAnimationsEnabled: data.campAnimationsEnabled !== false
     };
   }
   const erreur = validerStructureSauvegarde(data);
@@ -1061,9 +1078,9 @@ function analyserSauvegardeBrute(raw) {
     avertirSurplusNourriture: etat.avertirSurplusNourriture,
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
-    uiTheme:                 normaliserUiTheme(etat.uiTheme),
     campCatPortraitScale:    etat.campCatPortraitScale,
     hideCampCatIcons:          etat.hideCampCatIcons,
+    campAnimationsEnabled:   etat.campAnimationsEnabled !== false,
     resourceBarHidden:       etat.resourceBarHidden,
     campProfile:             normaliserProfilCampSauvegarde(etat.campProfile),
     scieriBloquee:              etat.scieriBloquee,
@@ -1233,11 +1250,11 @@ function analyserSauvegardeBrute(raw) {
   etat.avertirSurplusNourriture = d.avertirSurplusNourriture !== false;
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0;
-  etat.uiTheme             = normaliserUiTheme(d.uiTheme);
   etat.campCatPortraitScale = d.campCatPortraitScale !== undefined
     ? Math.max(0.7, Math.min(1.3, d.campCatPortraitScale))
     : 1;
   etat.hideCampCatIcons          = d.hideCampCatIcons === true;
+  etat.campAnimationsEnabled = d.campAnimationsEnabled !== false;
   etat.resourceBarHidden = Array.isArray(d.resourceBarHidden)
     ? Array.from(new Set(d.resourceBarHidden.filter(function(id) { return RESOURCE_BAR_KEYS.includes(id); })))
     : [];
@@ -1289,6 +1306,9 @@ function analyserSauvegardeBrute(raw) {
     : {};
   etat.camp.groundRewards = estObjetSauvegarde(campSource.groundRewards)
     ? campSource.groundRewards
+    : {};
+  etat.camp.uniqueItems = estObjetSauvegarde(campSource.uniqueItems)
+    ? campSource.uniqueItems
     : {};
   etat.camp.upgrades = estObjetSauvegarde(campSource.upgrades) ? campSource.upgrades : {};
   const progressionSource = estObjetSauvegarde(campSource.progression)

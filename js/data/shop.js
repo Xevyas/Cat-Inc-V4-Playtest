@@ -115,7 +115,8 @@
   CatInc.data.shop = Object.freeze({
     categories: Object.freeze([
       Object.freeze({ id: "blueprints", label: "Blueprints", requiredLevel: 0 }),
-      Object.freeze({ id: "boosts", label: "Boosts", requiredLevel: 10 })
+      Object.freeze({ id: "boosts", label: "Boosts", requiredLevel: 10 }),
+      Object.freeze({ id: "trade", label: "Trade", requiredLevel: 0 })
     ]),
     activeCategoryId: "blueprints",
     merchandise: merchandise,

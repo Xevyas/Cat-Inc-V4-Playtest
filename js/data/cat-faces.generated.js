@@ -35,7 +35,7 @@
       "id": "cat-faces-alternative-kitty-face-4",
       "name": "Alternative Kitty face 4",
       "runtimePath": "img/Cat faces/Alternative Kitty face 4_Final.png",
-      "revision": 1,
+      "revision": 2,
       "alternative": true
     },
     {
@@ -114,7 +114,7 @@
       "id": "cat-faces-alternative-kitty-face-4",
       "name": "Alternative Kitty face 4",
       "runtimePath": "img/Cat faces/Alternative Kitty face 4_Final.png",
-      "revision": 1,
+      "revision": 2,
       "alternative": true
     }
   ],
@@ -150,13 +150,13 @@
       ]
     },
     "img/Cat faces/Alternative Kitty face 4_Final.png": {
-      "width": 145,
-      "height": 124,
+      "width": 256,
+      "height": 256,
       "bounds": [
-        0,
-        0,
-        145,
-        124
+        26,
+        40,
+        230,
+        216
       ]
     },
     "img/Cat faces/Bernardo.png": {

@@ -1491,26 +1491,26 @@
           }
         },
         "2": {
-          "liveRevision": 6,
+          "liveRevision": 8,
           "revisions": {
-            "6": {
+            "8": {
               "name": "Job Center",
               "tier": 2,
-              "revision": 6,
+              "revision": 8,
               "status": "live",
               "width": 2,
               "height": 3,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/down.png",
-                "right": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/right.png",
-                "up": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/up.png",
-                "left": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/left.png"
+                "down": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/down.png",
+                "right": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/right.png",
+                "up": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/up.png",
+                "left": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/left.png"
               },
               "groundingSprites": {
-                "down": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/grounding-down.png",
-                "right": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/grounding-right.png",
-                "up": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/grounding-up.png",
-                "left": "img/Buildings/Camp Runtime/job-center/tier-2/revision-6/grounding-left.png"
+                "down": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/job-center/tier-2/revision-8/grounding-left.png"
               },
               "groundingBounds": {
                 "down": {
@@ -2014,6 +2014,65 @@
         }
       }
     },
+    "oldRadio": {
+      "assetId": "old-radio",
+      "name": "Old radio",
+      "category": "decoration",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 2,
+          "revisions": {
+            "2": {
+              "name": "Old radio",
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/left.png"
+              },
+              "groundingSprites": {
+                "down": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/old-radio/tier-1/revision-2/grounding-left.png"
+              },
+              "groundingBounds": {
+                "down": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "right": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "up": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "left": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "operationTable": {
       "assetId": "operation-table",
       "name": "Operation Table",
@@ -2123,6 +2182,80 @@
                 "right": "img/Buildings/Camp Runtime/pawsonry/tier-1/revision-7/grounding-right.png",
                 "up": "img/Buildings/Camp Runtime/pawsonry/tier-1/revision-7/grounding-up.png",
                 "left": "img/Buildings/Camp Runtime/pawsonry/tier-1/revision-7/grounding-left.png"
+              },
+              "groundingBounds": {
+                "down": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 4.0
+                },
+                "right": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 4.0
+                },
+                "up": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 4.0
+                },
+                "left": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 4.0
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "any-cell-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 2,
+                        "side": "south"
+                      },
+                      {
+                        "x": 1,
+                        "y": 2,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "2": {
+          "liveRevision": 2,
+          "revisions": {
+            "2": {
+              "name": "Pawsonry",
+              "tier": 2,
+              "revision": 2,
+              "status": "live",
+              "width": 2,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/left.png"
+              },
+              "groundingSprites": {
+                "down": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/pawsonry/tier-2/revision-2/grounding-left.png"
               },
               "groundingBounds": {
                 "down": {
@@ -2443,17 +2576,51 @@
                 }
               },
               "animation": {
-                "revision": 1,
+                "revision": 3,
                 "status": "live",
                 "baseRevision": 5,
                 "mode": "overlay-apng",
-                "frameCount": 5,
-                "frameDurationMs": 250,
+                "frameCount": 8,
+                "frameDurationMs": 150,
                 "sprites": {
-                  "down": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-down.png",
-                  "right": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-right.png",
-                  "up": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-up.png",
-                  "left": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-1/animation-left.png"
+                  "down": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-3/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-3/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-3/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/small-fountain/tier-1/animation-3/animation-left.png"
+                },
+                "registration": {
+                  "down": {
+                    "width": 188,
+                    "height": 199,
+                    "baseWidth": 420,
+                    "baseHeight": 420,
+                    "offsetX": 116,
+                    "offsetY": 33
+                  },
+                  "right": {
+                    "width": 188,
+                    "height": 199,
+                    "baseWidth": 420,
+                    "baseHeight": 420,
+                    "offsetX": 116,
+                    "offsetY": 33
+                  },
+                  "up": {
+                    "width": 188,
+                    "height": 199,
+                    "baseWidth": 420,
+                    "baseHeight": 420,
+                    "offsetX": 116,
+                    "offsetY": 33
+                  },
+                  "left": {
+                    "width": 188,
+                    "height": 199,
+                    "baseWidth": 420,
+                    "baseHeight": 420,
+                    "offsetX": 116,
+                    "offsetY": 33
+                  }
                 }
               }
             }
@@ -2746,6 +2913,152 @@
                   "width": 2.9,
                   "height": 1.9
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "stoneStorageShed": {
+      "assetId": "stone-storage-shed",
+      "name": "Stone Storage Shed",
+      "category": "building",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 2,
+          "revisions": {
+            "2": {
+              "name": "Stone Storage Shed",
+              "tier": 1,
+              "revision": 2,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/left.png"
+              },
+              "groundingSprites": {
+                "down": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/stone-storage-shed/tier-1/revision-2/grounding-left.png"
+              },
+              "groundingBounds": {
+                "down": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "right": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "up": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "left": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "2": {
+          "liveRevision": 2,
+          "revisions": {
+            "2": {
+              "name": "Stone Storage Shed",
+              "tier": 2,
+              "revision": 2,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/down.png",
+                "right": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/right.png",
+                "up": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/up.png",
+                "left": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/left.png"
+              },
+              "groundingSprites": {
+                "down": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/stone-storage-shed/tier-2/revision-2/grounding-left.png"
+              },
+              "groundingBounds": {
+                "down": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "right": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "up": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                },
+                "left": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 3.0,
+                  "height": 3.0
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 0,
+                        "y": 1,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
               }
             }
           }
@@ -3081,50 +3394,50 @@
                 }
               },
               "animation": {
-                "revision": 2,
+                "revision": 3,
                 "status": "live",
                 "baseRevision": 7,
                 "mode": "overlay-apng",
-                "frameCount": 6,
-                "frameDurationMs": 200,
+                "frameCount": 8,
+                "frameDurationMs": 220,
                 "sprites": {
-                  "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-down.png",
-                  "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-right.png",
-                  "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-up.png",
-                  "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-2/animation-left.png"
+                  "down": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-3/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-3/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-3/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/wood-cathouse/tier-2/animation-3/animation-left.png"
                 },
                 "registration": {
                   "down": {
-                    "width": 85,
-                    "height": 113,
+                    "width": 60,
+                    "height": 122,
                     "baseWidth": 360,
                     "baseHeight": 360,
-                    "offsetX": 214,
-                    "offsetY": -95
+                    "offsetX": 227,
+                    "offsetY": -112
                   },
                   "right": {
-                    "width": 66,
-                    "height": 120,
+                    "width": 51,
+                    "height": 126,
                     "baseWidth": 360,
                     "baseHeight": 360,
-                    "offsetX": 116,
-                    "offsetY": -131
+                    "offsetX": 124,
+                    "offsetY": -147
                   },
                   "up": {
-                    "width": 86,
-                    "height": 108,
+                    "width": 61,
+                    "height": 124,
                     "baseWidth": 360,
                     "baseHeight": 360,
-                    "offsetX": 59,
-                    "offsetY": -47
+                    "offsetX": 71,
+                    "offsetY": -69
                   },
                   "left": {
-                    "width": 68,
-                    "height": 115,
+                    "width": 52,
+                    "height": 126,
                     "baseWidth": 360,
                     "baseHeight": 360,
-                    "offsetX": 178,
-                    "offsetY": -20
+                    "offsetX": 186,
+                    "offsetY": -38
                   }
                 }
               },

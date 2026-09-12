@@ -211,8 +211,7 @@
       {
         "id": "food",
         "visitorLines": [
-          "Will there be enough food for one more Cat?",
-          "How do you keep everyone fed?"
+          "Will there be enough food for one more Cat?"
         ],
         "replies": {
           "good": "We plan our stores carefully, and useful paws are always welcome.",
@@ -221,10 +220,31 @@
         }
       },
       {
+        "id": "food-low-stores",
+        "visitorLines": [
+          "What happens if the food stores start running low?"
+        ],
+        "replies": {
+          "good": "We share what we have and make sure nobody gets left hungry.",
+          "neutral": "We improvise. Cats are pretty good at that.",
+          "bad": "Then you had better get to the bowl before everyone else."
+        }
+      },
+      {
+        "id": "food-self-sufficient",
+        "visitorLines": [
+          "Am I expected to find every meal myself?"
+        ],
+        "replies": {
+          "good": "Everyone helps differently. Feeding the Gang is something we handle together.",
+          "neutral": "Not every meal. Probably.",
+          "bad": "If you're hungry enough, you'll figure something out."
+        }
+      },
+      {
         "id": "shelter",
         "visitorLines": [
-          "Is there a warm, dry place to sleep?",
-          "What happens when the rain comes?"
+          "Is there a warm, dry place to sleep?"
         ],
         "replies": {
           "good": "We build shelter together, and every Cat gets a safe bed.",
@@ -233,15 +253,58 @@
         }
       },
       {
+        "id": "shelter-new-arrival",
+        "visitorLines": [
+          "Where does a new Cat sleep when they first arrive?"
+        ],
+        "replies": {
+          "good": "We make room first. Nobody joins the Gang just to sleep in the rain.",
+          "neutral": "We'll find you a corner somewhere.",
+          "bad": "First empty box you see is yours."
+        }
+      },
+      {
+        "id": "shelter-bad-weather",
+        "visitorLines": [
+          "What happens when the weather gets really bad?"
+        ],
+        "replies": {
+          "good": "That's why we keep improving the shelters before we need them.",
+          "neutral": "We squeeze together until it passes.",
+          "bad": "Try standing under a bigger Cat."
+        }
+      },
+      {
         "id": "safety",
         "visitorLines": [
-          "How safe is this camp, really?",
-          "What protects the camp at night?"
+          "How safe is this camp, really?"
         ],
         "replies": {
           "good": "We watch each other's backs and improve our defenses together.",
           "neutral": "It is quieter here than on the street.",
           "bad": "Stay behind someone braver."
+        }
+      },
+      {
+        "id": "safety-trouble",
+        "visitorLines": [
+          "What happens if trouble finds the camp?"
+        ],
+        "replies": {
+          "good": "We deal with it together. Nobody here has to face danger alone.",
+          "neutral": "Usually Bernardo has a plan.",
+          "bad": "Run faster than the Cat next to you."
+        }
+      },
+      {
+        "id": "safety-night-watch",
+        "visitorLines": [
+          "Does anyone keep watch while the others sleep?"
+        ],
+        "replies": {
+          "good": "We take the camp's safety seriously, even when most of us are resting.",
+          "neutral": "Someone is usually awake.",
+          "bad": "If something happens, the screaming will wake us."
         }
       },
       {
@@ -256,10 +319,31 @@
         }
       },
       {
+        "id": "comfort-peace-quiet",
+        "visitorLines": [
+          "Do Cats here ever get some peace and quiet?"
+        ],
+        "replies": {
+          "good": "Of course. A good camp needs places to work and places to switch off.",
+          "neutral": "When Mochi is asleep, mostly.",
+          "bad": "You'll get plenty of quiet when everyone else is working."
+        }
+      },
+      {
+        "id": "comfort-curl-up",
+        "visitorLines": [
+          "What if I just need a place to curl up for a while?"
+        ],
+        "replies": {
+          "good": "Then curl up. Being part of the Gang doesn't mean being busy every second.",
+          "neutral": "As long as you aren't in the way.",
+          "bad": "Sleeping is what nights are for."
+        }
+      },
+      {
         "id": "adventure",
         "visitorLines": [
-          "Is life with your Gang ever exciting?",
-          "Do you ever explore beyond the camp?"
+          "Is life with your Gang ever exciting?"
         ],
         "replies": {
           "good": "We explore, build and protect a home of our own. No two days are alike.",
@@ -268,15 +352,58 @@
         }
       },
       {
+        "id": "adventure-beyond-camp",
+        "visitorLines": [
+          "Do you actually explore beyond the camp?"
+        ],
+        "replies": {
+          "good": "Absolutely. There's a whole neighbourhood out there we still know almost nothing about.",
+          "neutral": "When we have a reason to.",
+          "bad": "Why leave? Everything important should come to us."
+        }
+      },
+      {
+        "id": "adventure-new-place",
+        "visitorLines": [
+          "Will I ever get to discover somewhere new?"
+        ],
+        "replies": {
+          "good": "If exploration is your thing, there will always be another place to investigate.",
+          "neutral": "Maybe, once the chores are done.",
+          "bad": "You can discover the storage shed first."
+        }
+      },
+      {
         "id": "belonging",
         "visitorLines": [
-          "Would I actually belong in your camp?",
-          "Do new Cats get treated like outsiders?"
+          "Would I actually belong in your camp?"
         ],
         "replies": {
           "good": "Every Cat brings something different. We'll find the place where you shine.",
           "neutral": "There are plenty of Cats around, at least.",
           "bad": "Belonging is mostly a matter of looking busy."
+        }
+      },
+      {
+        "id": "belonging-new-outsider",
+        "visitorLines": [
+          "Do new Cats get treated like outsiders?"
+        ],
+        "replies": {
+          "good": "Not for long. Once you're here, you're one of us.",
+          "neutral": "People warm up eventually.",
+          "bad": "Only until someone newer arrives."
+        }
+      },
+      {
+        "id": "belonging-knows-no-one",
+        "visitorLines": [
+          "What if I don't know anyone here?"
+        ],
+        "replies": {
+          "good": "Then you'll know us soon enough. Nobody has to earn the right to be welcomed.",
+          "neutral": "You'll meet everyone eventually.",
+          "bad": "Names aren't really necessary."
         }
       },
       {
@@ -291,6 +418,28 @@
         }
       },
       {
+        "id": "usefulness-strengths",
+        "visitorLines": [
+          "How would you even know what I'm good at?"
+        ],
+        "replies": {
+          "good": "We give Cats the chance to try things and find the work that suits them.",
+          "neutral": "We'll make an educated guess.",
+          "bad": "We'll pick something and hope for the best."
+        }
+      },
+      {
+        "id": "usefulness-first-job",
+        "visitorLines": [
+          "What if I'm terrible at my first job?"
+        ],
+        "replies": {
+          "good": "Then it was the wrong job, not the wrong Cat. We'll find a better fit.",
+          "neutral": "You can probably improve with practice.",
+          "bad": "Then we'll know what not to ask you to do."
+        }
+      },
+      {
         "id": "facilities",
         "visitorLines": [
           "Does this camp have anything besides boxes?"
@@ -299,6 +448,28 @@
           "good": "It grows every day: workshops, shelter and places built by Cats for Cats.",
           "neutral": "We have the basics and a few plans.",
           "bad": "A box is more than enough luxury."
+        }
+      },
+      {
+        "id": "facilities-workplaces",
+        "visitorLines": [
+          "Do you actually have proper places to work?"
+        ],
+        "replies": {
+          "good": "Yes, and we're building more as the Gang learns new skills.",
+          "neutral": "Some jobs have better setups than others.",
+          "bad": "A flat bit of ground counts as a workplace."
+        }
+      },
+      {
+        "id": "facilities-built",
+        "visitorLines": [
+          "What kind of things have you built here?"
+        ],
+        "replies": {
+          "good": "Homes, workshops, storage — and we're nowhere near finished.",
+          "neutral": "Enough to get by.",
+          "bad": "You'd be surprised what counts as a building around here."
         }
       },
       {
@@ -313,6 +484,28 @@
         }
       },
       {
+        "id": "trust-rules",
+        "visitorLines": [
+          "If I join, how do I know you won't change the rules later?"
+        ],
+        "replies": {
+          "good": "Because the Gang only works if Cats can trust each other.",
+          "neutral": "We try to keep things reasonable.",
+          "bad": "Bernardo makes the rules. You'll keep up."
+        }
+      },
+      {
+        "id": "trust-let-down",
+        "visitorLines": [
+          "What happens if someone here lets me down?"
+        ],
+        "replies": {
+          "good": "Then we deal with it openly. Trust matters too much to ignore problems.",
+          "neutral": "Depends what they did.",
+          "bad": "Remember it and get them back later."
+        }
+      },
+      {
         "id": "freedom",
         "visitorLines": [
           "Would I still have space to be myself?"
@@ -321,6 +514,28 @@
           "good": "Yes. We coordinate when it matters and respect each Cat's space.",
           "neutral": "Nobody watches you all the time.",
           "bad": "Freedom is scheduled after chores."
+        }
+      },
+      {
+        "id": "freedom-leaving-camp",
+        "visitorLines": [
+          "Do I have to ask permission every time I leave the camp?"
+        ],
+        "replies": {
+          "good": "No. You're joining a Gang, not becoming somebody's property.",
+          "neutral": "Just don't disappear for too long.",
+          "bad": "Depends whether Bernardo notices."
+        }
+      },
+      {
+        "id": "freedom-choice",
+        "visitorLines": [
+          "Do I get any say in what I do here?"
+        ],
+        "replies": {
+          "good": "Of course. Cats do their best work when the role actually suits them.",
+          "neutral": "There is usually some choice.",
+          "bad": "You get the job you're given."
         }
       },
       {
@@ -335,6 +550,28 @@
         }
       },
       {
+        "id": "contribution-every-cat",
+        "visitorLines": [
+          "Is every Cat expected to help?"
+        ],
+        "replies": {
+          "good": "Yes, in whatever way suits them best. Nobody has to carry the whole camp.",
+          "neutral": "Most Cats do something useful.",
+          "bad": "If you aren't working, someone will notice."
+        }
+      },
+      {
+        "id": "contribution-day-off",
+        "visitorLines": [
+          "What if I'm exhausted and need a day off?"
+        ],
+        "replies": {
+          "good": "Then rest. A tired Cat isn't helping anyone by collapsing on the job.",
+          "neutral": "As long as it doesn't happen too often.",
+          "bad": "Sleep faster."
+        }
+      },
+      {
         "id": "future",
         "visitorLines": [
           "Is this camp actually going somewhere?"
@@ -343,6 +580,28 @@
           "good": "Absolutely. Every new paw helps turn this camp into a lasting home.",
           "neutral": "We have made some progress already.",
           "bad": "Ask again when the roof stops leaking."
+        }
+      },
+      {
+        "id": "future-vision",
+        "visitorLines": [
+          "What are you actually trying to build here?"
+        ],
+        "replies": {
+          "good": "A place Cats can choose to call home, not just somewhere they happened to stop.",
+          "neutral": "Something better than what we started with.",
+          "bad": "A bigger camp, obviously."
+        }
+      },
+      {
+        "id": "future-months",
+        "visitorLines": [
+          "What will this place look like a few months from now?"
+        ],
+        "replies": {
+          "good": "Safer, stronger and full of things we haven't even learned to build yet.",
+          "neutral": "Hopefully a little less messy.",
+          "bad": "If we're lucky, exactly the same but with more Cats."
         }
       }
     ],
@@ -510,7 +769,14 @@
           "speakerClass": "cannelle",
           "speakerName": "Cannelle",
           "portraitClass": "cannelle",
-          "html": "Start with the blueprints. I think you'll like this one."
+          "html": "Start with the blueprints, I think you'll like this one. And as a token of appreciation, here's a little gift for you."
+        },
+        {
+          "classes": [],
+          "speakerClass": null,
+          "speakerName": null,
+          "portraitClass": null,
+          "html": "Old Radio obtained ! Look for it in the new Unique Items Camp menu"
         }
       ],
       "asset": {

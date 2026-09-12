@@ -322,7 +322,7 @@ const ITEMS = {
     nom:          "Sturdy House Plans",
     emoji:        LIVRE_ICONE,
     description:  "Detailed human blueprints for a compact stone house, with strict instructions on foundations, load-bearing walls, and structural stability. Excessively serious, but apparently very good at keeping a roof where it belongs.",
-    unlocksLabel: "Solid Stone Cathouse",
+    unlocksLabel: "Stone Storage Shed",
     studyDuration: 3600000,
     learningGame: {
       phraseParts: [
@@ -363,17 +363,46 @@ const ITEMS = {
   }
 };
 
+const INTERFACE_ICON_PATHS = Object.freeze({
+  builder: "img/interface/builder.png",
+  "camp-engineer": "img/interface/camp-engineer.png",
+  carpenter: "img/interface/carpenter.png",
+  "cat-paw": "img/interface/cat-paw.png",
+  chef: "img/interface/chef.png",
+  difficulty: "img/interface/difficulty.png",
+  explorator: "img/interface/explorator.png",
+  farmer: "img/interface/farmer.png",
+  "gang-leader": "img/interface/gang-leader.png",
+  hourglass: "img/interface/hourglass.png",
+  lock: "img/interface/lock.png",
+  lumberjack: "img/interface/lumberjack.png",
+  "magnifying-glass": "img/interface/magnifying-glass.png",
+  miner: "img/interface/miner.png",
+  pause: "img/interface/pause.png",
+  play: "img/interface/play.png",
+  power: "img/interface/power.png",
+  "shop-owner": "img/interface/shop-owner.png",
+  stonemason: "img/interface/stonemason.png"
+});
+
+function interfaceIconHtml(iconId, className, alt) {
+  const path = INTERFACE_ICON_PATHS[iconId];
+  if (!path) return "";
+  const classes = "interface-icon" + (className ? " " + className : "");
+  return '<img class="' + classes + '" src="' + path + '" alt="' + (alt || "") + '">';
+}
+
 const METIERS = {
-  lumberjack:    { id: "lumberjack",   nom: "Lumberjack",  emoji: "🪓", famille: "wood",    familleNom: "Wood resource family",    duree: 3600 },
-  carpenter:     { id: "carpenter",   nom: "Carpenter",    emoji: "🔨", famille: "sawmill", familleNom: "Sawmill resource family", duree: 3600 },
-  farmer:        { id: "farmer",      nom: "Farmer",       emoji: "🌾", famille: "food",    familleNom: "Food resource family",    duree: 3600 },
-  chef:          { id: "chef",        nom: "Chef",         emoji: "🍳", famille: "catchen",    familleNom: "Catchen resource family",    duree: 3600 },
-  explorator:    { id: "explorator",  nom: "Explorator",   emoji: "🧭", famille: "exploration", familleNom: "Exploration family",         duree: 3600 },
-  builder:       { id: "builder",     nom: "Builder",      emoji: "🏗️", famille: null,         familleNom: "Camp construction",          duree: 3600, unlockItem: "constructionPlan" },
-  miner:         { id: "miner",       nom: "Miner",        emoji: "⛏️", famille: "rock",        familleNom: "Rock resource family",       duree: 3600, unlockItem: "stoneGuide" },
-  stonemason:    { id: "stonemason",  nom: "Stonemason",   emoji: "🪨", famille: "pawsonry",    familleNom: "Pawsonry resource family",   duree: 3600, unlockItem: "stoneGuide" },
-  "gang-leader": { id: "gang-leader", nom: "Gang Leader",  emoji: "👑", famille: null,          familleNom: "Work speed",                 duree: 0 },
-  "camp-engineer": { id: "camp-engineer", nom: "Camp Engineer", emoji: "🔧", famille: "engineering", familleNom: "Passive camp systems", duree: 3600, engineer: true }
+  lumberjack:    { id: "lumberjack",   nom: "Lumberjack",  emoji: interfaceIconHtml("lumberjack", "job-icon"), famille: "wood",    familleNom: "Wood resource family",    duree: 3600 },
+  carpenter:     { id: "carpenter",   nom: "Carpenter",    emoji: interfaceIconHtml("carpenter", "job-icon"), famille: "sawmill", familleNom: "Sawmill resource family", duree: 3600 },
+  farmer:        { id: "farmer",      nom: "Farmer",       emoji: interfaceIconHtml("farmer", "job-icon"), famille: "food",    familleNom: "Food resource family",    duree: 3600 },
+  chef:          { id: "chef",        nom: "Chef",         emoji: interfaceIconHtml("chef", "job-icon"), famille: "catchen",    familleNom: "Catchen resource family",    duree: 3600 },
+  explorator:    { id: "explorator",  nom: "Explorator",   emoji: interfaceIconHtml("explorator", "job-icon"), famille: "exploration", familleNom: "Exploration family",         duree: 3600 },
+  builder:       { id: "builder",     nom: "Builder",      emoji: interfaceIconHtml("builder", "job-icon"), famille: null,         familleNom: "Camp construction",          duree: 3600, unlockItem: "constructionPlan" },
+  miner:         { id: "miner",       nom: "Miner",        emoji: interfaceIconHtml("miner", "job-icon"), famille: "rock",        familleNom: "Rock resource family",       duree: 3600, unlockItem: "stoneGuide" },
+  stonemason:    { id: "stonemason",  nom: "Stonemason",   emoji: interfaceIconHtml("stonemason", "job-icon"), famille: "pawsonry",    familleNom: "Pawsonry resource family",   duree: 3600, unlockItem: "stoneGuide" },
+  "gang-leader": { id: "gang-leader", nom: "Gang Leader",  emoji: interfaceIconHtml("gang-leader", "job-icon"), famille: null,          familleNom: "Work speed",                 duree: 0 },
+  "camp-engineer": { id: "camp-engineer", nom: "Camp Engineer", emoji: interfaceIconHtml("camp-engineer", "job-icon"), famille: "engineering", familleNom: "Passive camp systems", duree: 3600, engineer: true }
 };
 
 const explorationData = CatInc.data.exploration;
@@ -424,6 +453,31 @@ function explorationZonesAdjacent(first, second) {
   });
 }
 
+// Returns the visual center of a zone in grid-boundary coordinates. Concave
+// shapes whose bounding-box center is outside their owned cells use the
+// nearest owned cell center, with coordinate tie-breakers for stable output.
+function explorationZoneMarkerAnchor(zone) {
+  const cells = explorationZoneCells(zone);
+  if (!cells.length) return null;
+  const minX = Math.min.apply(null, cells.map(function(cell) { return cell.x; }));
+  const maxX = Math.max.apply(null, cells.map(function(cell) { return cell.x; }));
+  const minY = Math.min.apply(null, cells.map(function(cell) { return cell.y; }));
+  const maxY = Math.max.apply(null, cells.map(function(cell) { return cell.y; }));
+  const center = { x: (minX + maxX + 1) / 2, y: (minY + maxY - 1) / 2 };
+  const centerIsOwned = cells.some(function(cell) {
+    return center.x >= cell.x && center.x <= cell.x + 1
+      && center.y >= cell.y - 1 && center.y <= cell.y;
+  });
+  if (centerIsOwned) return { x: center.x, y: center.y, snapped: false };
+  const nearest = cells.map(function(cell) {
+    const x = cell.x + 0.5, y = cell.y - 0.5;
+    return { x: x, y: y, distance: Math.pow(x - center.x, 2) + Math.pow(y - center.y, 2) };
+  }).sort(function(first, second) {
+    return first.distance - second.distance || second.y - first.y || first.x - second.x;
+  })[0];
+  return { x: nearest.x, y: nearest.y, snapped: true };
+}
+
 function validateExplorationRegion(region) {
   if (!region || !Number.isInteger(region.columns) || region.columns < 1
       || !Number.isInteger(region.rows) || region.rows < 1 || !region.zones) {
@@ -470,6 +524,7 @@ const explorationGeometry = Object.freeze({
   zoneById: explorationZoneById,
   zoneCellIndex: explorationZoneCellIndex,
   zonesAdjacent: explorationZonesAdjacent,
+  zoneMarkerAnchor: explorationZoneMarkerAnchor,
   validateRegion: validateExplorationRegion
 });
 const TIERS_KITTIES = [
@@ -555,6 +610,8 @@ const CAT_FACES_ALEATOIRES = Object.freeze(LIVE_ALTERNATIVE_CAT_FACES.length
     NOMS_KITTIES: NOMS_KITTIES,
     KITTY_ICON: KITTY_ICON,
     CHECK_ICON: CHECK_ICON,
+    INTERFACE_ICON_PATHS: INTERFACE_ICON_PATHS,
+    interfaceIconHtml: interfaceIconHtml,
     CAT_FACES: CAT_FACES,
     CAT_FACES_ALEATOIRES: CAT_FACES_ALEATOIRES
   });

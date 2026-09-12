@@ -20,11 +20,9 @@
       if (!container) { showNext(); return; }
       const element = documentRef.createElement("div");
       element.textContent = message;
-      const symbol = /^(⚠️?|❌)\s*/u.exec(message);
-      if (symbol) {
-        element.textContent = message.slice(symbol[0].length);
+      if (pending.kind === "warning" || pending.kind === "cross") {
         const icon = documentRef.createElement("span");
-        icon.className = "interface-symbol " + (symbol[1] === "❌" ? "interface-cross" : "interface-warning");
+        icon.className = "interface-symbol interface-" + pending.kind;
         icon.setAttribute("aria-hidden", "true");
         element.prepend(icon, documentRef.createTextNode(" "));
       }
@@ -45,12 +43,12 @@
       }, DISPLAY_DURATION_MS);
     }
 
-    function show(message, getContainer) {
+    function show(message, getContainer, kind) {
       const text = String(message || "").trim();
       if (!text) return;
       if (activeNotification && activeNotification.message === text) return;
       if (pendingMessages.some(function(pending) { return pending.message === text; })) return;
-      pendingMessages.push({ message: text, getContainer: getContainer });
+      pendingMessages.push({ message: text, getContainer: getContainer, kind: kind });
       showNext();
     }
 

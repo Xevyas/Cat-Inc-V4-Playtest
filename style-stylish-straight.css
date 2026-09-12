@@ -69,6 +69,19 @@ body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
 body[data-ui-theme="stylish"][data-ui-shape="straight"] .camp-profile-summary {
   border-radius: var(--stylish-straight-card-radius);
 }
+body[data-ui-theme="stylish"][data-ui-shape="straight"] :is(
+  .explo-modal-panneau,
+  .system-utility-panel,
+  .camp-quick-dialogue,
+  .daily-quests-hud,
+  .daily-quest-row,
+  .bird-minijeu-carte,
+  .bird-success-carte,
+  .recruit-result-card
+) {
+  border-radius: var(--stylish-straight-card-radius);
+  mask: none;
+}
 body[data-ui-theme="stylish"][data-ui-shape="straight"] .onglet::before,
 body[data-ui-theme="stylish"][data-ui-shape="straight"] .onglet-actif::before {
   border-radius: 7px;

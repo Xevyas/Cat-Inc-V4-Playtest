@@ -672,6 +672,17 @@
       access: STORAGE_ACCESS,
       stickerSlot: STORAGE_STICKER_SLOT
     }))),
+    stoneStorageShed: gameplayItem("stoneStorageShed", gameplayRuntimeItem("stoneStorageShed", {
+      id: "stoneStorageShed",
+      label: "Stone Storage Shed",
+      width: 1,
+      height: 1,
+      color: "stone",
+      category: "building",
+      rotatable: true,
+      blocksMovement: true,
+      access: singleEntranceAccess(1, 1)
+    })),
     marketStall: gameplayItem("marketStall", gameplayRuntimeItem("marketStall", {
       id: "marketStall",
       label: "Market Stall",
@@ -886,11 +897,33 @@
     return visualTypes;
   }
 
+  function uniqueItemTypes(baseTypes) {
+    const uniqueTypes = {};
+    Object.keys(GAMEPLAY_MANIFEST.uniqueItems || {}).forEach(function(uniqueItemId) {
+      const definition = GAMEPLAY_MANIFEST.uniqueItems[uniqueItemId];
+      const runtimeTypeId = definition && definition.runtimeTypeId;
+      if (!runtimeTypeId || baseTypes[runtimeTypeId] || !runtimeRevision(runtimeTypeId, 1)) return;
+      uniqueTypes[runtimeTypeId] = runtimeItem(runtimeTypeId, {
+        id: runtimeTypeId,
+        label: definition.name || runtimeTypeId,
+        width: 1,
+        height: 1,
+        color: "unique-item",
+        category: "decoration",
+        rotatable: true,
+        blocksMovement: true,
+        uniqueItemId: uniqueItemId
+      });
+    });
+    return uniqueTypes;
+  }
+
   const FENCE_TYPES = Object.freeze({
     campBoundaryFence: runtimeFenceType("campBoundaryFence")
   });
   const ITEM_TYPES = Object.freeze({
     ...BASE_ITEM_TYPES,
+    ...uniqueItemTypes(BASE_ITEM_TYPES),
     ...Object.keys(FENCE_TYPES).reduce(function(types, typeId) {
       if (FENCE_TYPES[typeId]) types[typeId] = FENCE_TYPES[typeId];
       return types;
@@ -1618,6 +1651,7 @@
       }
       const sticker = item.sticker ? normaliserStickerSelection(item.sticker, type) : null;
       if (sticker) normalise.sticker = sticker;
+      if (item.animationDisabled === true) normalise.animationDisabled = true;
       layout.push(normalise);
     });
     return layout;
