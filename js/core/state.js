@@ -109,7 +109,7 @@ function creerEtatInitial() {
   afficherTempsAjusteRecrutement: false,
   avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
-  volumeMusique:           0,
+  volumeMusique:           0.3,
   campCatPortraitScale:    1,
   hideCampCatIcons:          false,
   campAnimationsEnabled:   true,
@@ -125,6 +125,7 @@ function creerEtatInitial() {
   birdPremierSpawnTs:      Date.now() + 5 * 60 * 1000,
   birdPremierDeclenche:     false,
   birdPremiereReussie:     false,
+  birdNextSpawnTs:          0,
   birdPityEchecs:           0,
 
   // First-production story state

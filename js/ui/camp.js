@@ -400,8 +400,10 @@
     const animation = revision.animation && revision.animation.mode === "overlay-apng"
       ? {
           mode: revision.animation.mode,
+          familyId: revision.animation.familyId || "",
           frameCount: revision.animation.frameCount,
           frameDurationMs: revision.animation.frameDurationMs,
+          composition: revision.animation.composition || "overlay",
           registration: revision.animation.registration || null,
           sprites: Object.keys(revision.animation.sprites || {}).reduce(function(paths, direction) {
             paths[direction] = runtimeSpritePath(revision.animation.sprites[direction], revision);
@@ -721,7 +723,7 @@
       height: 2,
       color: "nature",
       category: "decoration",
-      asset: "img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png?v=0.0001"
+      asset: "img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-6/down.png?v=0.0001"
     }),
     catToy: Object.freeze({
       id: "catToy",

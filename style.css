@@ -2080,35 +2080,6 @@ body {
 }
 
 /* ── Bird mini-game ─────────────────────────────────────── */
-#bird-btn {
-  background: none;
-  border: none;
-  font-size: 1.4rem;
-  cursor: pointer;
-  padding: 2px 4px;
-  animation: bird-wiggle 0.45s ease-in-out infinite alternate;
-  align-self: center;
-}
-#bird-btn.camp-bird-perch {
-  position: absolute;
-  left: var(--camp-bird-left, 0%);
-  top: var(--camp-bird-top, 0%);
-  z-index: 11;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  margin: 0;
-  padding: 7px;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 3px 4px rgba(56, 38, 20, .35));
-  touch-action: manipulation;
-}
-#bird-btn.camp-bird-perch:hover,
-#bird-btn.camp-bird-perch:focus-visible {
-  transform: translate(-50%, -50%) scale(1.08);
-}
 .bird-debug-btn {
   display: none;
   background: none;
@@ -2125,11 +2096,6 @@ body {
   object-fit: contain;
   display: block;
 }
-@keyframes bird-wiggle {
-  from { transform: translateY(0) rotate(-8deg); }
-  to   { transform: translateY(-5px) rotate(8deg); }
-}
-
 .bird-minijeu-overlay {
   position: fixed;
   inset: 0;
@@ -2345,8 +2311,7 @@ body.mini-game-runtime-active .camp-prototype-neighbor-fog-visual::before,
 body.mini-game-runtime-active .camp-prototype-neighbor-fog-visual::after,
 body.mini-game-runtime-active .sphere-fog-primary-track,
 body.mini-game-runtime-active .sphere-fog-secondary-track,
-body.mini-game-runtime-active .work-manual-focus-active::after,
-body.mini-game-runtime-active #bird-btn {
+body.mini-game-runtime-active .work-manual-focus-active::after {
   animation-play-state: paused !important;
 }
 .purrsuasion-v2-action {
@@ -3906,7 +3871,6 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     height: 15px;
     font-size: .43rem;
   }
-  .ressources-fixes #bird-btn,
   .ressources-fixes .bird-debug-btn {
     display: none;
     align-items: center;
@@ -3916,7 +3880,6 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     padding: 4px;
   }
   body[data-dev-mode="true"] .ressources-fixes .bird-debug-btn { display: inline-flex; }
-  .ressources-fixes #bird-btn .bird-btn-icone,
   .ressources-fixes .bird-debug-btn .bird-btn-icone {
     width: 42px;
     height: 42px;
@@ -4064,19 +4027,8 @@ body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.12); }
 }
-.camp-prototype-item.camp-bird-tree-attention {
-  filter: drop-shadow(0 0 7px rgba(242, 185, 45, .95));
-  animation: camp-bird-tree-pulse 2.8s ease-in-out infinite;
-}
-@keyframes camp-bird-tree-pulse {
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(242, 185, 45, .58)); }
-  50% { filter: drop-shadow(0 0 10px rgba(242, 185, 45, .98)); }
-}
 @media (prefers-reduced-motion: reduce) {
-  #bird-btn.camp-bird-perch,
-  #bird-btn.camp-bird-perch .bird-btn-icone,
-  .onglet.camp-tab-bird-attention,
-  .camp-prototype-item.camp-bird-tree-attention { animation: none; }
+  .onglet.camp-tab-bird-attention { animation: none; }
 }
 
 .panneau.camp-prototype-panel {
@@ -4528,9 +4480,9 @@ body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
   gap: 8px;
   min-height: 52px;
   padding: 7px 10px;
-  border: 2px solid color-mix(in srgb, var(--camp-prototype-color) 55%, #6b5542);
+  border: 2px solid #9f744c;
   border-radius: 9px;
-  background: color-mix(in srgb, var(--camp-prototype-color) 20%, white);
+  background: #f7ede2;
   color: #3e2a1d;
   overflow: hidden;
   touch-action: manipulation;
@@ -5566,10 +5518,12 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   pointer-events: auto;
   touch-action: manipulation;
 }
-.camp-prototype-interaction-menu:not(.camp-production-menu) button:hover {
-  color: #fff;
-  background: #27834f;
-  filter: none;
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu:not(.camp-production-menu) button:hover {
+    color: #fff;
+    background: #27834f;
+    filter: none;
+  }
 }
 .camp-prototype-interaction-menu:not(.camp-production-menu) button:focus-visible {
   outline: 3px solid rgba(39, 131, 79, .32);
@@ -5893,12 +5847,14 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   cursor: pointer;
   touch-action: manipulation;
 }
-.camp-prototype-interaction-menu.camp-production-menu .camp-production-recipe:hover,
-.camp-prototype-interaction-menu.camp-production-menu .camp-production-choose:hover,
-.camp-prototype-interaction-menu.camp-production-menu .camp-production-assign:hover,
-.camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-face:hover,
-.camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-remove:hover {
-  filter: brightness(.97);
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu.camp-production-menu .camp-production-recipe:hover,
+  .camp-prototype-interaction-menu.camp-production-menu .camp-production-choose:hover,
+  .camp-prototype-interaction-menu.camp-production-menu .camp-production-assign:hover,
+  .camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-face:hover,
+  .camp-prototype-interaction-menu.camp-production-menu .camp-production-cat-remove:hover {
+    filter: brightness(.97);
+  }
 }
 .camp-prototype-interaction-menu.camp-production-menu button:focus-visible {
   outline: 3px solid rgba(39, 131, 79, .32);
@@ -6066,8 +6022,10 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   color: #fff;
   background: #2d9b58;
 }
-.camp-prototype-interaction-menu .camp-task-claim-action:hover {
-  background: #247f49;
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu .camp-task-claim-action:hover {
+    background: #247f49;
+  }
 }
 .camp-prototype-interaction-menu .camp-task-claim-action strong {
   font-size: .72rem;
@@ -6109,10 +6067,12 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   color: #8d441b;
   background: #fff8eb;
 }
-.camp-prototype-interaction-menu .camp-prototype-demolition-action:hover {
-  color: #8d441b;
-  background: #fff8eb;
-  filter: brightness(.97);
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu .camp-prototype-demolition-action:hover {
+    color: #8d441b;
+    background: #fff8eb;
+    filter: brightness(.97);
+  }
 }
 .camp-prototype-demolition-action > img {
   width: 32px;
@@ -6126,10 +6086,12 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   color: #75431f;
   background: #fff8e8;
 }
-.camp-prototype-interaction-menu .camp-prototype-repair-action:hover {
-  color: #75431f;
-  background: #fff8e8;
-  filter: brightness(.97);
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu .camp-prototype-repair-action:hover {
+    color: #75431f;
+    background: #fff8e8;
+    filter: brightness(.97);
+  }
 }
 .camp-prototype-repair-action > img {
   width: 34px;
@@ -6144,9 +6106,11 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   border-color: #bd842d;
   background: #fff8df;
 }
-.camp-prototype-interaction-menu .camp-prototype-upgrade-action:hover {
-  color: #fff;
-  background: #9b681f;
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu .camp-prototype-upgrade-action:hover {
+    color: #fff;
+    background: #9b681f;
+  }
 }
 .camp-prototype-demolition-menu-status {
   display: inline-flex;
@@ -6388,9 +6352,11 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   cursor: pointer;
   transform: translate(-50%, -50%);
 }
-.camp-prototype-repair-quick:hover {
-  background: #ffe6a8;
-  transform: translate(-50%, -50%) scale(1.06);
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-repair-quick:hover {
+    background: #ffe6a8;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
 }
 .camp-prototype-repair-quick:focus-visible {
   outline: 3px solid rgba(168, 102, 32, .35);
@@ -6587,6 +6553,9 @@ body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
   -webkit-user-drag: none;
 }
 .camp-prototype-animation-shadow { z-index: 1; }
+.camp-prototype-animation-replaces-base > .camp-prototype-building-sprite {
+  visibility: hidden;
+}
 .camp-animation-toggle-action span { font-size: 1.25rem; line-height: 1; }
 .camp-prototype-interaction-menu .camp-production-actions .camp-animation-toggle-action,
 .camp-prototype-interaction-menu .camp-house-actions .camp-animation-toggle-action {
@@ -6893,7 +6862,9 @@ body.camp-prototype-editing .camp-location-cats {
 .camp-prototype-ghost .camp-prototype-animation-overlay {
   opacity: .55;
 }
-.camp-prototype-item:hover { filter: brightness(1.04); }
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-item:hover { filter: brightness(1.04); }
+}
 .camp-prototype-item:active { transform: none; }
 .camp-prototype-item-selected {
   z-index: 3;
@@ -9590,9 +9561,11 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   font-weight: 900;
   touch-action: manipulation;
 }
-.camp-task-slot-empty:hover {
-  border-color: #efc19c;
-  background: var(--couleur-accent);
+@media (hover: hover) and (pointer: fine) {
+  .camp-task-slot-empty:hover {
+    border-color: #efc19c;
+    background: var(--couleur-accent);
+  }
 }
 .camp-task-slot[aria-pressed="true"] {
   border-color: #efc19c;
@@ -9690,9 +9663,11 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   cursor: pointer;
   touch-action: manipulation;
 }
-.camp-demolition-kitty:hover:not(.camp-demolition-kitty-disabled) {
-  border-color: #b96528;
-  background: #fff8eb;
+@media (hover: hover) and (pointer: fine) {
+  .camp-demolition-kitty:hover:not(.camp-demolition-kitty-disabled) {
+    border-color: #b96528;
+    background: #fff8eb;
+  }
 }
 .camp-demolition-kitty-selected { border-color: #c8753e; background: #fff1e6; box-shadow: 0 0 0 2px rgba(200,117,62,.22); }
 .camp-demolition-start {
@@ -9709,7 +9684,9 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   font-weight: 850;
   touch-action: manipulation;
 }
-.camp-demolition-start:hover:not(:disabled) { background: #9e4d1f; }
+@media (hover: hover) and (pointer: fine) {
+  .camp-demolition-start:hover:not(:disabled) { background: #9e4d1f; }
+}
 .camp-demolition-start:disabled { cursor: not-allowed; opacity: .5; }
 .camp-demolition-kitty:focus-visible {
   outline: 3px solid rgba(185, 101, 40, .25);
@@ -10077,6 +10054,65 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   min-height: 44px;
 }
 .settings-changelog-btn:hover:not(:disabled) { background: #f5e7d8; }
+
+.settings-credits-btn {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 7px 10px;
+  border: 1px solid #d8c5af;
+  border-radius: var(--rayon-petit);
+  background: #fff8f0;
+  color: var(--couleur-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-action);
+  font-weight: var(--font-weight-emphasis);
+}
+.settings-credits-btn:hover { background: #f5e7d8; }
+.settings-music-entitlement[hidden] { display: none !important; }
+.settings-credits-btn:focus-visible,
+.music-credit-link:focus-visible {
+  outline: 3px solid rgba(224, 123, 57, .35);
+  outline-offset: 2px;
+}
+
+.music-credits-modal .explo-modal-panneau { max-width: 640px; }
+.music-credits-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: min(68vh, 600px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px;
+  color: var(--couleur-texte);
+  line-height: 1.45;
+}
+.music-credits-intro { margin: 0; }
+.music-credit-source {
+  padding: 13px 14px;
+  border: 1px solid #ead9c7;
+  border-radius: 9px;
+  background: #fffaf4;
+  overflow-wrap: anywhere;
+}
+.music-credit-source h3 {
+  margin: 0 0 2px;
+  color: var(--couleur-accent);
+  font-size: 1rem;
+}
+.music-credit-source p { margin: 7px 0; }
+.music-credit-pack {
+  margin-top: 0 !important;
+  font-weight: var(--font-weight-emphasis);
+}
+.music-credit-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--couleur-accent);
+  font-weight: var(--font-weight-emphasis);
+}
 
 .changelog-modal .explo-modal-panneau { max-width: 600px; }
 .changelog-releases {
@@ -13809,7 +13845,6 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
     overflow: hidden;
   }
   .ressources-fixes { height: 100%; padding-left: 2px; }
-  .ressources-fixes #bird-btn,
   .ressources-fixes .bird-debug-btn {
     align-self: stretch;
     align-items: center;
@@ -13818,17 +13853,7 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
     min-width: 44px;
     padding: 3px;
   }
-  .ressources-fixes #bird-btn {
-    animation: none;
-  }
   .ressources-fixes .bird-btn-icone { width: 25px; height: 25px; }
-  .ressources-fixes #bird-btn .bird-btn-icone {
-    animation: bird-wiggle-mobile .6s ease-in-out infinite alternate;
-  }
-  @keyframes bird-wiggle-mobile {
-    from { transform: translateY(2px) rotate(-7deg); }
-    to   { transform: translateY(-2px) rotate(7deg); }
-  }
   .ressources-fixes .ressource-cats {
     flex-direction: column;
     gap: 2px;
@@ -14142,6 +14167,8 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
     border-top: 1px solid #e8ddd0;
     box-shadow: 0 -2px 5px rgba(60, 40, 20, 0.08);
   }
+  body > .work-subnav { display: none; }
+  body[data-onglet-actif="work"] > .work-subnav { display: block; }
   .work-filtres-btns {
     display: grid;
     align-items: stretch;
@@ -15609,18 +15636,6 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
     padding: 8px 10px;
     font-size: .82rem;
   }
-  .camp-task-panel-anchored {
-    left: 0 !important;
-    right: 0;
-    top: auto !important;
-    bottom: 0;
-    width: 100% !important;
-    max-width: none !important;
-    max-height: min(82vh, 640px);
-    padding: 14px 14px calc(14px + var(--safe-area-inferieure-mobile));
-    border-radius: 18px 18px 0 0;
-    transform: none !important;
-  }
   .camp-task-panel-summary { grid-template-columns: 52px minmax(0, 1fr); gap: 9px; }
   .camp-task-panel-action-icon { width: 48px; height: 48px; padding: 6px; }
   .camp-task-panel-summary-copy { font-size: .66rem; gap: 4px; }
@@ -15655,28 +15670,28 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 }
 .camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-world-crop > .camp-prototype-board,
 .camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-world-crop > .camp-prototype-river-band,
-.camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-neighbor-fog {
+.camp-prototype-map[data-camp-visible-columns="1"] > .camp-prototype-world-crop > .camp-prototype-neighbor-fog {
   width: 300%;
   margin-left: -100%;
 }
 .camp-prototype-map[data-camp-visible-columns="2"] > .camp-prototype-world-crop > .camp-prototype-board,
 .camp-prototype-map[data-camp-visible-columns="2"] > .camp-prototype-world-crop > .camp-prototype-river-band,
-.camp-prototype-map[data-camp-visible-columns="2"] > .camp-prototype-neighbor-fog {
+.camp-prototype-map[data-camp-visible-columns="2"] > .camp-prototype-world-crop > .camp-prototype-neighbor-fog {
   width: 150%;
 }
 .camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="0"] > .camp-prototype-world-crop > .camp-prototype-board,
 .camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="0"] > .camp-prototype-world-crop > .camp-prototype-river-band,
-.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="0"] > .camp-prototype-neighbor-fog {
+.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="0"] > .camp-prototype-world-crop > .camp-prototype-neighbor-fog {
   margin-left: 0;
 }
 .camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="1"] > .camp-prototype-world-crop > .camp-prototype-board,
 .camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="1"] > .camp-prototype-world-crop > .camp-prototype-river-band,
-.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="1"] > .camp-prototype-neighbor-fog {
+.camp-prototype-map[data-camp-visible-columns="2"][data-camp-visible-start="1"] > .camp-prototype-world-crop > .camp-prototype-neighbor-fog {
   margin-left: -50%;
 }
 .camp-prototype-map[data-camp-visible-columns="3"] > .camp-prototype-world-crop > .camp-prototype-board,
 .camp-prototype-map[data-camp-visible-columns="3"] > .camp-prototype-world-crop > .camp-prototype-river-band,
-.camp-prototype-map[data-camp-visible-columns="3"] > .camp-prototype-neighbor-fog {
+.camp-prototype-map[data-camp-visible-columns="3"] > .camp-prototype-world-crop > .camp-prototype-neighbor-fog {
   width: 100%;
   margin-left: 0;
 }

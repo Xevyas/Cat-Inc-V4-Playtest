@@ -575,7 +575,11 @@
           </form>
         </div>
         <div id="camp-profile-stats" class="camp-profile-stats" aria-label="Current Camp statistics">
-          <span id="camp-profile-panel-level-wrap"><small>Camp Level</small><strong id="camp-profile-panel-level">0</strong></span>
+          <span id="camp-profile-panel-level-wrap">
+            <button id="camp-level-summary" class="interface-details-control camp-profile-stat-action" type="button" aria-label="Show Camp Level details" aria-expanded="false" aria-controls="camp-level-details" onclick="toggleDetailsNiveauCamp(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
+            <small>Camp Level</small><strong id="camp-profile-panel-level">0</strong>
+            <span id="camp-level-details" class="camp-appeal-details" role="region" aria-label="Camp Level details" hidden></span>
+          </span>
           <span id="camp-profile-panel-cats-wrap">
             <button id="camp-housing-summary" class="interface-details-control camp-profile-stat-action" type="button" aria-label="Show Housing Capacity details" aria-expanded="false" aria-controls="camp-housing-details" onclick="toggleDetailsHousingCamp(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
             <small>Cats / Capacity</small><strong id="camp-profile-panel-cats">0 / 4</strong>
@@ -718,7 +722,7 @@
                 </span>
                 <button id="camp-recruit-visitor" class="camp-recruit-visitor" type="button" hidden onclick="activerRecrutementDepuisCamp(event)">
                   <span class="camp-recruit-visitor-portrait">
-                    <img id="camp-recruit-visitor-face" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
+                    <img id="camp-recruit-visitor-face" src="img/interface/Gang_Final.png?v=0.0026" alt="">
                   </span>
                   <span class="camp-recruit-visitor-question" aria-hidden="true">?</span>
                 </button>
@@ -754,7 +758,6 @@
           <div id="camp-prototype-grounding" class="camp-prototype-grounding" aria-hidden="true"></div>
           <div id="camp-prototype-items" class="camp-prototype-items"></div>
           <div id="camp-task-ui-layer" class="camp-task-ui-layer" aria-hidden="true"></div>
-          <button id="bird-btn" class="camp-bird-perch" type="button" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
            <div id="camp-prototype-fences" class="camp-prototype-fences" aria-hidden="true"></div>
            <span class="camp-recruit-arrival-control">
              <button id="camp-recruit-arrival-status" class="camp-recruit-arrival-status" type="button" aria-expanded="false" aria-controls="camp-recruit-arrival-details" aria-label="Show visitor arrival timing details" onclick="toggleDetailsDureeArriveeCamp(event)" hidden></button>
@@ -794,11 +797,11 @@
              </div>
              <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
            </div>
-          </div>
            <div class="camp-prototype-neighbor-fog" aria-hidden="true">
              <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-red" data-camp-fog-zone="redGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
              <span class="camp-prototype-neighbor-fog-zone camp-prototype-neighbor-fog-green" data-camp-fog-zone="greenGarden"><span class="camp-prototype-neighbor-fog-visual"></span></span>
            </div>
+          </div>
         </div>
        </div>
        <div id="camp-prototype-first-reveal-cover" class="camp-prototype-first-reveal-cover" aria-hidden="true"></div>
@@ -824,7 +827,7 @@
           <span>Buildings</span>
         </button>
         <button type="button" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
-          <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-1/down.png" alt="">
+          <img class="camp-prototype-category-icon-image" src="img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-6/down.png" alt="">
           <span>Decor</span>
         </button>
         <button type="button" data-camp-category="unique-item" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('unique-item')" hidden>
@@ -1122,11 +1125,12 @@
           <input type="range" id="settings-sfx-volume" min="0" max="100" step="1" value="30" aria-label="Sound effects volume" oninput="gererVolumeAudio('sfx', this.value)">
           <output id="settings-sfx-volume-value" for="settings-sfx-volume">30%</output>
         </label>
-        <label class="settings-volume-row">
+        <label id="settings-music-volume-row" class="settings-volume-row settings-music-entitlement" hidden>
           <span>Music</span>
-          <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="0" aria-label="Music volume" oninput="gererVolumeAudio('music', this.value)">
-          <output id="settings-music-volume-value" for="settings-music-volume">0%</output>
+          <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="30" aria-label="Music volume" oninput="gererVolumeAudio('music', this.value)">
+          <output id="settings-music-volume-value" for="settings-music-volume">30%</output>
         </label>
+        <button class="settings-credits-btn settings-music-entitlement" type="button" onclick="ouvrirCreditsMusique()" hidden>Music credits &amp; licenses</button>
         <div class="settings-separateur"></div>
         <div class="settings-audio-title">Camp</div>
         <label class="settings-volume-row">
@@ -1161,6 +1165,18 @@
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MUSIC CREDITS -->
+  <div id="music-credits-modal" class="explo-modal music-credits-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="music-credits-modal-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerCreditsMusique()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="music-credits-modal-title">Music credits &amp; licenses</span>
+        <button class="explo-modal-close" aria-label="Close Music credits and licenses" onclick="fermerCreditsMusique()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <div id="music-credits-content" class="music-credits-content overlay-manager-content"></div>
     </div>
   </div>
 
@@ -1456,7 +1472,7 @@
         <div class="purrsuasion-v2-conversation">
           <div id="purrsuasion-v2-visitor-line" class="purrsuasion-v2-question">Is there a warm place to sleep?</div>
           <div class="purrsuasion-v2-speaker">
-            <img id="purrsuasion-v2-visitor-portrait" class="purrsuasion-v2-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="Simulated visitor">
+            <img id="purrsuasion-v2-visitor-portrait" class="purrsuasion-v2-portrait" src="img/interface/Gang_Final.png?v=0.0026" alt="Simulated visitor">
             <strong id="purrsuasion-v2-visitor-name">Visitor</strong>
           </div>
         </div>
@@ -1504,7 +1520,7 @@
     <div id="recruit-result-card" class="recruit-result-card" role="document" tabindex="-1">
       <h3 id="recruit-result-title">Recruitment successful!</h3>
       <div class="recruit-result-portrait-wrap">
-        <img id="recruit-result-portrait" class="recruit-result-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
+        <img id="recruit-result-portrait" class="recruit-result-portrait" src="img/interface/Gang_Final.png?v=0.0026" alt="">
         <img id="recruit-result-badge" class="recruit-result-badge" src="img/interface/✅_Final.png?v=0.0026" alt="Success">
       </div>
       <p id="recruit-result-message">The cat is convinced and agrees to join the Gang!</p>
@@ -1536,6 +1552,7 @@
   <script src="js/data/exploration.generated.js?v=0.0001"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/cat-faces.generated.js?v=0.0004"></script>
+  <script src="js/data/camp-gameplay.generated.js?v=0.0009"></script>
   <script src="js/data/content.js?v=0.0058"></script>
   <script src="js/data/perks.generated.js?v=0.0001"></script>
   <script src="js/data/changelog.js?v=0.0083"></script>
@@ -1546,7 +1563,6 @@
   <script src="js/core/save.js?v=0.0055"></script>
   <script src="js/core/dev-tools.js?v=0.0001"></script>
   <script src="js/core/production.js?v=0.0036"></script>
-  <script src="js/data/camp-gameplay.generated.js?v=0.0008"></script>
   <script src="js/data/cannelle-bargain.js?v=0.0002"></script>
   <script src="js/data/playable-content-scenario.js?v=0.0002"></script>
   <script src="js/core/incrementor-law.js?v=0.0004"></script>

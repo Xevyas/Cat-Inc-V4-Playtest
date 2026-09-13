@@ -4,6 +4,60 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
 
+// BEGIN GENERATED AUDIO CREDITS — Documentation/audio-credits.json
+CatInc.data.audioCredits = Object.freeze([
+  {
+    "creator": "LulleMusic",
+    "pack": "Lo-Fi Music Pack",
+    "sourceUrl": "https://lullemusic.itch.io/lo-fi-music-pack",
+    "attributionStatus": "optional",
+    "attributionText": "Music by LulleMusic — Lo-Fi Music Pack",
+    "licenseSummary": "Royalty-free use in commercial and non-commercial projects is permitted.",
+    "restriction": "The original tracks may not be redistributed or resold as standalone files.",
+    "tracks": [
+      "Sunbeams And Meadows",
+      "Cattails",
+      "Evening Drive",
+      "Grooving On",
+      "Neon Alley",
+      "Snowdrifts"
+    ]
+  },
+  {
+    "creator": "EpsilonGamesOfficial",
+    "pack": "Game Background Music Pack",
+    "sourceUrl": "https://epsilongamesofficial.itch.io/game-background-music-pack",
+    "attributionStatus": "not-stated",
+    "attributionText": "Music by EpsilonGamesOfficial — Game Background Music Pack",
+    "licenseSummary": "Use in commercial and non-commercial games, including modification, is permitted by the source page.",
+    "restriction": "",
+    "tracks": [
+      "Chill Vibe #3",
+      "Chill Vibe #4"
+    ]
+  },
+  {
+    "creator": "VOiD1 Gaming",
+    "pack": "Lo-Fi Music Pack",
+    "sourceUrl": "https://void1gaming.itch.io/",
+    "attributionStatus": "optional",
+    "attributionText": "Music by VOiD1 Gaming — Lo-Fi Music Pack",
+    "licenseSummary": "Licensed for use and adaptation in games, including commercial and monetized games.",
+    "restriction": "Cat Inc may distribute these tracks as part of the game, but not as reusable standalone audio assets.",
+    "tracks": [
+      "Moonlight Lullaby",
+      "The Call of the Night",
+      "Uncertainty",
+      "Silence of Baba Yaga",
+      "Flash form the Past",
+      "Winning with a Sacrifice",
+      "Crest",
+      "Coherent"
+    ]
+  }
+]);
+// END GENERATED AUDIO CREDITS
+
 const LIVRE_ICONE = '<img class="livre-icone" src="img/resources/Books_Final.png?v=0.0026" alt="Book">';
 
 // ── Resource info popups (Inventory tab) ─────────────────────
@@ -125,6 +179,14 @@ const RESOURCE_INFO = {
   }
 };
 
+const BOOK_LEARNING_CONTENT = CatInc.data.campGameplay?.bookLearning || {};
+function studioBookContent(itemId) {
+  const authored = BOOK_LEARNING_CONTENT[itemId];
+  return authored
+    ? {description: authored.description, learningGame: authored.learningGame}
+    : {description: "", learningGame: null};
+}
+
 const ITEMS = {
   smallFountainBlueprint: {
     id:           "smallFountainBlueprint",
@@ -166,19 +228,9 @@ const ITEMS = {
     id:           "schoolGuide",
     nom:          "School Guide",
     emoji:        LIVRE_ICONE,
-    description:  "A human guide to a few job orientations for kids. We may learn something from it.",
+    ...studioBookContent("schoolGuide"),
     unlocksLabel: "Explorator, Lumberjack, Carpenter, Farmer and Chef jobs",
     studyDuration: 60000,
-    learningGame: {
-      phraseParts: [
-        "You can ",
-        " to be anything: a brave ",
-        ", a skilled ",
-        ", or even a great ",
-        "!"
-      ],
-      answers: ["learn", "explorer", "builder", "chef"]
-    },
     actions: [
       { id: "study", label: "Study" }
     ]
@@ -187,19 +239,9 @@ const ITEMS = {
     id:           "fishingGuide",
     nom:          "Fishing Guide for Dummies",
     emoji:        LIVRE_ICONE,
-    description:  "A complete beginner's guide to feline fishing. Spoiler: you don't need a rod.",
+    ...studioBookContent("fishingGuide"),
     unlocksLabel: "Anchovy fishing and Grilled Anchovy",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "A patient ",
-        " watches the ",
-        ", catches an ",
-        ", then grills it in the ",
-        "!"
-      ],
-      answers: ["fisher", "water", "anchovy", "Catchen"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -208,19 +250,9 @@ const ITEMS = {
     id:           "constructionPlan",
     nom:          "Construction Plan",
     emoji:        LIVRE_ICONE,
-    description:  "Blueprints for renovating the house. Someone's been busy.",
+    ...studioBookContent("constructionPlan"),
     unlocksLabel: "Wood Builder job",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "Every sturdy ",
-        " begins with a careful ",
-        ": measure the ",
-        ", then let the ",
-        " start working!"
-      ],
-      answers: ["house", "plan", "planks", "builder"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -229,21 +261,9 @@ const ITEMS = {
     id:           "seminarGuide",
     nom:          "Corporate Seminar Booklet",
     emoji:        LIVRE_ICONE,
-    description:  "A booklet about professional training seminars. Participants walk out with new skills and sharper instincts for their trade.",
+    ...studioBookContent("seminarGuide"),
     unlocksLabel: "Training Center",
     studyDuration: 7200000,
-    learningGame: {
-      phraseParts: [
-        "An effective seminar aligns our ",
-        ", unlocks collective ",
-        ", fosters meaningful ",
-        ", strengthens team ",
-        ", accelerates sustainable ",
-        ", and transforms every challenge into an ",
-        "!"
-      ],
-      answers: ["values", "potential", "collaboration", "synergy", "growth", "opportunity"]
-    },
     actions: [
       { id: "study", label: "Study (2h)" }
     ]
@@ -252,21 +272,9 @@ const ITEMS = {
     id:           "dailyPurpose",
     nom:          "The Daily Purpose",
     emoji:        LIVRE_ICONE,
-    description:  "A human self-help book about building a daily routine and becoming the best version of yourself. The kind of advice that sounds profound before breakfast.",
+    ...studioBookContent("dailyPurpose"),
     unlocksLabel: "Daily Quests",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "Rise with ",
-        ", honor your ",
-        ", and unlock the ",
-        " ",
-        " of ",
-        ", one tiny ",
-        " at a time!"
-      ],
-      answers: ["purpose", "routine", "best", "version", "yourself", "step"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -275,21 +283,9 @@ const ITEMS = {
     id:           "engineerGuide",
     nom:          "The Engineer's Path",
     emoji:        LIVRE_ICONE,
-    description:  "A human engineering guide pointing toward a new generation of recipes and specialists.",
+    ...studioBookContent("engineerGuide"),
     unlocksLabel: "Laboratory",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "An engineer turns a ",
-        " into a ",
-        ", tests the ",
-        ", learns from each ",
-        ", and improves the final ",
-        " for ",
-        "."
-      ],
-      answers: ["problem", "design", "prototype", "failure", "solution", "everyone"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -298,21 +294,9 @@ const ITEMS = {
     id:           "teamworkGuide",
     nom:          "The Teamwork Advantage",
     emoji:        LIVRE_ICONE,
-    description:  "A human teamwork guide about combining different minds to uncover perspectives and solutions no one could find alone.",
+    ...studioBookContent("teamworkGuide"),
     unlocksLabel: "Engineer rank upgrades",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "Bring different ",
-        " together around one ",
-        ", and their varied ",
-        " can reveal ",
-        " solutions that no single ",
-        " could ",
-        " alone."
-      ],
-      answers: ["minds", "challenge", "perspectives", "unexpected", "person", "find"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -321,21 +305,9 @@ const ITEMS = {
     id:           "sturdyHousePlans",
     nom:          "Sturdy House Plans",
     emoji:        LIVRE_ICONE,
-    description:  "Detailed human blueprints for a compact stone house, with strict instructions on foundations, load-bearing walls, and structural stability. Excessively serious, but apparently very good at keeping a roof where it belongs.",
+    ...studioBookContent("sturdyHousePlans"),
     unlocksLabel: "Stone Storage Shed",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "A durable stone house depends on firm ",
-        ", carefully fitted ",
-        ", reinforced ",
-        ", evenly distributed ",
-        ", reliable ",
-        ", and a properly supported ",
-        "."
-      ],
-      answers: ["foundations", "blocks", "walls", "loads", "drainage", "roof"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -344,19 +316,9 @@ const ITEMS = {
     id:           "stoneGuide",
     nom:          "Stone Craft Guide",
     emoji:        LIVRE_ICONE,
-    description:  "A human guide to mining and stone masonry. Heavy reading, heavy lifting.",
+    ...studioBookContent("stoneGuide"),
     unlocksLabel: "Miner and Stonemason jobs",
     studyDuration: 3600000,
-    learningGame: {
-      phraseParts: [
-        "A skilled ",
-        " breaks through ",
-        " like butter, while a careful ",
-        " shapes them into solid ",
-        "!"
-      ],
-      answers: ["miner", "rocks", "stonemason", "bricks"]
-    },
     actions: [
       { id: "study", label: "Study (1h)" }
     ]
@@ -577,11 +539,7 @@ const CAT_FACES = {
     : "",
   luna: LIVE_LUNA_FACE
     ? LIVE_LUNA_FACE.runtimePath + "?v=live-r" + LIVE_LUNA_FACE.revision
-    : "",
-  alt1:     "img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026",
-  alt2:     "img/Cat faces/Alternative Kitty face 2_Final.png?v=0.0026",
-  alt3:     "img/Cat faces/Alternative Kitty face 3_Final.png?v=0.0026",
-  alt4:     "img/Cat faces/Alternative Kitty face 4_Final.png?v=0.0026"
+    : ""
 };
 const LIVE_CANNELLE_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
   ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-cannelle-3"; })
@@ -589,14 +547,12 @@ const LIVE_CANNELLE_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data
 CAT_FACES.cannelle = LIVE_CANNELLE_FACE
   ? LIVE_CANNELLE_FACE.runtimePath + "?v=live-r" + LIVE_CANNELLE_FACE.revision
   : "";
-const LIVE_ALTERNATIVE_CAT_FACES = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.alternatives)
-  ? CatInc.data.liveCatFaces.alternatives.map(function(item) {
+const LIVE_RANDOM_CAT_FACES = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.randomCats)
+  ? CatInc.data.liveCatFaces.randomCats.map(function(item) {
       return item.runtimePath + "?v=live-r" + item.revision;
     })
   : [];
-const CAT_FACES_ALEATOIRES = Object.freeze(LIVE_ALTERNATIVE_CAT_FACES.length
-  ? LIVE_ALTERNATIVE_CAT_FACES
-  : [CAT_FACES.alt1, CAT_FACES.alt2, CAT_FACES.alt3, CAT_FACES.alt4]);
+const CAT_FACES_ALEATOIRES = Object.freeze(LIVE_RANDOM_CAT_FACES);
 
   CatInc.data.content = Object.freeze({
     LIVRE_ICONE: LIVRE_ICONE,

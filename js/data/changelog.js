@@ -953,6 +953,34 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0096Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Randomly recruited Cats now draw from an expandable collection of authored Cat Faces while existing recruits keep their portrait.",
+        "The Garden Tree now uses its finished directional artwork, animated foliage and matching ambient sound."
+      ])
+    }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "The game now gives quicker audio feedback for interface actions, dialogue, work, construction and rewards.",
+        "Camp Profile now explains the actions that award Camp XP.",
+        "Old Radio controls and music credits remain hidden until the Radio has been earned."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Bird visits now follow a saved recurring schedule and appear only when the Garden Tree is present.",
+        "Mobile Work navigation and Camp contextual controls now remain stable and reachable on iOS.",
+        "Camp fog and soft artwork edges now stay intact while panning near neighboring gardens."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0095Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1259,7 +1287,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0095",
+    baseVersion: "0.0096",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1272,6 +1300,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0096",
+      date: "2026-09-13",
+      categories: release0096Categories
+    }),
     Object.freeze({
       version: "0.0095",
       date: "2026-09-12",

@@ -11,111 +11,132 @@
   "schemaVersion": 1,
   "items": [
     {
-      "id": "cat-faces-alternative-kitty-face-1",
-      "name": "Alternative Kitty face 1",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 1_Final.png",
-      "revision": 1,
-      "alternative": true
-    },
-    {
-      "id": "cat-faces-alternative-kitty-face-2",
-      "name": "Alternative Kitty face 2",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 2_Final.png",
-      "revision": 1,
-      "alternative": true
-    },
-    {
-      "id": "cat-faces-alternative-kitty-face-3",
-      "name": "Alternative Kitty face 3",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 3_Final.png",
-      "revision": 2,
-      "alternative": true
-    },
-    {
-      "id": "cat-faces-alternative-kitty-face-4",
-      "name": "Alternative Kitty face 4",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 4_Final.png",
-      "revision": 2,
-      "alternative": true
-    },
-    {
       "id": "cat-faces-bernardo",
       "name": "Bernardo",
       "runtimePath": "img/Cat faces/Bernardo.png",
-      "revision": 3,
-      "alternative": false
+      "revision": 3
     },
     {
       "id": "cat-faces-cannelle-3",
       "name": "Cannelle",
       "runtimePath": "img/Cat faces/cannelle-3.png",
-      "revision": 3,
-      "alternative": false
+      "revision": 3
     },
     {
       "id": "cat-faces-jimmy",
       "name": "Jimmy",
       "runtimePath": "img/Cat faces/jimmy.png",
-      "revision": 2,
-      "alternative": false
+      "revision": 2
     },
     {
       "id": "cat-faces-luna-v2",
       "name": "Luna",
       "runtimePath": "img/Cat faces/luna-v2.png",
-      "revision": 3,
-      "alternative": false
+      "revision": 3
     },
     {
       "id": "cat-faces-mochi-v2",
       "name": "Mochi",
       "runtimePath": "img/Cat faces/mochi-v2.png",
-      "revision": 3,
-      "alternative": false
+      "revision": 3
     },
     {
       "id": "cat-faces-naya",
       "name": "Naya",
       "runtimePath": "img/Cat faces/naya.png",
-      "revision": 1,
-      "alternative": false
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-1",
+      "name": "Random Cat 1",
+      "runtimePath": "img/Cat faces/random-cat-1.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-2",
+      "name": "Random Cat 2",
+      "runtimePath": "img/Cat faces/random-cat-2.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-3",
+      "name": "Random Cat 3",
+      "runtimePath": "img/Cat faces/random-cat-3.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-4",
+      "name": "Random Cat 4",
+      "runtimePath": "img/Cat faces/random-cat-4.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-5",
+      "name": "Random Cat 5",
+      "runtimePath": "img/Cat faces/random-cat-5.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-6",
+      "name": "Random Cat 6",
+      "runtimePath": "img/Cat faces/random-cat-6.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-7",
+      "name": "Random Cat 7",
+      "runtimePath": "img/Cat faces/random-cat-7.png",
+      "revision": 1
     },
     {
       "id": "cat-faces-the-greatest-incrementor",
       "name": "The Greatest Incrementor",
       "runtimePath": "img/Cat faces/the-greatest-incrementor.png",
-      "revision": 1,
-      "alternative": false
+      "revision": 1
     }
   ],
-  "alternatives": [
+  "randomCats": [
     {
-      "id": "cat-faces-alternative-kitty-face-1",
-      "name": "Alternative Kitty face 1",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 1_Final.png",
-      "revision": 1,
-      "alternative": true
+      "id": "cat-faces-random-cat-1",
+      "name": "Random Cat 1",
+      "runtimePath": "img/Cat faces/random-cat-1.png",
+      "revision": 1
     },
     {
-      "id": "cat-faces-alternative-kitty-face-2",
-      "name": "Alternative Kitty face 2",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 2_Final.png",
-      "revision": 1,
-      "alternative": true
+      "id": "cat-faces-random-cat-2",
+      "name": "Random Cat 2",
+      "runtimePath": "img/Cat faces/random-cat-2.png",
+      "revision": 1
     },
     {
-      "id": "cat-faces-alternative-kitty-face-3",
-      "name": "Alternative Kitty face 3",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 3_Final.png",
-      "revision": 2,
-      "alternative": true
+      "id": "cat-faces-random-cat-3",
+      "name": "Random Cat 3",
+      "runtimePath": "img/Cat faces/random-cat-3.png",
+      "revision": 1
     },
     {
-      "id": "cat-faces-alternative-kitty-face-4",
-      "name": "Alternative Kitty face 4",
-      "runtimePath": "img/Cat faces/Alternative Kitty face 4_Final.png",
-      "revision": 2,
-      "alternative": true
+      "id": "cat-faces-random-cat-4",
+      "name": "Random Cat 4",
+      "runtimePath": "img/Cat faces/random-cat-4.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-5",
+      "name": "Random Cat 5",
+      "runtimePath": "img/Cat faces/random-cat-5.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-6",
+      "name": "Random Cat 6",
+      "runtimePath": "img/Cat faces/random-cat-6.png",
+      "revision": 1
+    },
+    {
+      "id": "cat-faces-random-cat-7",
+      "name": "Random Cat 7",
+      "runtimePath": "img/Cat faces/random-cat-7.png",
+      "revision": 1
     }
   ],
   "framingByPath": {
@@ -357,6 +378,76 @@
         26,
         224,
         230
+      ]
+    },
+    "img/Cat faces/random-cat-1.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        35,
+        230,
+        221
+      ]
+    },
+    "img/Cat faces/random-cat-2.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        35,
+        230,
+        221
+      ]
+    },
+    "img/Cat faces/random-cat-3.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        33,
+        230,
+        222
+      ]
+    },
+    "img/Cat faces/random-cat-4.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        36,
+        230,
+        220
+      ]
+    },
+    "img/Cat faces/random-cat-5.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        33,
+        230,
+        223
+      ]
+    },
+    "img/Cat faces/random-cat-6.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        36,
+        230,
+        220
+      ]
+    },
+    "img/Cat faces/random-cat-7.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        33,
+        230,
+        222
       ]
     },
     "img/Cat faces/the-greatest-incrementor-amused.png": {

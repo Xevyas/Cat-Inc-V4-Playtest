@@ -246,7 +246,219 @@
       "minGapFloorPercent": 4
     }
   },
-  "uniqueItems": {},
+  "bookLearning": {
+    "schoolGuide": {
+      "name": "School Guide",
+      "description": "A human guide to a few job orientations for kids. We may learn something from it.",
+      "unlocksLabel": "Explorator, Lumberjack, Carpenter, Farmer and Chef jobs",
+      "learningGame": {
+        "phraseParts": [
+          "You can ",
+          " to be anything: a brave ",
+          ", a skilled ",
+          ", or even a great ",
+          "!"
+        ],
+        "answers": [
+          "learn",
+          "explorer",
+          "builder",
+          "chef"
+        ]
+      }
+    },
+    "fishingGuide": {
+      "name": "Fishing Guide for Dummies",
+      "description": "A complete beginner's guide to feline fishing. Spoiler: you don't need a rod.",
+      "unlocksLabel": "Anchovy fishing and Grilled Anchovy",
+      "learningGame": {
+        "phraseParts": [
+          "A patient ",
+          " watches the ",
+          ", catches an ",
+          ", then grills it in the ",
+          "!"
+        ],
+        "answers": [
+          "fisher",
+          "water",
+          "anchovy",
+          "Catchen"
+        ]
+      }
+    },
+    "constructionPlan": {
+      "name": "Construction Plan",
+      "description": "Blueprints for renovating the house. Someone's been busy.",
+      "unlocksLabel": "Wood Builder job",
+      "learningGame": {
+        "phraseParts": [
+          "Every sturdy ",
+          " begins with a careful ",
+          ": measure the ",
+          ", then let the ",
+          " start working!"
+        ],
+        "answers": [
+          "house",
+          "plan",
+          "planks",
+          "builder"
+        ]
+      }
+    },
+    "seminarGuide": {
+      "name": "Corporate Seminar Booklet",
+      "description": "A booklet about professional training seminars. Participants walk out with new skills and sharper instincts for their trade.",
+      "unlocksLabel": "Training Center",
+      "learningGame": {
+        "phraseParts": [
+          "An effective seminar aligns our ",
+          ", unlocks collective ",
+          ", fosters meaningful ",
+          ", strengthens team ",
+          ", accelerates sustainable ",
+          ", and transforms every challenge into an ",
+          "!"
+        ],
+        "answers": [
+          "values",
+          "potential",
+          "collaboration",
+          "synergy",
+          "growth",
+          "opportunity"
+        ]
+      }
+    },
+    "dailyPurpose": {
+      "name": "The Daily Purpose",
+      "description": "A human self-help book about building a daily routine and becoming the best version of yourself. The kind of advice that sounds profound before breakfast.",
+      "unlocksLabel": "Daily Quests",
+      "learningGame": {
+        "phraseParts": [
+          "Rise with ",
+          ", honor your ",
+          ", and unlock the ",
+          " ",
+          " of ",
+          ", one tiny ",
+          " at a time!"
+        ],
+        "answers": [
+          "purpose",
+          "routine",
+          "best",
+          "version",
+          "yourself",
+          "step"
+        ]
+      }
+    },
+    "engineerGuide": {
+      "name": "The Engineer's Path",
+      "description": "A human engineering guide pointing toward a new generation of recipes and specialists.",
+      "unlocksLabel": "Laboratory",
+      "learningGame": {
+        "phraseParts": [
+          "An engineer turns a ",
+          " into a ",
+          ", tests the ",
+          ", learns from each ",
+          ", and improves the final ",
+          " for ",
+          "."
+        ],
+        "answers": [
+          "problem",
+          "design",
+          "prototype",
+          "failure",
+          "solution",
+          "everyone"
+        ]
+      }
+    },
+    "teamworkGuide": {
+      "name": "The Teamwork Advantage",
+      "description": "A human teamwork guide about combining different minds to uncover perspectives and solutions no one could find alone.",
+      "unlocksLabel": "Engineer rank upgrades",
+      "learningGame": {
+        "phraseParts": [
+          "Bring different ",
+          " together around one ",
+          ", and their varied ",
+          " can reveal ",
+          " solutions that no single ",
+          " could ",
+          " alone."
+        ],
+        "answers": [
+          "minds",
+          "challenge",
+          "perspectives",
+          "unexpected",
+          "person",
+          "find"
+        ]
+      }
+    },
+    "sturdyHousePlans": {
+      "name": "Sturdy House Plans",
+      "description": "Detailed human blueprints for a compact stone house, with strict instructions on foundations, load-bearing walls, and structural stability. Excessively serious, but apparently very good at keeping a roof where it belongs.",
+      "unlocksLabel": "Stone Storage Shed",
+      "learningGame": {
+        "phraseParts": [
+          "A durable stone house depends on firm ",
+          ", carefully fitted ",
+          ", reinforced ",
+          ", evenly distributed ",
+          ", reliable ",
+          ", and a properly supported ",
+          "."
+        ],
+        "answers": [
+          "foundations",
+          "blocks",
+          "walls",
+          "loads",
+          "drainage",
+          "roof"
+        ]
+      }
+    },
+    "stoneGuide": {
+      "name": "Stone Craft Guide",
+      "description": "A human guide to mining and stone masonry. Heavy reading, heavy lifting.",
+      "unlocksLabel": "Miner and Stonemason jobs",
+      "learningGame": {
+        "phraseParts": [
+          "A skilled ",
+          " breaks through ",
+          " like butter, while a careful ",
+          " shapes them into solid ",
+          "!"
+        ],
+        "answers": [
+          "miner",
+          "rocks",
+          "stonemason",
+          "bricks"
+        ]
+      }
+    }
+  },
+  "uniqueItems": {
+    "old-radio-gift": {
+      "name": "Old radio",
+      "assetId": "old-radio",
+      "runtimeTypeId": "oldRadio",
+      "grant": {
+        "kind": "story-seen",
+        "flag": "storyMarketStallCompleteVue"
+      }
+    }
+  },
   "definitions": {
     "cardboardBox": {
       "assetId": "cardboard-box",

@@ -2067,6 +2067,55 @@
                   "width": 3.0,
                   "height": 3.0
                 }
+              },
+              "animation": {
+                "revision": 2,
+                "status": "live",
+                "baseRevision": 2,
+                "familyId": "music-notes",
+                "mode": "overlay-apng",
+                "frameCount": 8,
+                "frameDurationMs": 180,
+                "sprites": {
+                  "down": "img/Buildings/Camp Runtime/old-radio/tier-1/animation-2/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/old-radio/tier-1/animation-2/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/old-radio/tier-1/animation-2/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/old-radio/tier-1/animation-2/animation-left.png"
+                },
+                "registration": {
+                  "down": {
+                    "width": 154,
+                    "height": 126,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 105,
+                    "offsetY": -7
+                  },
+                  "right": {
+                    "width": 30,
+                    "height": 191,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 165,
+                    "offsetY": -38
+                  },
+                  "up": {
+                    "width": 154,
+                    "height": 127,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 101,
+                    "offsetY": -8
+                  },
+                  "left": {
+                    "width": 30,
+                    "height": 178,
+                    "baseWidth": 360,
+                    "baseHeight": 360,
+                    "offsetX": 165,
+                    "offsetY": -30
+                  }
+                }
               }
             }
           }
@@ -2579,6 +2628,7 @@
                 "revision": 3,
                 "status": "live",
                 "baseRevision": 5,
+                "familyId": "water-jet",
                 "mode": "overlay-apng",
                 "frameCount": 8,
                 "frameDurationMs": 150,
@@ -3397,6 +3447,7 @@
                 "revision": 3,
                 "status": "live",
                 "baseRevision": 7,
+                "familyId": "smoke-steam",
                 "mode": "overlay-apng",
                 "frameCount": 8,
                 "frameDurationMs": 220,
@@ -3473,53 +3524,135 @@
       "placeable": false,
       "tiers": {
         "1": {
-          "liveRevision": 1,
+          "liveRevision": 9,
           "revisions": {
-            "1": {
+            "9": {
               "name": "Garden Tree",
               "tier": 1,
-              "revision": 1,
+              "revision": 9,
               "status": "live",
               "width": 2,
               "height": 2,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png",
-                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png",
-                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png",
-                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-1/down.png"
+                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/down.png",
+                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/right.png",
+                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/up.png",
+                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/left.png"
+              },
+              "groundingSprites": {
+                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-left.png"
+              },
+              "groundingBounds": {
+                "down": {
+                  "x": -0.45,
+                  "y": -0.45,
+                  "width": 2.9,
+                  "height": 2.9
+                },
+                "right": {
+                  "x": -0.45,
+                  "y": -0.45,
+                  "width": 2.9,
+                  "height": 2.9
+                },
+                "up": {
+                  "x": -0.45,
+                  "y": -0.45,
+                  "width": 2.9,
+                  "height": 2.9
+                },
+                "left": {
+                  "x": -0.45,
+                  "y": -0.45,
+                  "width": 2.9,
+                  "height": 2.9
+                }
+              },
+              "animation": {
+                "revision": 2,
+                "status": "live",
+                "baseRevision": 9,
+                "familyId": "foliage-rustle",
+                "mode": "overlay-apng",
+                "frameCount": 8,
+                "frameDurationMs": 120,
+                "sprites": {
+                  "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-left.png"
+                },
+                "composition": "replace-base",
+                "registration": {
+                  "down": {
+                    "width": 512,
+                    "height": 512,
+                    "baseWidth": 512,
+                    "baseHeight": 512,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "right": {
+                    "width": 512,
+                    "height": 512,
+                    "baseWidth": 512,
+                    "baseHeight": 512,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "up": {
+                    "width": 512,
+                    "height": 512,
+                    "baseWidth": 512,
+                    "baseHeight": 512,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "left": {
+                    "width": 512,
+                    "height": 512,
+                    "baseWidth": 512,
+                    "baseHeight": 512,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  }
+                }
               },
               "spriteBounds": {
                 "down": {
-                  "canvasWidth": 400,
-                  "canvasHeight": 400,
-                  "left": 72,
-                  "top": 64,
-                  "right": 331,
-                  "bottom": 331
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 39,
+                  "right": 491,
+                  "bottom": 473
                 },
                 "right": {
-                  "canvasWidth": 400,
-                  "canvasHeight": 400,
-                  "left": 72,
-                  "top": 64,
-                  "right": 331,
-                  "bottom": 331
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 39,
+                  "right": 491,
+                  "bottom": 473
                 },
                 "up": {
-                  "canvasWidth": 400,
-                  "canvasHeight": 400,
-                  "left": 72,
-                  "top": 64,
-                  "right": 331,
-                  "bottom": 331
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 39,
+                  "right": 491,
+                  "bottom": 473
                 },
                 "left": {
-                  "canvasWidth": 400,
-                  "canvasHeight": 400,
-                  "left": 72,
-                  "top": 64,
-                  "right": 331,
-                  "bottom": 331
+                  "canvasWidth": 512,
+                  "canvasHeight": 512,
+                  "left": 20,
+                  "top": 39,
+                  "right": 491,
+                  "bottom": 473
                 }
               }
             }

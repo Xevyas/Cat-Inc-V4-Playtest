@@ -1127,7 +1127,7 @@
       ],
       "asset": {
         "type": "icon",
-        "src": "img/interface/camp.png",
+        "src": "img/interface/Camp.png",
         "alt": "Bernardo, Mochi and Luna inspect their cluttered new garden."
       }
     },

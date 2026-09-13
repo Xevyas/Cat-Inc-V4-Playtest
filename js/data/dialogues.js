@@ -1305,6 +1305,7 @@ function characterFromLine(line) {
     const speakerCharacter = speakerLabel && CHARACTERS[speakerLabel.dataset.dialogueSpeaker]
       ? CHARACTERS[speakerLabel.dataset.dialogueSpeaker]
       : character;
+    if (speakerCharacter) line.dataset.dialogueSpeakerId = speakerCharacter.id;
     const content = document.createElement("span");
     content.className = "story-beat-copy";
     Array.from(line.childNodes).forEach(function(node) {

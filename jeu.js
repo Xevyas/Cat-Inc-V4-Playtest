@@ -428,11 +428,39 @@ function assignerVisageChaton(nom) {
   if (nom === "Mochi")    return CAT_FACES.mochi;
   if (nom === "Luna")     return CAT_FACES.luna;
   if (nom === "Cannelle") return CAT_FACES.cannelle;
+  if (!CAT_FACES_ALEATOIRES.length) return "";
   return CAT_FACES_ALEATOIRES[Math.floor(Math.random() * CAT_FACES_ALEATOIRES.length)];
 }
 
+const VISAGES_GENERIQUES_LEGACY = Object.freeze([
+  { id: "cat-faces-alternative-kitty-face-1", runtimePath: "img/Cat faces/Alternative Kitty face 1_Final.png" },
+  { id: "cat-faces-alternative-kitty-face-2", runtimePath: "img/Cat faces/Alternative Kitty face 2_Final.png" },
+  { id: "cat-faces-alternative-kitty-face-3", runtimePath: "img/Cat faces/Alternative Kitty face 3_Final.png" },
+  { id: "cat-faces-alternative-kitty-face-4", runtimePath: "img/Cat faces/Alternative Kitty face 4_Final.png" }
+]);
+
+function estNomChatUnique(nom) {
+  return nom === "Bernardo" || nom === "Mochi" || nom === "Luna" || nom === "Cannelle";
+}
+
+function estVisageGeneriqueLegacy(kitty) {
+  if (!kitty || estNomChatUnique(kitty.nom)) return false;
+  const actuel = cheminVisageCanonique(kitty.visage);
+  return VISAGES_GENERIQUES_LEGACY.some(function(face) {
+    return face.runtimePath === actuel;
+  });
+}
+
+function idVisageChatLivePourSource(source) {
+  const path = cheminVisageCanonique(source);
+  const face = catalogueVisagesChatsLive().find(function(item) {
+    return item && cheminVisageCanonique(item.runtimePath) === path;
+  });
+  return face ? face.id : null;
+}
+
 function normaliserVisageChaton(kitty) {
-  if (!kitty) return CAT_FACES_ALEATOIRES[0];
+  if (!kitty) return CAT_FACES_ALEATOIRES[0] || "";
   if (kitty.nom === "Bernardo") return CAT_FACES.bernardo;
   if (kitty.nom === "Mochi") return CAT_FACES.mochi;
   if (kitty.nom === "Luna") return CAT_FACES.luna;
@@ -442,6 +470,8 @@ function normaliserVisageChaton(kitty) {
     return String(visage).split("?")[0] === actuel;
   });
   if (visageLive) return visageLive;
+  if (estVisageGeneriqueLegacy(kitty)) return assignerVisageChaton(kitty.nom);
+  if (!CAT_FACES_ALEATOIRES.length) return "";
   const nom = String(kitty.nom || "Cat");
   let hash = 0;
   for (let index = 0; index < nom.length; index += 1) {
@@ -2242,6 +2272,39 @@ function xpActuelNiveauCamp(layout) {
   }, 0);
 }
 
+function sourcesXpNiveauCamp(layout) {
+  const groupes = new Map();
+  (Array.isArray(layout) ? layout : []).forEach(function(item) {
+    const value = xpItemNiveauCamp(item);
+    if (value <= 0) return;
+    const type = typeCampPrototype(item.type);
+    const tier = Math.max(1, Math.floor(Number(item.tier) || 1));
+    const key = item.type + ":" + tier;
+    const groupe = groupes.get(key) || {
+      type: item.type,
+      tier: tier,
+      label: type && type.label ? type.label : item.type,
+      count: 0,
+      value: 0
+    };
+    groupe.count += 1;
+    groupe.value += value;
+    groupes.set(key, groupe);
+  });
+  const sources = Array.from(groupes.values());
+  const tiersParType = new Map();
+  sources.forEach(function(source) {
+    tiersParType.set(source.type, (tiersParType.get(source.type) || 0) + 1);
+  });
+  return sources.map(function(source) {
+    return {
+      label: source.label + (tiersParType.get(source.type) > 1 ? " T" + source.tier : ""),
+      count: source.count,
+      value: source.value
+    };
+  });
+}
+
 function progressionNiveauCamp() {
   return progressionNiveauCampPourXp(xpActuelNiveauCamp(campPrototypeLayout));
 }
@@ -2429,6 +2492,7 @@ function renduDetailsNiveauCamp() {
   const panneau = document.getElementById("camp-level-details");
   if (!panneau || panneau.hidden) return;
   const progression = progressionNiveauCamp();
+  const sources = sourcesXpNiveauCamp(campPrototypeLayout);
   const progressPercent = Math.max(0, Math.min(100, progression.stepProgressRatio * 100));
   panneau.innerHTML = '<strong>Camp Level ' + progression.level + '</strong>'
     + '<span class="camp-level-xp"><b>Camp XP</b><em>' + progression.xp + ' / '
@@ -2436,6 +2500,15 @@ function renduDetailsNiveauCamp() {
     + '<span class="camp-level-progress" role="progressbar" aria-label="Camp XP toward Level '
     + (progression.level + 1) + '" aria-valuemin="0" aria-valuemax="' + progression.stepCost
     + '" aria-valuenow="' + progression.stepProgress + '"><i style="width:' + progressPercent + '%"></i></span>'
+    + '<span class="camp-appeal-detail-section"><b>Camp XP sources</b>'
+    + (sources.length
+      ? '<span>' + sources.map(function(source) {
+          return '<i>' + echapperAttributHtml(source.label)
+            + (source.count > 1 ? ' ×' + source.count : '')
+            + '<em>+' + formaterNombre(source.value) + '</em></i>';
+        }).join("") + '</span>'
+      : '<i class="camp-appeal-detail-empty">Nothing included yet</i>')
+    + '</span>'
     + '<span class="camp-appeal-detail-section"><b>Current bonuses</b><span><i>Appeal<em>+'
     + formaterNombreAppealUi(progression.appeal, 6) + '</em></i></span></span>'
     + '<span class="camp-appeal-rule">Each Camp Level grants +'
@@ -2504,7 +2577,9 @@ function actualiserAffichageNiveauCamp() {
   const summary = document.getElementById("camp-level-summary");
   if (!summary) return;
   const progression = progressionNiveauCamp();
-  summary.textContent = "Camp Lv. " + progression.level;
+  if (!summary.classList.contains("camp-profile-stat-action")) {
+    summary.textContent = "Camp Lv. " + progression.level;
+  }
   summary.setAttribute("aria-label", "Camp Level " + progression.level + ". Show Camp Level details");
   renduDetailsNiveauCamp();
 }
@@ -3480,7 +3555,7 @@ let preferencesAncienneSauvegarde = null;
 let rattrapageAfkEnCours = false;
 let suspensionAfkConfirmee = false;
 let suspensionAfkDebutTs = null;
-let migrationOrdrePremiereVueStoriesAPersister = false;
+let migrationSauvegardeAPersister = false;
 
 function jouerSonAffectation() {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
@@ -3524,17 +3599,29 @@ function jouerSonReparation() {
   }
 }
 
-function jouerSonScieBois() {
+function jouerSonTravail(familyId) {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
-  if (audio && typeof audio.playHandsawWood === "function") {
-    audio.playHandsawWood(etat.volumeEffetsSonores);
+  const helpers = { wood: "playHandsawWood", food: "playWorkFood", rock: "playWorkRock" };
+  const helper = helpers[familyId];
+  if (audio && helper && typeof audio[helper] === "function") {
+    audio[helper](etat.volumeEffetsSonores);
   }
 }
 
-function jouerSonVoixDialogue() {
+function jouerSonSemantique(helper) {
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio[helper] === "function") audio[helper](etat.volumeEffetsSonores);
+}
+
+function jouerSonPlacementConstruction() { jouerSonSemantique("playBuildPlace"); }
+function jouerSonRefus() { jouerSonSemantique("playDenied"); }
+function jouerSonPetitSucces() { jouerSonSemantique("playSmallSuccess"); }
+function jouerSonGrandeRecompense() { jouerSonSemantique("playBigReward"); }
+
+function jouerSonVoixDialogue(speakerId) {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
   if (audio && typeof audio.playDialogueVoice === "function") {
-    audio.playDialogueVoice(etat.volumeEffetsSonores);
+    audio.playDialogueVoice(speakerId, etat.volumeEffetsSonores);
   }
 }
 
@@ -3546,7 +3633,7 @@ function jouerVoixBulleDialogue(modal) {
   const cle = String(index);
   if (modal.dataset.dialogueVoiceBeat === cle) return false;
   modal.dataset.dialogueVoiceBeat = cle;
-  jouerSonVoixDialogue();
+  jouerSonVoixDialogue(ligne.dataset.dialogueSpeakerId || "generic");
   return true;
 }
 
@@ -3590,7 +3677,7 @@ function charger() {
           : 0.3,
         volumeMusique: Number.isFinite(ancienneSauvegarde.volumeMusique)
           ? Math.max(0, Math.min(1, ancienneSauvegarde.volumeMusique))
-          : 0,
+          : 0.3,
         afficherTempsAjusteRecrutement: ancienneSauvegarde.afficherTempsAjusteRecrutement === true,
         avertirSurplusNourriture: ancienneSauvegarde.avertirSurplusNourriture !== false
       };
@@ -3611,9 +3698,22 @@ function charger() {
     nomsKitties: NOMS_KITTIES,
     jobIds: Object.keys(METIERS).concat(["shop-owner"]),
     assignerVisageChaton: assignerVisageChaton,
-    normaliserVisageChaton: normaliserVisageChaton
+    normaliserVisageChaton: normaliserVisageChaton,
+    estVisageGeneriqueLegacy: estVisageGeneriqueLegacy,
+    legacyGenericCatFaces: VISAGES_GENERIQUES_LEGACY,
+    catFaceIdForRuntimePath: idVisageChatLivePourSource
   });
-  migrationOrdrePremiereVueStoriesAPersister = !Array.isArray(analyse.data.storySeenOrder);
+  const empreinteVisages = function(source) {
+    return JSON.stringify({
+      kitties: (Array.isArray(source.kittiesData) ? source.kittiesData : []).map(function(kitty) {
+        return kitty && kitty.visage || null;
+      }),
+      prochain: source.prochainVisageChaton || null,
+      avatar: source.campProfile && source.campProfile.avatarCatFaceId || null
+    });
+  };
+  migrationSauvegardeAPersister = !Array.isArray(analyse.data.storySeenOrder)
+    || empreinteVisages(analyse.data) !== empreinteVisages(nouvelEtat);
   remplacerEtat(etat, nouvelEtat);
   workStructureInitialisee = false;
   if (typeof normaliserOccupationsChatons === "function" && normaliserOccupationsChatons()) sauvegarder();
@@ -3630,7 +3730,7 @@ function confirmerRedemarrageMajeur() {
   localStorage.removeItem(WORK_DETAILS_HINT_STORAGE_KEY);
   reinitialiserEtat();
   etat.volumeEffetsSonores = Number.isFinite(preferences.volumeEffetsSonores) ? preferences.volumeEffetsSonores : 0.3;
-  etat.volumeMusique = Number.isFinite(preferences.volumeMusique) ? preferences.volumeMusique : 0;
+  etat.volumeMusique = Number.isFinite(preferences.volumeMusique) ? preferences.volumeMusique : 0.3;
   etat.afficherTempsAjusteRecrutement = preferences.afficherTempsAjusteRecrutement === true;
   etat.avertirSurplusNourriture = preferences.avertirSurplusNourriture !== false;
   preferencesAncienneSauvegarde = null;
@@ -3662,6 +3762,7 @@ function reset() {
 function ouvrirModalSettings() {
   const openerToken = arguments[0] || null;
   actualiserVersionSettings();
+  actualiserVisibiliteMusiqueSettings();
   document.getElementById("toggle-adjusted-time").checked = etat.afficherTempsAjusteRecrutement;
   const overfoodToggle = document.getElementById("toggle-overfood-warning");
   if (overfoodToggle) overfoodToggle.checked = etat.avertirSurplusNourriture !== false;
@@ -3699,6 +3800,14 @@ function actualiserVersionSettings() {
   const versionElement = document.getElementById("settings-game-version");
   if (versionElement) versionElement.textContent = "v" + GAME_RELEASE_VERSION;
 }
+function actualiserVisibiliteMusiqueSettings() {
+  const radioPossedee = uniqueItemCampPossede("old-radio-gift");
+  const musicRow = document.getElementById("settings-music-volume-row");
+  const creditsButton = document.querySelector(".settings-credits-btn");
+  if (musicRow) musicRow.hidden = !radioPossedee;
+  if (creditsButton) creditsButton.hidden = !radioPossedee;
+  return radioPossedee;
+}
 function actualiserVolumeAudioUI(canal, rawValue) {
   const value = Math.max(0, Math.min(100, Number(rawValue) || 0));
   const output = document.getElementById(canal === "sfx" ? "settings-sfx-volume-value" : "settings-music-volume-value");
@@ -3707,7 +3816,11 @@ function actualiserVolumeAudioUI(canal, rawValue) {
 }
 function gererVolumeAudio(canal, rawValue) {
   const value = Math.max(0, Math.min(100, Number(rawValue) || 0)) / 100;
-  if (canal === "sfx") etat.volumeEffetsSonores = value;
+  if (canal === "sfx") {
+    etat.volumeEffetsSonores = value;
+    const audio = globalThis.CatInc && globalThis.CatInc.audio;
+    if (audio && typeof audio.setEffectsVolume === "function") audio.setEffectsVolume(value);
+  }
   if (canal === "music") {
     etat.volumeMusique = value;
     const audio = globalThis.CatInc && globalThis.CatInc.audio;
@@ -3761,6 +3874,92 @@ function fermerModalSettings() {
   fermerDialogueModal("settings-modal");
   if (typeof guidanceController !== "undefined" && guidanceController) guidanceController.reconcile();
   campTutorialActualiserInterface();
+}
+
+function rendreCreditsMusique() {
+  const container = document.getElementById("music-credits-content");
+  if (!container) return;
+  container.replaceChildren();
+
+  const intro = document.createElement("p");
+  intro.className = "music-credits-intro";
+  intro.textContent = "Thank you to the artists whose music is featured in Cat Inc.";
+  container.appendChild(intro);
+
+  const credits = globalThis.CatInc && globalThis.CatInc.data
+    ? globalThis.CatInc.data.audioCredits : [];
+  credits.forEach(function(credit) {
+    const section = document.createElement("section");
+    section.className = "music-credit-source";
+
+    const heading = document.createElement("h3");
+    heading.textContent = credit.creator;
+    section.appendChild(heading);
+
+    const pack = document.createElement("p");
+    pack.className = "music-credit-pack";
+    pack.textContent = credit.pack;
+    section.appendChild(pack);
+
+    const thanks = document.createElement("p");
+    thanks.textContent = "With thanks: " + credit.attributionText + ".";
+    section.appendChild(thanks);
+
+    const tracks = document.createElement("p");
+    const tracksLabel = document.createElement("strong");
+    tracksLabel.textContent = "Tracks: ";
+    tracks.appendChild(tracksLabel);
+    tracks.appendChild(document.createTextNode(credit.tracks.join(", ")));
+    section.appendChild(tracks);
+
+    const attribution = document.createElement("p");
+    const attributionLabel = document.createElement("strong");
+    attributionLabel.textContent = "Attribution: ";
+    attribution.appendChild(attributionLabel);
+    attribution.appendChild(document.createTextNode(credit.attributionStatus === "optional"
+      ? "Not required; credit is appreciated."
+      : "No requirement is stated by the source."));
+    section.appendChild(attribution);
+
+    const license = document.createElement("p");
+    const licenseLabel = document.createElement("strong");
+    licenseLabel.textContent = "License: ";
+    license.appendChild(licenseLabel);
+    license.appendChild(document.createTextNode(credit.licenseSummary));
+    section.appendChild(license);
+
+    if (credit.restriction) {
+      const restriction = document.createElement("p");
+      const restrictionLabel = document.createElement("strong");
+      restrictionLabel.textContent = "Distribution: ";
+      restriction.appendChild(restrictionLabel);
+      restriction.appendChild(document.createTextNode(credit.restriction));
+      section.appendChild(restriction);
+    }
+
+    const source = document.createElement("a");
+    source.className = "music-credit-link";
+    source.href = credit.sourceUrl;
+    source.target = "_blank";
+    source.rel = "noopener noreferrer";
+    source.textContent = "Source ↗";
+    section.appendChild(source);
+    container.appendChild(section);
+  });
+}
+
+function ouvrirCreditsMusique() {
+  rendreCreditsMusique();
+  ouvrirDialogueModal("music-credits-modal", {
+    dismissible: true,
+    fermer: fermerCreditsMusique,
+    focusSelector: ".explo-modal-close",
+    returnFocusSelector: ".settings-credits-btn"
+  });
+}
+
+function fermerCreditsMusique() {
+  fermerDialogueModal("music-credits-modal");
 }
 
 const changelogController = globalThis.CatInc.changelog.createController({
@@ -5883,6 +6082,8 @@ function renduWorkPairs(u) {
   setDisplay("filtre-work-rock", u.pebblecat || u.rockcat);
   const filtresBar = document.querySelector(".work-filtres");
   ecrireStyle(filtresBar, "display", u.cathering ? "" : "none");
+  const workSubnav = document.querySelector(".work-subnav");
+  ecrireStyle(workSubnav, "display", u.cathering ? "" : "none");
 
   const sectionEl = domParId("section-work-pairs");
   if (!u.cathering) { ecrireStyle(sectionEl, "display", "none"); return; }
@@ -6362,6 +6563,7 @@ function validerFormationIngenieur() {
   etat.formationIngenieurTermineeEnAttente = null;
   afficherNotification(kitty.nom + " is now a Camp Engineer (Rank " + rang + ")!");
   ajouterLog("unlock", kitty.nom + " trained as a Camp Engineer (Rank " + rang + "). Their passive AFK bonus is now active.");
+  jouerSonPetitSucces();
   labEngineerKittySelectionne = null;
   labEngineerMetierSelectionne = null;
   labDirty = true;
@@ -6793,6 +6995,7 @@ function terminerApprentissagePerk() {
     const node = noeudPerkV2(action.perkId);
     afficherNotification((kitty ? kitty.nom : "Your Cat") + " learned " + (node ? node.name : "a perk") + "!");
     ajouterLog("event", (kitty ? kitty.nom : "A Cat") + " learned " + (node ? node.name : action.perkId) + ".");
+    jouerSonPetitSucces();
   }
   sauvegarder();
   _tcKey = null;
@@ -10213,6 +10416,7 @@ function terminerApprentissage(itemId) {
     inventaireDirty = true;
     afficherNotification(item.nom + " studied! Complete its lesson to learn it.");
     ajouterLog("event", item.nom + " study complete — its lesson is ready in Inventory.");
+    jouerSonPetitSucces();
     sauvegarder(); rendu(); renduManagement();
     return;
   }
@@ -10290,6 +10494,7 @@ function apprendreLivre(itemId) {
   }
   etat.learningEnCours = null;
   inventaireDirty = true;
+  jouerSonGrandeRecompense();
   verifierObjectifs();
   sauvegarder(); rendu();
 }
@@ -11656,6 +11861,7 @@ function validerFormation() {
   etat.formationTermineeEnAttente = null;
   afficherNotification(kitty.nom + " is now a " + m.nom + "!");
   ajouterLog("unlock", kitty.nom + " trained as " + m.nom + ".");
+  jouerSonPetitSucces();
   if (formationValidee.metier === "explorator") {
     afficherNotification("Exploration map unlocked!");
     ajouterLog("unlock", "The exploration map is now available in the Explorations tab.");
@@ -11938,6 +12144,7 @@ function selectionnerRecette(recipeId) {
   if (!slot || !pair || pair.family !== familyId) return;
   const capacite = capaciteRecetteWork(pair, unlocks());
   if (!capacite.available) {
+    jouerSonRefus();
     afficherNotification(capacite.reason);
     renduModalRecette();
     return;
@@ -11979,7 +12186,7 @@ function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
     recipeId: recipeId
   }, guidanceDescriptor);
   fermerModalRecette();
-  if (!proposeWorker && familyId === "wood") jouerSonScieBois();
+  if (!proposeWorker) jouerSonTravail(familyId);
   verifierObjectifs(); sauvegarder(); rendu();
   // A newly chosen recipe is not useful until a Cat is assigned. Keep the
   // existing selection flow for occupied slots, but chain directly to the
@@ -12224,8 +12431,7 @@ function assignerWorkerSlot(kittyIndex) {
   // progress and private inputs are reset only when the recipe changes or is
   // cleared (see appliquerSelectionRecette / retirerRecetteSelectionneeConfirme).
   slot.kittyIndex = kittyIndex;
-  if (workerModalOuvert.familyId === "wood") jouerSonScieBois();
-  else jouerSonAffectation();
+  jouerSonTravail(workerModalOuvert.familyId);
   const assignedFamilyId = workerModalOuvert.familyId;
   const assignedSlotIdx = workerModalOuvert.slotIdx;
   fermerModalWorker(true);
@@ -12914,6 +13120,7 @@ function tick() {
   const resultatsRecettes = tickWorkRecipes(vitesse * TICK_DT * workBoostMult(), true);
   if (verifierDeblocageWoodCathouseApresFabrication(resultatsRecettes)) sauvegarder();
   verifierDeclencheurPremierOiseau();
+  reconcilierOiseauRecurrent(maintenant);
   const resultatPremierePlanche = resultatsRecettes.cardboardPlanks;
   if (resultatPremierePlanche && resultatPremierePlanche.produced > 0) {
     mettreDialogueRapideCampEnFile("firstPlank");
@@ -14841,8 +15048,6 @@ function fermerStoryBird() {
   fermerModal("ecran-story-bird");
   if (!_birdMiniJeuPending) return;
   _birdMiniJeuPending = false;
-  var el = document.getElementById("bird-btn");
-  if (el) el.style.display = "none";
   demarrerBirdMiniJeu();
 }
 function afficherModal(id, options) {
@@ -17975,7 +18180,6 @@ function appliquerZoomCampPrototype(conserverCentre, ancrageClient) {
   );
   board.dataset.campZoom = String(campPrototypeZoom);
   synchroniserPositionsUiTachesCamp();
-  positionnerBirdCampPrototype();
   actualiserCommandesZoomCampPrototype();
   const nouveauBoardRect = board.getBoundingClientRect();
   if (conserverCentre) {
@@ -18129,29 +18333,6 @@ function appliquerCadreCampPrototype(element, type, x, y, rotation, tier) {
   element.style.height = (dimensions.height / campPrototypeApi.GRID_HEIGHT * 100) + "%";
 }
 
-function positionnerBirdCampPrototype() {
-  const board = document.getElementById("camp-prototype-board");
-  const bird = document.getElementById("bird-btn");
-  const tree = board && board.querySelector('.camp-prototype-item[data-camp-type="tree"]');
-  if (!board || !bird || !tree
-      || typeof board.getBoundingClientRect !== "function"
-      || typeof tree.getBoundingClientRect !== "function") return false;
-  const boardRect = board.getBoundingClientRect();
-  const treeRect = tree.getBoundingClientRect();
-  if (boardRect.width <= 0 || boardRect.height <= 0
-      || treeRect.width <= 0 || treeRect.height <= 0) return false;
-  const anchorX = treeRect.left + treeRect.width * 0.78;
-  const anchorY = treeRect.top + treeRect.height * 0.24;
-  const left = Math.max(0, Math.min(100,
-    (anchorX - boardRect.left) / boardRect.width * 100));
-  const top = Math.max(0, Math.min(100,
-    (anchorY - boardRect.top) / boardRect.height * 100));
-  bird.style.setProperty("--camp-bird-left", left + "%");
-  bird.style.setProperty("--camp-bird-top", top + "%");
-  bird.dataset.campBirdAnchor = "tree";
-  return true;
-}
-
 function appliquerCadreTerrainCampPrototype(element, x, y, width, height) {
   if (!element) return;
   element.style.left = (x / campPrototypeApi.GRID_WIDTH * 100) + "%";
@@ -18205,6 +18386,35 @@ function animationCampPrototypePourRotation(type, rotation, functionalTier) {
     : "";
 }
 
+function animationCampPrototypeMeta(type, functionalTier) {
+  if (!type) return null;
+  const runtimeVisual = campPrototypeApi.runtimeVisualForTier(
+    type.runtimeAssetId || type.id,
+    Number.isInteger(functionalTier) && functionalTier > 0 ? functionalTier : 1
+  );
+  return runtimeVisual && runtimeVisual.animation || null;
+}
+
+function modePresentationAnimationCampPrototype(type, functionalTier) {
+  const animation = animationCampPrototypeMeta(type, functionalTier);
+  if (!animation) return "none";
+  if (type.id === "oldRadio" && animation.familyId === "music-notes") return "radio-continuous";
+  if (type.id === "tree" && animation.familyId === "foliage-rustle") return "bird-present-continuous";
+  return "always";
+}
+
+function etatPresentationAnimationCampPrototype(type, functionalTier) {
+  const mode = modePresentationAnimationCampPrototype(type, functionalTier);
+  if (mode === "radio-continuous") {
+    const audio = globalThis.CatInc && globalThis.CatInc.audio;
+    return {mode: mode, visible: Boolean(audio && typeof audio.isRadioOn === "function" && audio.isRadioOn())};
+  }
+  if (mode === "bird-present-continuous") {
+    return {mode: mode, visible: birdPresentCamp()};
+  }
+  return {mode: mode, visible: mode === "always"};
+}
+
 function animationCampPrototypeDisponible(type, rotation, functionalTier) {
   return Boolean(animationCampPrototypePourRotation(type, rotation, functionalTier));
 }
@@ -18213,7 +18423,9 @@ function animationCampPrototypeEffective(item, type, rotation, functionalTier) {
   if (!item || item.animationDisabled === true || etat.campAnimationsEnabled === false) return false;
   const reducedMotion = typeof window !== "undefined" && window.matchMedia
     && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  return !reducedMotion && animationCampPrototypeDisponible(type, rotation, functionalTier);
+  return !reducedMotion
+    && animationCampPrototypeDisponible(type, rotation, functionalTier)
+    && etatPresentationAnimationCampPrototype(type, functionalTier).visible;
 }
 
 function enregistrementAnimationCampPrototypePourRotation(type, rotation, functionalTier) {
@@ -18242,6 +18454,56 @@ function appliquerEnregistrementAnimationCampPrototype(element, registration) {
   element.style.width = (Number(registration.width) / baseWidth * 100) + "%";
   element.style.height = (Number(registration.height) / baseHeight * 100) + "%";
   element.style.transform = "none";
+}
+
+function synchroniserAnimationCampPrototype(element, item, type, rotation, functionalTier) {
+  if (!element || !item || !type) return false;
+  element.classList.remove("camp-prototype-animation-replaces-base");
+  element.querySelectorAll(
+    ".camp-prototype-animation-shadow, .camp-prototype-animation-overlay"
+  ).forEach(function(layer) { layer.remove(); });
+  if (!animationCampPrototypeEffective(item, type, rotation, functionalTier)) return false;
+  const animationMeta = animationCampPrototypeMeta(type, functionalTier);
+  if (animationMeta && animationMeta.composition === "replace-base") {
+    element.classList.add("camp-prototype-animation-replaces-base");
+  }
+  const registration = enregistrementAnimationCampPrototypePourRotation(
+    type, rotation, functionalTier
+  );
+  [
+    ["camp-prototype-animation-shadow", ombreAnimationCampPrototypePourRotation(type, rotation, functionalTier)],
+    ["camp-prototype-animation-overlay", animationCampPrototypePourRotation(type, rotation, functionalTier)]
+  ].forEach(function(entry) {
+    if (!entry[1]) return;
+    const layer = document.createElement("img");
+    layer.className = entry[0];
+    layer.src = entry[1];
+    layer.alt = "";
+    layer.loading = "lazy";
+    layer.decoding = "async";
+    layer.draggable = false;
+    layer.setAttribute("aria-hidden", "true");
+    layer.style.width = "100%";
+    layer.style.height = "100%";
+    layer.style.transform = "translate(-50%, -50%)";
+    appliquerEnregistrementAnimationCampPrototype(layer, registration);
+    element.appendChild(layer);
+  });
+  return true;
+}
+
+function actualiserAnimationsConditionnellesCampPrototype(typeId) {
+  document.querySelectorAll(".camp-prototype-item[data-camp-type]").forEach(function(element) {
+    if (typeId && element.dataset.campType !== typeId) return;
+    const type = typeCampPrototype(element.dataset.campType);
+    const tier = Number(element.dataset.campVisualTier) || 1;
+    if (!type || modePresentationAnimationCampPrototype(type, tier) === "always") return;
+    const item = itemCampPrototype(element.dataset.campUid)
+      || campPrototypeLayout.find(function(candidate) { return candidate.type === element.dataset.campType; });
+    synchroniserAnimationCampPrototype(
+      element, item, type, Number(element.dataset.campVisualRotation) || 0, tier
+    );
+  });
 }
 
 function ombreAnimationCampPrototypePourRotation(type, rotation, functionalTier) {
@@ -18440,48 +18702,9 @@ function remplirItemCampPrototype(element, type, rotation, functionalTier, item)
     image.style.transform = "translate(-50%, -50%)";
     element.classList.add("camp-prototype-item-has-sprite");
     element.appendChild(image);
-    const animationEffective = animationCampPrototypeEffective(
-      item, type, dimensions.rotation, functionalTier
+    synchroniserAnimationCampPrototype(
+      element, item, type, dimensions.rotation, functionalTier
     );
-    const dynamicShadowSrc = animationEffective
-      ? ombreAnimationCampPrototypePourRotation(type, dimensions.rotation, functionalTier)
-      : "";
-    const animationRegistration = animationEffective
-      ? enregistrementAnimationCampPrototypePourRotation(type, dimensions.rotation, functionalTier)
-      : null;
-    if (dynamicShadowSrc) {
-      const dynamicShadow = document.createElement("img");
-      dynamicShadow.className = "camp-prototype-animation-shadow";
-      dynamicShadow.src = dynamicShadowSrc;
-      dynamicShadow.alt = "";
-      dynamicShadow.loading = "lazy";
-      dynamicShadow.decoding = "async";
-      dynamicShadow.draggable = false;
-      dynamicShadow.setAttribute("aria-hidden", "true");
-      dynamicShadow.style.width = "100%";
-      dynamicShadow.style.height = "100%";
-      dynamicShadow.style.transform = "translate(-50%, -50%)";
-      appliquerEnregistrementAnimationCampPrototype(dynamicShadow, animationRegistration);
-      element.appendChild(dynamicShadow);
-    }
-    const animationSrc = animationEffective
-      ? animationCampPrototypePourRotation(type, dimensions.rotation, functionalTier)
-      : "";
-    if (animationSrc) {
-      const animation = document.createElement("img");
-      animation.className = "camp-prototype-animation-overlay";
-      animation.src = animationSrc;
-      animation.alt = "";
-      animation.loading = "lazy";
-      animation.decoding = "async";
-      animation.draggable = false;
-      animation.setAttribute("aria-hidden", "true");
-      animation.style.width = "100%";
-      animation.style.height = "100%";
-      animation.style.transform = "translate(-50%, -50%)";
-      appliquerEnregistrementAnimationCampPrototype(animation, animationRegistration);
-      element.appendChild(animation);
-    }
     const label = document.createElement("span");
     label.className = "camp-prototype-accessible-label";
     label.textContent = type.label;
@@ -18836,6 +19059,7 @@ function executerActionMenuCampPrototype(action, event) {
     if (!uniqueDefinition || uniqueDefinition.id !== "old-radio-gift" || !audio) return false;
     if (typeof audio.isRadioOn === "function" && audio.isRadioOn()) audio.stopRadio();
     else if (typeof audio.startRadio === "function") audio.startRadio(etat.volumeMusique);
+    actualiserAnimationsConditionnellesCampPrototype("oldRadio");
     return ouvrirMenuInteractionCampPrototype(item.uid, {conserverOuvert: true, semanticCommit: false});
   }
   if (action === "allocate") {
@@ -19832,6 +20056,11 @@ function activerItemCampPrototype(uid) {
   const type = item && typeCampPrototype(item.type);
   const tache = item && tacheCampPourItem(item);
   const upgradeDisponible = item && prochaineAmeliorationCamp(item);
+  if (type && type.id === "tree" && birdPresentCamp()) {
+    fermerMenuInteractionCampPrototype();
+    ouvrirBirdMiniJeu();
+    return;
+  }
   if (tache) {
     if (tache.job && !tache.job.readyToClaim) {
       fermerMenuInteractionCampPrototype();
@@ -21150,7 +21379,7 @@ function ancrerCampTaskPanel() {
   const target = campTaskPanelTargetElement();
   if (!panel) return;
   panel.classList.add("camp-task-panel-anchored");
-  if (!target || window.innerWidth <= 768) return;
+  if (!target) return;
   const placer = function() {
     const stage = document.querySelector(".camp-prototype-stage");
     const viewport = document.querySelector(".camp-prototype-viewport");
@@ -21243,7 +21472,7 @@ function rendreCampTaskPanel(options) {
   }
   const ancienPicker = document.querySelector(".camp-task-cat-picker-layer");
   if (ancienPicker) ancienPicker.remove();
-  ecrireTexte(title, CAT_ASSIGNMENT_MODAL_TITLE);
+  ecrireTexte(title, definition.actionLabel);
   summary.innerHTML = "";
   summary.classList.add("camp-task-panel-summary");
   summary.className = String(summary.className || "").split(/\s+/).filter(function(className) {
@@ -21486,6 +21715,7 @@ function ouvrirModalConstructionMaisonCamp() {
     || !ressourcesMaisonCampSuffisantes(type.id)
     || !kittyDisponibleConstructionMaisonCamp()
   ) {
+    jouerSonRefus();
     definirMessageCampPrototype("This house cannot be built yet.");
     actualiserCommandesCampPrototype();
     return false;
@@ -21763,6 +21993,7 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
   fermerModalConstructionMaisonCamp();
   masquerApercuCampPrototype();
   invaliderConnexionsCampPrototype();
+  jouerSonPlacementConstruction();
   ajouterLog("event", kitty.nom + " started building " + type.label + " at Base Camp.");
   definirMessageCampPrototype(kitty.nom + " is building " + type.label
     + " · " + formaterTemps(etat.camp.houseConstructions[item.uid].duree) + " remaining.");
@@ -21840,6 +22071,7 @@ function ouvrirModalConstructionBatimentCamp() {
     return true;
   }
   if (!ressourcesConstructionBatimentCampSuffisantes(type.id)) {
+    jouerSonRefus();
     afficherNotification("Not enough resources to build " + type.label + ".");
     return false;
   }
@@ -21959,6 +22191,7 @@ function selectionnerKittyConstructionBatimentCamp(kittyIndex) {
   fermerModalConstructionBatimentCamp();
   masquerApercuCampPrototype();
   invaliderConnexionsCampPrototype();
+  jouerSonPlacementConstruction();
   ajouterLog("event", kitty.nom + " started building " + type.label + " at Base Camp.");
   definirMessageCampPrototype(type.label + " construction in progress · "
     + formaterTemps(construction.duration) + " remaining.");
@@ -23547,6 +23780,54 @@ function statistiquesPaletteJunkCamp(type) {
   };
 }
 
+function creerCarteCatalogueCampPrototype(bouton, type, options) {
+  const config = options || {};
+  const buildEffects = Array.isArray(config.effects) ? config.effects : [];
+  bouton.dataset.campType = type.id;
+  bouton.className = "camp-prototype-palette-item camp-prototype-color-" + type.color;
+  bouton.setAttribute("aria-pressed", "false");
+  if (config.uniqueItemId) bouton.dataset.campUniqueItem = config.uniqueItemId;
+  const dimensions = type.edgePlacement
+    ? "grid edge · " + type.motifLength + "-cell motif"
+    : type.width + " × " + type.height;
+  bouton.innerHTML = (type.asset
+    ? '<img class="camp-prototype-palette-sprite" src="'
+      + echapperAttributHtml(type.asset) + '" alt="" draggable="false">'
+    : "")
+    + '<span class="camp-prototype-palette-copy"><strong>'
+    + echapperAttributHtml(type.label)
+    + ' <span class="camp-prototype-palette-dimensions">('
+    + echapperAttributHtml(dimensions) + ")</span></strong>"
+    + (config.metadataHtml || "")
+    + (config.visualOnly
+      ? '<span class="camp-prototype-visual-only-badge">Visual only</span>'
+      : "")
+    + "</span>";
+  const carte = document.createElement("div");
+  carte.className = "camp-prototype-palette-card"
+    + (buildEffects.length ? " camp-prototype-palette-card-has-effects" : "");
+  carte.appendChild(bouton);
+  if (buildEffects.length) {
+    obtenirPopoverEffetsBatimentCamp();
+    const aide = document.createElement("button");
+    aide.type = "button";
+    aide.className = "camp-prototype-palette-effects-toggle";
+    aide.classList.add("interface-details-control");
+    aide.innerHTML = '<span class="interface-symbol interface-details" aria-hidden="true"></span>';
+    aide.dataset.closedLabel = "Show Tier 1 effects for " + type.label;
+    aide.setAttribute("aria-label", aide.dataset.closedLabel);
+    aide.setAttribute("aria-controls", "camp-building-effects-popover");
+    aide.setAttribute("aria-expanded", "false");
+    aide.addEventListener("click", function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      ouvrirPopoverEffetsBatimentCamp(aide, type, buildEffects);
+    });
+    carte.appendChild(aide);
+  }
+  return carte;
+}
+
 function rendrePaletteCampPrototype() {
   const palette = document.getElementById("camp-prototype-palette");
   if (!palette) return;
@@ -23578,18 +23859,7 @@ function rendrePaletteCampPrototype() {
       const placed = itemUniqueCampPlace(uniqueItemId);
       const button = document.createElement("button");
       button.type = "button";
-      button.dataset.campType = type.id;
-      button.dataset.campUniqueItem = uniqueItemId;
-      button.className = "camp-prototype-palette-item camp-prototype-color-" + type.color;
       button.disabled = Boolean(placed);
-      button.setAttribute("aria-pressed", "false");
-      button.innerHTML = (type.asset
-        ? '<img class="camp-prototype-palette-sprite" src="' + type.asset + '" alt="" draggable="false">'
-        : "")
-        + '<span class="camp-prototype-palette-copy"><strong>' + type.label
-        + ' <span class="camp-prototype-palette-dimensions">(' + type.width + " × " + type.height
-        + ')</span></strong><span>' + (placed ? "Placed in Camp" : "Owned · Ready to place")
-        + "</span></span>";
       button.addEventListener("click", function() {
         if (!uniqueItemCampDisponible(uniqueItemId)) return;
         campPrototypeModeEdition = true;
@@ -23605,10 +23875,11 @@ function rendrePaletteCampPrototype() {
         rendreItemsCampPrototype();
         actualiserCommandesCampPrototype();
       });
-      const card = document.createElement("div");
-      card.className = "camp-prototype-palette-card";
-      card.appendChild(button);
-      palette.appendChild(card);
+      palette.appendChild(creerCarteCatalogueCampPrototype(button, type, {
+        uniqueItemId: uniqueItemId,
+        metadataHtml: '<span class="camp-prototype-palette-requirements camp-prototype-palette-state">'
+          + (placed ? "Placed in Camp" : "Owned · Ready to place") + "</span>"
+      }));
     });
     actualiserCommandesCampPrototype();
     return;
@@ -23664,9 +23935,6 @@ function rendrePaletteCampPrototype() {
         && !DEV_MODE && !batimentCampDisponiblePlacement(typeId)) return;
     const bouton = document.createElement("button");
     bouton.type = "button";
-    bouton.dataset.campType = typeId;
-    bouton.className = "camp-prototype-palette-item camp-prototype-color-" + type.color;
-    bouton.setAttribute("aria-pressed", "false");
     const devis = categorie === "house"
       ? devisMaisonCamp(typeId)
       : ((categorie === "building" || categorie === "decoration") ? devisConstructionBatimentCamp(typeId) : null);
@@ -23731,21 +23999,9 @@ function rendrePaletteCampPrototype() {
           : (devis && devis.duration)) || 0) / 60)
         + " mins</span></span>"
       : '');
-    bouton.innerHTML = (type.asset
-      ? '<img class="camp-prototype-palette-sprite" src="' + type.asset + '" alt="" draggable="false">'
-      : "")
-      + '<span class="camp-prototype-palette-copy"><strong>'
-      + type.label
-      + ' <span class="camp-prototype-palette-dimensions">'
-      + (type.edgePlacement ? '(grid edge · ' + type.motifLength + '-cell motif)' : '(' + type.width + " × " + type.height + ")")
-      + "</span></strong>"
-      + requirementsHtml
-      + (type.visualOnly
-        ? '<span class="camp-prototype-visual-only-badge">Visual only</span>'
-        : "")
-      + "</span>";
     bouton.addEventListener("click", function() {
       if (categorie === "house" && !maisonCampConstructible(typeId)) {
+        jouerSonRefus();
         afficherNotification(!ressourcesMaisonCampSuffisantes(typeId)
           ? "Not enough resources to build " + type.label + "."
           : "No Cat is available to build " + type.label + ".");
@@ -23788,29 +24044,11 @@ function rendrePaletteCampPrototype() {
     const buildEffects = ["house", "building", "decoration"].includes(categorie)
       ? campGameplayEffectEntries(typeId, 1, null)
       : [];
-    const carte = document.createElement("div");
-    carte.className = "camp-prototype-palette-card"
-      + (buildEffects.length ? " camp-prototype-palette-card-has-effects" : "");
-    carte.appendChild(bouton);
-    if (buildEffects.length) {
-      obtenirPopoverEffetsBatimentCamp();
-      const aide = document.createElement("button");
-      aide.type = "button";
-      aide.className = "camp-prototype-palette-effects-toggle";
-      aide.classList.add("interface-details-control");
-      aide.innerHTML = '<span class="interface-symbol interface-details" aria-hidden="true"></span>';
-      aide.dataset.closedLabel = "Show Tier 1 effects for " + type.label;
-      aide.setAttribute("aria-label", aide.dataset.closedLabel);
-      aide.setAttribute("aria-controls", "camp-building-effects-popover");
-      aide.setAttribute("aria-expanded", "false");
-      aide.addEventListener("click", function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        ouvrirPopoverEffetsBatimentCamp(aide, type, buildEffects);
-      });
-      carte.appendChild(aide);
-    }
-    palette.appendChild(carte);
+    palette.appendChild(creerCarteCatalogueCampPrototype(bouton, type, {
+      metadataHtml: requirementsHtml,
+      visualOnly: type.visualOnly,
+      effects: buildEffects
+    }));
   });
   if (categorie === "house" && palette.children.length === 0) {
     const vide = document.createElement("p");
@@ -24268,6 +24506,8 @@ function rendreItemsCampPrototype(presencesCamp) {
     if (connexionInactive) bouton.classList.add("camp-prototype-item-inactive");
     if (!junkInerte) bouton.dataset.campUid = item.uid;
     bouton.dataset.campType = item.type;
+    bouton.dataset.campVisualRotation = String(dimensions.rotation);
+    bouton.dataset.campVisualTier = String(tierAffiche);
     if (type.category === "junk") bouton.dataset.campDemolitionLabel = type.label;
     if (type.category === "road") {
       const connexions = campPrototypeApi.connexionsRoute(
@@ -25447,6 +25687,7 @@ function validerPlacementCampPrototype() {
   const type = typeCampPrototype(placement.type);
   const resultat = actualiserValiditePlacementCampPrototype();
   if (!type || !resultat.valide) {
+    jouerSonRefus();
     definirMessageCampPrototype((resultat && resultat.raison)
       || "Move this item to compatible cells before confirming.");
     actualiserCommandesCampPrototype();
@@ -25455,6 +25696,7 @@ function validerPlacementCampPrototype() {
   const uniqueDefinition = definitionUniqueItemCampParType(placement.type);
   if (placement.mode === "new" && uniqueDefinition
       && !uniqueItemCampDisponible(uniqueDefinition.id)) {
+    jouerSonRefus();
     definirMessageCampPrototype(type.label + " is already placed in Camp.");
     return false;
   }
@@ -25492,6 +25734,7 @@ function validerPlacementCampPrototype() {
     invaliderConnexionsCampPrototype();
     sauvegarderCampPrototype();
     sauvegarder();
+    jouerSonPlacementConstruction();
     quitterEditionCampPrototype(false);
     renduCampPrototype();
     renduManagement();
@@ -25544,6 +25787,7 @@ function validerPlacementCampPrototype() {
   campPrototypeRotationAPlacer = 0;
   sauvegarderCampPrototype();
   masquerApercuCampPrototype();
+  jouerSonPlacementConstruction();
   const message = type.label + " placed at column " + (item.x + 1)
     + ", row " + (item.y + 1) + ".";
   quitterEditionCampPrototype(false);
@@ -26650,10 +26894,24 @@ function gererNavigationOnglets(e) {
 
 document.querySelector(".barre-onglets").addEventListener("keydown", gererNavigationOnglets);
 
+function actualiserAncrageSousNavigationWork() {
+  const sousNavigation = document.querySelector(".work-subnav");
+  const navigationPrincipale = document.querySelector(".barre-onglets");
+  const filtresWork = document.querySelector("#contenu-work .work-filtres");
+  if (!sousNavigation || !navigationPrincipale || !filtresWork) return;
+
+  if (window.matchMedia("(max-width: 768px)").matches) {
+    if (sousNavigation.parentElement !== document.body) navigationPrincipale.before(sousNavigation);
+    return;
+  }
+  if (sousNavigation.parentElement !== filtresWork) filtresWork.insertBefore(sousNavigation, filtresWork.firstChild);
+}
+
 function actualiserOrientationNavigationPrincipale() {
   const navigation = document.querySelector(".barre-onglets");
   if (!navigation) return;
   navigation.setAttribute("aria-orientation", window.innerWidth > 768 ? "vertical" : "horizontal");
+  actualiserAncrageSousNavigationWork();
 }
 
 actualiserOrientationNavigationPrincipale();
@@ -26894,6 +27152,9 @@ function demarrerAnimationMiniJeu(id, callback) {
 function fermerSessionMiniJeu(id) {
   arreterAnimationMiniJeu(id);
   if (!miniJeuRuntimeActif(id)) return;
+  if (id === "bird" && typeof definirPresenceOiseauCamp === "function") {
+    definirPresenceOiseauCamp(false);
+  }
   miniJeuRuntime.actif = null;
   miniJeuRuntime.generation += 1;
   if (document.body) {
@@ -27575,6 +27836,7 @@ var _birdTimerId        = null;
 var _birdCursorPct      = 0;
 var _birdDir            = 1;
 var _birdMiniJeuPending = false;
+var _birdPresentCamp    = false;
 const BIRD_PITY_REDUCTION_PER_FAIL = 0.05;
 const BIRD_PITY_MAX_REDUCTION = 0.35;
 
@@ -27582,6 +27844,19 @@ function multiplicateurPityOiseau() {
   const echecs = Number.isInteger(etat.birdPityEchecs) ? Math.max(0, etat.birdPityEchecs) : 0;
   const reduction = Math.min(BIRD_PITY_MAX_REDUCTION, echecs * BIRD_PITY_REDUCTION_PER_FAIL);
   return 1 - reduction;
+}
+
+function birdPresentCamp() {
+  return _birdPresentCamp === true;
+}
+
+function definirPresenceOiseauCamp(present) {
+  const suivante = Boolean(present);
+  const changee = _birdPresentCamp !== suivante;
+  _birdPresentCamp = suivante;
+  if (changee) actualiserAnimationsConditionnellesCampPrototype("tree");
+  actualiserIndicateursPremierOiseau();
+  return changee;
 }
 
 function arbreAccessibleCamp() {
@@ -27603,14 +27878,30 @@ function onboardingPremierOiseauPret(maintenant) {
 }
 
 function actualiserIndicateursPremierOiseau() {
-  positionnerBirdCampPrototype();
   const actif = premierOiseauIndicateursActifs();
   const onglet = document.getElementById("onglet-camp");
   if (onglet) onglet.classList.toggle("camp-tab-bird-attention", actif);
-  const bird = document.getElementById("bird-btn");
-  const oiseauPose = actif && bird && bird.style.display !== "none";
   const arbre = document.querySelector('.camp-prototype-item[data-camp-type="tree"]');
-  if (arbre) arbre.classList.toggle("camp-bird-tree-attention", Boolean(oiseauPose));
+  if (arbre) {
+    const present = birdPresentCamp();
+    if (!arbre.dataset.campBirdBaseLabel) {
+      arbre.dataset.campBirdBaseLabel = arbre.getAttribute("aria-label") || "Garden Tree";
+      arbre.dataset.campBirdBaseHaspopup = arbre.getAttribute("aria-haspopup") || "";
+      arbre.dataset.campBirdBaseControls = arbre.getAttribute("aria-controls") || "";
+    }
+    arbre.classList.toggle("camp-bird-present", present);
+    if (present) {
+      arbre.setAttribute("aria-label", arbre.dataset.campBirdBaseLabel + ", bird waiting, open bird mini-game");
+      arbre.setAttribute("aria-haspopup", "dialog");
+      arbre.setAttribute("aria-controls", "bird-minijeu");
+    } else {
+      arbre.setAttribute("aria-label", arbre.dataset.campBirdBaseLabel);
+      if (arbre.dataset.campBirdBaseHaspopup) arbre.setAttribute("aria-haspopup", arbre.dataset.campBirdBaseHaspopup);
+      else arbre.removeAttribute("aria-haspopup");
+      if (arbre.dataset.campBirdBaseControls) arbre.setAttribute("aria-controls", arbre.dataset.campBirdBaseControls);
+      else arbre.removeAttribute("aria-controls");
+    }
+  }
 }
 
 function verifierDeclencheurPremierOiseau() {
@@ -27632,6 +27923,53 @@ function verifierDeclencheurPremierOiseau() {
   return true;
 }
 
+function birdEventActifOuEnAttente() {
+  const successPopup = document.getElementById("bird-success-popup");
+  return Boolean(
+    birdPresentCamp()
+    || (successPopup && successPopup.style.display !== "none")
+    || _birdMiniJeuPending
+    || miniJeuRuntimeActif("bird")
+  );
+}
+
+function presentationOiseauBloquee() {
+  return birdEventActifOuEnAttente()
+    || miniJeuRuntimeActif()
+    || (typeof dialogueOuvertAuPremierPlan === "function" && Boolean(dialogueOuvertAuPremierPlan()));
+}
+
+function armerTimerOiseauRecurrent(maintenant, forcerRearmement) {
+  const delai = Math.max(0, etat.birdNextSpawnTs - maintenant);
+  if (_birdTimerId && !forcerRearmement) return;
+  if (_birdTimerId) clearTimeout(_birdTimerId);
+  _birdTimerId = setTimeout(function() {
+    _birdTimerId = null;
+    reconcilierOiseauRecurrent(Date.now());
+  }, delai);
+}
+
+function reconcilierOiseauRecurrent(maintenant, options) {
+  if (!etat.birdPremiereReussie) return false;
+  const timestamp = Number.isFinite(maintenant) ? maintenant : Date.now();
+  if (!Number.isFinite(etat.birdNextSpawnTs) || etat.birdNextSpawnTs <= 0) {
+    if (birdEventActifOuEnAttente()) return false;
+    etat.birdNextSpawnTs = timestamp + (Math.random() * 600 + 300) * 1000;
+    sauvegarder();
+  }
+  if (timestamp < etat.birdNextSpawnTs) {
+    armerTimerOiseauRecurrent(timestamp, Boolean(options && options.rearm));
+    return false;
+  }
+  if (!catheringDebloquee() || !arbreAccessibleCamp() || presentationOiseauBloquee()) return false;
+  if (!montrerOiseau()) return false;
+  etat.birdNextSpawnTs = 0;
+  if (_birdTimerId) clearTimeout(_birdTimerId);
+  _birdTimerId = null;
+  sauvegarder();
+  return true;
+}
+
 function planifierOiseau() {
   if (!etat.birdPremiereReussie && !onboardingPremierOiseauPret(Date.now())) {
     const legacyDeclencheur = etat.birdPremierDeclenche === true;
@@ -27642,9 +27980,7 @@ function planifierOiseau() {
       etat.birdPremierSpawnTs = 0;
       sauvegarder();
     }
-    const birdBtn = document.getElementById("bird-btn");
-    if (birdBtn) birdBtn.style.display = "none";
-    actualiserIndicateursPremierOiseau();
+    definirPresenceOiseauCamp(false);
     return;
   }
   if (!catheringDebloquee()) {
@@ -27659,50 +27995,44 @@ function planifierOiseau() {
     return;
   }
   if (_birdTimerId) clearTimeout(_birdTimerId);
+  _birdTimerId = null;
   if (!arbreAccessibleCamp()) {
     _birdTimerId = setTimeout(planifierOiseau, 30000);
     return;
   }
   var premiere = !etat.birdPremiereReussie;
-  var delai;
   if (premiere) {
     if (!Number.isFinite(etat.birdPremierSpawnTs) || etat.birdPremierSpawnTs <= 0) {
       etat.birdPremierSpawnTs = Date.now() + 5 * 60 * 1000;
       sauvegarder();
     }
-    delai = Math.max(0, etat.birdPremierSpawnTs - Date.now());
-  } else {
-    delai = (Math.random() * 600 + 300) * 1000; // 5 à 15 min
+    _birdTimerId = setTimeout(montrerOiseau, Math.max(0, etat.birdPremierSpawnTs - Date.now()));
+    return;
   }
-  _birdTimerId = setTimeout(montrerOiseau, delai);
+  reconcilierOiseauRecurrent(Date.now(), { rearm: true });
 }
 
 function montrerOiseau() {
   if (!etat.birdPremiereReussie && (!etat.birdPremierDeclenche
       || !onboardingPremierOiseauPret(Date.now()))) {
-    const birdBtn = document.getElementById("bird-btn");
-    if (birdBtn) birdBtn.style.display = "none";
-    actualiserIndicateursPremierOiseau();
-    return;
+    definirPresenceOiseauCamp(false);
+    return false;
   }
   if (!catheringDebloquee() || !arbreAccessibleCamp()) {
     planifierOiseau();
-    return;
+    return false;
   }
   jouerSonAilesOiseau();
-  var el = document.getElementById("bird-btn");
-  if (el) el.style.display = "inline-flex";
+  definirPresenceOiseauCamp(true);
   var dbg = document.getElementById("bird-debug-btn");
   if (dbg) dbg.style.display = "none";
-  actualiserIndicateursPremierOiseau();
+  return birdPresentCamp();
 }
 
 function birdWhistleDisponible() {
-  const bird = document.getElementById("bird-btn");
-  const birdAlreadyWaiting = Boolean(bird && bird.style.display !== "none");
   const successPopup = document.getElementById("bird-success-popup");
   const resultPending = Boolean(successPopup && successPopup.style.display !== "none");
-  return Boolean(bird) && !birdAlreadyWaiting && !resultPending && !_birdMiniJeuPending && !miniJeuRuntimeActif()
+  return !birdPresentCamp() && !resultPending && !_birdMiniJeuPending && !miniJeuRuntimeActif()
     && catheringDebloquee() && arbreAccessibleCamp()
     && (etat.birdPremiereReussie || onboardingPremierOiseauPret(Date.now()));
 }
@@ -27715,22 +28045,28 @@ function appelerProchainOiseau() {
     etat.birdPremierDeclenche = true;
     etat.birdPremierSpawnTs = Date.now();
   }
-  montrerOiseau();
-  const bird = document.getElementById("bird-btn");
-  return Boolean(bird && bird.style.display !== "none");
+  const deadlineRecurrente = etat.birdNextSpawnTs;
+  if (!montrerOiseau()) {
+    etat.birdNextSpawnTs = deadlineRecurrente;
+    reconcilierOiseauRecurrent(Date.now(), { rearm: true });
+    return false;
+  }
+  if (etat.birdPremiereReussie) {
+    etat.birdNextSpawnTs = 0;
+    sauvegarder();
+  }
+  return birdPresentCamp();
 }
 
 function demarrerBirdMiniJeu() {
-  if (!catheringDebloquee() || !arbreAccessibleCamp()) return;
+  if (!birdPresentCamp() || !catheringDebloquee() || !arbreAccessibleCamp()) return;
   if (!ouvrirSessionMiniJeu("bird")) return;
   var premiere = !etat.birdPremiereReussie;
-  var el = document.getElementById("bird-btn");
-  if (el) el.style.display = "none";
   _birdCursorPct = 0;
   _birdDir = 1;
   ouvrirDialogueModal("bird-minijeu", {
     focusSelector: ".bird-catch-btn",
-    returnFocusSelector: "#bird-btn"
+    returnFocusSelector: '[data-camp-type="tree"]'
   });
   var carte = document.querySelector('.bird-minijeu-carte');
   if (carte) {
@@ -27766,22 +28102,21 @@ function demarrerBirdMiniJeu() {
 }
 
 function ouvrirBirdMiniJeu() {
+  if (!birdPresentCamp() || _birdMiniJeuPending || miniJeuRuntimeActif("bird")) return false;
   if (!catheringDebloquee() || !arbreAccessibleCamp()) {
-    const birdBtn = document.getElementById("bird-btn");
-    if (birdBtn) birdBtn.style.display = "none";
+    definirPresenceOiseauCamp(false);
     planifierOiseau();
-    return;
+    return false;
   }
   if (!storyEstVue("storyBirdVue")) {
     marquerStoryVue("storyBirdVue");
-    var birdBtn = document.getElementById("bird-btn");
-    if (birdBtn) birdBtn.style.display = "none";
     _birdMiniJeuPending = true;
     afficherModal("ecran-story-bird");
     renduStories();
-    return;
+    return true;
   }
   demarrerBirdMiniJeu();
+  return true;
 }
 
 function _apresMinijeuOiseau() {
@@ -27913,7 +28248,7 @@ mobileInputDiagnostic.configure({
 });
 initialiserCampPrototype();
 normaliserFormuleRecrutementCamp();
-if (partieExistante && migrationOrdrePremiereVueStoriesAPersister) sauvegarder();
+if (partieExistante && migrationSauvegardeAPersister) sauvegarder();
 if (globalThis.CatInc.devTools) {
   globalThis.CatInc.devTools.configure({
     getState: function() { return etat; },
@@ -27943,7 +28278,10 @@ if (globalThis.CatInc.devTools) {
         nomsKitties: NOMS_KITTIES,
         jobIds: Object.keys(METIERS).concat(["shop-owner"]),
         assignerVisageChaton: assignerVisageChaton,
-        normaliserVisageChaton: normaliserVisageChaton
+        normaliserVisageChaton: normaliserVisageChaton,
+        estVisageGeneriqueLegacy: estVisageGeneriqueLegacy,
+        legacyGenericCatFaces: VISAGES_GENERIQUES_LEGACY,
+        catFaceIdForRuntimePath: idVisageChatLivePourSource
       });
       const raw = saveCore.serialiserEtat(normalized);
       const finalAnalysis = analyserSauvegardeBrute(raw);
@@ -28366,15 +28704,25 @@ function rattraperApresSuspensionAfk() {
   return rattraperProgressionAfk();
 }
 
+function reconcilierOiseauApresReprise() {
+  reconcilierOiseauRecurrent(Date.now(), { rearm: true });
+}
+
 document.addEventListener("visibilitychange", function() {
   if (document.visibilityState === "hidden") marquerSuspensionAfk();
-  else if (document.visibilityState === "visible") rattraperApresSuspensionAfk();
+  else if (document.visibilityState === "visible") {
+    rattraperApresSuspensionAfk();
+    reconcilierOiseauApresReprise();
+  }
 });
 
 // pageshow is essential for iOS Safari/Android Chrome when the page returns
 // from bfcache without a normal reload or a second visibilitychange event.
 window.addEventListener("pageshow", function() {
-  if (document.visibilityState !== "hidden") rattraperApresSuspensionAfk();
+  if (document.visibilityState !== "hidden") {
+    rattraperApresSuspensionAfk();
+    reconcilierOiseauApresReprise();
+  }
 });
 
 // Some mobile browsers restore focus without dispatching pageshow. Focus alone
@@ -28382,7 +28730,10 @@ window.addEventListener("pageshow", function() {
 // as temporary Camp placement. Only a preceding hidden/pagehide/freeze event authorizes the
 // catch-up, so visible gameplay always stays at full active speed.
 window.addEventListener("focus", function() {
-  if (document.visibilityState !== "hidden") rattraperApresSuspensionAfk();
+  if (document.visibilityState !== "hidden") {
+    rattraperApresSuspensionAfk();
+    reconcilierOiseauApresReprise();
+  }
 });
 
 // pagehide/freeze are the last persistence opportunities before a mobile tab

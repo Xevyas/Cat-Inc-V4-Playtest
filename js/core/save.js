@@ -359,8 +359,8 @@ function validerStructureSauvegarde(d) {
     "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "basicWoodPlanksTotalProduit", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
     "cannelleTokens", "cannelleBargainNextAt", "shortcutMapFinTs",
-    "workBoostFinTs", "manualFocusOnboardingCompletedTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
-    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique", "campCatPortraitScale"
+    "workBoostFinTs", "manualFocusOnboardingCompletedTs", "birdPremierSpawnTs", "birdNextSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
+    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "campCatPortraitScale"
   ];
   for (const cle of champsNumeriques) {
     if (d[cle] !== undefined && (typeof d[cle] !== "number" || !Number.isFinite(d[cle]) || d[cle] < 0)) {
@@ -405,9 +405,8 @@ function validerStructureSauvegarde(d) {
       && (typeof d.releaseNotesSeenVersion !== "string" || d.releaseNotesSeenVersion.length > 30 || /[<>]/.test(d.releaseNotesSeenVersion))) {
     return "Invalid release notes version.";
   }
-  for (const cle of ["volumeEffetsSonores", "volumeMusique"]) {
-    if (d[cle] !== undefined && d[cle] > 1) return "Invalid audio volume: " + cle + ".";
-  }
+  // Audio preferences are soft settings: malformed legacy values are normalized
+  // to product defaults during migration instead of invalidating the whole save.
   if (d.campCatPortraitScale !== undefined
       && (d.campCatPortraitScale < 0.7 || d.campCatPortraitScale > 1.3)) {
     return "Invalid Camp Cat portrait scale.";
@@ -1064,6 +1063,7 @@ function analyserSauvegardeBrute(raw) {
     birdPremierSpawnTs:      etat.birdPremierSpawnTs,
     birdPremierDeclenche:    etat.birdPremierDeclenche,
     birdPremiereReussie:     etat.birdPremiereReussie,
+    birdNextSpawnTs:         etat.birdNextSpawnTs,
     birdPityEchecs:          etat.birdPityEchecs,
     sequenceEnCours:         etat.sequenceEnCours,
     sequenceDebutTs:         etat.sequenceDebutTs,
@@ -1152,6 +1152,18 @@ function analyserSauvegardeBrute(raw) {
     const normaliserVisageChaton = typeof options.normaliserVisageChaton === "function"
       ? options.normaliserVisageChaton
       : null;
+    const estVisageGeneriqueLegacy = typeof options.estVisageGeneriqueLegacy === "function"
+      ? options.estVisageGeneriqueLegacy
+      : function() { return false; };
+    const catFaceIdForRuntimePath = typeof options.catFaceIdForRuntimePath === "function"
+      ? options.catFaceIdForRuntimePath
+      : function() { return null; };
+    const legacyGenericCatFaces = Array.isArray(options.legacyGenericCatFaces)
+      ? options.legacyGenericCatFaces
+      : [];
+    const cheminVisage = function(value) {
+      return String(value || "").split("?")[0].replace(/\\/g, "/");
+    };
     const jobIds = new Set(Array.isArray(options.jobIds) ? options.jobIds : JOB_IDS);
     const jobIdMigration = { bucheron: "lumberjack", charpentier: "carpenter", fermier: "farmer", cuisinier: "chef" };
     function normaliserJobId(value) {
@@ -1213,11 +1225,17 @@ function analyserSauvegardeBrute(raw) {
     ? d.manualFocusOnboardingCompletedTs
     : 0;
   etat.campProfile = normaliserProfilCampSauvegarde(d.campProfile);
+  const ancienAvatarGenerique = legacyGenericCatFaces.find(function(face) {
+    return face && face.id === etat.campProfile.avatarCatFaceId
+      && typeof face.runtimePath === "string";
+  }) || null;
+  let avatarGeneriqueMigre = null;
   etat.birdPremierSpawnTs     = Number.isFinite(d.birdPremierSpawnTs)
     ? d.birdPremierSpawnTs
     : maintenant + 5 * 60 * 1000;
   etat.birdPremierDeclenche   = d.birdPremierDeclenche === true;
   etat.birdPremiereReussie    = d.birdPremiereReussie === true;
+  etat.birdNextSpawnTs        = Number.isFinite(d.birdNextSpawnTs) ? d.birdNextSpawnTs : 0;
   etat.birdPityEchecs         = Number.isInteger(d.birdPityEchecs) ? Math.max(0, d.birdPityEchecs) : 0;
   if (!etat.birdPremiereReussie && etat.birdPremierDeclenche
       && (!(etat.manualFocusOnboardingCompletedTs > 0)
@@ -1248,8 +1266,10 @@ function analyserSauvegardeBrute(raw) {
   etat.reductionAuMomentDuClic = d.reductionAuMomentDuClic || 0;
   etat.afficherTempsAjusteRecrutement = d.afficherTempsAjusteRecrutement || false;
   etat.avertirSurplusNourriture = d.avertirSurplusNourriture !== false;
-  etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
-  etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0;
+  etat.volumeEffetsSonores = Number.isFinite(d.volumeEffetsSonores)
+    && d.volumeEffetsSonores >= 0 && d.volumeEffetsSonores <= 1 ? d.volumeEffetsSonores : 0.3;
+  etat.volumeMusique = Number.isFinite(d.volumeMusique)
+    && d.volumeMusique >= 0 && d.volumeMusique <= 1 ? d.volumeMusique : 0.3;
   etat.campCatPortraitScale = d.campCatPortraitScale !== undefined
     ? Math.max(0.7, Math.min(1.3, d.campCatPortraitScale))
     : 1;
@@ -1624,11 +1644,20 @@ function analyserSauvegardeBrute(raw) {
     // Balance update: the former default manager speed was ×2. Existing
     // current-era saves are converted once so managers use ×1.5 too.
     if (k.managerMult === undefined || k.managerMult === 2) k.managerMult = 1.5;
+    const ancienVisage = k.visage;
+    const appuieAncienAvatar = ancienAvatarGenerique && estVisageGeneriqueLegacy(k)
+      && cheminVisage(ancienVisage) === cheminVisage(ancienAvatarGenerique.runtimePath);
     if (normaliserVisageChaton) k.visage = normaliserVisageChaton(k);
     else k.visage = assignerVisageChaton(k.nom);
+    if (appuieAncienAvatar && !avatarGeneriqueMigre) {
+      avatarGeneriqueMigre = catFaceIdForRuntimePath(k.visage);
+    }
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
     if (k.metier === "camp-engineer" && k.engineerRank === undefined) k.engineerRank = 1;
   });
+  if (ancienAvatarGenerique) {
+    etat.campProfile.avatarCatFaceId = avatarGeneriqueMigre;
+  }
 
     return etat;
   }

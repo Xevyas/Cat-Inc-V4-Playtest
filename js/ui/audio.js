@@ -11,11 +11,16 @@
     rewardChest: "Sounds/Other/Reward Chest.mp3",
     repair: "Sounds/Other/Repair.mp3",
     handsawWood: "Sounds/Other/Handsaw Wood.mp3",
-    dialogueVoices: Object.freeze([
-      "Sounds/Voices/Kid voice var 1.wav",
-      "Sounds/Voices/Kid voice var 2.wav",
-      "Sounds/Voices/Kid voice var 3.wav"
-    ]),
+    workFood: "Sounds/Other/Work Food.mp3",
+    workRock: "Sounds/Other/Work Rock.mp3",
+    buildPlace: "Sounds/Other/Build Place.mp3",
+    uiClick: "Sounds/Other/UI Click.mp3",
+    uiBackClose: "Sounds/Other/UI Back_Close.mp3",
+    uiDeniedError: "Sounds/Other/UI Denied_Error.mp3",
+    smallSuccess: "Sounds/Other/Small Success.mp3",
+    bigReward: "Sounds/Other/Big Reward.mp3",
+    dialogueBernardo: "Sounds/Other/Dialogue Bernardo.mp3",
+    dialogueGeneric: "Sounds/Other/Dialogue Generic.mp3",
     radioPlaylist: Object.freeze([
       "Sounds/Radio/SunbeamsAndMeadows.ogg",
       "Sounds/Radio/Cattails.ogg",
@@ -35,9 +40,24 @@
       "Sounds/Radio/18. Coherent.ogg"
     ])
   });
+  const SHORT_EFFECT_KEYS = Object.freeze(Object.keys(SOURCES).filter(function(key) {
+    return key !== "radioPlaylist";
+  }));
+  const RELATIVE_GAIN = Object.freeze({
+    dialogueBernardo: 0.42,
+    dialogueGeneric: 0.42,
+    uiClick: 0.58,
+    uiBackClose: 0.62,
+    uiDeniedError: 0.62,
+    smallSuccess: 0.72,
+    handsawWood: 0.82,
+    workFood: 0.82,
+    workRock: 0.82,
+    buildPlace: 0.88,
+    bigReward: 1
+  });
+
   let assignmentMeowIndex = 0;
-  let lastDialogueVoiceIndex = -1;
-  let dialogueVoiceAudio = null;
   let musicAudio = null;
   let radioRequested = false;
   let radioTrackIndex = -1;
@@ -45,6 +65,18 @@
   let radioFailedTracks = 0;
   let radioPlaybackAttempt = 0;
   let radioFailureHandledAttempt = -1;
+  let audioContext = null;
+  let effectsGain = null;
+  let effectsVolume = 0.3;
+  let decodedCount = 0;
+  let playCount = 0;
+  let lastPlayed = null;
+  const effectBuffers = new Map();
+  const encodedPromises = new Map();
+  const decodePromises = new Map();
+  const preloadErrors = new Map();
+  const activeGroups = new Map();
+  let activeActivation = null;
 
   function clampVolume(value) {
     const number = Number(value);
@@ -52,30 +84,189 @@
     return Math.max(0, Math.min(1, number));
   }
 
-  function play(source, volume) {
+  function ensureEffectsContext() {
+    if (audioContext) return audioContext;
+    const AudioContextCtor = root.AudioContext || root.webkitAudioContext;
+    if (typeof AudioContextCtor !== "function") return null;
+    try {
+      try { audioContext = new AudioContextCtor({ latencyHint: "interactive" }); }
+      catch (error) { audioContext = new AudioContextCtor(); }
+      effectsGain = audioContext.createGain();
+      effectsGain.gain.value = effectsVolume;
+      effectsGain.connect(audioContext.destination);
+    } catch (error) {
+      audioContext = null;
+      effectsGain = null;
+    }
+    return audioContext;
+  }
+
+  function decodeEffect(context, key) {
+    if (effectBuffers.has(key)) return Promise.resolve(effectBuffers.get(key));
+    if (decodePromises.has(key)) return decodePromises.get(key);
+    if (!encodedPromises.has(key)) {
+      const encoded = root.fetch(SOURCES[key], { cache: "force-cache" })
+        .then(function(response) {
+          if (!response.ok) throw new Error("Unable to preload " + SOURCES[key]);
+          return response.arrayBuffer();
+        })
+        .catch(function(error) {
+          encodedPromises.delete(key);
+          throw error;
+        });
+      encodedPromises.set(key, encoded);
+    }
+    const pending = encodedPromises.get(key)
+      .then(function(bytes) {
+        const decodable = bytes && typeof bytes.slice === "function" ? bytes.slice(0) : bytes;
+        return context.decodeAudioData(decodable);
+      })
+      .then(function(buffer) {
+        if (!effectBuffers.has(key)) {
+          effectBuffers.set(key, buffer);
+          decodedCount += 1;
+        }
+        preloadErrors.delete(key);
+        return buffer;
+      })
+      .catch(function(error) {
+        preloadErrors.set(key, error && error.message ? error.message : String(error));
+        return null;
+      })
+      .then(function(result) {
+        decodePromises.delete(key);
+        return result;
+      });
+    decodePromises.set(key, pending);
+    return pending;
+  }
+
+  function preloadShortEffects() {
+    const context = ensureEffectsContext();
+    if (!context || typeof root.fetch !== "function") return Promise.resolve(false);
+    return Promise.all(SHORT_EFFECT_KEYS.map(function(key) {
+      return decodeEffect(context, key);
+    })).then(function() { return effectBuffers.size > 0; });
+  }
+
+  function resumeShortEffects() {
+    const context = ensureEffectsContext();
+    if (!context || context.state !== "suspended" || typeof context.resume !== "function") {
+      return preloadShortEffects().then(function() { return Boolean(context); });
+    }
+    const promise = context.resume();
+    return promise && typeof promise.catch === "function"
+      ? promise.then(function() {
+          return preloadShortEffects().then(function() { return true; });
+        }).catch(function() { return false; })
+      : Promise.resolve(true);
+  }
+
+  function stopGroup(group) {
+    const active = activeGroups.get(group);
+    if (!active) return;
+    try { active.stop(); } catch (error) {}
+    if (typeof active.pause === "function") active.pause();
+    try { if (typeof active.currentTime === "number") active.currentTime = 0; } catch (error) {}
+    activeGroups.delete(group);
+  }
+
+  function playHtmlFallback(key, relativeGain, group) {
     if (typeof root.Audio !== "function") return null;
-    const audio = new root.Audio(source);
+    if (group) stopGroup(group);
+    const audio = new root.Audio(SOURCES[key]);
     audio.preload = "auto";
-    audio.volume = clampVolume(volume);
+    audio.volume = clampVolume(effectsVolume * relativeGain);
+    if (group) activeGroups.set(group, audio);
     const promise = audio.play();
     if (promise && typeof promise.catch === "function") promise.catch(function() {});
     return audio;
   }
 
-  function playDialogueVoice(volume) {
-    const choices = SOURCES.dialogueVoices.map(function(source, index) {
-      return { source: source, index: index };
-    }).filter(function(choice) {
-      return choice.index !== lastDialogueVoiceIndex;
-    });
-    if (!choices.length) return;
-    const selected = choices[Math.floor(Math.random() * choices.length)];
-    lastDialogueVoiceIndex = selected.index;
-    if (dialogueVoiceAudio) {
-      dialogueVoiceAudio.pause();
-      try { dialogueVoiceAudio.currentTime = 0; } catch (error) {}
+  function markSpecializedActivation() {
+    if (activeActivation) activeActivation.specialized = true;
+  }
+
+  function playEffect(key, volume, options) {
+    if (!SOURCES[key] || key === "radioPlaylist") return null;
+    effectsVolume = clampVolume(volume === undefined ? effectsVolume : volume);
+    if (effectsGain) effectsGain.gain.value = effectsVolume;
+    const config = options || {};
+    playCount += 1;
+    lastPlayed = key;
+    const relativeGain = RELATIVE_GAIN[key] === undefined ? 0.78 : RELATIVE_GAIN[key];
+    if (config.specialized !== false) markSpecializedActivation();
+    const context = ensureEffectsContext();
+    const buffer = effectBuffers.get(key);
+    if (!context || !effectsGain || !buffer || context.state === "closed") {
+      return playHtmlFallback(key, relativeGain, config.group);
     }
-    dialogueVoiceAudio = play(selected.source, volume);
+    if (context.state === "suspended") resumeShortEffects();
+    if (config.group) stopGroup(config.group);
+    const source = context.createBufferSource();
+    const sourceGain = context.createGain();
+    source.buffer = buffer;
+    sourceGain.gain.value = relativeGain;
+    source.connect(sourceGain);
+    sourceGain.connect(effectsGain);
+    if (config.group) {
+      activeGroups.set(config.group, source);
+      source.onended = function() {
+        if (activeGroups.get(config.group) === source) activeGroups.delete(config.group);
+      };
+    }
+    source.start(0);
+    return source;
+  }
+
+  function setEffectsVolume(volume) {
+    effectsVolume = clampVolume(volume);
+    if (effectsGain) effectsGain.gain.value = effectsVolume;
+  }
+
+  function eventControl(event) {
+    if (!event || !event.target || typeof event.target.closest !== "function") return null;
+    return event.target.closest("button, [role=button], [role=tab], [data-clavier-clic], input[type=button], input[type=submit]");
+  }
+
+  function isBackControl(control) {
+    if (!control) return false;
+    if (control.dataset && control.dataset.audioSemantic === "back") return true;
+    const classes = String(control.className || "");
+    const label = String(control.getAttribute && control.getAttribute("aria-label") || "")
+      + " " + String(control.textContent || "");
+    return /(?:^|\s)(?:explo-modal-close|book-learning-close|work-confirm-cancel|camp-prototype-placement-cancel|exploration-mobile-back|bird-skip-btn)(?:\s|$)/.test(classes)
+      || /\b(?:close|back|cancel|dismiss|give up|leave)\b/i.test(label);
+  }
+
+  function isGenericControl(control) {
+    if (!control || control.disabled || control.getAttribute("aria-disabled") === "true") return false;
+    if (control.dataset && control.dataset.audioSemantic === "none") return false;
+    return true;
+  }
+
+  function installActivationOwner() {
+    const document = root.document;
+    if (!document || typeof document.addEventListener !== "function") return;
+    ["pointerdown", "touchstart", "keydown"].forEach(function(eventName) {
+      document.addEventListener(eventName, resumeShortEffects, { capture: true, passive: true });
+    });
+    document.addEventListener("click", function(event) {
+      resumeShortEffects();
+      activeActivation = { event: event, specialized: false };
+    }, true);
+    document.addEventListener("click", function(event) {
+      const activation = activeActivation;
+      const control = eventControl(event);
+      Promise.resolve().then(function() {
+        if (activeActivation === activation) activeActivation = null;
+        if (!activation || activation.specialized || !isGenericControl(control)) return;
+        playEffect(isBackControl(control) ? "uiBackClose" : "uiClick", effectsVolume, { specialized: false });
+      });
+    }, false);
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") preloadShortEffects();
+    });
   }
 
   function buildRadioDeck() {
@@ -121,9 +312,7 @@
     audio.preload = "auto";
     const attempt = ++radioPlaybackAttempt;
     const promise = audio.play();
-    if (promise && typeof promise.catch === "function") {
-      promise.catch(function() { handleRadioFailure(attempt); });
-    }
+    if (promise && typeof promise.catch === "function") promise.catch(function() { handleRadioFailure(attempt); });
     return true;
   }
 
@@ -136,9 +325,7 @@
         radioFailedTracks = 0;
         advanceRadio(musicAudio.volume);
       });
-      musicAudio.addEventListener("error", function() {
-        handleRadioFailure(radioPlaybackAttempt);
-      });
+      musicAudio.addEventListener("error", function() { handleRadioFailure(radioPlaybackAttempt); });
     }
     musicAudio.volume = clampVolume(volume);
     return musicAudio;
@@ -168,49 +355,53 @@
   function setMusicVolume(volume) {
     const value = clampVolume(volume);
     const audio = musicAudio ? ensureMusic(value) : null;
-    if (!audio) return;
-    audio.volume = value;
+    if (audio) audio.volume = value;
   }
 
   CatInc.audio = Object.freeze({
     sources: SOURCES,
+    shortEffectKeys: SHORT_EFFECT_KEYS,
+    preloadShortEffects: preloadShortEffects,
+    resumeShortEffects: resumeShortEffects,
+    setEffectsVolume: setEffectsVolume,
+    playSemantic: function(key, volume) { return playEffect(key, volume); },
     playCatAssignment: function(volume) {
-      var meow = assignmentMeowIndex === 0 ? SOURCES.meowNormal : SOURCES.meowStrong;
+      const meow = assignmentMeowIndex === 0 ? "meowNormal" : "meowStrong";
       assignmentMeowIndex = assignmentMeowIndex === 0 ? 1 : 0;
-      play(meow, volume);
+      playEffect(meow, volume);
     },
-    playCatMeow: function(volume) {
-      play(SOURCES.meowPurr, volume);
+    playCatMeow: function(volume) { playEffect("meowPurr", volume); },
+    playBirdWingFlaps: function(volume) { playEffect("birdWingFlaps", volume); },
+    playExplorationReveal: function(volume) { playEffect("explorationReveal", volume); },
+    playRewardChest: function(volume) { playEffect("rewardChest", volume); },
+    playRepair: function(volume) { playEffect("repair", volume); },
+    playHandsawWood: function(volume) { playEffect("handsawWood", volume); },
+    playWorkFood: function(volume) { playEffect("workFood", volume); },
+    playWorkRock: function(volume) { playEffect("workRock", volume); },
+    playBuildPlace: function(volume) { playEffect("buildPlace", volume); },
+    playDenied: function(volume) { playEffect("uiDeniedError", volume); },
+    playSmallSuccess: function(volume) { playEffect("smallSuccess", volume); },
+    playBigReward: function(volume) { playEffect("bigReward", volume); },
+    playDialogueVoice: function(speakerId, volume) {
+      playEffect(speakerId === "bernardo" ? "dialogueBernardo" : "dialogueGeneric", volume, { group: "dialogue" });
     },
-    playBirdWingFlaps: function(volume) {
-      play(SOURCES.birdWingFlaps, volume);
-    },
-    playExplorationReveal: function(volume) {
-      play(SOURCES.explorationReveal, volume);
-    },
-    playRewardChest: function(volume) {
-      play(SOURCES.rewardChest, volume);
-    },
-    playRepair: function(volume) {
-      play(SOURCES.repair, volume);
-    },
-    playHandsawWood: function(volume) {
-      play(SOURCES.handsawWood, volume);
-    },
-    playDialogueVoice: function(volume) {
-      playDialogueVoice(volume);
-    },
-    startRadio: function(volume) {
-      return startRadio(volume);
-    },
-    stopRadio: function() {
-      stopRadio();
-    },
-    isRadioOn: function() {
-      return radioRequested;
-    },
-    setMusicVolume: function(volume) {
-      setMusicVolume(volume);
+    startRadio: startRadio,
+    stopRadio: stopRadio,
+    isRadioOn: function() { return radioRequested; },
+    setMusicVolume: setMusicVolume,
+    getShortEffectStatus: function() {
+      return Object.freeze({
+        backend: audioContext ? "web-audio" : "html-audio-fallback",
+        contextState: audioContext ? audioContext.state : "unavailable",
+        decoded: decodedCount,
+        expected: SHORT_EFFECT_KEYS.length,
+        playCount: playCount,
+        lastPlayed: lastPlayed,
+        preloadFailures: preloadErrors.size,
+        preloadError: preloadErrors.size ? Array.from(preloadErrors.values())[0] : null
+      });
     }
   });
+  installActivationOwner();
+  preloadShortEffects();
 })(typeof window !== "undefined" ? window : globalThis);
