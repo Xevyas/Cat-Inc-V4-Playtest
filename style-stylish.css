@@ -561,7 +561,8 @@ body[data-ui-theme="stylish"] #contenu-inventaire .inv-secondary-tabs {
   padding: 2px 2px 0;
 }
 body[data-ui-theme="stylish"] #contenu-inventaire .inv-secondary-tab,
-body[data-ui-theme="stylish"] #contenu-work .btn-filtre-work {
+body[data-ui-theme="stylish"] #contenu-work .btn-filtre-work,
+body[data-ui-theme="stylish"] > .work-subnav .btn-filtre-work {
   flex: 0 0 auto;
   font-family: var(--font-family-ui);
   font-size: .74rem;
@@ -573,7 +574,8 @@ body[data-ui-theme="stylish"] #contenu-work .btn-filtre-work {
   scroll-margin-inline: 2px;
 }
 body[data-ui-theme="stylish"] #contenu-inventaire .inv-secondary-tab.inv-res-tab-actif,
-body[data-ui-theme="stylish"] #contenu-work .btn-filtre-work-actif {
+body[data-ui-theme="stylish"] #contenu-work .btn-filtre-work-actif,
+body[data-ui-theme="stylish"] > .work-subnav .btn-filtre-work-actif {
   background: transparent;
   border-bottom-color: #98612d;
   color: #513b2b;

@@ -1944,6 +1944,40 @@
       }
     },
     {
+      "id": "ecran-story-right-house",
+      "name": "The Other Neighbors Are Leaving",
+      "flag": "storyRightHouseEvacuationVue",
+      "trigger": "The gang reaches twenty Cats.",
+      "closeButton": {
+        "label": "See what changed next door!",
+        "handler": "ouvrirScoutingVoisinDroitDepuisStory()",
+        "actionSummary": "Open Exploration and focus the changed Scouting at the right neighbor's house."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "The neighbors on the right have left. Their property has gone completely quiet."
+        },
+        {
+          "classes": [],
+          "speakerClass": "luna",
+          "speakerName": "Luna",
+          "portraitClass": "luna",
+          "html": "Then searching their trash the old way will not make much sense anymore."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernardPresetHappy",
+          "html": "Exactly. A quiet property may attract small prey. We should scout the area differently."
+        }
+      ]
+    },
+    {
       "id": "ecran-story-6a",
       "name": "What's that thing?",
       "flag": "story6aVue",

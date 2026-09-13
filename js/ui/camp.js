@@ -1653,7 +1653,6 @@
       }
       const sticker = item.sticker ? normaliserStickerSelection(item.sticker, type) : null;
       if (sticker) normalise.sticker = sticker;
-      if (item.animationDisabled === true) normalise.animationDisabled = true;
       layout.push(normalise);
     });
     return layout;

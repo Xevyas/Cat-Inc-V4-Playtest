@@ -190,6 +190,7 @@ function creerEtatInitial() {
   explorationRetries: { zones: {}, campaigns: {} }, // Capped failure counts by canonical activity ID.
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
   butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, tripled, rewards } }
+  scoutingsNouveauxNonVus: [], // Sparse acknowledgement IDs; availability stays derived from Stories.
   managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null },
   managersDebloques:   false,
   managerRoleTutorialShown: false,

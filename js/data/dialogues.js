@@ -38,6 +38,7 @@
     Object.freeze({ id: "ecran-story-first-expedition", name: "Beyond the Fence", flag: "storyFirstExpeditionVue", asset: Object.freeze({ type: "icon", src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo planning the first expedition." }) }),
     Object.freeze({ id: "ecran-story-house-evacuation", name: "They Built a Camp", flag: "storyHouseEvacuationVue" }),
     Object.freeze({ id: "ecran-story-left-house", name: "The Neighbors Are Leaving", flag: "storyLeftHouseEvacuationVue" }),
+    Object.freeze({ id: "ecran-story-right-house", name: "The Other Neighbors Are Leaving", flag: "storyRightHouseEvacuationVue" }),
     Object.freeze({ id: "ecran-story-6a", name: "What's that thing?", flag: "story6aVue", asset: Object.freeze({ type: "icon", src: "img/resources/Books_Final.png", alt: "A mysterious book found during scouting." }) }),
     Object.freeze({ id: "ecran-story-6b", name: "A job for everyone", flag: "story6bVue", asset: Object.freeze({ type: "illustration", src: "img/Story scenes/Story 6b.webp", alt: "Bernardo studies charts and diagrams in an open book." }) }),
     Object.freeze({ id: "ecran-story-salad", name: "Chef's kiss", flag: "storySaladVue", asset: Object.freeze({ type: "icon", src: "img/resources/Catnip Salad_Final.png", alt: "A freshly prepared Catnip Salad." }) }),

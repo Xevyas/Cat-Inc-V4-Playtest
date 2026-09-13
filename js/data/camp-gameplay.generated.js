@@ -34,6 +34,9 @@
     "appealPerLevel": 1
   },
   "generalRules": {
+    "catLeveling": {
+      "xpGrowthExponent": 2.1
+    },
     "recruitment": {
       "authoredBaseSeconds": {
         "3": 60,

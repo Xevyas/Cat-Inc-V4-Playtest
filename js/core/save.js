@@ -207,8 +207,8 @@ function normaliserLayoutStickersSauvegarde(layout) {
     const sticker = normaliserStickerSelectionSauvegarde(copy.sticker);
     if (sticker) copy.sticker = sticker;
     else delete copy.sticker;
-    if (copy.animationDisabled === true) copy.animationDisabled = true;
-    else delete copy.animationDisabled;
+    // Drop the retired per-instance animation preference from legacy saves.
+    delete copy.animationDisabled;
     return copy;
   });
 }
@@ -304,7 +304,7 @@ function validerStructureSauvegarde(d) {
 
   const champsTableaux = [
     "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies",
-    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden",
+    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden", "scoutingsNouveauxNonVus",
     "batimentsCampRepares"
   ];
 
@@ -428,7 +428,7 @@ function validerStructureSauvegarde(d) {
     return "Invalid cathouse history.";
   }
 
-  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden"];
+  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden", "scoutingsNouveauxNonVus"];
   for (const cle of champsTableauxDeChaines) {
     if (d[cle] && !d[cle].every(function(valeur) { return typeof valeur === "string"; })) {
       return "Invalid entries in field: " + cle + ".";
@@ -1126,6 +1126,7 @@ function analyserSauvegardeBrute(raw) {
     explorationRetries: normaliserExplorationRetries(etat.explorationRetries, etat),
     scoutingsEnCours:    etat.scoutingsEnCours,
     butinsScouting:      etat.butinsScouting,
+    scoutingsNouveauxNonVus: etat.scoutingsNouveauxNonVus,
     managers:            etat.managers,
     managersDebloques:   etat.managersDebloques,
     managerRoleTutorialShown: etat.managerRoleTutorialShown,
@@ -1442,6 +1443,10 @@ function analyserSauvegardeBrute(raw) {
   etat.explorationRetries = normaliserExplorationRetries(d.explorationRetries, etat);
   etat.scoutingsEnCours    = d.scoutingsEnCours    || {};
   etat.butinsScouting      = d.butinsScouting      || {};
+  const scoutingIds = new Set(Object.keys((CatInc.data && CatInc.data.exploration && CatInc.data.exploration.scoutings) || {}));
+  etat.scoutingsNouveauxNonVus = Array.isArray(d.scoutingsNouveauxNonVus)
+    ? Array.from(new Set(d.scoutingsNouveauxNonVus.filter(function(id) { return scoutingIds.has(id); })))
+    : [];
   Object.values(etat.butinsScouting).forEach(function(butin) {
     if (!Number.isInteger(butin.tripled) || butin.tripled < 0) butin.tripled = 0;
     butin.rewards = Object.keys(butin.rewards || {}).reduce(function(rewards, rewardId) {
@@ -1491,6 +1496,7 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1 || (d.objectifsComplis || []).includes("tenPlanks"));
     ajouterStory("storyHouseEvacuationVue", chatons >= 15);
     ajouterStory("storyLeftHouseEvacuationVue", chatons >= 17);
+    ajouterStory("storyRightHouseEvacuationVue", chatons >= 20);
     ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
     ajouterStory("story6bVue", itemsAppris.includes("schoolGuide") || !!d.jobCenterDebloque || !!d.jobCenterConstruit);
     ajouterStory("storySaladVue", !!d.premiereSaladeFaite);

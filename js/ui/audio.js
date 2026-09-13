@@ -68,6 +68,9 @@
   let audioContext = null;
   let effectsGain = null;
   let effectsVolume = 0.3;
+  let musicSource = null;
+  let musicGain = null;
+  let musicVolume = 0.3;
   let decodedCount = 0;
   let playCount = 0;
   let lastPlayed = null;
@@ -85,7 +88,7 @@
   }
 
   function ensureEffectsContext() {
-    if (audioContext) return audioContext;
+    if (audioContext && audioContext.state !== "closed") return audioContext;
     const AudioContextCtor = root.AudioContext || root.webkitAudioContext;
     if (typeof AudioContextCtor !== "function") return null;
     try {
@@ -101,27 +104,41 @@
     return audioContext;
   }
 
+  function fetchEffect(key) {
+    if (encodedPromises.has(key)) return encodedPromises.get(key);
+    if (typeof root.fetch !== "function") return Promise.resolve(null);
+    const encoded = root.fetch(SOURCES[key], { cache: "force-cache" })
+      .then(function(response) {
+        if (!response.ok) throw new Error("Unable to preload " + SOURCES[key]);
+        return response.arrayBuffer();
+      })
+      .catch(function(error) {
+        encodedPromises.delete(key);
+        preloadErrors.set(key, error && error.message ? error.message : String(error));
+        return null;
+      });
+    encodedPromises.set(key, encoded);
+    return encoded;
+  }
+
+  function preloadEncodedEffects() {
+    if (typeof root.fetch !== "function") return Promise.resolve(false);
+    return Promise.all(SHORT_EFFECT_KEYS.map(fetchEffect)).then(function(results) {
+      return results.some(Boolean);
+    });
+  }
+
   function decodeEffect(context, key) {
     if (effectBuffers.has(key)) return Promise.resolve(effectBuffers.get(key));
     if (decodePromises.has(key)) return decodePromises.get(key);
-    if (!encodedPromises.has(key)) {
-      const encoded = root.fetch(SOURCES[key], { cache: "force-cache" })
-        .then(function(response) {
-          if (!response.ok) throw new Error("Unable to preload " + SOURCES[key]);
-          return response.arrayBuffer();
-        })
-        .catch(function(error) {
-          encodedPromises.delete(key);
-          throw error;
-        });
-      encodedPromises.set(key, encoded);
-    }
-    const pending = encodedPromises.get(key)
+    const pending = fetchEffect(key)
       .then(function(bytes) {
+        if (!bytes) return null;
         const decodable = bytes && typeof bytes.slice === "function" ? bytes.slice(0) : bytes;
         return context.decodeAudioData(decodable);
       })
       .then(function(buffer) {
+        if (!buffer) return null;
         if (!effectBuffers.has(key)) {
           effectBuffers.set(key, buffer);
           decodedCount += 1;
@@ -142,24 +159,35 @@
   }
 
   function preloadShortEffects() {
-    const context = ensureEffectsContext();
-    if (!context || typeof root.fetch !== "function") return Promise.resolve(false);
-    return Promise.all(SHORT_EFFECT_KEYS.map(function(key) {
-      return decodeEffect(context, key);
-    })).then(function() { return effectBuffers.size > 0; });
+    return preloadEncodedEffects().then(function() {
+      const context = audioContext && audioContext.state !== "closed" ? audioContext : null;
+      if (!context) return false;
+      return Promise.all(SHORT_EFFECT_KEYS.map(function(key) {
+        return decodeEffect(context, key);
+      })).then(function() { return effectBuffers.size > 0; });
+    });
   }
 
   function resumeShortEffects() {
     const context = ensureEffectsContext();
-    if (!context || context.state !== "suspended" || typeof context.resume !== "function") {
-      return preloadShortEffects().then(function() { return Boolean(context); });
+    if (!context) return Promise.resolve(false);
+
+    // Creating and starting a silent source inside the trusted activation stack
+    // unlocks Web Audio on WebKit without coupling SFX to the Radio element.
+    if ((context.state === "suspended" || context.state === "interrupted")
+      && typeof context.createBuffer === "function") {
+      try {
+        const unlockSource = context.createBufferSource();
+        unlockSource.buffer = context.createBuffer(1, 1, 22050);
+        unlockSource.connect(context.destination);
+        unlockSource.start(0);
+      } catch (error) {}
     }
-    const promise = context.resume();
-    return promise && typeof promise.catch === "function"
-      ? promise.then(function() {
-          return preloadShortEffects().then(function() { return true; });
-        }).catch(function() { return false; })
-      : Promise.resolve(true);
+    const needsResume = context.state === "suspended" || context.state === "interrupted";
+    const resumed = needsResume && typeof context.resume === "function" ? context.resume() : null;
+    return Promise.resolve(resumed).then(function() {
+      return preloadShortEffects().then(function() { return context.state !== "closed"; });
+    }).catch(function() { return false; });
   }
 
   function stopGroup(group) {
@@ -196,12 +224,12 @@
     lastPlayed = key;
     const relativeGain = RELATIVE_GAIN[key] === undefined ? 0.78 : RELATIVE_GAIN[key];
     if (config.specialized !== false) markSpecializedActivation();
-    const context = ensureEffectsContext();
+    const context = audioContext;
     const buffer = effectBuffers.get(key);
     if (!context || !effectsGain || !buffer || context.state === "closed") {
       return playHtmlFallback(key, relativeGain, config.group);
     }
-    if (context.state === "suspended") resumeShortEffects();
+    if (context.state === "suspended" || context.state === "interrupted") resumeShortEffects();
     if (config.group) stopGroup(config.group);
     const source = context.createBufferSource();
     const sourceGain = context.createGain();
@@ -265,7 +293,7 @@
       });
     }, false);
     document.addEventListener("visibilitychange", function() {
-      if (document.visibilityState === "visible") preloadShortEffects();
+      if (document.visibilityState === "visible") preloadEncodedEffects();
     });
   }
 
@@ -296,7 +324,7 @@
     if (!radioRequested || attempt !== radioPlaybackAttempt || radioFailureHandledAttempt === attempt) return;
     radioFailureHandledAttempt = attempt;
     radioFailedTracks += 1;
-    advanceRadio(musicAudio ? musicAudio.volume : 0);
+    advanceRadio(musicVolume);
   }
 
   function advanceRadio(volume) {
@@ -318,17 +346,46 @@
 
   function ensureMusic(volume) {
     if (typeof root.Audio !== "function") return null;
+    musicVolume = clampVolume(volume);
     if (!musicAudio) {
       musicAudio = new root.Audio();
       musicAudio.preload = "none";
       musicAudio.addEventListener("ended", function() {
         radioFailedTracks = 0;
-        advanceRadio(musicAudio.volume);
+        advanceRadio(musicVolume);
       });
       musicAudio.addEventListener("error", function() { handleRadioFailure(radioPlaybackAttempt); });
     }
-    musicAudio.volume = clampVolume(volume);
+    ensureMusicGain();
+    applyMusicVolume();
     return musicAudio;
+  }
+
+  function ensureMusicGain() {
+    if (!musicAudio || musicGain) return Boolean(musicGain);
+    const context = audioContext || ensureEffectsContext();
+    if (!context || typeof context.createMediaElementSource !== "function") return false;
+    try {
+      musicSource = context.createMediaElementSource(musicAudio);
+      musicGain = context.createGain();
+      musicSource.connect(musicGain);
+      musicGain.connect(context.destination);
+      return true;
+    } catch (error) {
+      musicSource = null;
+      musicGain = null;
+      return false;
+    }
+  }
+
+  function applyMusicVolume() {
+    if (!musicAudio) return;
+    if (musicGain) {
+      musicGain.gain.value = musicVolume;
+      musicAudio.volume = 1;
+      return;
+    }
+    musicAudio.volume = musicVolume;
   }
 
   function startRadio(volume) {
@@ -353,9 +410,11 @@
   }
 
   function setMusicVolume(volume) {
-    const value = clampVolume(volume);
-    const audio = musicAudio ? ensureMusic(value) : null;
-    if (audio) audio.volume = value;
+    musicVolume = clampVolume(volume);
+    if (musicAudio) {
+      ensureMusicGain();
+      applyMusicVolume();
+    }
   }
 
   CatInc.audio = Object.freeze({
@@ -398,10 +457,12 @@
         playCount: playCount,
         lastPlayed: lastPlayed,
         preloadFailures: preloadErrors.size,
-        preloadError: preloadErrors.size ? Array.from(preloadErrors.values())[0] : null
+        preloadError: preloadErrors.size ? Array.from(preloadErrors.values())[0] : null,
+        musicBackend: musicGain ? "web-audio-gain" : "html-audio-volume",
+        musicVolume: musicVolume
       });
     }
   });
   installActivationOwner();
-  preloadShortEffects();
+  preloadEncodedEffects();
 })(typeof window !== "undefined" ? window : globalThis);

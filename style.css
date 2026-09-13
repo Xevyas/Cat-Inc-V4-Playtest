@@ -6556,17 +6556,6 @@ body.camp-cat-icons-hidden .camp-cat-idle-zzz { display: none; }
 .camp-prototype-animation-replaces-base > .camp-prototype-building-sprite {
   visibility: hidden;
 }
-.camp-animation-toggle-action span { font-size: 1.25rem; line-height: 1; }
-.camp-prototype-interaction-menu .camp-production-actions .camp-animation-toggle-action,
-.camp-prototype-interaction-menu .camp-house-actions .camp-animation-toggle-action {
-  width: 48px;
-  min-width: 48px;
-  min-height: 48px;
-  height: 48px;
-  padding: 0;
-  border-width: 2px;
-  border-radius: 10px;
-}
 @media (prefers-reduced-motion: reduce) {
   .camp-prototype-animation-overlay,
   .camp-prototype-animation-shadow { display: none; }
@@ -11689,6 +11678,14 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
 .carte-badge-reward { top: 5px; right: 5px; }
 .carte-badge-reward img { width: 21px; height: 21px; object-fit: contain; }
 .carte-badge-failure { bottom: 5px; left: 5px; background: #fff0ee; }
+.carte-badge-new-scouting {
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #e84855;
+  color: #fff;
+  font-weight: 900;
+}
 .carte-nom         { font-size: 0.55rem; font-weight: 700; text-align: center; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 
 .carte-hint {
@@ -11723,6 +11720,23 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   margin-bottom: 14px;
   background: #fdfaf6;
 }
+.explo-card.scouting-new { border-color: #e84855; box-shadow: 0 0 0 2px rgba(232, 72, 85, 0.12); }
+.explo-card.scouting-legacy { border-style: dashed; }
+.scouting-new-badge,
+.scouting-new-inline {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: #e84855;
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+}
+.scouting-new-badge { cursor: pointer; vertical-align: middle; }
 
 .explo-nom {
   font-size: 0.82rem;

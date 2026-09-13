@@ -390,13 +390,13 @@
     "searchRightHouse": {
       "id": "searchRightHouse",
       "nom": "Search the house",
-      "description": "There may be useful things inside, but a human is still home.",
+      "description": "This house Campaign is not available yet.",
       "difficulte": 0,
       "duree": 0,
       "slots": 2,
       "recompense": null,
       "zone": "E1",
-      "lockedReason": "Human inside the house. Your cats can't search it yet."
+      "lockedReason": "This Campaign is not available yet."
     },
     "searchLeftNeighborTrash": {
       "id": "searchLeftNeighborTrash",
@@ -612,7 +612,34 @@
         }
       ],
       "zone": "D1",
-      "unlockCampaign": "checkTheTrash"
+      "unlockCampaign": "checkTheTrash",
+      "availableUntilStory": "storyHouseEvacuationVue"
+    },
+    "huntAroundEmptyHome": {
+      "id": "huntAroundEmptyHome",
+      "nom": "Hunt around the empty house",
+      "description": "Search the quiet property for small prey and anything the humans left behind.",
+      "difficulte": 1,
+      "duree": 600,
+      "slots": 1,
+      "recompense": "humanLeftovers",
+      "recompenseRange": [
+        {
+          "qty": 1,
+          "weight": 70
+        },
+        {
+          "qty": 2,
+          "weight": 20
+        },
+        {
+          "qty": 3,
+          "weight": 10
+        }
+      ],
+      "zone": "D1",
+      "unlockCampaign": "checkTheTrash",
+      "unlockAfterStory": "storyHouseEvacuationVue"
     },
     "searchNeighborTrashAgain": {
       "id": "searchNeighborTrashAgain",
@@ -637,7 +664,34 @@
         }
       ],
       "zone": "E1",
-      "unlockCampaign": "searchNeighborTrash"
+      "unlockCampaign": "searchNeighborTrash",
+      "availableUntilStory": "storyRightHouseEvacuationVue"
+    },
+    "huntAroundEmptyRightHouse": {
+      "id": "huntAroundEmptyRightHouse",
+      "nom": "Hunt around the empty right house",
+      "description": "Search the quiet property for small prey and anything the neighbors left behind.",
+      "difficulte": 15,
+      "duree": 1200,
+      "slots": 1,
+      "recompense": "humanLeftovers",
+      "recompenseRange": [
+        {
+          "qty": 1,
+          "weight": 70
+        },
+        {
+          "qty": 2,
+          "weight": 20
+        },
+        {
+          "qty": 3,
+          "weight": 10
+        }
+      ],
+      "zone": "E1",
+      "unlockCampaign": "searchNeighborTrash",
+      "unlockAfterStory": "storyRightHouseEvacuationVue"
     },
     "searchLeftNeighborTrashAgain": {
       "id": "searchLeftNeighborTrashAgain",
@@ -662,7 +716,34 @@
         }
       ],
       "zone": "C1",
-      "unlockCampaign": "searchLeftNeighborTrash"
+      "unlockCampaign": "searchLeftNeighborTrash",
+      "availableUntilStory": "storyLeftHouseEvacuationVue"
+    },
+    "huntAroundEmptyLeftHouse": {
+      "id": "huntAroundEmptyLeftHouse",
+      "nom": "Hunt around the empty left house",
+      "description": "Search the quiet property for small prey and anything the neighbors left behind.",
+      "difficulte": 15,
+      "duree": 1200,
+      "slots": 1,
+      "recompense": "humanLeftovers",
+      "recompenseRange": [
+        {
+          "qty": 1,
+          "weight": 70
+        },
+        {
+          "qty": 2,
+          "weight": 20
+        },
+        {
+          "qty": 3,
+          "weight": 10
+        }
+      ],
+      "zone": "C1",
+      "unlockCampaign": "searchLeftNeighborTrash",
+      "unlockAfterStory": "storyLeftHouseEvacuationVue"
     },
     "searchBasementAgain": {
       "id": "searchBasementAgain",

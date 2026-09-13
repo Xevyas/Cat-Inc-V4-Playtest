@@ -106,6 +106,7 @@ const campPrototypeApi = globalThis.CatInc.camp;
 const campCapabilitiesApi = globalThis.CatInc.campCapabilities;
 const campGameplayData = globalThis.CatInc.data.campGameplay;
 const CAMP_GENERAL_RULES = campGameplayData.generalRules;
+const CAMP_CAT_LEVELING_RULES = CAMP_GENERAL_RULES.catLeveling;
 const CAMP_RECRUITMENT_RULES = CAMP_GENERAL_RULES.recruitment;
 const CAMP_AFK_RULES = CAMP_GENERAL_RULES.afk;
 const CAMP_UNIQUE_ITEM_DEFINITIONS = Object.freeze(campGameplayData.uniqueItems || {});
@@ -1422,6 +1423,54 @@ function chatonsLibres() { return etat.chatons - totalAlloue() - chatonsEnExplo(
 function scoutingDebloquee(scoutingDef) {
   if (scoutingDef.unlockCampaign && !etat.campaignsCompletees.includes(scoutingDef.unlockCampaign)) return false;
   if (scoutingDef.zone && !etat.zonesExplorees.includes(scoutingDef.zone)) return false;
+  if (scoutingDef.unlockAfterStory && !storyEstVue(scoutingDef.unlockAfterStory)) return false;
+  if (scoutingDef.availableUntilStory && storyEstVue(scoutingDef.availableUntilStory)) return false;
+  return true;
+}
+
+const SCOUTING_STORY_TRANSITIONS = Object.freeze({
+  storyHouseEvacuationVue: Object.freeze({ outgoing: "searchTrashAgain", incoming: "huntAroundEmptyHome" }),
+  storyLeftHouseEvacuationVue: Object.freeze({ outgoing: "searchLeftNeighborTrashAgain", incoming: "huntAroundEmptyLeftHouse" }),
+  storyRightHouseEvacuationVue: Object.freeze({ outgoing: "searchNeighborTrashAgain", incoming: "huntAroundEmptyRightHouse" })
+});
+
+function scoutingsNouveauxNonVus() {
+  if (!Array.isArray(etat.scoutingsNouveauxNonVus)) etat.scoutingsNouveauxNonVus = [];
+  return etat.scoutingsNouveauxNonVus;
+}
+
+function scoutingNouveauNonVu(scoutingId) {
+  return scoutingsNouveauxNonVus().includes(scoutingId) && !!CONFIG.scoutings[scoutingId]
+    && scoutingDebloquee(CONFIG.scoutings[scoutingId]);
+}
+
+function zoneAvecNouveauScouting(zoneId) {
+  return scoutingsNouveauxNonVus().some(function(scoutingId) {
+    const scouting = CONFIG.scoutings[scoutingId];
+    return scouting && scouting.zone === zoneId && scoutingDebloquee(scouting);
+  });
+}
+
+function enregistrerTransitionScoutingStory(flag) {
+  const transition = SCOUTING_STORY_TRANSITIONS[flag];
+  if (!transition) return false;
+  if (typeof scoutingsStagingKitty !== "undefined") delete scoutingsStagingKitty[transition.outgoing];
+  const nouveaux = scoutingsNouveauxNonVus();
+  if (!nouveaux.includes(transition.incoming)) nouveaux.push(transition.incoming);
+  carteDirty = true;
+  exploTabDirty = true;
+  return true;
+}
+
+function accuserVueNouveauScouting(scoutingId) {
+  const nouveaux = scoutingsNouveauxNonVus();
+  const index = nouveaux.indexOf(scoutingId);
+  if (index < 0) return false;
+  nouveaux.splice(index, 1);
+  carteDirty = true;
+  exploTabDirty = true;
+  sauvegarder();
+  rendu();
   return true;
 }
 
@@ -1540,7 +1589,8 @@ function terminerScouting(scoutingId) {
   var def = CONFIG.scoutings[scoutingId];
   var sc  = etat.scoutingsEnCours[scoutingId];
   if (!def || !sc) return;
-  var runCount = Math.max(1, Math.floor(runs || 1));
+  var disponibleApresRun = scoutingDebloquee(def);
+  var runCount = disponibleApresRun ? Math.max(1, Math.floor(runs || 1)) : 1;
   var butin = obtenirButinScouting(scoutingId);
   var dailySuccesses = 0;
   for (var run = 0; run < runCount; run++) {
@@ -1575,14 +1625,18 @@ function terminerScouting(scoutingId) {
   ajouterLog("event", runCount + " scouting run" + (runCount === 1 ? "" : "s")
     + " completed for " + def.nom + ". "
     + (butinScoutingReclamable(butin) ? "Rewards are waiting on the map." : "No rewards were collected."));
-  // Auto-restart with the same kitty while preserving any elapsed remainder.
-  var restartDuree = scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree;
-  etat.scoutingsEnCours[scoutingId] = {
-    kittyIndex: sc.kittyIndex,
-    power: kittyEP(sc.kittyIndex),
-    startTs: sc.startTs + runCount * ((sc.duree !== undefined) ? sc.duree : def.duree) * 1000,
-    duree: restartDuree
-  };
+  if (disponibleApresRun) {
+    // Auto-restart with the same kitty while preserving any elapsed remainder.
+    var restartDuree = scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree;
+    etat.scoutingsEnCours[scoutingId] = {
+      kittyIndex: sc.kittyIndex,
+      power: kittyEP(sc.kittyIndex),
+      startTs: sc.startTs + runCount * ((sc.duree !== undefined) ? sc.duree : def.duree) * 1000,
+      duree: restartDuree
+    };
+  } else {
+    delete etat.scoutingsEnCours[scoutingId];
+  }
   carteDirty = true;
   exploTabDirty = true;
 }
@@ -1596,6 +1650,7 @@ function assignerKittyScouting(scoutingId, kittyIndex) {
   if (!autoriserActionTableOperationsCamp() || !kittyEligiblePourAffectationOrdinaire(kittyIndex)) return false;
   if (etat.scoutingsEnCours[scoutingId] || !etat.kittiesData[kittyIndex] || kittyIsBusy(kittyIndex)) return false;
   var def = CONFIG.scoutings[scoutingId];
+  if (!def || !scoutingDebloquee(def)) return false;
   var duree = def ? (scoutingHalveTime(kittyIndex) ? def.duree / 2 : def.duree) : 120;
   etat.scoutingsEnCours[scoutingId] = { kittyIndex: kittyIndex, power: kittyEP(kittyIndex), startTs: Date.now(), duree: duree };
   // The map badge is derived from the persisted running-scouting state. Mark
@@ -1628,7 +1683,10 @@ function lancerScouting(scoutingId) {
   var ki = scoutingsStagingKitty[scoutingId];
   if (ki === undefined) return;
   delete scoutingsStagingKitty[scoutingId];
-  assignerKittyScouting(scoutingId, ki);
+  if (!assignerKittyScouting(scoutingId, ki)) {
+    exploTabDirty = true;
+    renderCampaignCards();
+  }
 }
 
 function cardboardBoxesActivesCampPrototype() {
@@ -1902,7 +1960,7 @@ const GATHER_LEVEL_MULTIPLIER = 1.05;
 const MAX_CAT_LEVEL = 100;
 
 function xpPourNiveau(n) {
-  return Math.max(n + 1, Math.ceil(Math.pow(n, 1.7)));
+  return Math.max(n + 1, Math.ceil(Math.pow(n, CAMP_CAT_LEVELING_RULES.xpGrowthExponent)));
 }
 
 function productionParChaton(action) {
@@ -5870,9 +5928,12 @@ function actualiserIndicateursExploration() {
   if (!indicateur) return;
   const campaignReady = Object.values(etat.resultatsCampaigns).some(function(resultat) { return resultat.success; });
   const revealReady = Object.values(etat.resultatsExplorationZones).some(function(resultat) { return resultat.success; });
-  const icons = (revealReady ? interfaceIconHtml("magnifying-glass") : "")
+  const scoutingNew = scoutingsNouveauxNonVus().some(scoutingNouveauNonVu);
+  const icons = (scoutingNew ? '<strong aria-hidden="true">!</strong>' : "")
+    + (revealReady ? interfaceIconHtml("magnifying-glass") : "")
     + (campaignReady ? '<img class="interface-icon" src="img/interface/reward.png" alt="">' : "");
   const labels = [];
+  if (scoutingNew) labels.push("new scouting available");
   if (revealReady) labels.push("zone ready to reveal");
   if (campaignReady) labels.push("campaign reward ready");
   ecrireHTML(indicateur, icons);
@@ -8509,7 +8570,8 @@ function renderCampaignCards() {
   // ── Scoutings for explored zone ──
   if (scoutEl) {
     var scoutDefs = Object.values(CONFIG.scoutings).filter(function(s) {
-      return s.zone === zoneId && scoutingDebloquee(s);
+      return s.zone === zoneId && (scoutingDebloquee(s) || !!etat.scoutingsEnCours[s.id]
+        || butinScoutingReclamable(etat.butinsScouting[s.id]));
     });
     if (scoutDefs.length === 0) {
       scoutEl.innerHTML = '<p class="explo-vide">No scouting missions available yet.</p>';
@@ -8517,9 +8579,11 @@ function renderCampaignCards() {
       var scoutHtml = "";
       scoutDefs.forEach(function(sc) {
         var running = etat.scoutingsEnCours[sc.id];
+        var available = scoutingDebloquee(sc);
+        var nouveau = scoutingNouveauNonVu(sc.id);
         var scKiDisp = running ? running.kittyIndex : scoutingsStagingKitty[sc.id];
-        scoutHtml += '<div class="explo-card">';
-        scoutHtml += '<div class="explo-nom">' + sc.nom + '</div>';
+        scoutHtml += '<div class="explo-card' + (nouveau ? ' scouting-new' : '') + (available ? '' : ' scouting-legacy') + '" data-scouting-id="' + echapperAttributHtml(sc.id) + '">';
+        scoutHtml += '<div class="explo-nom">' + sc.nom + (nouveau ? ' <button type="button" class="scouting-new-badge" aria-label="Mark ' + echapperAttributHtml(sc.nom) + ' as viewed" title="New Scouting" onclick="accuserVueNouveauScouting(\'' + sc.id + '\')">!</button>' : '') + '</div>';
         scoutHtml += '<div class="explo-description">' + sc.description + '</div>';
         scoutHtml += '<div class="explo-meta">' + interfaceIconHtml("difficulty") + ' Difficulty ' + sc.difficulte + ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' ' + formaterTempsStat(sc.duree) + '</div>';
         scoutHtml += renduRecompensesLuckScouting(sc, scKiDisp);
@@ -8556,8 +8620,8 @@ function renderCampaignCards() {
           scoutHtml += '</div>';
           scoutHtml += '</div>';
           scoutHtml += '<div class="conteneur-barre"><div class="barre barre-explo" id="scout-barre-' + sc.id + '" style="width:' + Math.round(prog * 100) + '%"></div></div>';
-          scoutHtml += '<div class="explo-timer" id="scout-timer-' + sc.id + '">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining &#x21BA; auto-repeats</div>';
-        } else {
+          scoutHtml += '<div class="explo-timer" id="scout-timer-' + sc.id + '">' + formaterTempsStat(Math.ceil(remaining)) + (available ? ' remaining &#x21BA; auto-repeats' : ' remaining &middot; final run') + '</div>';
+        } else if (available) {
           var stagedKi  = scoutingsStagingKitty[sc.id];
           var stagedK   = (stagedKi !== undefined) ? etat.kittiesData[stagedKi] : null;
           var selPower  = stagedKi !== undefined ? kittyEP(stagedKi) : 0;
@@ -8837,6 +8901,7 @@ function renduCarteGrille() {
           return camp && camp.zone === zoneId && !etat.resultatsCampaigns[campaignId].success;
         });
       const scoutingRewardReady = scoutingIdsAvecButinZone(zoneId).length > 0;
+      const newScoutingReady = zoneAvecNouveauScouting(zoneId);
       const selected   = carteZoneSelectionnee === zoneId;
       const locked     = zone.type !== "home" && !explorateurOk;
       const zoneEtatLabel = locked ? "locked" : (inProgress ? "exploration in progress" : (exploree ? "explored" : "unexplored"));
@@ -8866,6 +8931,7 @@ function renduCarteGrille() {
           if (revealReady) html += '<span class="carte-badge-result carte-badge-reveal" title="Zone ready to reveal">' + interfaceIconHtml("magnifying-glass") + '</span>';
           if (campaignRewardReady || scoutingRewardReady) html += '<span class="carte-badge-result carte-badge-reward" title="Rewards ready to claim"><img src="img/interface/reward.png" alt=""></span>';
           if (failedResultReady) html += '<span class="carte-badge-result carte-badge-failure" title="Mission ready to retry"><span class="interface-symbol interface-cross" aria-hidden="true"></span></span>';
+          if (newScoutingReady) html += '<span class="carte-badge-result carte-badge-new-scouting" title="New Scouting available" aria-label="New Scouting available">!</span>';
           if (exploree) {
             var zoneScouts = Object.values(CONFIG.scoutings).filter(function(s) {
               return s.zone === zoneId && scoutingDebloquee(s);
@@ -9134,7 +9200,8 @@ function renduZoneInfo() {
   } else {
     html += unlocked.map(function(s) {
       const active = !!etat.scoutingsEnCours[s.id];
-      return '<div class="zone-info-item"><span class="zone-info-status-dot ' + (active ? 'is-active' : 'is-idle') + '" aria-hidden="true"></span> ' + s.nom + (active ? ' — active' : ' — idle') + '</div>';
+      const nouveau = scoutingNouveauNonVu(s.id) ? '<strong class="scouting-new-inline" aria-label="New Scouting">!</strong> ' : '';
+      return '<div class="zone-info-item">' + nouveau + '<span class="zone-info-status-dot ' + (active ? 'is-active' : 'is-idle') + '" aria-hidden="true"></span> ' + s.nom + (active ? ' — active' : ' — idle') + '</div>';
     }).join('');
   }
   html += '</div>';
@@ -9178,7 +9245,7 @@ function actualiserTimersExplorations() {
     const barEl     = domParId("scout-barre-" + scoutingId);
     const timerEl   = domParId("scout-timer-" + scoutingId);
     ecrireStyle(barEl, "width", Math.round(progress * 100) + "%");
-    ecrireTexte(timerEl, formaterTempsStat(Math.ceil(remaining)) + " remaining ↺ auto-repeats");
+    ecrireTexte(timerEl, formaterTempsStat(Math.ceil(remaining)) + (scoutingDebloquee(def) ? " remaining ↺ auto-repeats" : " remaining · final run"));
   });
 }
 
@@ -9223,6 +9290,8 @@ function ouvrirModalExploZone(zoneId, slotIndex) {
 }
 
 function ouvrirModalScouting(scoutingId) {
+  accuserVueNouveauScouting(scoutingId);
+  if (!CONFIG.scoutings[scoutingId] || !scoutingDebloquee(CONFIG.scoutings[scoutingId])) return;
   exploModalOuvert = { scoutingId: scoutingId };
   renduModalExplo();
   ouvrirDialogueModal("explo-modal", {
@@ -14643,6 +14712,7 @@ function marquerStoryVue(flag) {
   if (!Array.isArray(etat.storiesVues)) etat.storiesVues = [];
   if (etat.storiesVues.includes(flag)) return false;
   etat.storiesVues.push(flag);
+  enregistrerTransitionScoutingStory(flag);
   sauvegarder();
   return true;
 }
@@ -15026,6 +15096,26 @@ function ouvrirMaisonVoisineGaucheDepuisStory() {
   }, 80);
 }
 
+function ouvrirScoutingVoisinDroitDepuisStory() {
+  fermerModal("ecran-story-right-house");
+  carteZoneSelectionnee = "E1";
+  carteDirty = true;
+  exploTabDirty = true;
+  changerOnglet("explorations");
+  explorationMobileVue = estExplorationMobile() ? "zone" : "map";
+  explorationMobileTypeMission = "scoutings";
+  setTimeout(function() {
+    const cible = document.querySelector('[data-scouting-id="huntAroundEmptyRightHouse"]')
+      || document.getElementById("section-scoutings");
+    if (!cible) return;
+    cible.scrollIntoView({ behavior: "smooth", block: "center" });
+    cible.classList.remove("objectif-cible-highlight");
+    void cible.offsetWidth;
+    cible.classList.add("objectif-cible-highlight");
+    setTimeout(function() { cible.classList.remove("objectif-cible-highlight"); }, 1700);
+  }, 80);
+}
+
 function allerEtudierSchoolGuideDepuisStory() {
   fermerModal("ecran-story-6a");
   resCategorieFiltree = "books";
@@ -15273,15 +15363,23 @@ function verifierStoryModals() {
     afficherModal("ecran-story-manual-focus");
     renduStories();
   }
-  if (etat.chatons >= 15 && !storyEstVue("storyHouseEvacuationVue")) {
+  if (etat.chatons >= 15 && !storyEstVue("storyHouseEvacuationVue") && !dialogueOuvertAuPremierPlan()) {
     marquerStoryVue("storyHouseEvacuationVue");
     afficherModal("ecran-story-house-evacuation");
     renduStories();
+    return;
   }
-  if (etat.chatons >= 17 && !storyEstVue("storyLeftHouseEvacuationVue")) {
+  if (etat.chatons >= 17 && !storyEstVue("storyLeftHouseEvacuationVue") && !dialogueOuvertAuPremierPlan()) {
     marquerStoryVue("storyLeftHouseEvacuationVue");
     afficherModal("ecran-story-left-house");
     renduStories();
+    return;
+  }
+  if (etat.chatons >= 20 && !storyEstVue("storyRightHouseEvacuationVue") && !dialogueOuvertAuPremierPlan()) {
+    marquerStoryVue("storyRightHouseEvacuationVue");
+    afficherModal("ecran-story-right-house");
+    renduStories();
+    return;
   }
 }
 
@@ -18419,8 +18517,8 @@ function animationCampPrototypeDisponible(type, rotation, functionalTier) {
   return Boolean(animationCampPrototypePourRotation(type, rotation, functionalTier));
 }
 
-function animationCampPrototypeEffective(item, type, rotation, functionalTier) {
-  if (!item || item.animationDisabled === true || etat.campAnimationsEnabled === false) return false;
+function animationCampPrototypeEffective(type, rotation, functionalTier) {
+  if (etat.campAnimationsEnabled === false) return false;
   const reducedMotion = typeof window !== "undefined" && window.matchMedia
     && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return !reducedMotion
@@ -18462,7 +18560,7 @@ function synchroniserAnimationCampPrototype(element, item, type, rotation, funct
   element.querySelectorAll(
     ".camp-prototype-animation-shadow, .camp-prototype-animation-overlay"
   ).forEach(function(layer) { layer.remove(); });
-  if (!animationCampPrototypeEffective(item, type, rotation, functionalTier)) return false;
+  if (!animationCampPrototypeEffective(type, rotation, functionalTier)) return false;
   const animationMeta = animationCampPrototypeMeta(type, functionalTier);
   if (animationMeta && animationMeta.composition === "replace-base") {
     element.classList.add("camp-prototype-animation-replaces-base");
@@ -19069,17 +19167,6 @@ function executerActionMenuCampPrototype(action, event) {
     return ouvrirModalAllocationMaisonCamp(null, Number.isInteger(occupantIndex) ? occupantIndex : null);
   }
   if (action === "claim") return validerTacheCampDepuisMenu();
-  if (action === "toggle-animation") {
-    const menu = document.getElementById("camp-prototype-interaction-menu");
-    const item = itemCampPrototype(menu && menu.dataset.campUid);
-    const type = item && typeCampPrototype(item.type);
-    if (!item || !type || !animationCampPrototypeDisponible(type, item.rotation, item.tier)) return false;
-    if (item.animationDisabled === true) delete item.animationDisabled;
-    else item.animationDisabled = true;
-    sauvegarderCampPrototype();
-    rendreItemsCampPrototype();
-    return ouvrirMenuInteractionCampPrototype(item.uid, {conserverOuvert: true, semanticCommit: false});
-  }
   if (action === "customize-sticker") {
     const menu = document.getElementById("camp-prototype-interaction-menu");
     return ouvrirStickerCustomizerCampPrototype(menu && menu.dataset.campUid);
@@ -19247,7 +19334,7 @@ function campProductionPanelMarkup(item, familyId) {
     + '</section>';
 }
 
-function rectViewportVisiblePanneauProductionCamp(fenetre, navigationRect) {
+function rectViewportVisibleCamp(fenetre, occluderRects, containerRect) {
   const source = fenetre || {};
   const layoutWidth = Math.max(0, Number(source.innerWidth) || 0);
   const layoutHeight = Math.max(0, Number(source.innerHeight) || 0);
@@ -19256,21 +19343,29 @@ function rectViewportVisiblePanneauProductionCamp(fenetre, navigationRect) {
     ? Number(visualViewport.width) : layoutWidth;
   const visualHeight = visualViewport && Number(visualViewport.height) > 0
     ? Number(visualViewport.height) : layoutHeight;
-  const left = visualViewport && Number.isFinite(Number(visualViewport.offsetLeft))
+  let left = visualViewport && Number.isFinite(Number(visualViewport.offsetLeft))
     ? Number(visualViewport.offsetLeft) : 0;
-  const top = visualViewport && Number.isFinite(Number(visualViewport.offsetTop))
+  let top = visualViewport && Number.isFinite(Number(visualViewport.offsetTop))
     ? Number(visualViewport.offsetTop) : 0;
-  const right = left + visualWidth;
+  let right = left + visualWidth;
   let bottom = top + visualHeight;
-  const navigation = navigationRect || {};
-  const navigationLeft = Number(navigation.left);
-  const navigationRight = Number(navigation.right);
-  const navigationTop = Number(navigation.top);
-  const navigationOverlaps = Number.isFinite(navigationTop)
-    && navigationTop > top && navigationTop < bottom
-    && (!Number.isFinite(navigationLeft) || !Number.isFinite(navigationRight)
-      || (navigationRight > left && navigationLeft < right));
-  if (navigationOverlaps) bottom = navigationTop;
+  const container = containerRect || {};
+  if (Number.isFinite(Number(container.left))) left = Math.max(left, Number(container.left));
+  if (Number.isFinite(Number(container.top))) top = Math.max(top, Number(container.top));
+  if (Number.isFinite(Number(container.right))) right = Math.min(right, Number(container.right));
+  if (Number.isFinite(Number(container.bottom))) bottom = Math.min(bottom, Number(container.bottom));
+  const occluders = Array.isArray(occluderRects) ? occluderRects : [occluderRects];
+  occluders.forEach(function(rect) {
+    const occluder = rect || {};
+    const occluderLeft = Number(occluder.left);
+    const occluderRight = Number(occluder.right);
+    const occluderTop = Number(occluder.top);
+    const overlaps = Number.isFinite(occluderTop)
+      && occluderTop > top && occluderTop < bottom
+      && (!Number.isFinite(occluderLeft) || !Number.isFinite(occluderRight)
+        || (occluderRight > left && occluderLeft < right));
+    if (overlaps) bottom = Math.min(bottom, occluderTop);
+  });
   return {
     left: left,
     top: top,
@@ -19279,6 +19374,24 @@ function rectViewportVisiblePanneauProductionCamp(fenetre, navigationRect) {
     width: Math.max(0, right - left),
     height: Math.max(0, bottom - top)
   };
+}
+
+function rectsOcculteursFixesBasCamp() {
+  if (typeof document === "undefined") return [];
+  return [".barre-onglets", ".camp-prototype-edit-dock", ".camp-prototype-category-sheet"]
+    .map(function(selector) { return document.querySelector(selector); })
+    .filter(function(element) {
+      if (!element || element.hidden || typeof element.getBoundingClientRect !== "function") return false;
+      const style = typeof getComputedStyle === "function" ? getComputedStyle(element) : null;
+      if (style && (style.display === "none" || style.visibility === "hidden" || style.position !== "fixed")) {
+        return false;
+      }
+      const rect = element.getBoundingClientRect();
+      const width = Number(rect.width) || Number(rect.right) - Number(rect.left);
+      const height = Number(rect.height) || Number(rect.bottom) - Number(rect.top);
+      return width > 0 && height > 0;
+    })
+    .map(function(element) { return element.getBoundingClientRect(); });
 }
 
 function calculerPlacementPanneauProductionCamp(viewportRect, boardRect, targetRect, panelSize, mobile, visibleViewportRect) {
@@ -19372,13 +19485,8 @@ function positionnerPanneauProductionCamp(menu) {
     : null;
   if (!stage || !viewport || !board || !target) return false;
   const mobile = typeof window !== "undefined" && window.innerWidth <= 768;
-  const navigation = mobile ? document.querySelector(".barre-onglets") : null;
   const visibleViewportRect = mobile
-    ? rectViewportVisiblePanneauProductionCamp(
-        window,
-        navigation && typeof navigation.getBoundingClientRect === "function"
-          ? navigation.getBoundingClientRect() : null
-      )
+    ? rectViewportVisibleCamp(window, rectsOcculteursFixesBasCamp())
     : null;
   const stageRect = stage.getBoundingClientRect();
   let geometry;
@@ -19896,8 +20004,6 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
   const menu = document.getElementById("camp-prototype-interaction-menu");
   const maison = Boolean(type && type.category === "house");
   const stickerEligible = stickerCampPrototypeEligible(item, type);
-  const animationEligible = Boolean(item && type
-    && animationCampPrototypeDisponible(type, item.rotation, item.tier));
   campPanelDiagnostic.recordCall("ouvrirMenuInteractionCampPrototype", {
     uid: uid || null,
     buildingId: type && type.id || null,
@@ -19909,7 +20015,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
     uid: uid, buildingId: type.id, familyId: famille
   });
   const standardMenuUnavailable = (!upgradeDisponible && !famille && !fonction && !tache && !maison && !stickerEligible);
-  if (!item || !type || (standardMenuUnavailable && !animationEligible && !uniqueDefinition) || !menu) {
+  if (!item || !type || (standardMenuUnavailable && !uniqueDefinition) || !menu) {
     fermerMenuInteractionCampPrototype();
     return false;
   }
@@ -19997,19 +20103,6 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
     menu.innerHTML += '<button type="button" class="camp-sticker-customize-action" role="menuitem"'
       + ' data-camp-menu-action="customize-sticker" aria-label="Customize sticker on '
       + echapperAttributHtml(type.label) + '"><img src="img/interface/Stickers.png" alt=""></button>';
-  }
-  if (!tache && animationEligible) {
-    const animationLabel = item.animationDisabled === true ? "Enable animation" : "Disable animation";
-    const animationButton = '<button type="button" class="camp-animation-toggle-action"'
-      + (famille || maison ? '' : ' role="menuitem"')
-      + ' data-camp-menu-action="toggle-animation" aria-label="' + animationLabel
-      + '" title="' + animationLabel + '"><span aria-hidden="true">'
-      + (item.animationDisabled === true ? 'On' : 'Off') + '</span></button>';
-    const animationActions = famille
-      ? menu.querySelector(".camp-production-actions")
-      : (maison ? menu.querySelector(".camp-house-actions-right") : null);
-    if (animationActions) animationActions.insertAdjacentHTML("beforeend", animationButton);
-    else menu.innerHTML += animationButton;
   }
   const productionPanel = Boolean(famille && menu.querySelector("[data-camp-production-panel]"));
   const housePanel = Boolean(maison && menu.querySelector("[data-camp-house-panel]"));
@@ -21385,11 +21478,22 @@ function ancrerCampTaskPanel() {
     const viewport = document.querySelector(".camp-prototype-viewport");
     if (!stage || !viewport) return;
     const targetRect = target.getBoundingClientRect();
+    const visibleRect = rectViewportVisibleCamp(
+      window,
+      rectsOcculteursFixesBasCamp(),
+      viewport.getBoundingClientRect()
+    );
+    panel.style.maxHeight = "none";
+    panel.style.overflowY = "visible";
     const panelWidth = panel.offsetWidth || Math.min(460, window.innerWidth * .92);
-    const panelHeight = panel.offsetHeight || Math.min(window.innerHeight * .8, 640);
+    const naturalHeight = panel.scrollHeight || panel.offsetHeight || Math.min(window.innerHeight * .8, 640);
+    const availableHeight = Math.max(0, visibleRect.height - 20);
+    panel.style.maxHeight = availableHeight + "px";
+    panel.style.overflowY = "auto";
+    const panelHeight = Math.min(panel.offsetHeight || naturalHeight, availableHeight);
     const position = calculerAncrageUiFlottanteCampPrototype(
       stage.getBoundingClientRect(),
-      viewport.getBoundingClientRect(),
+      visibleRect,
       targetRect,
       { width: panelWidth, height: panelHeight },
       10
@@ -24589,8 +24693,7 @@ function rendreItemsCampPrototype(presencesCamp) {
       }
     } else if ((workFamily || fonctionCampPrototype(type, item)
         || definitionUniqueItemCampParType(type.id)
-        || type.category === "junk" || type.category === "house"
-        || animationCampPrototypeDisponible(type, rotationAffiche, tierAffiche)) && !campPrototypeModeEdition) {
+        || type.category === "junk" || type.category === "house") && !campPrototypeModeEdition) {
       configurerDeclencheurPanneauCamp(
         bouton,
         workFamily ? "region" : "menu",
