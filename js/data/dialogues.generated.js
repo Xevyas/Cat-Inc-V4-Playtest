@@ -38,6 +38,13 @@
       "portrait": "img/Cat faces/cannelle-3.png",
       "speakerKey": "cannelle"
     },
+    "naya": {
+      "id": "naya",
+      "name": "Naya",
+      "side": "right",
+      "portrait": "img/Cat faces/naya.png",
+      "speakerKey": "naya"
+    },
     "incrementor": {
       "id": "incrementor",
       "name": "The Greatest Incrementor",
@@ -132,6 +139,15 @@
       "presetId": "angry",
       "presetRevision": 1
     },
+    "mochiPresetSleep": {
+      "id": "mochi",
+      "name": "Mochi · Sleep",
+      "side": "right",
+      "portrait": "img/Cat faces/Presets/cat-faces-mochi-v2/sleep.png",
+      "speakerKey": "mochi",
+      "presetId": "sleep",
+      "presetRevision": 1
+    },
     "lunaPresetShocked": {
       "id": "luna",
       "name": "Luna · shocked",
@@ -139,6 +155,15 @@
       "portrait": "img/Cat faces/Presets/cat-faces-luna-v2/shocked.png",
       "speakerKey": "luna",
       "presetId": "shocked",
+      "presetRevision": 1
+    },
+    "lunaPresetSleep": {
+      "id": "luna",
+      "name": "Luna · Sleep",
+      "side": "right",
+      "portrait": "img/Cat faces/Presets/cat-faces-luna-v2/sleep.png",
+      "speakerKey": "luna",
+      "presetId": "sleep",
       "presetRevision": 1
     },
     "incrementorPresetAmusedMockery": {
@@ -606,7 +631,7 @@
       }
     ],
     "recruitOverrides": {
-      "10": [
+      "11": [
         {
           "id": "cannelle-trade",
           "visitorLines": [
@@ -638,6 +663,41 @@
             "good": "With the right Cat organizing it, absolutely.",
             "neutral": "Maybe, once the basics are handled.",
             "bad": "We already have boxes. What else would anyone buy?"
+          }
+        }
+      ],
+      "16": [
+        {
+          "id": "visitors",
+          "visitorLines": [
+            "What do you do when a Cat you don't know shows up at the camp?"
+          ],
+          "replies": {
+            "good": "We make sure they're safe, fed, and give them a chance to introduce themselves.",
+            "neutral": "Depends on the Cat, I suppose.",
+            "bad": "We make sure they don't stay too long."
+          }
+        },
+        {
+          "id": "travelers",
+          "visitorLines": [
+            "Do Cats ever pass through here without planning to stay?"
+          ],
+          "replies": {
+            "good": "Of course. They don't have to join the Gang to be welcome for a while.",
+            "neutral": "Sometimes. We usually just let them do their thing.",
+            "bad": "If they're not joining us, there's not much reason for them to be here."
+          }
+        },
+        {
+          "id": "place",
+          "visitorLines": [
+            "What makes a place feel like home to you?"
+          ],
+          "replies": {
+            "good": "Good company, something to share, and knowing there's always a place for you.",
+            "neutral": "A roof and enough food usually helps.",
+            "bad": "As long as everyone stays out of my way, I'm happy."
           }
         }
       ]
@@ -1853,7 +1913,7 @@
         }
       ],
       "asset": {
-        "type": "illustration",
+        "type": "icon",
         "src": "img/interface/warning.png",
         "alt": "warning"
       }
@@ -1938,7 +1998,7 @@
         }
       ],
       "asset": {
-        "type": "illustration",
+        "type": "icon",
         "src": "img/interface/warning.png",
         "alt": "warning"
       }
@@ -1975,7 +2035,12 @@
           "portraitClass": "bernardPresetHappy",
           "html": "Exactly. A quiet property may attract small prey. We should scout the area differently."
         }
-      ]
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/interface/warning.png",
+        "alt": "dza"
+      }
     },
     {
       "id": "ecran-story-6a",
@@ -2619,6 +2684,105 @@
         "type": "icon",
         "src": "img/interface/Bird Minigame Icon_Final.png",
         "alt": "bird"
+      }
+    },
+    {
+      "id": "ecran-story-naya-recruit",
+      "name": "Naya's Proposal",
+      "flag": "storyNayaRecruitVue",
+      "trigger": "This scene currently has no documented automatic trigger.",
+      "closeButton": {
+        "label": "Build Naya's Inn",
+        "handler": "terminerStoryRecrutementNaya()",
+        "actionSummary": "Close the dialogue and return to the current screen."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "naya",
+          "speakerName": "Naya",
+          "portraitClass": "naya",
+          "html": "Hi there! I've been watching your camp grow and there are quite a few of you here now."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Indeed our camp grew a lot these past few days. You're welcome to join us as well and add your talents to the crew."
+        },
+        {
+          "classes": [],
+          "speakerClass": "naya",
+          "speakerName": "Naya",
+          "portraitClass": "naya",
+          "html": "I'm an innkeeper. A place where everyone can meet and welcome travelers passing through would fit this camp nicely."
+        },
+        {
+          "classes": [],
+          "speakerClass": "naya",
+          "speakerName": "Naya",
+          "portraitClass": "naya",
+          "html": "If you build me an inn, I'll run it. Wandering Cats will have somewhere warm to stop, and they may bring useful opportunities."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernardPresetHappy",
+          "html": "An inn, huh? A proper place for the Gang to gather, and a few new paws passing through. You've got a deal!"
+        }
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/Cat faces/naya.png",
+        "alt": "Naya"
+      }
+    },
+    {
+      "id": "ecran-story-naya-inn-complete",
+      "name": "Naya Opens the Inn",
+      "flag": "storyNayaInnCompleteVue",
+      "trigger": "This scene currently has no documented automatic trigger.",
+      "closeButton": {
+        "label": "Open the Inn",
+        "handler": "terminerStoryNayaInn()",
+        "actionSummary": "Close the dialogue and return to the current screen."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "naya",
+          "speakerName": "Naya",
+          "portraitClass": "naya",
+          "html": "It's perfect. Thank you, Bernardo."
+        },
+        {
+          "classes": [],
+          "speakerClass": "naya",
+          "speakerName": "Naya",
+          "portraitClass": "naya",
+          "html": "I'll take it from here. Travelers can rest, share what they've learned and bring a little life from outside the Camp."
+        },
+        {
+          "classes": [],
+          "speakerClass": "naya",
+          "speakerName": "Naya",
+          "portraitClass": "naya",
+          "html": "Come by each day. You never know who's passing through, or what opportunity they might bring."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Welcome to the Camp, Naya. Let's see what your guests bring us."
+        }
+      ],
+      "asset": {
+        "type": "icon",
+        "src": "img/Cat faces/naya.png",
+        "alt": "Naya"
       }
     }
   ]

@@ -335,6 +335,7 @@ const INTERFACE_ICON_PATHS = Object.freeze({
   explorator: "img/interface/explorator.png",
   farmer: "img/interface/farmer.png",
   "gang-leader": "img/interface/gang-leader.png",
+  heart: "img/interface/heart.png",
   hourglass: "img/interface/hourglass.png",
   lock: "img/interface/lock.png",
   lumberjack: "img/interface/lumberjack.png",
@@ -344,6 +345,7 @@ const INTERFACE_ICON_PATHS = Object.freeze({
   play: "img/interface/play.png",
   power: "img/interface/power.png",
   "shop-owner": "img/interface/shop-owner.png",
+  "sleep-bubble": "img/interface/sleep-bubble.png",
   stonemason: "img/interface/stonemason.png"
 });
 
@@ -496,8 +498,8 @@ const TIERS_KITTIES = [
 
 const NOMS_KITTIES = [
   "Bernardo", "Mochi", "Luna", "Whiskers", "Felix",
-  "Cleopatra", "Biscuit", "Cosmo", "Zelda", "Cannelle", "Napoleon",
-  "Duchess", "Rascal", "Aurora", "Chester", "Pumpkin",
+  "Cleopatra", "Biscuit", "Cosmo", "Zelda", "Napoleon", "Cannelle",
+  "Duchess", "Rascal", "Aurora", "Chester", "Naya", "Pumpkin",
   "Oliver", "Mittens", "Shadow", "Simba", "Nala",
   "Tiger", "Max", "Lily", "Charlie", "Bella",
   "Jasper", "Ruby", "Oscar", "Daisy", "Leo",
@@ -546,6 +548,12 @@ const LIVE_CANNELLE_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data
   : null;
 CAT_FACES.cannelle = LIVE_CANNELLE_FACE
   ? LIVE_CANNELLE_FACE.runtimePath + "?v=live-r" + LIVE_CANNELLE_FACE.revision
+  : "";
+const LIVE_NAYA_FACE = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.items)
+  ? CatInc.data.liveCatFaces.items.find(function(item) { return item.id === "cat-faces-naya"; })
+  : null;
+CAT_FACES.naya = LIVE_NAYA_FACE
+  ? LIVE_NAYA_FACE.runtimePath + "?v=live-r" + LIVE_NAYA_FACE.revision
   : "";
 const LIVE_RANDOM_CAT_FACES = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.randomCats)
   ? CatInc.data.liveCatFaces.randomCats.map(function(item) {

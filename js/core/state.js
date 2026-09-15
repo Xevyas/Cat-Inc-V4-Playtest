@@ -182,6 +182,15 @@ function creerEtatInitial() {
       stealGasStationAgain: 2
     }
   },
+  // Naya's Inn shares the canonical Paris calendar day with Daily Purpose.
+  // Generated identities and consumption flags are durable; balances and
+  // mission state remain in their existing authorities.
+  innDaily: {
+    version: 2,
+    dateKey: "",
+    travelers: [],
+    contracts: []
+  },
   regionCourante:      "startingNeighbourhood",
   zonesExplorees:      ["D1"], // D1 (home) always starts explored
   exploZoneEnCours:    null,   // { zoneId, kittyIndices, startTs, duree }
@@ -190,7 +199,7 @@ function creerEtatInitial() {
   explorationRetries: { zones: {}, campaigns: {} }, // Capped failure counts by canonical activity ID.
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
   butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, tripled, rewards } }
-  scoutingsNouveauxNonVus: [], // Sparse acknowledgement IDs; availability stays derived from Stories.
+  explorationNouveautesNonVues: [], // Sparse "zone:<id>" / "scouting:<id>" acknowledgements only.
   managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null },
   managersDebloques:   false,
   managerRoleTutorialShown: false,

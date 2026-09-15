@@ -227,6 +227,18 @@
       <button class="bouton-intro" type="button" onclick="terminerStoryMarketStall()">Show me your stock</button>
     </div>
   </div>
+  <div id="ecran-story-naya-recruit" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Naya's Proposal" style="display:none">
+    <div class="intro-boite" role="document" tabindex="-1">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="terminerStoryRecrutementNaya()">Build Naya's Inn</button>
+    </div>
+  </div>
+  <div id="ecran-story-naya-inn-complete" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Naya Opens the Inn" style="display:none">
+    <div class="intro-boite" role="document" tabindex="-1">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" type="button" onclick="terminerStoryNayaInn()">Open the Inn</button>
+    </div>
+  </div>
 
   <!-- MANUAL FOCUS EXPLANATION : shown after the player presses Try -->
   <div id="manual-focus-explainer-modal" class="ecran-intro manual-focus-explainer-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="manual-focus-explainer-title" aria-describedby="manual-focus-explainer-copy" style="display:none">
@@ -648,7 +660,7 @@
     <button id="onglet-camp"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><img class="onglet-icone" src="img/interface/Camp.png" alt=""> <span class="onglet-label">Camp</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label">Work</span><span id="work-boost-tab-badge" class="work-boost-tab-badge" hidden></span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/interface/job.png" alt=""> <span class="onglet-label">Jobs</span></button>
-    <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label">Explore</span></button>
+    <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""> <span class="onglet-label">Explore</span></button>
     <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label">Bag</span></button>
     <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label">Logs</span></button>
   </div>
@@ -698,7 +710,7 @@
           <div class="camp-prototype-environment" aria-hidden="true">
             <div class="camp-prototype-houses">
               <div class="camp-prototype-house-plot camp-prototype-house-plot-red" data-camp-garden-zone="redGarden" aria-hidden="true">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Red_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
+                <img class="camp-prototype-house" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_Red_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
                 <svg class="camp-prototype-house-window-tints" viewBox="0 0 768 512" aria-hidden="true">
                   <rect x="195" y="304" width="23" height="15"></rect><rect x="227" y="303" width="22" height="16"></rect>
                   <rect x="198" y="326" width="22" height="13"></rect><rect x="230" y="326" width="21" height="14"></rect>
@@ -711,7 +723,7 @@
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
               </div>
               <div class="camp-prototype-house-plot camp-recruitment-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Blue_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
+                <img class="camp-prototype-house" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_Blue_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
                 <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
                 <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
                 <span id="camp-recruit-route" class="camp-recruit-route" hidden aria-hidden="true">
@@ -736,7 +748,7 @@
                 </button>
                </div>
               <div class="camp-prototype-house-plot camp-prototype-house-plot-green" data-camp-garden-zone="greenGarden" aria-hidden="true">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Runtime/Environment/Camp_Green_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
+                <img class="camp-prototype-house" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_Green_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
                 <svg class="camp-prototype-house-window-tints" viewBox="0 0 768 512" aria-hidden="true">
                   <rect x="363" y="184" width="13" height="11"></rect><rect x="385" y="184" width="14" height="11"></rect>
                   <rect x="363" y="204" width="13" height="16"></rect><rect x="385" y="204" width="14" height="16"></rect>
@@ -799,9 +811,9 @@
            </div>
            <div class="camp-prototype-river-band" aria-hidden="true">
              <div class="camp-prototype-river-segments">
-               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
-               <span><img class="camp-prototype-river camp-prototype-river-home" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
-               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
+               <span data-camp-garden-zone="redGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-red" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
+               <span><img class="camp-prototype-river camp-prototype-river-home" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
+               <span data-camp-garden-zone="greenGarden" aria-hidden="true"><img class="camp-prototype-river camp-prototype-river-green" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_River_Border_Watercolor_v5.webp?v=0.0002" alt=""></span>
              </div>
              <div id="camp-prototype-shore-fences" class="camp-prototype-shore-fences"></div>
            </div>
@@ -1300,6 +1312,18 @@
       </div>
       <p id="market-stall-shop-status" class="market-stall-shop-status" role="status" aria-live="polite" hidden></p>
       <div id="market-stall-shop-grid" class="market-stall-shop-grid" role="tabpanel" aria-label="Cannelle merchandise"></div>
+    </div>
+  </div>
+
+  <!-- NAYA'S INN -->
+  <div id="naya-inn-modal" class="explo-modal naya-inn-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="naya-inn-title" style="display:none">
+    <div class="explo-modal-panneau naya-inn-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header naya-inn-header">
+        <img id="naya-inn-portrait" class="naya-inn-portrait" src="" alt="Naya">
+        <span><strong id="naya-inn-title">Naya's Inn</strong><small>Innkeeper · Daily opportunities</small></span>
+        <button class="explo-modal-close" type="button" aria-label="Close Naya's Inn" onclick="fermerAubergeNaya()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <div id="naya-inn-content"></div>
     </div>
   </div>
 

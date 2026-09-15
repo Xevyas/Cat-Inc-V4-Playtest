@@ -696,6 +696,17 @@
       blocksMovement: true,
       access: singleEntranceAccess(2, 2)
     })),
+    nayaSInn: gameplayItem("nayaSInn", gameplayRuntimeItem("nayaSInn", {
+      id: "nayaSInn",
+      label: "Naya's Inn",
+      width: 3,
+      height: 2,
+      color: "market",
+      category: "building",
+      rotatable: true,
+      blocksMovement: true,
+      access: singleEntranceAccess(3, 2)
+    })),
     smallFountain: gameplayItem("smallFountain", gameplayRuntimeItem("smallFountain", {
       id: "smallFountain",
       label: "Small Fountain",
@@ -1533,9 +1544,13 @@
     ) {
       return { valide: false, raison: "This item would extend outside the camp." };
     }
+    const candidateOccupiedCells = campConnectivity.cellulesOccupeesItem(
+      {x: positionX, y: positionY, rotation: rotation, tier: tier || 1},
+      type
+    );
     if (
       terrain
-      && campConnectivity.cellulesOccupeesItem({x: positionX, y: positionY, rotation: rotation, tier: tier || 1}, type).some(function(cellule) {
+      && candidateOccupiedCells.some(function(cellule) {
         return !estCelluleConstructible(terrain, cellule.x, cellule.y);
       })
     ) {
@@ -1543,13 +1558,13 @@
     }
 
     const elements = Array.isArray(layout) ? layout : [];
+    const candidateCellKeys = new Set(candidateOccupiedCells.map(function(cell) {
+      return cleCellule(cell.x, cell.y);
+    }));
     for (let index = 0; index < elements.length; index += 1) {
       const autre = elements[index];
       if (!autre || autre.uid === ignoreUid) continue;
-      const candidateCells = new Set(campConnectivity.cellulesOccupeesItem(
-        {x: positionX, y: positionY, rotation: rotation, tier: tier || 1}, type
-      ).map(function(cell) { return cleCellule(cell.x, cell.y); }));
-      if (cellulesReserveesItem(autre).some(function(cell) { return candidateCells.has(cleCellule(cell.x, cell.y)); })) {
+      if (cellulesReserveesItem(autre).some(function(cell) { return candidateCellKeys.has(cleCellule(cell.x, cell.y)); })) {
         const autreType = ITEM_TYPES[autre.type];
         return {
           valide: false,
@@ -1681,14 +1696,43 @@
     return Math.round(Number(value) * 1000000) / 1000000;
   }
 
+  function signatureRaccordItem(item) {
+    if (!item) return "";
+    return [
+      item.type,
+      item.tier || 1,
+      entier(item.x),
+      entier(item.y),
+      normaliserRotation(item.rotation)
+    ].join(":");
+  }
+
   function raccordsRouteItem(layout, item, routesIndexees) {
     const type = item && ITEM_TYPES[item.type];
     const access = campConnectivity.resoudreAccesType(type, item && item.tier || 1);
     if (!type || !access || !Array.isArray(access.ports)) return [];
-    const routesParCellule = routesIndexees instanceof Map
+    const contexteRenduRoutes = routesIndexees
+      && routesIndexees.routesParCellule instanceof Map
       ? routesIndexees
-      : new Map();
-    if (!(routesIndexees instanceof Map)) {
+      : null;
+    if (
+      contexteRenduRoutes
+      && item
+      && item.uid
+      && contexteRenduRoutes.raccordsParItemUid instanceof Map
+      && contexteRenduRoutes.raccordsParItemUid.has(item.uid)
+    ) {
+      const entreeIndexee = contexteRenduRoutes.raccordsParItemUid.get(item.uid);
+      if (entreeIndexee.signature === signatureRaccordItem(item)) {
+        return entreeIndexee.raccords;
+      }
+    }
+    const routesParCellule = contexteRenduRoutes
+      ? contexteRenduRoutes.routesParCellule
+      : routesIndexees instanceof Map
+        ? routesIndexees
+        : new Map();
+    if (!contexteRenduRoutes && !(routesIndexees instanceof Map)) {
       (Array.isArray(layout) ? layout : []).forEach(function(entree) {
         const routeType = entree && ITEM_TYPES[entree.type];
         if (!routeType || routeType.category !== "road") return;
@@ -1866,7 +1910,7 @@
     return raccords;
   }
 
-  function connexionsRoute(layout, x, y) {
+  function creerContexteRenduRoutes(layout) {
     const layoutNormalise = Array.isArray(layout) ? layout : [];
     const routesParCellule = new Map();
     layoutNormalise.forEach(function(item) {
@@ -1876,25 +1920,62 @@
         routesParCellule.set(cleCellule(cell.x, cell.y), routeType);
       });
     });
-    const positionX = entier(x);
-    const positionY = entier(y);
-    const connexionsBatiments = new Set();
-    const connexionsBatimentsFusionnees = new Set();
+    const raccordsParItemUid = new Map();
+    const raccordsParCelluleRoute = new Map();
     layoutNormalise.forEach(function(item) {
-      raccordsRouteItem(layoutNormalise, item, routesParCellule).forEach(function(raccord) {
+      const raccords = raccordsRouteItem(layoutNormalise, item, routesParCellule);
+      if (item && item.uid) {
+        raccordsParItemUid.set(item.uid, {
+          signature: signatureRaccordItem(item),
+          raccords: raccords
+        });
+      }
+      raccords.forEach(function(raccord) {
         const cellules = Array.isArray(raccord.cells)
           ? raccord.cells
           : [raccord.cell];
-        if (!cellules.some(function(cellule) {
-          return cellule.x === positionX && cellule.y === positionY;
-        })) return;
-        const direction = directionOpposee(raccord.direction);
-        connexionsBatiments.add(direction);
-        if (raccord.shape === "merged-cone") {
-          connexionsBatimentsFusionnees.add(direction);
-        }
+        cellules.forEach(function(cellule) {
+          const key = cleCellule(cellule.x, cellule.y);
+          if (!raccordsParCelluleRoute.has(key)) {
+            raccordsParCelluleRoute.set(key, {
+              directions: new Set(),
+              directionsFusionnees: new Set()
+            });
+          }
+          const indexCellule = raccordsParCelluleRoute.get(key);
+          const direction = directionOpposee(raccord.direction);
+          indexCellule.directions.add(direction);
+          if (raccord.shape === "merged-cone") {
+            indexCellule.directionsFusionnees.add(direction);
+          }
+        });
       });
     });
+    return {
+      routesParCellule: routesParCellule,
+      raccordsParItemUid: raccordsParItemUid,
+      raccordsParCelluleRoute: raccordsParCelluleRoute
+    };
+  }
+
+  function connexionsRoute(layout, x, y, contexteRenduRoutes) {
+    const contexte = contexteRenduRoutes
+      && contexteRenduRoutes.routesParCellule instanceof Map
+      && contexteRenduRoutes.raccordsParCelluleRoute instanceof Map
+      ? contexteRenduRoutes
+      : creerContexteRenduRoutes(layout);
+    const routesParCellule = contexte.routesParCellule;
+    const positionX = entier(x);
+    const positionY = entier(y);
+    const raccordsCellule = contexte.raccordsParCelluleRoute.get(
+      cleCellule(positionX, positionY)
+    );
+    const connexionsBatiments = raccordsCellule
+      ? raccordsCellule.directions
+      : new Set();
+    const connexionsBatimentsFusionnees = raccordsCellule
+      ? raccordsCellule.directionsFusionnees
+      : new Set();
     const roadNorth = routesParCellule.has(positionX + ":" + (positionY - 1));
     const roadEast = routesParCellule.has((positionX + 1) + ":" + positionY);
     const roadSouth = routesParCellule.has(positionX + ":" + (positionY + 1));
@@ -2146,6 +2227,7 @@
     adapterTerrainAuLayout: adapterTerrainAuLayout,
     dimensionsType: dimensionsType,
     resoudreAccesType: campConnectivity.resoudreAccesType,
+    portsItem: campConnectivity.portsItem,
     cellulesOccupeesItem: cellulesOccupeesItem,
     cellulesReserveesItem: cellulesReserveesItem,
     rectangleItem: rectangleItem,
@@ -2156,6 +2238,7 @@
     evaluerConnexionsLayout: evaluerConnexionsLayout,
     accesExterieurDisponible: accesExterieurDisponible,
     raccordsRouteItem: raccordsRouteItem,
+    creerContexteRenduRoutes: creerContexteRenduRoutes,
     connexionsRoute: connexionsRoute,
     cellulesLigne: cellulesLigne
   });

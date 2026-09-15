@@ -300,6 +300,16 @@
         230
       ]
     },
+    "img/Cat faces/Presets/cat-faces-luna-v2/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        29,
+        26,
+        228,
+        230
+      ]
+    },
     "img/Cat faces/Presets/cat-faces-luna/amused.png": {
       "width": 256,
       "height": 256,
@@ -321,6 +331,16 @@
       ]
     },
     "img/Cat faces/Presets/cat-faces-mochi-v2/shocked.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        47,
+        45,
+        215,
+        199
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-mochi-v2/sleep.png": {
       "width": 256,
       "height": 256,
       "bounds": [
@@ -358,6 +378,76 @@
         40,
         230,
         223
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-1/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        35,
+        230,
+        221
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-2/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        35,
+        230,
+        221
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-3/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        33,
+        230,
+        222
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-4/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        36,
+        230,
+        220
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-5/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        33,
+        230,
+        223
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-6/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        36,
+        230,
+        220
+      ]
+    },
+    "img/Cat faces/Presets/cat-faces-random-cat-7/sleep.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        28,
+        33,
+        230,
+        222
       ]
     },
     "img/Cat faces/Presets/cat-faces-the-greatest-incrementor/amused-mockery.png": {

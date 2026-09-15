@@ -304,7 +304,7 @@ function validerStructureSauvegarde(d) {
 
   const champsTableaux = [
     "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies",
-    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden", "scoutingsNouveauxNonVus",
+    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden", "explorationNouveautesNonVues", "scoutingsNouveauxNonVus",
     "batimentsCampRepares"
   ];
 
@@ -312,7 +312,7 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workRecipeSlots", "perksV2", "boostInventory", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "reparationsCamp", "constructionsMaisonsCamp", "camp", "campProfile"];
+  const champsObjets = ["workRecipeSlots", "perksV2", "boostInventory", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks", "innDaily", "reparationsCamp", "constructionsMaisonsCamp", "camp", "campProfile"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
@@ -396,6 +396,35 @@ function validerStructureSauvegarde(d) {
       if (!Number.isInteger(stocks.remaining[cle]) || stocks.remaining[cle] < 0) return "Invalid daily scouting stock.";
     }
   }
+  if (d.innDaily !== undefined) {
+    const inn = d.innDaily;
+    if (typeof inn.dateKey !== "string" || inn.dateKey.length > 20) return "Invalid Inn date.";
+    if (!Array.isArray(inn.contracts) || inn.contracts.length > 3) return "Invalid Inn contracts.";
+    if (inn.version === 2) {
+      if (!Array.isArray(inn.travelers) || ![0, 2].includes(inn.travelers.length)) return "Invalid Inn travelers.";
+      if (inn.travelers.some(function(traveler) {
+        return !estObjetSauvegarde(traveler) || !["helper", "guide"].includes(traveler.templateId)
+          || typeof traveler.rarity !== "string" || typeof traveler.face !== "string"
+          || typeof traveler.invited !== "boolean" || typeof traveler.consumed !== "boolean";
+      })) return "Invalid Inn traveler fields.";
+      if (inn.contracts.some(function(contract) {
+        return !estObjetSauvegarde(contract) || typeof contract.templateId !== "string"
+          || typeof contract.rarity !== "string" || typeof contract.completed !== "boolean"
+          || typeof contract.inputId !== "string" || !Number.isFinite(contract.inputQty) || contract.inputQty <= 0
+          || typeof contract.outputId !== "string" || !Number.isFinite(contract.outputQty) || contract.outputQty <= 0;
+      })) return "Invalid Inn contract fields.";
+    } else {
+      if (inn.visitor !== null && !estObjetSauvegarde(inn.visitor)) return "Invalid Inn visitor.";
+      if (inn.visitor && (typeof inn.visitor.templateId !== "string" || typeof inn.visitor.face !== "string"
+          || typeof inn.visitor.consumed !== "boolean" || typeof inn.visitor.armed !== "boolean")) {
+        return "Invalid Inn visitor fields.";
+      }
+      if (inn.contracts.some(function(contract) {
+        return !estObjetSauvegarde(contract) || typeof contract.templateId !== "string"
+          || typeof contract.rarity !== "string" || typeof contract.completed !== "boolean";
+      })) return "Invalid Inn contract fields.";
+    }
+  }
 
   if (d.prochainVisageChaton !== undefined && d.prochainVisageChaton !== null
       && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300)) {
@@ -428,7 +457,7 @@ function validerStructureSauvegarde(d) {
     return "Invalid cathouse history.";
   }
 
-  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden", "scoutingsNouveauxNonVus"];
+  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "storySeenOrder", "ongletsVisites", "resourceBarHidden", "explorationNouveautesNonVues", "scoutingsNouveauxNonVus"];
   for (const cle of champsTableauxDeChaines) {
     if (d[cle] && !d[cle].every(function(valeur) { return typeof valeur === "string"; })) {
       return "Invalid entries in field: " + cle + ".";
@@ -1118,6 +1147,7 @@ function analyserSauvegardeBrute(raw) {
     formationIngenieurTermineeEnAttente: etat.formationIngenieurTermineeEnAttente,
     dailyQuests:          etat.dailyQuests,
     dailyScoutingStocks:  etat.dailyScoutingStocks,
+    innDaily:              etat.innDaily,
     regionCourante:           etat.regionCourante,
     zonesExplorees:      etat.zonesExplorees,
     exploZoneEnCours:    etat.exploZoneEnCours,
@@ -1126,7 +1156,7 @@ function analyserSauvegardeBrute(raw) {
     explorationRetries: normaliserExplorationRetries(etat.explorationRetries, etat),
     scoutingsEnCours:    etat.scoutingsEnCours,
     butinsScouting:      etat.butinsScouting,
-    scoutingsNouveauxNonVus: etat.scoutingsNouveauxNonVus,
+    explorationNouveautesNonVues: etat.explorationNouveautesNonVues,
     managers:            etat.managers,
     managersDebloques:   etat.managersDebloques,
     managerRoleTutorialShown: etat.managerRoleTutorialShown,
@@ -1152,6 +1182,9 @@ function analyserSauvegardeBrute(raw) {
       : function() { return null; };
     const normaliserVisageChaton = typeof options.normaliserVisageChaton === "function"
       ? options.normaliserVisageChaton
+      : null;
+    const nomProchainChat = typeof options.nomProchainChat === "function"
+      ? options.nomProchainChat
       : null;
     const estVisageGeneriqueLegacy = typeof options.estVisageGeneriqueLegacy === "function"
       ? options.estVisageGeneriqueLegacy
@@ -1252,7 +1285,9 @@ function analyserSauvegardeBrute(raw) {
   etat.sequenceDerniereMajTs   = d.sequenceDerniereMajTs   !== undefined ? d.sequenceDerniereMajTs   : 0;
   etat.sequenceVitesseDerniere = d.sequenceVitesseDerniere !== undefined ? d.sequenceVitesseDerniere : 1;
   if (d.prochainVisageChaton && normaliserVisageChaton) {
-    const prochainNom = NOMS_KITTIES[etat.chatons] || ("Cat #" + (etat.chatons + 1));
+    const prochainNom = nomProchainChat
+      ? nomProchainChat(Array.isArray(d.kittiesData) ? d.kittiesData : [])
+      : (NOMS_KITTIES[etat.chatons] || ("Cat #" + (etat.chatons + 1)));
     etat.prochainVisageChaton = normaliserVisageChaton({
       nom: prochainNom,
       visage: d.prochainVisageChaton
@@ -1426,6 +1461,9 @@ function analyserSauvegardeBrute(raw) {
   if (Object.prototype.hasOwnProperty.call(etat.dailyQuests, "scoutingCannedCatFood")) {
     delete etat.dailyQuests.scoutingCannedCatFood;
   }
+  etat.innDaily = d.innDaily && typeof d.innDaily === "object" ? d.innDaily : {
+    version: 2, dateKey: "", travelers: [], contracts: []
+  };
   const regions = regionsExploration();
   etat.regionCourante = Object.prototype.hasOwnProperty.call(regions, d.regionCourante)
     ? d.regionCourante
@@ -1442,11 +1480,28 @@ function analyserSauvegardeBrute(raw) {
   etat.resultatsCampaigns  = d.resultatsCampaigns  || {};
   etat.explorationRetries = normaliserExplorationRetries(d.explorationRetries, etat);
   etat.scoutingsEnCours    = d.scoutingsEnCours    || {};
+  // V1 stored one armed visitor marker on a mission. Its duration/power was
+  // already captured at commit; remove only the obsolete slot-filling marker.
+  etat.exploEnCours.forEach(function(mission) {
+    if (mission && mission.innVisitor && !Array.isArray(mission.innTravelers)) delete mission.innVisitor;
+  });
+  Object.values(etat.scoutingsEnCours).forEach(function(mission) {
+    if (mission && mission.innVisitor && !Array.isArray(mission.innTravelers)) delete mission.innVisitor;
+  });
   etat.butinsScouting      = d.butinsScouting      || {};
   const scoutingIds = new Set(Object.keys((CatInc.data && CatInc.data.exploration && CatInc.data.exploration.scoutings) || {}));
-  etat.scoutingsNouveauxNonVus = Array.isArray(d.scoutingsNouveauxNonVus)
-    ? Array.from(new Set(d.scoutingsNouveauxNonVus.filter(function(id) { return scoutingIds.has(id); })))
+  const nouveautesExploration = Array.isArray(d.explorationNouveautesNonVues)
+    ? d.explorationNouveautesNonVues.slice()
     : [];
+  if (Array.isArray(d.scoutingsNouveauxNonVus)) {
+    d.scoutingsNouveauxNonVus.forEach(function(id) { nouveautesExploration.push("scouting:" + id); });
+  }
+  etat.explorationNouveautesNonVues = Array.from(new Set(nouveautesExploration.filter(function(cle) {
+    if (typeof cle !== "string") return false;
+    if (cle.startsWith("zone:")) return zoneExplorationExiste(cle.slice(5));
+    if (cle.startsWith("scouting:")) return scoutingIds.has(cle.slice(9));
+    return false;
+  })));
   Object.values(etat.butinsScouting).forEach(function(butin) {
     if (!Number.isInteger(butin.tripled) || butin.tripled < 0) butin.tripled = 0;
     butin.rewards = Object.keys(butin.rewards || {}).reduce(function(rewards, rewardId) {

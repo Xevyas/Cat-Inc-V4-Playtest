@@ -2014,6 +2014,132 @@
         }
       }
     },
+    "nayaSInn": {
+      "assetId": "naya-s-inn",
+      "name": "Naya's Inn",
+      "category": "building",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 7,
+          "revisions": {
+            "7": {
+              "name": "Naya's Inn",
+              "tier": 1,
+              "revision": 7,
+              "status": "live",
+              "width": 3,
+              "height": 2,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/down.png",
+                "right": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/right.png",
+                "up": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/up.png",
+                "left": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/left.png"
+              },
+              "groundingSprites": {
+                "down": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/revision-7/grounding-left.png"
+              },
+              "groundingBounds": {
+                "down": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 5.0,
+                  "height": 4.0
+                },
+                "right": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 5.0
+                },
+                "up": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 5.0,
+                  "height": 4.0
+                },
+                "left": {
+                  "x": -1.0,
+                  "y": -1.0,
+                  "width": 4.0,
+                  "height": 5.0
+                }
+              },
+              "animation": {
+                "revision": 2,
+                "status": "live",
+                "baseRevision": 7,
+                "familyId": "smoke-steam",
+                "mode": "overlay-apng",
+                "frameCount": 8,
+                "frameDurationMs": 220,
+                "sprites": {
+                  "down": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/animation-2/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/animation-2/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/animation-2/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/naya-s-inn/tier-1/animation-2/animation-left.png"
+                },
+                "registration": {
+                  "down": {
+                    "width": 95,
+                    "height": 145,
+                    "baseWidth": 768,
+                    "baseHeight": 512,
+                    "offsetX": 482,
+                    "offsetY": -43
+                  },
+                  "right": {
+                    "width": 83,
+                    "height": 139,
+                    "baseWidth": 512,
+                    "baseHeight": 768,
+                    "offsetX": 178,
+                    "offsetY": 36
+                  },
+                  "up": {
+                    "width": 100,
+                    "height": 154,
+                    "baseWidth": 768,
+                    "baseHeight": 512,
+                    "offsetX": 176,
+                    "offsetY": -34
+                  },
+                  "left": {
+                    "width": 92,
+                    "height": 156,
+                    "baseWidth": 512,
+                    "baseHeight": 768,
+                    "offsetX": 255,
+                    "offsetY": 164
+                  }
+                }
+              },
+              "access": {
+                "activationPolicy": "all-ports-reachable",
+                "ports": [
+                  {
+                    "id": "access-1",
+                    "side": "south",
+                    "cellPolicy": "all-cells-reachable",
+                    "approachCells": [
+                      {
+                        "x": 1,
+                        "y": 2,
+                        "side": "south"
+                      }
+                    ],
+                    "minimumReachableCells": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "oldRadio": {
       "assetId": "old-radio",
       "name": "Old radio",
@@ -3572,18 +3698,18 @@
                 }
               },
               "animation": {
-                "revision": 2,
+                "revision": 3,
                 "status": "live",
                 "baseRevision": 9,
                 "familyId": "foliage-rustle",
                 "mode": "overlay-apng",
                 "frameCount": 8,
-                "frameDurationMs": 120,
+                "frameDurationMs": 92,
                 "sprites": {
-                  "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-down.png",
-                  "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-right.png",
-                  "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-up.png",
-                  "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-2/animation-left.png"
+                  "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-left.png"
                 },
                 "composition": "replace-base",
                 "registration": {

@@ -15,6 +15,7 @@
     bernard: Object.freeze({ id: "bernardo", name: "Bernardo", side: "left", portrait: "img/Cat faces/Bernardo.png" }),
     mochi: Object.freeze({ id: "mochi", name: "Mochi", side: "right", portrait: liveCatFaceSource("cat-faces-mochi-v2") }),
     luna: Object.freeze({ id: "luna", name: "Luna", side: "right", portrait: liveCatFaceSource("cat-faces-luna-v2") }),
+    naya: Object.freeze({ id: "naya", name: "Naya", side: "right", portrait: liveCatFaceSource("cat-faces-naya") }),
     incrementor: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor.png" }),
     incrementorAmused: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor-amused.png" }),
     incrementorLaugh: Object.freeze({ id: "incrementor", name: "The Greatest Incrementor", side: "right", portrait: "img/Cat faces/the-greatest-incrementor-laugh.png" }),

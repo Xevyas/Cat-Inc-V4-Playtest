@@ -953,6 +953,27 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0098Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Naya can now join the Gang and unlock her Inn, whose daily board offers Travelers for Exploration support and resource contracts."
+      ])
+    }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Exploration now uses consistent Warning breadcrumbs for new zones, pending results and world-driven Scouting changes.",
+        "Idle Cats now visibly sleep around the Camp, with dedicated sleeping portraits and cozy bubble feedback.",
+        "Claiming a completed Camp build, repair or upgrade now shows its positive gains directly on the map.",
+        "Camp navigation and placement remain smoother by reusing derived layout data and avoiding redundant previews and media work."
+      ])
+    }),
+    Object.freeze({ label: "Bug Fixes", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0097Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1317,7 +1338,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0097",
+    baseVersion: "0.0098",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1330,6 +1351,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0098",
+      date: "2026-09-15",
+      categories: release0098Categories
+    }),
     Object.freeze({
       version: "0.0097",
       date: "2026-09-13",

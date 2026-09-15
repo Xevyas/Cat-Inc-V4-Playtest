@@ -52,8 +52,8 @@
     },
     "afk": {
       "minimumAbsenceSeconds": 60,
-      "baseRatio": 0.25,
-      "baseMaxSeconds": 36000,
+      "baseRatio": 0.2,
+      "baseMaxSeconds": 14400,
       "engineerRank1CapMinutesPerLevel": 6,
       "engineerRank2RatioPercentPerLevel": 0.5,
       "maxRatio": 1
@@ -247,6 +247,47 @@
       "accuracyCeilingPercent": 96,
       "minGapStepPercent": 0.6,
       "minGapFloorPercent": 4
+    }
+  },
+  "nayaInn": {
+    "stateVersion": 2,
+    "rarityWeights": {
+      "common": 50,
+      "rare": 30,
+      "epic": 15,
+      "legendary": 5
+    },
+    "contracts": {
+      "common": {
+        "inputAmount": 4,
+        "outputAmount": 4
+      },
+      "rare": {
+        "inputAmount": 5,
+        "outputAmount": 8
+      },
+      "epic": {
+        "inputAmount": 6,
+        "outputAmount": 12
+      },
+      "legendary": {
+        "inputAmount": 12,
+        "outputAmount": 1
+      }
+    },
+    "travelers": {
+      "helperPower": {
+        "common": 10,
+        "rare": 15,
+        "epic": 20,
+        "legendary": 25
+      },
+      "guideReductionPercent": {
+        "common": 15,
+        "rare": 25,
+        "epic": 35,
+        "legendary": 50
+      }
     }
   },
   "bookLearning": {
@@ -784,7 +825,10 @@
         "kind": "runtime-rule",
         "id": "cannelleRecruitStoryComplete"
       },
-      "effects": {},
+      "effects": {
+        "campXp": 10,
+        "appeal": 3
+      },
       "upgradeTiers": {},
       "simulation": {},
       "build": {
@@ -1049,6 +1093,35 @@
         "rounding": "ceil",
         "refundRate": 0.5,
         "durationGrowth": 1.4
+      }
+    },
+    "nayaSInn": {
+      "assetId": "naya-s-inn",
+      "name": "Naya's Inn",
+      "category": "building",
+      "repeatable": false,
+      "footprint": {
+        "width": 3,
+        "height": 2
+      },
+      "unlock": {
+        "kind": "runtime-rule",
+        "id": "nayaRecruitStoryComplete"
+      },
+      "effects": {
+        "appeal": 3,
+        "campXp": 15
+      },
+      "upgradeTiers": {},
+      "simulation": {},
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 7200,
+        "costs": {
+          "rockBricks": 20,
+          "pebbleBricks": 40,
+          "basicWoodPlanks": 50
+        }
       }
     }
   }
