@@ -953,6 +953,42 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0099Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Cats can now bring back Small Prey from neighborhood hunting and eat it as a Tier 3 food worth 30 XP."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Neighborhood hunting now takes 100 minutes at difficulty 30 and rewards weighted quantities of Small Prey."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Feeding a Cat now plays a dedicated sound and shows the food traveling to the selected Cat before the XP feedback.",
+        "Camp building cards stay within two columns, while action bubbles and paw trails remain clearer across buildings and Junk.",
+        "Resource definitions, icons, storage rules and Exploration rewards can now be authored and promoted consistently through the Studio."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Radio playback now uses native browser volume when available, restoring reliable local playback in Firefox.",
+        "Weighted Exploration reward quantities now survive loading, saving and Studio-authored resource updates."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "Studio animation fine-tuning now preserves exact values and reports generation failures more reliably."
+      ])
+    })
+  ]);
+
   const release0098Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1338,7 +1374,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0098",
+    baseVersion: "0.0099",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1351,6 +1387,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0099",
+      date: "2026-09-15",
+      categories: release0099Categories
+    }),
     Object.freeze({
       version: "0.0098",
       date: "2026-09-15",

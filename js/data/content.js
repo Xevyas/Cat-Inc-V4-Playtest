@@ -60,124 +60,50 @@ CatInc.data.audioCredits = Object.freeze([
 
 const LIVRE_ICONE = '<img class="livre-icone" src="img/resources/Books_Final.png?v=0.0026" alt="Book">';
 
-// ── Resource info popups (Inventory tab) ─────────────────────
-// Keep this in sync whenever a resource is added or changed.
-const RESOURCE_INFO = {
-  "inv-res-cardboard": {
-    nom:     "Cardboard Pieces",
-    tier:    "Tier 1 · Wood family",
-    desc:    "Small patches of cardboard found lying on the ground. Might be useful.",
-    produce: "Gathered by a Cat assigned to a Cardboard Planks recipe.",
-    usage:   "Used inside that recipe slot (10 pieces per plank). It is never stored globally."
-  },
-  "inv-res-cardboard-plank": {
-    resourceId: "cardboardPlanks",
-    nom:     "Cardboard Planks",
-    tier:    "Tier 1 · Wood family (processed)",
-    desc:    "Sturdy planks pressed from cardboard. The backbone of early construction.",
-    produce: "Assign a Cat to a Cardboard Planks recipe in Work. The slot gathers 10 Cardboard Pieces first.",
-    usage:   "Used to construct buildings like Houses."
-  },
-  "inv-res-basic-wood": {
-    nom:     "Basic Wood",
-    tier:    "Tier 2 · Wood family",
-    desc:    "Rough wooden planks salvaged from human furniture. Heavier to carry, but sturdier.",
-    produce: "Gathered by a Cat assigned to a Basic Wood Planks recipe.",
-    usage:   "Used inside that recipe slot (10 logs per plank). It is never stored globally."
-  },
-  "inv-res-wood-plank": {
-    resourceId: "basicWoodPlanks",
-    nom:     "Basic Wood Planks",
-    tier:    "Tier 2 · Wood family (processed)",
-    desc:    "Refined wooden planks, sanded and shaped. A real upgrade from cardboard.",
-    produce: "Assign a Cat to a Basic Wood Planks recipe in Work. The slot gathers 10 Basic Wood first.",
-    usage:   "Used to construct buildings like Houses."
-  },
-  "inv-res-catnip": {
-    nom:     "Catnip",
-    tier:    "Tier 1 · Food family",
-    desc:    "Fresh catnip from the garden. Nutritious, if you're a cat.",
-    produce: "Gathered by a Cat assigned to a Catnip Salad recipe.",
-    usage:   "Used as the input for that recipe (10 Catnip per salad). It is never stored globally."
-  },
-  "inv-res-salads": {
-    resourceId: "salads",
-    nom:     "Catnip Salad",
-    tier:    "Tier 1 · Food family (processed)",
-    desc:    "A balanced catnip salad. Even Bernardo eats his greens.",
-    produce: "Assign a Cat to a Catnip Salad recipe in Work. The slot gathers 10 Catnip first.",
-    usage:   "Feed to a Cat in the Gang tab to give them +1 XP."
-  },
-  "inv-res-anchovy": {
-    nom:     "Anchovy",
-    tier:    "Tier 2 · Food family",
-    desc:    "Fresh anchovies fished from the nearby stream. A cat's favourite.",
-    produce: "Gathered by a Cat assigned to a Grilled Anchovy recipe.",
-    usage:   "Used as the input for that recipe (10 Anchovies per serving). It is never stored globally."
-  },
-  "inv-res-grilled-anchovy": {
-    resourceId: "grilledAnchovy",
-    nom:     "Grilled Anchovy",
-    tier:    "Tier 2 · Food family (processed)",
-    desc:    "Golden, crispy, perfectly grilled. Worth every second of cooking.",
-    produce: "Assign a Cat to a Grilled Anchovy recipe in Work. The slot gathers 10 Anchovies first.",
-    usage:   "Feed to a Cat in the Gang tab to give them +10 XP."
-  },
-  "inv-res-pebbles": {
-    nom:     "Pebbles",
-    tier:    "Tier 1 · Rock family",
-    desc:    "Small smooth pebbles gathered from the yard. Heavy pockets, light heart.",
-    produce: "Gathered by a Cat assigned to a Pebble Bricks recipe.",
-    usage:   "Used inside that recipe slot (10 pebbles per brick). It is never stored globally."
-  },
-  "inv-res-pebble-brick": {
-    resourceId: "pebbleBricks",
-    nom:     "Pebble Bricks",
-    tier:    "Tier 1 · Rock family (processed)",
-    desc:    "Compact bricks made from compressed pebbles. Surprisingly solid.",
-    produce: "Assign a Cat to a Pebble Bricks recipe in Work. The slot gathers 10 Pebbles first.",
-    usage:   "Used to construct buildings like Facilities."
-  },
-  "inv-res-rocks": {
-    nom:     "Rocks",
-    tier:    "Tier 2 · Rock family",
-    desc:    "Dense stones hauled from deeper in the yard. Much heavier than pebbles.",
-    produce: "Gathered by a Cat assigned to a Rock Bricks recipe.",
-    usage:   "Used inside that recipe slot (10 rocks per brick). It is never stored globally."
-  },
-  "inv-res-rock-brick": {
-    resourceId: "rockBricks",
-    nom:     "Rock Bricks",
-    tier:    "Tier 2 · Rock family (processed)",
-    desc:    "Solid bricks forged from dense rock. Built to last.",
-    produce: "Assign a Cat to a Rock Bricks recipe in Work. The slot gathers 10 Rocks first.",
-    usage:   "Used in advanced construction."
-  },
-  "inv-res-human-leftovers": {
-    resourceId: "humanLeftovers",
-    nom:     "Human Leftovers",
-    tier:    null,
-    desc:    "Bits and pieces left behind by humans. One human's trash is another cat's treasure.",
-    produce: "Found by sending cats on Exploration campaigns.",
-    usage:   "Feed to a Cat in the Gang tab to give them +1 XP."
-  },
-  "inv-res-human-workers-food": {
-    resourceId: "humanWorkersFood",
-    nom:     "Workers Food",
-    tier:    null,
-    desc:    "Packed lunches left behind by the construction workers. Still good.",
-    produce: "Found by scouting the basement in A1 (unlocks after both A1 campaigns).",
-    usage:   "Feed to a Cat in the Gang tab to give them +15 XP."
-  },
-  "inv-res-canned-cat-food": {
-    resourceId: "cannedCatFood",
-    nom:     "Canned Cat Food",
-    tier:    "Training Materials",
-    desc:    "A sealed can of premium cat food found in the supermarket. This is the good stuff.",
-    produce: "Complete or scout the Supermarket in the Exploration tab.",
-    usage:   "Used in the Training Center to improve job levels."
-  }
+// Acquisition/use context stays with its owning runtime systems. Resource
+// identity, presentation, Tier and feeding values come from Gameplay Studio.
+const LEGACY_RESOURCE_CONTEXT = {
+  "inv-res-cardboard": {produce: "Gathered by a Cat assigned to a Cardboard Planks recipe.", usage: "Used inside that recipe slot (10 pieces per plank). It is never stored globally."},
+  "inv-res-cardboard-plank": {produce: "Assign a Cat to a Cardboard Planks recipe in Work. The slot gathers 10 Cardboard Pieces first.", usage: "Used to construct buildings like Houses."},
+  "inv-res-basic-wood": {produce: "Gathered by a Cat assigned to a Basic Wood Planks recipe.", usage: "Used inside that recipe slot (10 logs per plank). It is never stored globally."},
+  "inv-res-wood-plank": {produce: "Assign a Cat to a Basic Wood Planks recipe in Work. The slot gathers 10 Basic Wood first.", usage: "Used to construct buildings like Houses."},
+  "inv-res-catnip": {produce: "Gathered by a Cat assigned to a Catnip Salad recipe.", usage: "Used as the input for that recipe (10 Catnip per salad). It is never stored globally."},
+  "inv-res-salads": {produce: "Assign a Cat to a Catnip Salad recipe in Work. The slot gathers 10 Catnip first.", usage: "Feed to a Cat in the Gang tab."},
+  "inv-res-anchovy": {produce: "Gathered by a Cat assigned to a Grilled Anchovy recipe.", usage: "Used as the input for that recipe (10 Anchovies per serving). It is never stored globally."},
+  "inv-res-grilled-anchovy": {produce: "Assign a Cat to a Grilled Anchovy recipe in Work. The slot gathers 10 Anchovies first.", usage: "Feed to a Cat in the Gang tab."},
+  "inv-res-pebbles": {produce: "Gathered by a Cat assigned to a Pebble Bricks recipe.", usage: "Used inside that recipe slot (10 pebbles per brick). It is never stored globally."},
+  "inv-res-pebble-brick": {produce: "Assign a Cat to a Pebble Bricks recipe in Work. The slot gathers 10 Pebbles first.", usage: "Used to construct buildings like Facilities."},
+  "inv-res-rocks": {produce: "Gathered by a Cat assigned to a Rock Bricks recipe.", usage: "Used inside that recipe slot (10 rocks per brick). It is never stored globally."},
+  "inv-res-rock-brick": {produce: "Assign a Cat to a Rock Bricks recipe in Work. The slot gathers 10 Rocks first.", usage: "Used in advanced construction."},
+  "inv-res-human-leftovers": {produce: "Found by sending cats on Exploration campaigns.", usage: "Feed to a Cat in the Gang tab."},
+  "inv-res-human-workers-food": {produce: "Found by scouting the basement in A1 (unlocks after both A1 campaigns).", usage: "Feed to a Cat in the Gang tab."},
+  "inv-res-canned-cat-food": {produce: "Complete or scout the Supermarket in the Exploration tab.", usage: "Used in the Training Center to improve job levels."}
 };
+
+const RESOURCE_INVENTORY_IDS = {
+  cardboardPieces: "inv-res-cardboard", cardboardPlanks: "inv-res-cardboard-plank",
+  basicWood: "inv-res-basic-wood", basicWoodPlanks: "inv-res-wood-plank",
+  catnip: "inv-res-catnip", salads: "inv-res-salads", anchovy: "inv-res-anchovy",
+  grilledAnchovy: "inv-res-grilled-anchovy", pebbles: "inv-res-pebbles",
+  pebbleBricks: "inv-res-pebble-brick", rocks: "inv-res-rocks", rockBricks: "inv-res-rock-brick",
+  humanLeftovers: "inv-res-human-leftovers", humanWorkersFood: "inv-res-human-workers-food",
+  cannedCatFood: "inv-res-canned-cat-food"
+};
+const RESOURCE_INFO = Object.freeze((CatInc.resources?.definitions() || []).reduce(function(result, resource) {
+  const inventoryId = RESOURCE_INVENTORY_IDS[resource.id]
+    || "inv-res-" + resource.id.replace(/([A-Z])/g, "-$1").toLowerCase();
+  const context = LEGACY_RESOURCE_CONTEXT[inventoryId] || {};
+  result[inventoryId] = {
+    resourceId: resource.id,
+    nom: resource.name,
+    tier: resource.tier ? "Tier " + resource.tier + " · " + resource.family + " family" : null,
+    desc: resource.description,
+    produce: context.produce || "Obtained through gameplay content.",
+    usage: resource.feedable ? "Feed to a Cat in the Gang tab for +" + resource.feedXp + " XP."
+      : context.usage || "Stored in your Inventory."
+  };
+  return result;
+}, {}));
 
 const BOOK_LEARNING_CONTENT = CatInc.data.campGameplay?.bookLearning || {};
 function studioBookContent(itemId) {

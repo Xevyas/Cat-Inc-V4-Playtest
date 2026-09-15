@@ -5,6 +5,7 @@
 // Static balance data lives in js/data/config.js.
 const gameConfigData = globalThis.CatInc.data.config;
 const CONFIG = gameConfigData.CONFIG;
+const resourceApi = globalThis.CatInc.resources;
 
 // Exploration authoring lives in its Studio-managed generated domain.
 const explorationData = globalThis.CatInc.data.exploration;
@@ -2101,7 +2102,10 @@ function vitesseAttrapage() {
 }
 
 // XP / leveling
-const FOOD_XP = { salads: 1, grilledAnchovy: 10, humanLeftovers: 1, humanWorkersFood: 15 };
+const FOOD_XP = Object.freeze(resourceApi.feedableDefinitions().reduce(function(result, resource) {
+  result[resource.id] = resource.feedXp;
+  return result;
+}, {}));
 const GATHER_LEVEL_MULTIPLIER = 1.05;
 // Global level ceiling. Keep this in one place so every XP source (food,
 // offline progression and future systems) shares the same maximum.
@@ -4932,17 +4936,26 @@ function marquerOngletVisite(id) {
 }
 
 // ── 9a. Resources bar
-const RESOURCE_BAR_ITEMS = Object.freeze([
-  { key: "cardboardPlanks", rowId: "row-cardboard-planks", label: "Cardboard Planks", icon: "img/resources/Cardboard Plank_Final.png", tier: "T1", unlocked: function(u) { return u.scierie; } },
-  { key: "basicWoodPlanks", rowId: "row-basic-wood-planks", label: "Basic Wood Planks", icon: "img/resources/Basic Wood Plank_Final.png", tier: "T2", unlocked: function(u) { return u.basicSawmill; } },
-  { key: "pebbleBricks", rowId: "row-pebble-bricks", label: "Pebble Bricks", icon: "img/resources/Pebble Brick_Final.png", tier: "T1", unlocked: function(u) { return u.brickfact; } },
-  { key: "rockBricks", rowId: "row-rock-bricks", label: "Rock Bricks", icon: "img/resources/Rock Brick_Final.png", tier: "T2", unlocked: function(u) { return u.rockfact; } },
-  { key: "salads", rowId: "row-salads", label: "Catnip Salad", icon: "img/resources/Catnip Salad_Final.png", tier: "T1", unlocked: function(u) { return u.catchen; } },
-  { key: "grilledAnchovy", rowId: "row-grilled-anchovy", label: "Grilled Anchovy", icon: "img/resources/Grilled Anchovy_Final.png?v=0.0029", tier: "T2", unlocked: function(u) { return u.grilledAnchovy; } },
-  { key: "humanLeftovers", rowId: "row-human-leftovers", label: "Human Leftovers", icon: "img/resources/Human Leftovers_Final.png?v=0.0029", tier: null, unlocked: function() { return etat.humanLeftovers > 0; } },
-  { key: "humanWorkersFood", rowId: "row-human-workers-food", label: "Workers Food", icon: "img/resources/Human Workers Food_Final.png?v=0.0029", tier: null, unlocked: function() { return etat.humanWorkersFood > 0; } },
-  { key: "cannedCatFood", rowId: "row-canned-cat-food", label: "Canned Cat Food", icon: "img/resources/Canned Cat Food_Final.png?v=0.0029", tier: null, unlocked: function() { return etat.cannedCatFood > 0; } }
-]);
+const RESOURCE_BAR_LEGACY_UNLOCKS = {
+  cardboardPlanks: function(u) { return u.scierie; },
+  basicWoodPlanks: function(u) { return u.basicSawmill; },
+  pebbleBricks: function(u) { return u.brickfact; },
+  rockBricks: function(u) { return u.rockfact || etat.rockBricks > 0; },
+  salads: function(u) { return u.catchen; },
+  grilledAnchovy: function(u) { return u.grilledAnchovy; }
+};
+const RESOURCE_BAR_ITEMS = Object.freeze(resourceApi.globalDefinitions().map(function(resource) {
+  return {
+    key: resource.id,
+    rowId: "row-" + resource.id.replace(/([A-Z])/g, "-$1").toLowerCase(),
+    label: resource.name,
+    icon: resource.iconPath,
+    tier: resource.tier ? "T" + resource.tier : null,
+    unlocked: RESOURCE_BAR_LEGACY_UNLOCKS[resource.id] || function() {
+      return resourceApi.balance(etat, resource.id) > 0;
+    }
+  };
+}));
 let dernierEtatDeblocageRessources = null;
 
 function ressourcesMasqueesBandeau() {
@@ -4957,6 +4970,26 @@ function ressourceFavoriteBandeau(key) {
 function ressourcesDisponiblesBandeau(u) {
   u = u || dernierEtatDeblocageRessources || unlocks();
   return RESOURCE_BAR_ITEMS.filter(function(item) { return !!item.unlocked(u); });
+}
+
+function assurerLignesBandeauRessources() {
+  const host = document.getElementById("ressources-liste");
+  if (!host) return;
+  RESOURCE_BAR_ITEMS.forEach(function(item) {
+    if (document.getElementById(item.rowId)) return;
+    const row = document.createElement("div");
+    row.className = "ressource";
+    row.id = item.rowId;
+    row.dataset.resourceKey = item.key;
+    row.dataset.family = resourceApi.family(item.key) || "special";
+    row.dataset.tooltip = item.label;
+    if (item.tier) row.dataset.tier = item.tier;
+    row.style.display = "none";
+    row.innerHTML = '<img class="ressource-icone" src="' + item.icon + '" alt="' + echapperAttributHtml(item.label)
+      + '"><div class="ressource-chiffres"><span class="ressource-valeur" id="val-'
+      + item.key.replace(/([A-Z])/g, "-$1").toLowerCase() + '">0</span></div>';
+    host.appendChild(row);
+  });
 }
 
 function rendreGestionRessources() {
@@ -4996,6 +5029,7 @@ function fermerGestionRessources() {
 }
 
 function appliquerPreferencesRessourcesBandeau() {
+  assurerLignesBandeauRessources();
   const u = dernierEtatDeblocageRessources || unlocks();
   RESOURCE_BAR_ITEMS.forEach(function(item) {
     ecrireStyle(domParId(item.rowId), "display", item.unlocked(u) && ressourceFavoriteBandeau(item.key) ? "flex" : "none");
@@ -5046,6 +5080,14 @@ function modeleStockageRessourceBandeau(stockage, label) {
 function renduRessources(u) {
   dernierEtatDeblocageRessources = u;
   ecrireTexte(domParId("val-chatons"), etat.chatons);
+  assurerLignesBandeauRessources();
+  RESOURCE_BAR_ITEMS.forEach(function(item) {
+    const valueId = "val-" + item.key.replace(/([A-Z])/g, "-$1").toLowerCase();
+    const value = domParId(valueId);
+    if (value && !["cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks", "salads", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood"].includes(item.key)) {
+      ecrireTexte(value, formaterNombre(resourceApi.balance(etat, item.key)));
+    }
+  });
   [
     ["val-cardboard-planks", etat.cardboardPlanks, "cardboardPlanks", "Cardboard Planks"],
     ["val-basic-wood-planks", etat.basicWoodPlanks, "basicWoodPlanks", "Basic Wood Planks"],
@@ -7272,6 +7314,107 @@ let kittySelectionnee = null;
 let detailKittyMobileOuvert = false;
 let experienceHelpOuvert = false;
 let gangSousOnglet = "all";
+let feedbackNourritureKitty = null;
+const feedbackNourritureTimers = new Set();
+
+function nettoyerFeedbackNourriture(stopAudio) {
+  const overlay = document.getElementById("gang-feeding-feedback");
+  if (overlay) overlay.replaceChildren();
+  feedbackNourritureTimers.forEach(function(timer) { clearTimeout(timer); });
+  feedbackNourritureTimers.clear();
+  feedbackNourritureKitty = null;
+  if (stopAudio) {
+    const audio = globalThis.CatInc && globalThis.CatInc.audio;
+    if (audio && typeof audio.stopEating === "function") audio.stopEating();
+  }
+}
+
+function capturerOriginesFeedbackNourriture(selecteur) {
+  const result = {};
+  document.querySelectorAll(selecteur).forEach(function(control) {
+    const foodType = control.dataset.foodType;
+    const icon = control.querySelector("img");
+    if (!foodType || !icon) return;
+    const rect = icon.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      result[foodType] = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    }
+  });
+  return result;
+}
+
+function sequenceFeedbackNourriture(entries, limit) {
+  const queues = (entries || []).filter(function(entry) {
+    return entry && FOOD_DISPLAY[entry.foodType] && entry.quantity > 0;
+  }).map(function(entry) {
+    return { foodType: entry.foodType, remaining: Math.floor(entry.quantity) };
+  });
+  const sequence = [];
+  while (sequence.length < limit && queues.some(function(entry) { return entry.remaining > 0; })) {
+    queues.forEach(function(entry) {
+      if (sequence.length >= limit || entry.remaining < 1) return;
+      sequence.push(entry.foodType);
+      entry.remaining -= 1;
+    });
+  }
+  return sequence;
+}
+
+function jouerFeedbackNourriture(entries, source, kittyIdx, origins) {
+  const total = (entries || []).reduce(function(sum, entry) { return sum + Math.max(0, Math.floor(entry.quantity || 0)); }, 0);
+  if (!total) return;
+  nettoyerFeedbackNourriture(true);
+  feedbackNourritureKitty = kittyIdx;
+  const sequence = sequenceFeedbackNourriture(entries, 12);
+  const durationMs = 520 + Math.max(0, sequence.length - 1) * 70;
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio.playEating === "function") {
+    audio.playEating(etat.volumeEffetsSonores, {
+      loop: source === "food-management" || total > 2,
+      durationMs: durationMs + 180
+    });
+  }
+
+  const overlay = document.getElementById("gang-feeding-feedback");
+  const portrait = document.querySelector("#detail-kitty .detail-photo");
+  if (!overlay || !portrait || kittySelectionnee !== kittyIdx) return;
+  const target = portrait.getBoundingClientRect();
+  if (!target.width || !target.height) return;
+  const reduced = Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  sequence.forEach(function(foodType, index) {
+    const display = FOOD_DISPLAY[foodType];
+    const origin = origins && origins[foodType];
+    if (!display || !origin) return;
+    const size = Math.max(24, Math.min(40, Math.max(origin.width, origin.height)));
+    const startX = origin.left + origin.width / 2 - size / 2;
+    const startY = origin.top + origin.height / 2 - size / 2;
+    const targetX = target.left + target.width * 0.52 - size / 2;
+    const targetY = target.top + target.height * 0.62 - size / 2;
+    const icon = document.createElement("img");
+    icon.className = "gang-feeding-flight" + (reduced ? " gang-feeding-flight-reduced" : "");
+    icon.src = display.sprite;
+    icon.alt = "";
+    icon.dataset.foodType = foodType;
+    icon.style.left = (reduced ? targetX : startX) + "px";
+    icon.style.top = (reduced ? targetY : startY) + "px";
+    icon.style.width = size + "px";
+    icon.style.height = size + "px";
+    icon.style.setProperty("--food-flight-x", (targetX - startX) + "px");
+    icon.style.setProperty("--food-flight-y", (targetY - startY) + "px");
+    icon.style.animationDelay = (index * 70) + "ms";
+    overlay.appendChild(icon);
+    const remove = function() {
+      icon.remove();
+      if (!overlay.childElementCount) feedbackNourritureKitty = null;
+    };
+    icon.addEventListener("animationend", remove, { once: true });
+    const timer = setTimeout(function() {
+      feedbackNourritureTimers.delete(timer);
+      remove();
+    }, durationMs + 350);
+    feedbackNourritureTimers.add(timer);
+  });
+}
 
 function fermerExperienceHelp() {
   experienceHelpOuvert = false;
@@ -7342,6 +7485,7 @@ function selectionnerKitty(index) {
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
   const conserverFocus = document.activeElement && document.activeElement.dataset.kittyIndex === String(index);
+  if (feedbackNourritureKitty !== null && feedbackNourritureKitty !== index) nettoyerFeedbackNourriture(true);
   kittySelectionnee = index;
   detailKittyMobileOuvert = true;
   renduManagement();
@@ -7363,6 +7507,7 @@ function selectionnerKitty(index) {
 }
 
 function deselectionnerKitty() {
+  nettoyerFeedbackNourriture(true);
   detailKittyMobileOuvert = false;
   renduManagement();
   requestAnimationFrame(function() {
@@ -7388,12 +7533,10 @@ var _foodMgmtOuvert = false;
 var _foodMgmtPct    = 50;
 var _foodMgmtHelp   = null;
 
-const FOOD_DISPLAY = {
-  salads:           { nom: 'Catnip Salad',    sprite: 'img/resources/Catnip Salad_Final.png' },
-  grilledAnchovy:   { nom: 'Grilled Anchovy', sprite: 'img/resources/Grilled Anchovy_Final.png' },
-  humanLeftovers:   { nom: 'Human Leftovers', sprite: 'img/resources/Human Leftovers_Final.png' },
-  humanWorkersFood: { nom: 'Workers Food',    sprite: 'img/resources/Human Workers Food_Final.png' }
-};
+const FOOD_DISPLAY = Object.freeze(resourceApi.feedableDefinitions().reduce(function(result, resource) {
+  result[resource.id] = {nom: resource.name, sprite: resource.iconPath};
+  return result;
+}, {}));
 
 function totalFoodXp() {
   return Object.keys(FOOD_XP).reduce(function(s, f) { return s + (etat[f] || 0) * FOOD_XP[f]; }, 0);
@@ -7421,6 +7564,7 @@ function estMetierManager(kitty) {
 
 function changerSousOngletGang(vue) {
   if (!gangSousOngletsDebloques()) return;
+  nettoyerFeedbackNourriture(true);
   gangSousOnglet = ["all", "managers", "engineers", "strays"].includes(vue) ? vue : "all";
   kittySelectionnee = null;
   detailKittyMobileOuvert = false;
@@ -7511,7 +7655,7 @@ function renduFoodManagement() {
       var qty  = etat[f] || 0;
       var info = FOOD_DISPLAY[f] || { nom: f };
       var icone = info.sprite ? '<img class="fm-food-icone" src="' + info.sprite + '" alt="">' : '';
-      tableHtml += '<div class="fm-cell">'
+      tableHtml += '<div class="fm-cell" data-food-type="' + f + '">'
         + icone
         + '<span class="fm-cell-nom">' + info.nom + '</span>'
         + '<span class="fm-cell-detail">x' + qty + ' &middot; ' + FOOD_XP[f] + ' XP</span>'
@@ -7551,6 +7695,8 @@ function renduFoodManagement() {
 }
 
 function distribuerFood(mode) {
+  var feedbackOrigins = capturerOriginesFeedbackNourriture("#food-management-panel .fm-cell[data-food-type]");
+  var feedbackKittyIdx = kittySelectionnee;
   var totalXp  = totalFoodXp();
   var xpBudget = Math.floor(totalXp * _foodMgmtPct / 100);
   var nbChats  = etat.kittiesData.filter(function(k) {
@@ -7561,7 +7707,7 @@ function distribuerFood(mode) {
   var foods = Object.keys(FOOD_XP).sort(function(a, b) { return FOOD_XP[a] - FOOD_XP[b]; });
   var totalLevelUps = 0;
   var distributionRecap = etat.kittiesData.map(function(k) {
-    return { kitty: k, niveauAvant: k.niveau, foodUnits: 0, xp: 0, levelUps: 0 };
+    return { kitty: k, niveauAvant: k.niveau, foodUnits: 0, foods: {}, xp: 0, levelUps: 0 };
   });
   function recapPour(k) {
     var index = etat.kittiesData.indexOf(k);
@@ -7580,7 +7726,10 @@ function distribuerFood(mode) {
       var units  = Math.min(Math.floor(reste / FOOD_XP[f]), stock);
       etat[f]   -= units;
       consomme  += units * FOOD_XP[f];
-      if (recap) recap.foodUnits += units;
+      if (recap && units > 0) {
+        recap.foodUnits += units;
+        recap.foods[f] = (recap.foods[f] || 0) + units;
+      }
     });
     // If nothing was consumed but forced (e.g. needed=1, smallest unit=15), consume 1 of the smallest
     if (consomme === 0 && forceSingle) {
@@ -7588,7 +7737,10 @@ function distribuerFood(mode) {
         if ((etat[foods[fi]] || 0) > 0) {
           etat[foods[fi]] -= 1;
           consomme = FOOD_XP[foods[fi]];
-          if (recap) recap.foodUnits += 1;
+          if (recap) {
+            recap.foodUnits += 1;
+            recap.foods[foods[fi]] = (recap.foods[foods[fi]] || 0) + 1;
+          }
           break;
         }
       }
@@ -7658,6 +7810,15 @@ function distribuerFood(mode) {
   } else afficherNotification("XP distributed — no level-ups yet.");
   renduManagement();
   if (_foodMgmtOuvert) renduFoodManagement();
+  var feedbackFoods = {};
+  distributionRecap.forEach(function(recap) {
+    Object.keys(recap.foods).forEach(function(foodType) {
+      feedbackFoods[foodType] = (feedbackFoods[foodType] || 0) + recap.foods[foodType];
+    });
+  });
+  jouerFeedbackNourriture(Object.keys(feedbackFoods).map(function(foodType) {
+    return { foodType: foodType, quantity: feedbackFoods[foodType] };
+  }), "food-management", feedbackKittyIdx, feedbackOrigins);
   afficherFoodDistributionRecap(distributionRecap);
 }
 
@@ -7869,14 +8030,8 @@ function renduManagement() {
     const atMaxLevel = Number.isFinite(maxLevel) && k.niveau >= maxLevel;
     const xpNext = atMaxLevel ? 0 : xpPourNiveau(k.niveau);
     const xpPct  = atMaxLevel ? 100 : Math.min(100, Math.floor((k.xp / xpNext) * 100));
-    const FOOD_LABELS = {
-      salads:         { sprite: "img/resources/Catnip Salad_Final.png",    nom: "Salad" },
-      grilledAnchovy: { sprite: "img/resources/Grilled Anchovy_Final.png", nom: "Grilled Anchovy" },
-      humanLeftovers:   { sprite: "img/resources/Human Leftovers_Final.png",     nom: "Human Leftovers" },
-      humanWorkersFood: { sprite: "img/resources/Human Workers Food_Final.png",  nom: "Workers Food" }
-    };
     const feedBtns = atMaxLevel ? "" : Object.keys(FOOD_XP).filter(function(f) { return etat[f] > 0; }).map(function(f) {
-      const info  = FOOD_LABELS[f] || { nom: f };
+      const info  = FOOD_DISPLAY[f] || { nom: f };
       const icone = info.sprite ? '<img class="cout-icone" src="' + info.sprite + '" alt="' + info.nom + '">' : "";
       return "<button class='btn-xp-feed' data-food-type='" + f + "' onclick='nourrir(" + kittySelectionnee + ",\"" + f + "\")'>" + icone + "<span class='xp-gain'>+" + FOOD_XP[f] + " XP</span><span class='xp-stock'>×" + etat[f] + "</span></button>";
     }).join("");
@@ -8467,13 +8622,10 @@ const RECOMPENSE_LIVRES = {
   sturdyHousePlans: { emoji: LIVRE_ICONE, nom: "Sturdy House Plans" }
 };
 
-const RESOURCE_DISPLAY_NAMES = {
-  basicWoodPlanks:  "Basic Wood Planks",
-  rockBricks:       "Rock Bricks",
-  humanLeftovers:   "Human Leftovers",
-  cannedCatFood:    "Canned Cat Food",
-  humanWorkersFood: "Workers Food",
-};
+const RESOURCE_DISPLAY_NAMES = Object.freeze(resourceApi.definitions().reduce(function(result, resource) {
+  result[resource.id] = resource.name;
+  return result;
+}, {}));
 
 function renduRecompensesLuckScouting(sc, kittyIndex) {
   var entries;
@@ -10031,6 +10183,17 @@ function applyPerkCatFood(table, kittyIndex) {
 }
 
 function appliquerRecompense(recompenseId, recompenseQty) {
+  const resource = resourceApi.definition(recompenseId);
+  if (resource && resource.storageMode !== "recipe-slot") {
+    const qty = Math.max(0, Number(recompenseQty) || 1);
+    const granted = resourceApi.grant(etat, recompenseId, qty);
+    if (granted > 0) {
+      inventaireDirty = true;
+      afficherNotification(granted + " " + resource.name + (granted === 1 ? "" : "s") + " obtained!");
+      ajouterLog("event", granted + " " + resource.name + (granted === 1 ? "" : "s") + " added to inventory.");
+    }
+    return;
+  }
   if (recompenseId === "compass") {
     if (!etat.itemsAcquis.includes("compass")) {
       etat.itemsAcquis.push("compass");
@@ -10038,24 +10201,6 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       afficherNotification("Compass obtained! A path beyond the neighbourhood may be opening.");
       ajouterLog("unlock", "Compass added to your Inventory.");
     }
-  }
-  if (recompenseId === "basicWoodPlanks") {
-    const qty = recompenseQty || 1;
-    etat.basicWoodPlanks += qty;
-    afficherNotification(qty + " Basic Wood Planks found!");
-    ajouterLog("event", qty + " Basic Wood Planks added to inventory.");
-  }
-  if (recompenseId === "rockBricks") {
-    const qty = recompenseQty || 1;
-    etat.rockBricks += qty;
-    afficherNotification(qty + " Rock Bricks found!");
-    ajouterLog("event", qty + " Rock Bricks added to inventory.");
-  }
-  if (recompenseId === "humanLeftovers") {
-    const qty = recompenseQty || 1;
-    etat.humanLeftovers += qty;
-    afficherNotification(qty + " Human Leftovers found!");
-    ajouterLog("event", qty + " Human Leftovers found in the neighbor's trash.");
   }
   if (recompenseId === "schoolGuide") {
     if (!etat.itemsAcquis.includes("schoolGuide")) {
@@ -10133,17 +10278,6 @@ function appliquerRecompense(recompenseId, recompenseQty) {
     }
     afficherNotification("Sturdy House Plans obtained! Check your Inventory.");
     ajouterLog("unlock", "Sturdy House Plans added to your Inventory.");
-  }
-  if (recompenseId === "cannedCatFood") {
-    etat.cannedCatFood += (recompenseQty || 1);
-    afficherNotification("Canned Cat Food obtained!");
-    ajouterLog("event", "Canned Cat Food added to inventory.");
-  }
-  if (recompenseId === "humanWorkersFood") {
-    const qty = recompenseQty || 1;
-    etat.humanWorkersFood += qty;
-    afficherNotification(qty + " Human Workers Food found!");
-    ajouterLog("event", qty + " Human Workers Food added to inventory.");
   }
 }
 
@@ -11326,26 +11460,39 @@ const RES_CATEGORIES = [
 ];
 
 function buildRessourcesList(u) {
-  return [
-    { id: "inv-res-cardboard",       label: "Cardboard Pieces",  category: "wood",  sprite: "img/resources/Cardboard Pieces_Final.png",  val: function() { return 0; }, simple: true, visible: u.cathering    },
-    { id: "inv-res-cardboard-plank", label: "Cardboard Planks",  category: "wood",  sprite: "img/resources/Cardboard Plank_Final.png",   val: function() { return etat.cardboardPlanks;  }, visible: u.scierie      },
-    { id: "inv-res-basic-wood",      label: "Basic Wood",        category: "wood",  sprite: "img/resources/Basic Wood_Final.png",        val: function() { return 0; }, simple: true, visible: u.basicWood    },
-    { id: "inv-res-wood-plank",      label: "Basic Wood Planks", category: "wood",  sprite: "img/resources/Basic Wood Plank_Final.png",  val: function() { return etat.basicWoodPlanks;  }, visible: u.basicSawmill },
-    { id: "inv-res-catnip",          label: "Catnip",            category: "food",  sprite: "img/resources/Catnip_Final.png",            val: function() { return 0; }, simple: true, visible: u.grasscat     },
-    { id: "inv-res-salads",          label: "Catnip Salad",       category: "food",  sprite: "img/resources/Catnip Salad_Final.png",      val: function() { return etat.salads;           }, visible: u.catchen      },
-    { id: "inv-res-anchovy",         label: "Anchovy",           category: "food",  sprite: "img/resources/Anchovy_Final.png",           val: function() { return 0; }, simple: true, visible: u.anchovy      },
-    { id: "inv-res-grilled-anchovy", label: "Grilled Anchovy",   category: "food",  sprite: "img/resources/Grilled Anchovy_Final.png",   val: function() { return etat.grilledAnchovy;   }, visible: u.grilledAnchovy },
-    { id: "inv-res-human-leftovers",   label: "Human Leftovers",  category: "food",  sprite: "img/resources/Human Leftovers_Final.png",    val: function() { return etat.humanLeftovers;    }, visible: etat.humanLeftovers > 0    },
-    { id: "inv-res-human-workers-food", label: "Workers Food",    category: "food",  sprite: "img/resources/Human Workers Food_Final.png", val: function() { return etat.humanWorkersFood;  }, visible: etat.humanWorkersFood > 0  },
-    { id: "inv-res-canned-cat-food",   label: "Canned Cat Food", category: "training", sprite: "img/resources/Canned Cat Food_Final.png",   val: function() { return etat.cannedCatFood;     }, visible: etat.cannedCatFood > 0     },
-    { id: "inv-res-pebbles",         label: "Pebbles",           category: "stone", sprite: "img/resources/Pebbles_Final.png",           val: function() { return 0; }, simple: true, visible: u.pebblecat    },
-    { id: "inv-res-pebble-brick",    label: "Pebble Bricks",     category: "stone", sprite: "img/resources/Pebble Brick_Final.png",      val: function() { return etat.pebbleBricks;     }, visible: u.brickfact    },
-    { id: "inv-res-rocks",           label: "Rocks",             category: "stone", sprite: "img/resources/Rock_Final.png",              val: function() { return 0; }, simple: true, visible: u.rockcat      },
-    // Rock Bricks can arrive as an Exploration campaign reward before the
-    // Rock Bricks recipe is unlocked, so a positive stock must reveal them.
-    { id: "inv-res-rock-brick",      label: "Rock Bricks",       category: "stone", sprite: "img/resources/Rock Brick_Final.png",        val: function() { return etat.rockBricks;       }, visible: u.rockfact || etat.rockBricks > 0 },
-    // metal: add here when metal resources are implemented
-  ];
+  const legacyInventoryIds = {
+    cardboardPieces: "inv-res-cardboard", cardboardPlanks: "inv-res-cardboard-plank",
+    basicWood: "inv-res-basic-wood", basicWoodPlanks: "inv-res-wood-plank",
+    catnip: "inv-res-catnip", salads: "inv-res-salads", anchovy: "inv-res-anchovy",
+    grilledAnchovy: "inv-res-grilled-anchovy", pebbles: "inv-res-pebbles",
+    pebbleBricks: "inv-res-pebble-brick", rocks: "inv-res-rocks", rockBricks: "inv-res-rock-brick",
+    humanLeftovers: "inv-res-human-leftovers", humanWorkersFood: "inv-res-human-workers-food",
+    cannedCatFood: "inv-res-canned-cat-food"
+  };
+  const legacyUnlocks = {
+    cardboardPieces: u.cathering, cardboardPlanks: u.scierie,
+    basicWood: u.basicWood, basicWoodPlanks: u.basicSawmill,
+    catnip: u.grasscat, salads: u.catchen,
+    anchovy: u.anchovy, grilledAnchovy: u.grilledAnchovy,
+    pebbles: u.pebblecat, pebbleBricks: u.brickfact,
+    rocks: u.rockcat, rockBricks: u.rockfact || etat.rockBricks > 0
+  };
+  return resourceApi.definitions().map(function(resource) {
+    const global = resource.storageMode !== "recipe-slot";
+    const quantity = function() { return global ? resourceApi.balance(etat, resource.id) : 0; };
+    return {
+      id: legacyInventoryIds[resource.id]
+        || "inv-res-" + resource.id.replace(/([A-Z])/g, "-$1").toLowerCase(),
+      resourceId: resource.id,
+      label: resource.name,
+      category: resource.family,
+      sprite: resource.iconPath,
+      val: quantity,
+      simple: !global,
+      visible: Object.prototype.hasOwnProperty.call(legacyUnlocks, resource.id)
+        ? legacyUnlocks[resource.id] : quantity() > 0
+    };
+  });
 }
 
 function inventaireIllustre() {
@@ -11578,17 +11725,7 @@ function renderResourcesSection(u) {
   displayed.forEach(function(r) {
     if (r.simple) return;
     const qtyEl = domParId(r.id + "-qty");
-    const resourceId = {
-      "inv-res-cardboard-plank": "cardboardPlanks",
-      "inv-res-wood-plank": "basicWoodPlanks",
-      "inv-res-salads": "salads",
-      "inv-res-grilled-anchovy": "grilledAnchovy",
-      "inv-res-human-leftovers": "humanLeftovers",
-      "inv-res-human-workers-food": "humanWorkersFood",
-      "inv-res-canned-cat-food": "cannedCatFood",
-      "inv-res-pebble-brick": "pebbleBricks",
-      "inv-res-rock-brick": "rockBricks"
-    }[r.id];
+    const resourceId = r.resourceId;
     const stockage = resourceId ? etatStockageRessource(resourceId) : null;
     if (stockage && !illustrated) {
       const quantite = formaterNombre(Math.floor(r.val()))
@@ -12956,6 +13093,7 @@ function nourrir(kittyIdx, foodType) {
   const niveauMax = niveauMaxChat(k);
   if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) return;
   const niveauAvant = k.niveau;
+  const feedbackOrigins = capturerOriginesFeedbackNourriture('#detail-experience [data-food-type="' + foodType + '"]');
   etat[foodType] -= 1;
   k.xp += xpGain;
   while (k.xp >= xpPourNiveau(k.niveau) && k.niveau < niveauMax) {
@@ -12968,6 +13106,7 @@ function nourrir(kittyIdx, foodType) {
     enregistrerNiveauQuotidien(k.niveau - niveauAvant);
   }
   verifierObjectifs(); sauvegarder(); renduManagement();
+  jouerFeedbackNourriture([{ foodType: foodType, quantity: 1 }], "manual", kittyIdx, feedbackOrigins);
   if (k.niveau > niveauAvant) afficherNiveauChat(kittyIdx, k);
   campGuidanceActionCommit({
     type: "gang.cat-fed",
@@ -13030,6 +13169,7 @@ function nourrirAutoNiveau(kittyIdx) {
   if (!plan) return;
 
   const appliquerPlan = function() {
+    const feedbackOrigins = capturerOriginesFeedbackNourriture("#detail-experience [data-food-type]");
     Object.keys(plan.quantities).forEach(function(foodType) {
       etat[foodType] -= plan.quantities[foodType];
     });
@@ -13044,6 +13184,9 @@ function nourrirAutoNiveau(kittyIdx) {
       enregistrerNiveauQuotidien(k.niveau - niveauAvant);
     }
     verifierObjectifs(); sauvegarder(); renduManagement();
+    jouerFeedbackNourriture(Object.keys(plan.quantities).map(function(foodType) {
+      return { foodType: foodType, quantity: plan.quantities[foodType] };
+    }), "auto-feed", kittyIdx, feedbackOrigins);
     if (k.niveau > niveauAvant) afficherNiveauChat(kittyIdx, k);
   };
 
@@ -13170,7 +13313,7 @@ function reglerSlotRecetteHeriteApresCycle(pair, slot, result) {
   // of dropping it when the now-complete compatibility cycle is retired.
   const carry = Math.max(0, Number(slot.outputCarry) || 0);
   if (carry > 1e-9) {
-    etat[pair.outputRes] = (Number(etat[pair.outputRes]) || 0) + carry;
+    resourceApi.grant(etat, pair.outputRes, carry);
     if (pair.procTotalKey) etat[pair.procTotalKey] = (Number(etat[pair.procTotalKey]) || 0) + carry;
     result.produced += carry;
   }
@@ -17183,7 +17326,9 @@ function capaciteBatimentCamp(typeId, requiredTier, options) {
 
 const CAMP_STORAGE_BASE_CAPACITY = campGameplayData.storageRules.baseCapacity;
 const CAMP_STORAGE_CAPACITY_PER_TIER = effetGameplayCamp("storage", "storageCapacity", 10);
-const CAMP_STORAGE_RESOURCE_IDS = campGameplayData.storageRules.resourceIds;
+const CAMP_STORAGE_RESOURCE_IDS = Object.freeze(resourceApi.globalDefinitions()
+  .filter(function(resource) { return resource.storageMode === "camp-storage"; })
+  .map(function(resource) { return resource.id; }));
 
 function ressourceSoumiseStockage(resourceId) {
   return CAMP_STORAGE_RESOURCE_IDS.includes(resourceId);
@@ -20347,7 +20492,7 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
     const audio = globalThis.CatInc && globalThis.CatInc.audio;
     const radioOn = Boolean(audio && typeof audio.isRadioOn === "function" && audio.isRadioOn());
     const radioLabel = "Turn Radio " + (radioOn ? "Off" : "On");
-    menu.innerHTML = '<button type="button" class="camp-function-action" role="menuitem"'
+    menu.innerHTML = '<button type="button" class="camp-function-action camp-radio-action" role="menuitem"'
       + ' data-camp-menu-action="toggle-radio" aria-label="' + radioLabel + '" title="' + radioLabel + '">'
       + interfaceIconHtml(radioOn ? "pause" : "play", "camp-action-icon") + '</button>';
   } else if (maison) {
@@ -21950,12 +22095,7 @@ function campTaskPanelCostEntries(definition) {
 }
 
 function tierRessourceCamp(resourceId) {
-  const pair = typeof RESOURCE_PAIRS !== "undefined" && Array.isArray(RESOURCE_PAIRS)
-    ? RESOURCE_PAIRS.find(function(candidate) {
-        return candidate.rawRes === resourceId || candidate.procRes === resourceId;
-      })
-    : null;
-  return pair && Number.isFinite(Number(pair.tier)) ? Number(pair.tier) : null;
+  return resourceApi.tier(resourceId);
 }
 
 function campTaskPanelSelectedCats() {
@@ -22970,45 +23110,12 @@ function prochaineAmeliorationCamp(item) {
 }
 
 function libelleRessourceCamp(resourceId) {
-  return {
-    cardboardPieces: "Cardboard Pieces",
-    cardboardPlanks: "Cardboard Planks",
-    basicWood: "Basic Wood",
-    basicWoodPlanks: "Basic Wood Planks",
-    catnip: "Catnip",
-    salads: "Catnip Salad",
-    anchovy: "Anchovy",
-    grilledAnchovy: "Grilled Anchovy",
-    pebbles: "Pebbles",
-    pebbleBricks: "Pebble Bricks",
-    rocks: "Rocks",
-    rockBricks: "Rock Bricks",
-    humanLeftovers: "Human Leftovers",
-    humanWorkersFood: "Workers Food",
-    cannedCatFood: "Canned Cat Food",
-    cannelleTokens: "Cannelle's Tokens"
-  }[resourceId] || resourceId;
+  return resourceId === "cannelleTokens" ? "Cannelle's Tokens" : resourceApi.name(resourceId);
 }
 
 function iconeRessourceCamp(resourceId) {
-  return {
-    cardboardPieces: "img/resources/Cardboard Pieces_Final.png",
-    cardboardPlanks: "img/resources/Cardboard%20Plank_Final.png",
-    basicWood: "img/resources/Basic Wood_Final.png",
-    basicWoodPlanks: "img/resources/Basic Wood Plank_Final.png",
-    catnip: "img/resources/Catnip_Final.png",
-    salads: "img/resources/Catnip Salad_Final.png",
-    anchovy: "img/resources/Anchovy_Final.png?v=0.0029",
-    grilledAnchovy: "img/resources/Grilled Anchovy_Final.png?v=0.0029",
-    pebbles: "img/resources/Pebbles_Final.png",
-    pebbleBricks: "img/resources/Pebble Brick_Final.png",
-    rocks: "img/resources/Rock_Final.png",
-    rockBricks: "img/resources/Rock Brick_Final.png",
-    humanLeftovers: "img/resources/Human Leftovers_Final.png",
-    humanWorkersFood: "img/resources/Human Workers Food_Final.png",
-    cannedCatFood: "img/resources/Canned Cat Food_Final.png",
-    cannelleTokens: "img/resources/silver-coin.png"
-  }[resourceId] || "";
+  return resourceId === "cannelleTokens"
+    ? "img/resources/silver-coin.png" : resourceApi.icon(resourceId);
 }
 
 function ressourcesAmeliorationCampSuffisantes(upgrade) {
@@ -24555,6 +24662,9 @@ function rendrePaletteCampPrototype() {
   fermerPopoverEffetsBatimentCamp(false);
   palette.innerHTML = "";
   const categorie = campPrototypeCategorieOuverte;
+  palette.dataset.campCategory = categorie || "";
+  const categorySheet = palette.closest(".camp-prototype-category-sheet");
+  if (categorySheet) categorySheet.dataset.campCategory = categorie || "";
   if (!categorie) {
     actualiserCommandesCampPrototype();
     return;
@@ -27673,6 +27783,7 @@ function changerOnglet(id, options) {
       familyId: tutorialWorkIntent.familyId
     })) return false;
   }
+  if (id !== "gang" && typeof nettoyerFeedbackNourriture === "function") nettoyerFeedbackNourriture(true);
   const guidanceDescriptor = typeof guidanceController !== "undefined" && guidanceController
     ? guidanceController.currentDescriptor() : null;
   if (id !== "camp") fermerMenuInteractionCampPrototype();

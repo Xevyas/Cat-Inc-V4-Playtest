@@ -95,7 +95,11 @@
       const wholeOutput = Math.floor(slot.outputCarry + EPSILON);
       slot.outputCarry = Math.max(0, slot.outputCarry - wholeOutput);
       if (wholeOutput > 0) {
-        state[pair.outputRes] = (Number(state[pair.outputRes]) || 0) + wholeOutput;
+        if (CatInc.resources && CatInc.resources.definition(pair.outputRes)) {
+          CatInc.resources.grant(state, pair.outputRes, wholeOutput);
+        } else {
+          state[pair.outputRes] = (Number(state[pair.outputRes]) || 0) + wholeOutput;
+        }
         if (pair.procTotalKey) state[pair.procTotalKey] = (Number(state[pair.procTotalKey]) || 0) + wholeOutput;
         result.produced += wholeOutput;
         if (result.firstProducerIndex === null) result.firstProducerIndex = slot.kittyIndex;

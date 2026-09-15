@@ -4472,6 +4472,18 @@ body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
   grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   gap: 8px;
 }
+@media (min-width: 769px) {
+  #camp-prototype-category-sheet[data-camp-category="building"] {
+    width: min(calc(100% - 28px), 760px);
+  }
+  #camp-prototype-palette[data-camp-category="building"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+#camp-prototype-palette[data-camp-category="building"] .camp-prototype-palette-requirements {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
 .camp-prototype-palette-item {
   display: flex;
   min-width: 0;
@@ -4922,8 +4934,8 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   top: var(--camp-paw-top, 50%);
   width: 3.3%;
   aspect-ratio: 1;
-  filter: drop-shadow(0 1px 1px rgba(255, 248, 218, .88));
-  opacity: .36;
+  filter: grayscale(1) saturate(0) drop-shadow(0 1px 1px rgba(255, 248, 218, .88));
+  opacity: .52;
   transform: translate(-50%, -50%) rotate(calc(180deg + var(--camp-paw-turn, 0deg)));
   transition: opacity .25s ease, filter .25s ease;
 }
@@ -5662,12 +5674,33 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   max-height: 100%;
   object-fit: contain;
 }
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-function-action {
+  border-color: transparent;
+  background: transparent;
+}
+@media (hover: hover) and (pointer: fine) {
+  .camp-prototype-interaction-menu:not(.camp-production-menu) .camp-function-action:hover {
+    color: #27834f;
+    background: transparent;
+    filter: brightness(1.06);
+  }
+}
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-function-action .camp-action-icon {
+  width: 58px;
+  height: 58px;
+}
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-radio-action .camp-action-icon {
+  width: 66px;
+  height: 66px;
+  max-width: none;
+  max-height: none;
+}
 .camp-prototype-interaction-menu:not(.camp-production-menu) .camp-upgrade-compact {
   grid-template: 1fr / 1fr;
 }
 .camp-prototype-interaction-menu:not(.camp-production-menu) .camp-exploration-action .camp-action-icon {
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
 }
 .camp-house-panel {
   display: grid;
@@ -6061,22 +6094,21 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   height: 24px;
   object-fit: contain;
 }
-.camp-prototype-interaction-menu .camp-prototype-demolition-action {
-  border-color: #b96528;
-  border-radius: 50%;
+.camp-prototype-interaction-menu:not(.camp-production-menu):not(:has(.camp-sticker-customizer)) .camp-prototype-demolition-action {
+  border-color: transparent;
   color: #8d441b;
-  background: #fff8eb;
+  background: transparent;
 }
 @media (hover: hover) and (pointer: fine) {
-  .camp-prototype-interaction-menu .camp-prototype-demolition-action:hover {
+  .camp-prototype-interaction-menu:not(.camp-production-menu):not(:has(.camp-sticker-customizer)) .camp-prototype-demolition-action:hover {
     color: #8d441b;
-    background: #fff8eb;
-    filter: brightness(.97);
+    background: transparent;
+    filter: brightness(1.06);
   }
 }
 .camp-prototype-demolition-action > img {
-  width: 32px;
-  height: 32px;
+  width: 58px;
+  height: 58px;
   max-width: none;
   object-fit: contain;
   pointer-events: none;
@@ -10452,6 +10484,43 @@ body[data-ui-theme="stylish"] #detail-experience .detail-level-row { min-height:
 }
 .btn-xp-auto:hover:not(:disabled) { background: var(--couleur-survol); }
 .btn-xp-auto:disabled { background: #ddd; color: #999; cursor: not-allowed; }
+
+.gang-feeding-feedback {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gang-feeding-flight {
+  position: fixed;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: gang-food-to-mouth 520ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes gang-food-to-mouth {
+  0% { transform: translate3d(0, 0, 0) scale(.82) rotate(-5deg); opacity: 0; }
+  14% { opacity: 1; }
+  72% { opacity: 1; }
+  100% { transform: translate3d(var(--food-flight-x), var(--food-flight-y), 0) scale(.34) rotate(7deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gang-feeding-flight {
+    animation-name: gang-food-mouth-pop;
+    animation-duration: 220ms;
+  }
+}
+
+@keyframes gang-food-mouth-pop {
+  0% { transform: scale(.72); opacity: 0; }
+  35% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(.55); opacity: 0; }
+}
 
 .xp-gain  { opacity: 0.9; }
 .xp-stock { opacity: 0.65; font-weight: 400; }

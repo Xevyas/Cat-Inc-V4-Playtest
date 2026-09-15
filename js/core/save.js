@@ -7,6 +7,8 @@
   const perksV2Api = CatInc.perksV2 || Object.freeze({
     normalizeProgress: function() { return { version: 2, learned: [] }; }
   });
+  const resourceApi = CatInc.resources;
+  if (!resourceApi) throw new Error("CatInc.resources must be loaded before CatInc.save.");
 
   function regionsExploration() {
     return CatInc.data && CatInc.data.exploration && CatInc.data.exploration.regions || {};
@@ -62,7 +64,7 @@
     "lumberjack", "carpenter", "farmer", "chef", "explorator", "builder",
     "miner", "stonemason", "gang-leader", "camp-engineer", "shop-owner"
   ];
-  const SCOUTING_REWARD_IDS = ["humanLeftovers", "humanWorkersFood", "cannedCatFood"];
+  const SCOUTING_REWARD_IDS = resourceApi.globalDefinitions().map(function(resource) { return resource.id; });
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
   const CAMP_CANONICAL_REPAIR_IDS = [
     "cardboardBox", "storage", "operationsTable", "jobCenter",
@@ -177,10 +179,7 @@
   const CHEF_KISS_FEED_TUTORIAL_STAGES = [
     "inactive", "story", "gang", "mochi", "feed", "bonuses", "complete"
   ];
-  const RESOURCE_BAR_KEYS = [
-    "cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks",
-    "salads", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood"
-  ];
+  const RESOURCE_BAR_KEYS = resourceApi.globalDefinitions().map(function(resource) { return resource.id; });
 
 function estObjetSauvegarde(valeur) {
   return valeur !== null && typeof valeur === "object" && !Array.isArray(valeur);
@@ -366,6 +365,14 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && (typeof d[cle] !== "number" || !Number.isFinite(d[cle]) || d[cle] < 0)) {
       return "Invalid numeric field: " + cle + ".";
     }
+  }
+  if (d.resources !== undefined) {
+    if (!estObjetSauvegarde(d.resources)) return "Invalid Resources balance map.";
+    if (Object.keys(d.resources).some(function(resourceId) {
+      return !RESOURCE_BAR_KEYS.includes(resourceId)
+        || typeof d.resources[resourceId] !== "number"
+        || !Number.isFinite(d.resources[resourceId]) || d.resources[resourceId] < 0;
+    })) return "Invalid Resources balance map.";
   }
   if (d.birdPityEchecs !== undefined && (!Number.isInteger(d.birdPityEchecs) || d.birdPityEchecs < 0)) {
     return "Invalid Bird pity data.";
@@ -1068,18 +1075,10 @@ function analyserSauvegardeBrute(raw) {
     catnip:                 etat.catnip,            catnipTotalRecolte:    etat.catnipTotalRecolte,
     pebbles:                etat.pebbles,           pebblesTotalRecolte:   etat.pebblesTotalRecolte,
     rocks:                  etat.rocks,             rocksTotalRecolte:     etat.rocksTotalRecolte,
-    cardboardPlanks:        etat.cardboardPlanks,
+    resources:              resourceApi.normalizeBalances(etat),
     cardboardPlanksTotalProduit: etat.cardboardPlanksTotalProduit,
-    basicWoodPlanks:        etat.basicWoodPlanks,
     basicWoodPlanksTotalProduit: etat.basicWoodPlanksTotalProduit,
-    pebbleBricks:           etat.pebbleBricks,
-    rockBricks:             etat.rockBricks,
-    salads:                 etat.salads,
     anchovy:                etat.anchovy,             anchovyTotalRecolte:  etat.anchovyTotalRecolte,
-    grilledAnchovy:         etat.grilledAnchovy,
-    humanLeftovers:         etat.humanLeftovers,
-    humanWorkersFood:       etat.humanWorkersFood,
-    cannedCatFood:          etat.cannedCatFood,
     cannelleTokens:         etat.cannelleTokens,
     cannelleBargainNextAt:  etat.cannelleBargainNextAt,
     cannelleBargainRulesSeen: etat.cannelleBargainRulesSeen,
@@ -1222,8 +1221,21 @@ function analyserSauvegardeBrute(raw) {
   etat.pebblesTotalRecolte    = d.pebblesTotalRecolte    || 0;
   etat.rocks                  = d.rocks                  || 0;
   etat.rocksTotalRecolte      = d.rocksTotalRecolte      || 0;
+  const canonicalBalanceMapPresent = estObjetSauvegarde(d.resources);
+  etat.resources = resourceApi.normalizeBalances(d);
+  resourceApi.installLegacyAccessors(etat);
   // Migration: planks → cardboardPlanks, bricks → pebbleBricks
-  etat.cardboardPlanks        = d.cardboardPlanks        !== undefined ? d.cardboardPlanks        : (d.planks || 0);
+  if (!canonicalBalanceMapPresent) {
+    etat.cardboardPlanks = d.cardboardPlanks !== undefined ? d.cardboardPlanks : (d.planks || 0);
+    etat.basicWoodPlanks = d.basicWoodPlanks || 0;
+    etat.pebbleBricks = d.pebbleBricks !== undefined ? d.pebbleBricks : (d.bricks || 0);
+    etat.rockBricks = d.rockBricks || 0;
+    etat.salads = d.salads || 0;
+    etat.grilledAnchovy = d.grilledAnchovy || 0;
+    etat.humanLeftovers = d.humanLeftovers || 0;
+    etat.humanWorkersFood = d.humanWorkersFood || 0;
+    etat.cannedCatFood = d.cannedCatFood || 0;
+  }
   // New saves track lifetime finished Cardboard Planks. Older saves can
   // safely infer completion when the tutorial objective was already done;
   // otherwise keep at least the current stock as the conservative baseline.
@@ -1231,17 +1243,9 @@ function analyserSauvegardeBrute(raw) {
   etat.cardboardPlanksTotalProduit = d.cardboardPlanksTotalProduit !== undefined
     ? d.cardboardPlanksTotalProduit
     : Math.max(etat.cardboardPlanks, legacyTenPlanks ? 10 : 0);
-  etat.basicWoodPlanks        = d.basicWoodPlanks        || 0;
   etat.basicWoodPlanksTotalProduit = d.basicWoodPlanksTotalProduit || 0;
-  etat.pebbleBricks           = d.pebbleBricks           !== undefined ? d.pebbleBricks           : (d.bricks || 0);
-  etat.rockBricks             = d.rockBricks             || 0;
-  etat.salads                 = d.salads                 || 0;
   etat.anchovy                = d.anchovy                || 0;
   etat.anchovyTotalRecolte    = d.anchovyTotalRecolte    || 0;
-  etat.grilledAnchovy         = d.grilledAnchovy         || 0;
-  etat.humanLeftovers         = d.humanLeftovers         || 0;
-  etat.humanWorkersFood       = d.humanWorkersFood       || 0;
-  etat.cannedCatFood          = d.cannedCatFood          || 0;
   etat.cannelleTokens         = Number.isFinite(d.cannelleTokens) ? Math.max(0, Math.floor(d.cannelleTokens)) : 0;
   etat.cannelleBargainNextAt  = Number.isFinite(d.cannelleBargainNextAt) ? Math.max(0, d.cannelleBargainNextAt) : 0;
   etat.cannelleBargainRulesSeen = d.cannelleBargainRulesSeen === true;

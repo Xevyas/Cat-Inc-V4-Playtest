@@ -9,23 +9,184 @@
   }
   CatInc.data.campGameplay = deepFreeze({
   "schemaVersion": 1,
+  "resources": {
+    "cardboardPieces": {
+      "name": "Cardboard Pieces",
+      "iconId": "resources-cardboard-pieces",
+      "family": "wood",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Small patches of cardboard found lying on the ground. Might be useful.",
+      "tier": 1,
+      "iconPath": "img/resources/Cardboard Pieces_Final.png"
+    },
+    "cardboardPlanks": {
+      "name": "Cardboard Planks",
+      "iconId": "resources-cardboard-plank",
+      "family": "wood",
+      "storageMode": "camp-storage",
+      "feedable": false,
+      "description": "Sturdy planks pressed from cardboard. The backbone of early construction.",
+      "tier": 1,
+      "iconPath": "img/resources/Cardboard Plank_Final.png"
+    },
+    "basicWood": {
+      "name": "Basic Wood",
+      "iconId": "resources-basic-wood",
+      "family": "wood",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Rough wood salvaged from human furniture. Heavier to carry, but sturdier.",
+      "tier": 2,
+      "iconPath": "img/resources/Basic Wood_Final.png"
+    },
+    "basicWoodPlanks": {
+      "name": "Basic Wood Planks",
+      "iconId": "resources-basic-wood-plank",
+      "family": "wood",
+      "storageMode": "camp-storage",
+      "feedable": false,
+      "description": "Refined wooden planks, sanded and shaped. A real upgrade from cardboard.",
+      "tier": 2,
+      "iconPath": "img/resources/Basic Wood Plank_Final.png"
+    },
+    "catnip": {
+      "name": "Catnip",
+      "iconId": "resources-catnip",
+      "family": "food",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Fresh catnip from the garden. Nutritious, if you're a cat.",
+      "tier": 1,
+      "iconPath": "img/resources/Catnip_Final.png"
+    },
+    "salads": {
+      "name": "Catnip Salad",
+      "iconId": "resources-catnip-salad",
+      "family": "food",
+      "storageMode": "camp-storage",
+      "feedable": true,
+      "description": "A balanced catnip salad. Even Bernardo eats his greens.",
+      "tier": 1,
+      "feedXp": 1,
+      "iconPath": "img/resources/Catnip Salad_Final.png"
+    },
+    "anchovy": {
+      "name": "Anchovy",
+      "iconId": "resources-anchovy",
+      "family": "food",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Fresh anchovies fished from the nearby stream. A cat's favourite.",
+      "tier": 2,
+      "iconPath": "img/resources/Anchovy_Final.png"
+    },
+    "grilledAnchovy": {
+      "name": "Grilled Anchovy",
+      "iconId": "resources-grilled-anchovy",
+      "family": "food",
+      "storageMode": "camp-storage",
+      "feedable": true,
+      "description": "Golden, crispy, perfectly grilled. Worth every second of cooking.",
+      "tier": 2,
+      "feedXp": 10,
+      "iconPath": "img/resources/Grilled Anchovy_Final.png"
+    },
+    "pebbles": {
+      "name": "Pebbles",
+      "iconId": "resources-pebbles",
+      "family": "stone",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Small smooth pebbles gathered from the yard. Heavy pockets, light heart.",
+      "tier": 1,
+      "iconPath": "img/resources/Pebbles_Final.png"
+    },
+    "pebbleBricks": {
+      "name": "Pebble Bricks",
+      "iconId": "resources-pebble-brick",
+      "family": "stone",
+      "storageMode": "camp-storage",
+      "feedable": false,
+      "description": "Compact bricks made from compressed pebbles. Surprisingly solid.",
+      "tier": 1,
+      "iconPath": "img/resources/Pebble Brick_Final.png"
+    },
+    "rocks": {
+      "name": "Rocks",
+      "iconId": "resources-rock",
+      "family": "stone",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Dense stones hauled from deeper in the yard. Much heavier than pebbles.",
+      "tier": 2,
+      "iconPath": "img/resources/Rock_Final.png"
+    },
+    "rockBricks": {
+      "name": "Rock Bricks",
+      "iconId": "resources-rock-brick",
+      "family": "stone",
+      "storageMode": "camp-storage",
+      "feedable": false,
+      "description": "Solid bricks forged from dense rock. Built to last.",
+      "tier": 2,
+      "iconPath": "img/resources/Rock Brick_Final.png"
+    },
+    "humanLeftovers": {
+      "name": "Human Leftovers",
+      "iconId": "resources-human-leftovers",
+      "family": "food",
+      "storageMode": "camp-storage",
+      "feedable": true,
+      "description": "Bits and pieces left behind by humans. One human's trash is another cat's treasure.",
+      "tier": 1,
+      "feedXp": 1,
+      "iconPath": "img/resources/Human Leftovers_Final.png"
+    },
+    "humanWorkersFood": {
+      "name": "Workers Food",
+      "iconId": "resources-human-workers-food",
+      "family": "food",
+      "storageMode": "camp-storage",
+      "feedable": true,
+      "description": "Packed lunches left behind by the construction workers. Still good.",
+      "tier": 2,
+      "feedXp": 15,
+      "iconPath": "img/resources/Human Workers Food_Final.png"
+    },
+    "cannedCatFood": {
+      "name": "Canned Cat Food",
+      "iconId": "resources-canned-cat-food",
+      "family": "training",
+      "storageMode": "global-uncapped",
+      "feedable": false,
+      "description": "A sealed can of premium cat food found in the supermarket. This is the good stuff.",
+      "iconPath": "img/resources/Canned Cat Food_Final.png"
+    },
+    "smallprey": {
+      "name": "Small prey",
+      "iconId": "resources-small-prey",
+      "family": "food",
+      "storageMode": "camp-storage",
+      "feedable": true,
+      "description": "A small prey",
+      "tier": 3,
+      "feedXp": 30,
+      "iconPath": "img/resources/small-prey.png"
+    }
+  },
   "storageRules": {
     "baseCapacity": 5,
     "resourceIds": [
-      "cardboardPieces",
-      "basicWood",
-      "catnip",
-      "pebbles",
-      "rocks",
       "cardboardPlanks",
       "basicWoodPlanks",
+      "salads",
+      "grilledAnchovy",
       "pebbleBricks",
       "rockBricks",
-      "salads",
-      "anchovy",
-      "grilledAnchovy",
       "humanLeftovers",
-      "humanWorkersFood"
+      "humanWorkersFood",
+      "smallprey"
     ]
   },
   "campLevelRules": {

@@ -618,11 +618,14 @@
     "huntAroundEmptyHome": {
       "id": "huntAroundEmptyHome",
       "nom": "Hunt around the empty house",
-      "description": "Search the quiet property for small prey and anything the humans left behind.",
-      "difficulte": 1,
-      "duree": 600,
+      "description": "Search the quiet property for small preys",
+      "difficulte": 30,
+      "duree": 6000,
       "slots": 1,
-      "recompense": "humanLeftovers",
+      "zone": "D1",
+      "unlockCampaign": "checkTheTrash",
+      "unlockAfterStory": "storyHouseEvacuationVue",
+      "recompense": "smallprey",
       "recompenseRange": [
         {
           "qty": 1,
@@ -636,10 +639,7 @@
           "qty": 3,
           "weight": 10
         }
-      ],
-      "zone": "D1",
-      "unlockCampaign": "checkTheTrash",
-      "unlockAfterStory": "storyHouseEvacuationVue"
+      ]
     },
     "searchNeighborTrashAgain": {
       "id": "searchNeighborTrashAgain",
@@ -670,11 +670,14 @@
     "huntAroundEmptyRightHouse": {
       "id": "huntAroundEmptyRightHouse",
       "nom": "Hunt around the empty right house",
-      "description": "Search the quiet property for small prey and anything the neighbors left behind.",
-      "difficulte": 15,
-      "duree": 1200,
+      "description": "Search the quiet property for small prey",
+      "difficulte": 30,
+      "duree": 6000,
       "slots": 1,
-      "recompense": "humanLeftovers",
+      "recompense": "smallprey",
+      "zone": "E1",
+      "unlockCampaign": "searchNeighborTrash",
+      "unlockAfterStory": "storyRightHouseEvacuationVue",
       "recompenseRange": [
         {
           "qty": 1,
@@ -688,10 +691,7 @@
           "qty": 3,
           "weight": 10
         }
-      ],
-      "zone": "E1",
-      "unlockCampaign": "searchNeighborTrash",
-      "unlockAfterStory": "storyRightHouseEvacuationVue"
+      ]
     },
     "searchLeftNeighborTrashAgain": {
       "id": "searchLeftNeighborTrashAgain",
@@ -722,11 +722,14 @@
     "huntAroundEmptyLeftHouse": {
       "id": "huntAroundEmptyLeftHouse",
       "nom": "Hunt around the empty left house",
-      "description": "Search the quiet property for small prey and anything the neighbors left behind.",
-      "difficulte": 15,
-      "duree": 1200,
+      "description": "Search the quiet property for small prey",
+      "difficulte": 30,
+      "duree": 6000,
       "slots": 1,
-      "recompense": "humanLeftovers",
+      "recompense": "smallprey",
+      "zone": "C1",
+      "unlockCampaign": "searchLeftNeighborTrash",
+      "unlockAfterStory": "storyLeftHouseEvacuationVue",
       "recompenseRange": [
         {
           "qty": 1,
@@ -740,10 +743,7 @@
           "qty": 3,
           "weight": 10
         }
-      ],
-      "zone": "C1",
-      "unlockCampaign": "searchLeftNeighborTrash",
-      "unlockAfterStory": "storyLeftHouseEvacuationVue"
+      ]
     },
     "searchBasementAgain": {
       "id": "searchBasementAgain",

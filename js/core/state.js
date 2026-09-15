@@ -3,6 +3,114 @@
 
   const CatInc = root.CatInc = root.CatInc || {};
 
+  function resourceCatalog() {
+    return CatInc.data && CatInc.data.campGameplay
+      && CatInc.data.campGameplay.resources || {};
+  }
+
+  function resourceDefinition(resourceId) {
+    return Object.prototype.hasOwnProperty.call(resourceCatalog(), resourceId)
+      ? resourceCatalog()[resourceId] : null;
+  }
+
+  function resourceDefinitions() {
+    return Object.keys(resourceCatalog()).map(function(resourceId) {
+      return Object.assign({id: resourceId}, resourceCatalog()[resourceId]);
+    });
+  }
+
+  function globalResourceDefinitions() {
+    return resourceDefinitions().filter(function(resource) {
+      return resource.storageMode !== "recipe-slot";
+    });
+  }
+
+  function feedableResourceDefinitions() {
+    return globalResourceDefinitions().filter(function(resource) {
+      return resource.family === "food" && resource.feedable === true
+        && Number(resource.feedXp) > 0;
+    });
+  }
+
+  function normalizeResourceBalances(source) {
+    const state = source && typeof source === "object" ? source : {};
+    const hasCanonicalMap = state.resources && typeof state.resources === "object"
+      && !Array.isArray(state.resources);
+    const balances = {};
+    globalResourceDefinitions().forEach(function(resource) {
+      const raw = hasCanonicalMap ? state.resources[resource.id] : state[resource.id];
+      const amount = Number(raw);
+      balances[resource.id] = Number.isFinite(amount) && amount >= 0 ? amount : 0;
+    });
+    return balances;
+  }
+
+  function resourceBalance(state, resourceId) {
+    if (!resourceDefinition(resourceId) || !state || !state.resources) return 0;
+    const amount = Number(state.resources[resourceId]);
+    return Number.isFinite(amount) && amount >= 0 ? amount : 0;
+  }
+
+  function installLegacyResourceAccessors(state) {
+    if (!state || typeof state !== "object") return state;
+    state.resources = normalizeResourceBalances(state);
+    globalResourceDefinitions().forEach(function(resource) {
+      Object.defineProperty(state, resource.id, {
+        configurable: true,
+        enumerable: false,
+        get: function() { return resourceBalance(state, resource.id); },
+        set: function(value) {
+          const amount = Number(value);
+          state.resources[resource.id] = Number.isFinite(amount) && amount >= 0 ? amount : 0;
+        }
+      });
+    });
+    return state;
+  }
+
+  function grantResource(state, resourceId, amount, maximum) {
+    const resource = resourceDefinition(resourceId);
+    if (!resource || resource.storageMode === "recipe-slot") return 0;
+    const qty = Number(amount);
+    if (!Number.isFinite(qty) || qty <= 0) return 0;
+    const before = resourceBalance(state, resourceId);
+    const limit = Number.isFinite(maximum) ? Math.max(0, maximum) : Infinity;
+    const after = Math.min(limit, before + qty);
+    state.resources[resourceId] = after;
+    return after - before;
+  }
+
+  function debitResource(state, resourceId, amount) {
+    const qty = Number(amount);
+    if (!Number.isFinite(qty) || qty <= 0) return false;
+    const before = resourceBalance(state, resourceId);
+    if (before < qty) return false;
+    state.resources[resourceId] = before - qty;
+    return true;
+  }
+
+  CatInc.resources = Object.freeze({
+    definition: resourceDefinition,
+    definitions: resourceDefinitions,
+    globalDefinitions: globalResourceDefinitions,
+    feedableDefinitions: feedableResourceDefinitions,
+    normalizeBalances: normalizeResourceBalances,
+    installLegacyAccessors: installLegacyResourceAccessors,
+    balance: resourceBalance,
+    grant: grantResource,
+    debit: debitResource,
+    isCampStorage: function(resourceId) {
+      const resource = resourceDefinition(resourceId);
+      return Boolean(resource && resource.storageMode === "camp-storage");
+    },
+    name: function(resourceId) { return resourceDefinition(resourceId)?.name || resourceId; },
+    icon: function(resourceId) { return resourceDefinition(resourceId)?.iconPath || ""; },
+    family: function(resourceId) { return resourceDefinition(resourceId)?.family || null; },
+    tier: function(resourceId) { return resourceDefinition(resourceId)?.tier ?? null; },
+    storageMode: function(resourceId) { return resourceDefinition(resourceId)?.storageMode || null; },
+    feedXp: function(resourceId) { return Number(resourceDefinition(resourceId)?.feedXp) || 0; }
+  });
+
 function makeWorkRecipeSlot() {
   return {
     recipeId: null,
@@ -65,7 +173,7 @@ function makeCampState() {
 }
 
 function creerEtatInitial() {
-  return {
+  const state = {
   // Resources
   chatons:              0,
   cardboardPieces:            0,  cardboardPiecesTotalRecolte: 0,
@@ -73,16 +181,10 @@ function creerEtatInitial() {
   catnip:               0,  catnipTotalRecolte:    0,
   pebbles:              0,  pebblesTotalRecolte:   0,
   rocks:                0,  rocksTotalRecolte:     0,
-  cardboardPlanks:      0,  cardboardPlanksTotalProduit: 0,
-  basicWoodPlanks:      0,  basicWoodPlanksTotalProduit: 0,
-  pebbleBricks:         0,
-  rockBricks:           0,
-  salads:               0,
+  cardboardPlanksTotalProduit: 0,
+  basicWoodPlanksTotalProduit: 0,
   anchovy:              0,  anchovyTotalRecolte:  0,
-  grilledAnchovy:       0,
-  humanLeftovers:       0,
-  humanWorkersFood:     0,
-  cannedCatFood:        0,
+  resources:            {},
   cannelleTokens:       0,
   cannelleBargainNextAt: 0,
   cannelleBargainRulesSeen: false,
@@ -216,12 +318,13 @@ function creerEtatInitial() {
   // Last real-world timestamp the game state was saved (for offline progress)
     dernierTimestamp: Date.now()
   };
+  return CatInc.resources ? CatInc.resources.installLegacyAccessors(state) : state;
 }
 
   function remplacerEtat(cible, nouvelEtat) {
     Object.keys(cible).forEach(function(cle) { delete cible[cle]; });
     Object.assign(cible, nouvelEtat);
-    return cible;
+    return CatInc.resources ? CatInc.resources.installLegacyAccessors(cible) : cible;
   }
 
   CatInc.state = Object.freeze({

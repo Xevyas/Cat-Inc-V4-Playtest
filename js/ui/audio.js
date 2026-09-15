@@ -21,6 +21,7 @@
     bigReward: "Sounds/Other/Big Reward.mp3",
     dialogueBernardo: "Sounds/Other/Dialogue Bernardo.mp3",
     dialogueGeneric: "Sounds/Other/Dialogue Generic.mp3",
+    eating: "Sounds/Other/Eating.mp3",
     radioPlaylist: Object.freeze([
       "Sounds/Radio/SunbeamsAndMeadows.ogg",
       "Sounds/Radio/Cattails.ogg",
@@ -51,6 +52,7 @@
     uiDeniedError: 0.62,
     smallSuccess: 0.72,
     handsawWood: 0.82,
+    eating: 0.82,
     workFood: 0.82,
     workRock: 0.82,
     buildPlace: 0.88,
@@ -70,6 +72,7 @@
   let effectsVolume = 0.3;
   let musicSource = null;
   let musicGain = null;
+  let nativeMusicVolumeSupported = null;
   let musicVolume = 0.3;
   let decodedCount = 0;
   let playCount = 0;
@@ -247,6 +250,79 @@
     return source;
   }
 
+  function playLoopingEffect(key, volume, durationMs) {
+    if (!SOURCES[key] || key === "radioPlaylist") return null;
+    effectsVolume = clampVolume(volume === undefined ? effectsVolume : volume);
+    if (effectsGain) effectsGain.gain.value = effectsVolume;
+    markSpecializedActivation();
+    playCount += 1;
+    lastPlayed = key;
+    stopGroup("feeding");
+
+    const totalMs = Math.max(420, Math.min(1800, Number(durationMs) || 900));
+    const fadeMs = Math.min(260, Math.max(140, totalMs * 0.28));
+    const relativeGain = RELATIVE_GAIN[key] === undefined ? 0.78 : RELATIVE_GAIN[key];
+    const context = audioContext;
+    const buffer = effectBuffers.get(key);
+    if (context && effectsGain && buffer && context.state !== "closed") {
+      if (context.state === "suspended" || context.state === "interrupted") resumeShortEffects();
+      const source = context.createBufferSource();
+      const sourceGain = context.createGain();
+      const now = context.currentTime || 0;
+      const fadeStart = now + (totalMs - fadeMs) / 1000;
+      const stopAt = now + totalMs / 1000;
+      source.buffer = buffer;
+      source.loop = true;
+      sourceGain.gain.value = relativeGain;
+      if (typeof sourceGain.gain.setValueAtTime === "function") {
+        sourceGain.gain.setValueAtTime(relativeGain, now);
+        sourceGain.gain.setValueAtTime(relativeGain, fadeStart);
+        sourceGain.gain.linearRampToValueAtTime(0, stopAt);
+      }
+      source.connect(sourceGain);
+      sourceGain.connect(effectsGain);
+      activeGroups.set("feeding", source);
+      source.onended = function() {
+        if (activeGroups.get("feeding") === source) activeGroups.delete("feeding");
+      };
+      source.start(0);
+      source.stop(stopAt + 0.02);
+      return source;
+    }
+
+    if (typeof root.Audio !== "function") return null;
+    const audio = new root.Audio(SOURCES[key]);
+    audio.preload = "auto";
+    audio.loop = true;
+    const fullVolume = clampVolume(effectsVolume * relativeGain);
+    audio.volume = fullVolume;
+    let fadeTimer = null;
+    let stopTimer = null;
+    const controller = {
+      pause: function() { audio.pause(); },
+      stop: function() {
+        if (fadeTimer) root.clearInterval(fadeTimer);
+        if (stopTimer) root.clearTimeout(stopTimer);
+        audio.pause();
+        try { audio.currentTime = 0; } catch (error) {}
+        if (activeGroups.get("feeding") === controller) activeGroups.delete("feeding");
+      }
+    };
+    activeGroups.set("feeding", controller);
+    const promise = audio.play();
+    if (promise && typeof promise.catch === "function") promise.catch(function() {});
+    stopTimer = root.setTimeout(function() {
+      const steps = 8;
+      let step = 0;
+      fadeTimer = root.setInterval(function() {
+        step += 1;
+        audio.volume = clampVolume(fullVolume * (1 - step / steps));
+        if (step >= steps) controller.stop();
+      }, fadeMs / steps);
+    }, totalMs - fadeMs);
+    return controller;
+  }
+
   function setEffectsVolume(volume) {
     effectsVolume = clampVolume(volume);
     if (effectsGain) effectsGain.gain.value = effectsVolume;
@@ -356,13 +432,30 @@
       });
       musicAudio.addEventListener("error", function() { handleRadioFailure(radioPlaybackAttempt); });
     }
-    ensureMusicGain();
+    ensureMusicOutput();
     applyMusicVolume();
     return musicAudio;
   }
 
-  function ensureMusicGain() {
-    if (!musicAudio || musicGain) return Boolean(musicGain);
+  function supportsNativeMusicVolume() {
+    if (!musicAudio) return false;
+    if (nativeMusicVolumeSupported !== null) return nativeMusicVolumeSupported;
+    const original = clampVolume(musicAudio.volume);
+    const probe = Math.abs(original - 0.473) < 0.001 ? 0.619 : 0.473;
+    try {
+      musicAudio.volume = probe;
+      nativeMusicVolumeSupported = Math.abs(Number(musicAudio.volume) - probe) < 0.001;
+      musicAudio.volume = original;
+    } catch (error) {
+      nativeMusicVolumeSupported = false;
+      try { musicAudio.volume = original; } catch (restoreError) {}
+    }
+    return nativeMusicVolumeSupported;
+  }
+
+  function ensureMusicOutput() {
+    if (!musicAudio || supportsNativeMusicVolume()) return false;
+    if (musicGain) return true;
     const context = audioContext || ensureEffectsContext();
     if (!context || typeof context.createMediaElementSource !== "function") return false;
     try {
@@ -412,7 +505,7 @@
   function setMusicVolume(volume) {
     musicVolume = clampVolume(volume);
     if (musicAudio) {
-      ensureMusicGain();
+      ensureMusicOutput();
       applyMusicVolume();
     }
   }
@@ -444,6 +537,13 @@
     playDialogueVoice: function(speakerId, volume) {
       playEffect(speakerId === "bernardo" ? "dialogueBernardo" : "dialogueGeneric", volume, { group: "dialogue" });
     },
+    playEating: function(volume, options) {
+      const config = options || {};
+      return config.loop
+        ? playLoopingEffect("eating", volume, config.durationMs)
+        : playEffect("eating", volume, { group: "feeding" });
+    },
+    stopEating: function() { stopGroup("feeding"); },
     startRadio: startRadio,
     stopRadio: stopRadio,
     isRadioOn: function() { return radioRequested; },
