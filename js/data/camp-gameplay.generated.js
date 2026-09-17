@@ -175,6 +175,128 @@
       "iconPath": "img/resources/small-prey.png"
     }
   },
+  "workRecipes": {
+    "cardboardPlanks": {
+      "name": "Cardboard Planks",
+      "family": "wood",
+      "tier": 1,
+      "input": {
+        "resourceId": "cardboardPieces",
+        "quantity": 10,
+        "gatherSecondsPerUnit": 60
+      },
+      "output": {
+        "resourceId": "cardboardPlanks",
+        "quantity": 1,
+        "processSeconds": 300
+      },
+      "production": {
+        "buildingTypeId": "sawmill",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "wood-tier1"
+    },
+    "basicWoodPlanks": {
+      "name": "Basic Wood Planks",
+      "family": "wood",
+      "tier": 2,
+      "input": {
+        "resourceId": "basicWood",
+        "quantity": 10,
+        "gatherSecondsPerUnit": 300
+      },
+      "output": {
+        "resourceId": "basicWoodPlanks",
+        "quantity": 1,
+        "processSeconds": 1500
+      },
+      "production": {
+        "buildingTypeId": "sawmill",
+        "minimumBuildingTier": 2
+      },
+      "unlockProfile": "wood-tier2"
+    },
+    "salads": {
+      "name": "Catnip Salad",
+      "family": "food",
+      "tier": 1,
+      "input": {
+        "resourceId": "catnip",
+        "quantity": 10,
+        "gatherSecondsPerUnit": 120
+      },
+      "output": {
+        "resourceId": "salads",
+        "quantity": 1,
+        "processSeconds": 600
+      },
+      "production": {
+        "buildingTypeId": "catchen",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "food-tier1"
+    },
+    "grilledAnchovy": {
+      "name": "Grilled Anchovy",
+      "family": "food",
+      "tier": 2,
+      "input": {
+        "resourceId": "anchovy",
+        "quantity": 10,
+        "gatherSecondsPerUnit": 600
+      },
+      "output": {
+        "resourceId": "grilledAnchovy",
+        "quantity": 1,
+        "processSeconds": 3000
+      },
+      "production": {
+        "buildingTypeId": "catchen",
+        "minimumBuildingTier": 2
+      },
+      "unlockProfile": "fishing-guide"
+    },
+    "pebbleBricks": {
+      "name": "Pebble Bricks",
+      "family": "stone",
+      "tier": 1,
+      "input": {
+        "resourceId": "pebbles",
+        "quantity": 10,
+        "gatherSecondsPerUnit": 180
+      },
+      "output": {
+        "resourceId": "pebbleBricks",
+        "quantity": 1,
+        "processSeconds": 900
+      },
+      "production": {
+        "buildingTypeId": "pawsonry",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "stone-tier1"
+    },
+    "rockBricks": {
+      "name": "Rock Bricks",
+      "family": "stone",
+      "tier": 2,
+      "input": {
+        "resourceId": "rocks",
+        "quantity": 10,
+        "gatherSecondsPerUnit": 900
+      },
+      "output": {
+        "resourceId": "rockBricks",
+        "quantity": 1,
+        "processSeconds": 4500
+      },
+      "production": {
+        "buildingTypeId": "pawsonry",
+        "minimumBuildingTier": 2
+      },
+      "unlockProfile": "stone-tier2"
+    }
+  },
   "storageRules": {
     "baseCapacity": 5,
     "resourceIds": [
@@ -410,6 +532,74 @@
       "minGapFloorPercent": 4
     }
   },
+  "purchasableContent": {
+    "smallFountainBlueprint": {
+      "contentType": "inventory-item",
+      "name": "Small Fountain Blueprint",
+      "description": "Cannelle's plan for a compact stone fountain that brings a little calm to the Camp.",
+      "previewAssetId": "small-fountain"
+    },
+    "cardboardLitterboxBlueprint": {
+      "contentType": "inventory-item",
+      "name": "Cardboard Litterbox Blueprint",
+      "description": "Cannelle's practical plan for a compact cardboard litterbox at the Camp.",
+      "previewAssetId": "cardboard-litterbox"
+    },
+    "birdWhistle": {
+      "contentType": "boost-quantity",
+      "name": "Bird Whistle",
+      "description": "Calls the next Bird event immediately.",
+      "iconId": "items-bird-whistle",
+      "iconRuntimePath": "img/items/bird-whistle.png"
+    },
+    "shortcutMap": {
+      "contentType": "boost-quantity",
+      "name": "Shortcut Map",
+      "description": "Exploration Speed ×2 for 10 real-time minutes.",
+      "iconId": "items-shortcut-map",
+      "iconRuntimePath": "img/items/shortcut-map.png"
+    }
+  },
+  "cannelleShop": {
+    "merchandise": [
+      {
+        "id": "small-fountain-blueprint",
+        "category": "blueprints",
+        "contentId": "smallFountainBlueprint",
+        "requiredLevel": 0,
+        "priceResource": "cannedCatFood",
+        "priceAmount": 1,
+        "repeatable": false
+      },
+      {
+        "id": "cardboard-litterbox-blueprint",
+        "category": "blueprints",
+        "contentId": "cardboardLitterboxBlueprint",
+        "requiredLevel": 10,
+        "priceResource": "cannedCatFood",
+        "priceAmount": 1,
+        "repeatable": false
+      },
+      {
+        "id": "bird-whistle",
+        "category": "boosts",
+        "contentId": "birdWhistle",
+        "requiredLevel": 10,
+        "priceResource": "cannelleTokens",
+        "priceAmount": 3,
+        "repeatable": true
+      },
+      {
+        "id": "shortcut-map",
+        "category": "boosts",
+        "contentId": "shortcutMap",
+        "requiredLevel": 10,
+        "priceResource": "cannelleTokens",
+        "priceAmount": 3,
+        "repeatable": true
+      }
+    ]
+  },
   "nayaInn": {
     "stateVersion": 2,
     "rarityWeights": {
@@ -449,7 +639,8 @@
         "epic": 35,
         "legendary": 50
       }
-    }
+    },
+    "levelMilestones": []
   },
   "bookLearning": {
     "schoolGuide": {

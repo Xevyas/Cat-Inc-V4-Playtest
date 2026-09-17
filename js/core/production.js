@@ -43,7 +43,8 @@
       * positive(modifiers.processingManualSpeed, 1)
       * positive(modifiers.globalSpeed, 1)
       / processingSeconds;
-    const complexProduction = positive(modifiers.complexProduction, 1);
+    const complexProduction = positive(modifiers.complexProduction, 1)
+      * positive(pair.outputQuantity, 1);
     const EPSILON = 1e-9;
 
     slot.gatheredInputs = slot.gatheredInputs && typeof slot.gatheredInputs === "object" ? slot.gatheredInputs : {};
@@ -57,10 +58,9 @@
     while (remaining > EPSILON && guard++ < 100000) {
       if (slot.phase === "gathering") {
         let gathered = Math.max(0, Number(slot.gatheredInputs[pair.rawRes]) || 0);
-        if (gathered > targetRaw) gathered = targetRaw;
         const missing = Math.max(0, targetRaw - gathered);
         if (missing <= EPSILON) {
-          slot.gatheredInputs[pair.rawRes] = targetRaw;
+          slot.gatheredInputs[pair.rawRes] = gathered;
           slot.phase = "processing";
           slot.phaseProgress = 0;
           continue;
@@ -105,7 +105,8 @@
         if (result.firstProducerIndex === null) result.firstProducerIndex = slot.kittyIndex;
       }
       result.completedCycles += 1;
-      slot.gatheredInputs = {};
+      const remainingRaw = Math.max(0, (Number(slot.gatheredInputs[pair.rawRes]) || 0) - targetRaw);
+      slot.gatheredInputs = remainingRaw > EPSILON ? {[pair.rawRes]: remainingRaw} : {};
       slot.reservedInputs = {};
       slot.phase = "gathering";
       slot.phaseProgress = 0;

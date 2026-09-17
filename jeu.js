@@ -807,8 +807,8 @@ const OBJECTIF_GUIDE = Object.freeze({
   firstWoodcatter:          { ordre: 40,  onglet: "work",         cible: "#recipe-slot-wood-0",    filtre: "wood", progression: function() { return { actuel: recetteChoisieCount("cardboardPlanks"), cible: 1 }; } },
   firstSawmillWorker:       { ordre: 80,  onglet: "work",         cible: "#recipe-slot-wood-0",    filtre: "wood", progression: function() { return { actuel: allocationCount("cardboardPlanks"), cible: 1 }; } },
   firstPlank:               { ordre: 90,  onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 1 }; } },
-  buildSmallStorageShed:    { ordre: 95,  onglet: "camp",         cible: '[data-camp-category="building"]', action: "Open Buildings", progression: function() { return { actuel: stockagesCampActifs().length > 0 ? 1 : 0, cible: 1 }; } },
-  firstCathouse:            { ordre: 100, onglet: "camp",         cible: '[data-camp-category="house"]', action: "Open Houses", progression: function(e) { return { actuel: e.cathouses.length, cible: 1 }; } },
+  buildSmallStorageShed:    { ordre: 95,  onglet: "camp",         cible: '.camp-prototype-edit-dock > button[data-camp-category="building"]', action: "Open Buildings", progression: function() { return { actuel: stockagesCampActifs().length > 0 ? 1 : 0, cible: 1 }; } },
+  firstCathouse:            { ordre: 100, onglet: "camp",         cible: '.camp-prototype-edit-dock > button[data-camp-category="house"]', action: "Open Houses", progression: function(e) { return { actuel: e.cathouses.length, cible: 1 }; } },
   investigateIncrementorLaw:{ ordre: 105, onglet: "logs",         cible: "#stories-liste", logsVue: "stories", action: "Open Main Story", progression: function() { return { actuel: 0, cible: 1, texte: "The investigation continues" }; } },
   repairCatchen:            { ordre: 108, onglet: "camp",         cible: '[data-camp-type="catchen"]', action: "Repair Catchen", progression: function() { return { actuel: batimentCampRepare("catchen") ? 1 : 0, cible: 1 }; } },
   firstGrasscatter:         { ordre: 110, onglet: "work",         cible: "#recipe-slot-food-0",    filtre: "food", progression: function() { return { actuel: recetteChoisieCount("salads"), cible: 1 }; } },
@@ -845,8 +845,8 @@ const OBJECTIF_GUIDE = Object.freeze({
   firstBrick:               { ordre: 240, onglet: "work",         cible: "#work-recipe-slots-rock", filtre: "rock", progression: function(e) { return { actuel: e.pebbleBricks >= 1 || e.objectifsComplis.includes("firstBrick") ? 1 : 0, cible: 1 }; } },
   firstBasicSawmill:        { ordre: 250, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function() { return { actuel: allocationCount("basicWoodPlanks"), cible: 1 }; } },
   firstBasicWoodPlank:      { ordre: 260, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.basicWoodPlanks, cible: 1 }; } },
-  buildRealCathouse:        { ordre: 270, onglet: "camp",         cible: '[data-camp-category="house"]', action: "Open Houses", progression: function(e) { return { actuel: Math.max(e.cathouseCount, nombreAssetsCampPossedesPourLoi("woodCathouse")), cible: 1 }; } },
-  buildJobCenter:           { ordre: 280, onglet: "camp",         cible: '[data-camp-category="building"]', action: "Open Buildings", progression: function(e) {
+  buildRealCathouse:        { ordre: 270, onglet: "camp",         cible: '.camp-prototype-edit-dock > button[data-camp-category="house"]', action: "Open Houses", progression: function(e) { return { actuel: Math.max(e.cathouseCount, nombreAssetsCampPossedesPourLoi("woodCathouse")), cible: 1 }; } },
+  buildJobCenter:           { ordre: 280, onglet: "camp",         cible: '.camp-prototype-edit-dock > button[data-camp-category="building"]', action: "Open Buildings", progression: function(e) {
     const briques = Math.min(10, e.pebbleBricks);
     const planches = Math.min(1, e.basicWoodPlanks);
     return { actuel: Math.min(briques / 10, planches), cible: 1, texte: formaterNombre(briques) + "/10 bricks · " + formaterNombre(planches) + "/1 plank" };
@@ -5468,81 +5468,42 @@ window.addEventListener("resize", positionnerStatsAttrapagePopover);
 document.addEventListener("scroll", positionnerStatsAttrapagePopover, true);
 
 // ── 9c. Work resources (separate Gathering and Processing views)
-const RESOURCE_PAIRS = [
-  {
-    recipeId: "cardboardPlanks", family: "wood", tier: 1, rawTotalKey: "cardboardPiecesTotalRecolte", procTotalKey: "cardboardPlanksTotalProduit",
-    rawAction: "woodcatting", rawRes: "cardboardPieces", rawCfg: CONFIG.woodcatting,
-    rawLabel: "Cardboard Pieces", rawIcon: "img/resources/Cardboard Pieces_Final.png",
-    rawUnlocked: function(u) { return u.cathering; },
-    procAction: "sawmill", procRes: "cardboardPlanks", procCfg: CONFIG.sawmill,
-    procLabel: "Cardboard Planks", procIcon: "img/resources/Cardboard Plank_Final.png",
-    procSecUnite: "secondesParPlanche", procSecRaw: "secondesParCardboard",
-    procMultAction: "sawmill", procUnlocked: function(u) { return u.scierie; },
-    bloqueeKey: "scieriBloquee",
-    inputs: [{ res: "cardboardPieces", label: "Cardboard Pieces", icon: "img/resources/Cardboard Pieces_Final.png", baseQuantity: 10, costAdjusted: true }]
-  },
-  {
-    recipeId: "basicWoodPlanks", family: "wood", tier: 2, rawTotalKey: "basicWoodTotalRecolte",
-    procTotalKey: "basicWoodPlanksTotalProduit",
-    rawAction: "basicWoodcatting", rawRes: "basicWood", rawCfg: CONFIG.basicWoodcatting,
-    rawLabel: "Basic Wood", rawIcon: "img/resources/Basic Wood_Final.png",
-    rawUnlocked: function(u) { return u.basicWood; },
-    procAction: "basicSawmill", procRes: "basicWoodPlanks", procCfg: CONFIG.basicSawmill,
-    procLabel: "Basic Wood Planks", procIcon: "img/resources/Basic Wood Plank_Final.png",
-    procSecUnite: "secondesParPlanche", procSecRaw: "secondesParBasicWood",
-    procMultAction: "sawmill", procUnlocked: function(u) { return u.basicSawmill; },
-    bloqueeKey: "basicSawmillBloquee",
-    inputs: [{ res: "basicWood", label: "Basic Wood", icon: "img/resources/Basic Wood_Final.png", baseQuantity: 10, costAdjusted: true }]
-  },
-  {
-    recipeId: "salads", family: "food", tier: 1, rawTotalKey: "catnipTotalRecolte",
-    rawAction: "grasscatting", rawRes: "catnip", rawCfg: CONFIG.grasscatting,
-    rawLabel: "Catnip", rawIcon: "img/resources/Catnip_Final.png",
-    rawUnlocked: function(u) { return u.grasscat; },
-    procAction: "catchen", procRes: "salads", procCfg: CONFIG.catchen,
-    procLabel: "Catnip Salad", procIcon: "img/resources/Catnip Salad_Final.png",
-    procSecUnite: "secondesParSalad", procSecRaw: "secondesParCatnip",
-    procMultAction: "catchen", procUnlocked: function(u) { return u.catchen; },
-    bloqueeKey: "catchenBloquee",
-    inputs: [{ res: "catnip", label: "Catnip", icon: "img/resources/Catnip_Final.png", baseQuantity: 10, costAdjusted: true }]
-  },
-  {
-    recipeId: "grilledAnchovy", family: "food", tier: 2, rawTotalKey: "anchovyTotalRecolte",
-    rawAction: "fishcatting", rawRes: "anchovy", rawCfg: CONFIG.fishcatting,
-    rawLabel: "Anchovy", rawIcon: "img/resources/Anchovy_Final.png?v=0.0029",
-    rawUnlocked: function(u) { return u.anchovy; },
-    procAction: "grilledAnchovy", procRes: "grilledAnchovy", procCfg: CONFIG.grilledAnchovy,
-    procLabel: "Grilled Anchovy", procIcon: "img/resources/Grilled Anchovy_Final.png?v=0.0029",
-    procSecUnite: "secondesParRecette", procSecRaw: "secondesParAnchovy",
-    procMultAction: "grilledAnchovy", procUnlocked: function(u) { return u.grilledAnchovy; },
-    bloqueeKey: "catchenAnchovyBloquee",
-    inputs: [{ res: "anchovy", label: "Anchovy", icon: "img/resources/Anchovy_Final.png?v=0.0029", baseQuantity: 10, costAdjusted: true }]
-  },
-  {
-    recipeId: "pebbleBricks", family: "rock", tier: 1, rawTotalKey: "pebblesTotalRecolte",
-    rawAction: "pebblegathering", rawRes: "pebbles", rawCfg: CONFIG.pebblegathering,
-    rawLabel: "Pebbles", rawIcon: "img/resources/Pebbles_Final.png",
-    rawUnlocked: function(u) { return u.pebblecat; },
-    procAction: "brickfactory", procRes: "pebbleBricks", procCfg: CONFIG.brickfactory,
-    procLabel: "Pebble Bricks", procIcon: "img/resources/Pebble Brick_Final.png",
-    procSecUnite: "secondesParBrique", procSecRaw: "secondesParPebble",
-    procMultAction: "brickfactory", procUnlocked: function(u) { return u.brickfact; },
-    bloqueeKey: "brickBloquee",
-    inputs: [{ res: "pebbles", label: "Pebbles", icon: "img/resources/Pebbles_Final.png", baseQuantity: 10, costAdjusted: true }]
-  },
-  {
-    recipeId: "rockBricks", family: "rock", tier: 2, rawTotalKey: "rocksTotalRecolte",
-    rawAction: "rockgathering", rawRes: "rocks", rawCfg: CONFIG.rockgathering,
-    rawLabel: "Rocks", rawIcon: "img/resources/Rock_Final.png",
-    rawUnlocked: function(u) { return u.rockcat; },
-    procAction: "rockFactory", procRes: "rockBricks", procCfg: CONFIG.rockFactory,
-    procLabel: "Rock Bricks", procIcon: "img/resources/Rock Brick_Final.png",
-    procSecUnite: "secondesParBrique", procSecRaw: "secondesParRock",
-    procMultAction: "rockFactory", procUnlocked: function(u) { return u.rockfact; },
-    bloqueeKey: "rockFactoryBloquee",
-    inputs: [{ res: "rocks", label: "Rocks", icon: "img/resources/Rock_Final.png", baseQuantity: 10, costAdjusted: true }]
-  }
-];
+const WORK_RECIPE_PROFILES = Object.freeze({
+  "wood-tier1": { rawAction: "woodcatting", procAction: "sawmill", procMultAction: "sawmill", bloqueeKey: "scieriBloquee", rawUnlocked: function(u) { return u.cathering; }, procUnlocked: function(u) { return u.scierie; }, legacyRawResourceId: "cardboardPieces", rawTotalKey: "cardboardPiecesTotalRecolte", legacyOutputResourceId: "cardboardPlanks", procTotalKey: "cardboardPlanksTotalProduit" },
+  "wood-tier2": { rawAction: "basicWoodcatting", procAction: "basicSawmill", procMultAction: "sawmill", bloqueeKey: "basicSawmillBloquee", rawUnlocked: function(u) { return u.basicWood; }, procUnlocked: function(u) { return u.basicSawmill; }, legacyRawResourceId: "basicWood", rawTotalKey: "basicWoodTotalRecolte", legacyOutputResourceId: "basicWoodPlanks", procTotalKey: "basicWoodPlanksTotalProduit" },
+  "food-tier1": { rawAction: "grasscatting", procAction: "catchen", procMultAction: "catchen", bloqueeKey: "catchenBloquee", rawUnlocked: function(u) { return u.grasscat; }, procUnlocked: function(u) { return u.catchen; }, legacyRawResourceId: "catnip", rawTotalKey: "catnipTotalRecolte" },
+  "fishing-guide": { rawAction: "fishcatting", procAction: "grilledAnchovy", procMultAction: "grilledAnchovy", bloqueeKey: "catchenAnchovyBloquee", rawUnlocked: function(u) { return u.anchovy; }, procUnlocked: function(u) { return u.grilledAnchovy; }, legacyRawResourceId: "anchovy", rawTotalKey: "anchovyTotalRecolte" },
+  "stone-tier1": { rawAction: "pebblegathering", procAction: "brickfactory", procMultAction: "brickfactory", bloqueeKey: "brickBloquee", rawUnlocked: function(u) { return u.pebblecat; }, procUnlocked: function(u) { return u.brickfact; }, legacyRawResourceId: "pebbles", rawTotalKey: "pebblesTotalRecolte" },
+  "stone-tier2": { rawAction: "rockgathering", procAction: "rockFactory", procMultAction: "rockFactory", bloqueeKey: "rockFactoryBloquee", rawUnlocked: function(u) { return u.rockcat; }, procUnlocked: function(u) { return u.rockfact; }, legacyRawResourceId: "rocks", rawTotalKey: "rocksTotalRecolte" }
+});
+
+const RESOURCE_PAIRS = Object.keys(campGameplayData.workRecipes || {}).map(function(recipeId) {
+  const recipe = campGameplayData.workRecipes[recipeId];
+  const profile = WORK_RECIPE_PROFILES[recipe.unlockProfile];
+  const input = resourceApi.definition(recipe.input.resourceId);
+  const output = resourceApi.definition(recipe.output.resourceId);
+  return Object.assign({}, profile, {
+    recipeId: recipeId,
+    family: recipe.family === "stone" ? "rock" : recipe.family,
+    tier: recipe.tier,
+    rawRes: recipe.input.resourceId,
+    rawTotalKey: profile.legacyRawResourceId === recipe.input.resourceId ? profile.rawTotalKey : null,
+    rawCfg: { secondesParUnite: recipe.input.gatherSecondsPerUnit },
+    rawLabel: input.name,
+    rawIcon: input.iconPath,
+    procRes: recipe.output.resourceId,
+    procTotalKey: profile.legacyOutputResourceId === recipe.output.resourceId ? profile.procTotalKey : null,
+    procCfg: { secondsPerCycle: recipe.output.processSeconds, secondsPerInput: recipe.output.processSeconds / recipe.input.quantity },
+    procLabel: recipe.name || output.name,
+    procIcon: output.iconPath,
+    procSecUnite: "secondsPerCycle",
+    procSecRaw: "secondsPerInput",
+    outputQuantity: recipe.output.quantity,
+    buildingTypeId: recipe.production.buildingTypeId,
+    minimumBuildingTier: recipe.production.minimumBuildingTier,
+    inputs: [{ res: recipe.input.resourceId, label: input.name, icon: input.iconPath, baseQuantity: recipe.input.quantity, costAdjusted: true }]
+  });
+});
 
 const WORK_FAMILIES = {
   wood: { label: "Wood", gatheringScope: "Wood resources", gatheringManager: "wood", processingScope: "Sawmill and planks", processingManager: "sawmill" },
@@ -5564,8 +5525,8 @@ function capaciteRecetteWork(pair, u) {
   if (!pair) return { available: false, reason: "This recipe does not exist." };
   const contentUnlocked = recetteWorkContenuDebloque(pair, u || unlocks());
   return capaciteBatimentCamp(
-    WORK_BUILDING_BY_FAMILY[pair.family],
-    pair.tier,
+    pair.buildingTypeId || WORK_BUILDING_BY_FAMILY[pair.family],
+    pair.minimumBuildingTier || pair.tier,
     { contentUnlocked: contentUnlocked }
   );
 }
@@ -7830,6 +7791,9 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
   const campActionSpeedLine = "<span class='xp-bonus-ligne'><span class='bonus-var'>×"
     + multiplicateurVitesseActionCampKitty(k).toFixed(2)
     + "</span> Camp Actions Speed</span>";
+  const nayaInnProgressionLine = k.nom === "Naya"
+    ? "<span class='xp-bonus-ligne'>As Naya levels up, the Inn improves with better contracts and traveler bonuses.</span>"
+    : "";
 
   if (isBernardo) {
     if (k.metier !== "gang-leader") {
@@ -7853,9 +7817,11 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
   }
 
   if (isShopOwner) {
+    const nextShopLevel = SHOP_DATA.nextMerchandiseLevel(k.niveau);
+    const nextShopCopy = nextShopLevel === null ? "All current merchandise unlocked" : "New items at Level " + nextShopLevel;
     return {
-      helpBody: "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks new merchandise tiers every 10 levels.</span><span>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span>",
-      levelBonuses: "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>New items at Level " + SHOP_DATA.nextMerchandiseLevel(k.niveau) + "</span></div>"
+      helpBody: "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks merchandise at the levels authored in Gameplay &amp; Balance.</span><span>" + nextShopCopy + "</span>",
+      levelBonuses: "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>" + nextShopCopy + "</span></div>"
     };
   }
 
@@ -7875,7 +7841,8 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
       + "<span>Process Production Bonus by " + processLevelPercent + "%</span>"
       + "<span>Exploration Power by 1</span>"
       + "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>"
-      + campActionSpeedHelpLine;
+      + campActionSpeedHelpLine
+      + (k.nom === "Naya" ? "<span>The Inn also improves at Studio-authored Naya level milestones.</span>" : "");
   const levelBonuses = k.niveau > 0 ? (
     isEngineer
       ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? (k.niveau * engineerInfo.value) + "%" : (k.niveau * (engineerInfo ? engineerInfo.value : 6)) + " min") + "</span> " + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? "AFK Ratio Bonus" : "AFK Timer Bonus") + "</span></div>"
@@ -7885,6 +7852,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyProcessProductionMultiplier(k).toFixed(2) + "</span> Process Production Bonus</span>"
         + managerSpeedBonusLine
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>"
+        + nayaInnProgressionLine
         + "</div>"
   ) : "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "</div>";
   return { helpBody: helpBody, levelBonuses: levelBonuses };
@@ -13246,7 +13214,8 @@ function definitionMoteurRecette(pair) {
       ? input.baseQuantity
       : pair.procCfg[pair.procSecUnite] / pair.procCfg[pair.procSecRaw],
     processingSeconds: pair.procCfg[pair.procSecUnite],
-    outputRes: pair.procRes
+    outputRes: pair.procRes,
+    outputQuantity: pair.outputQuantity || 1
   };
 }
 
@@ -14632,7 +14601,7 @@ function campGuidanceDescripteurActif() {
       id: "first-box", stage: "inactive",
       targets: function() {
         const box = document.querySelector('[data-camp-type="cardboardBox"]');
-        return box ? [box] : campGuidanceElements('[data-camp-category="house"]');
+        return box ? [box] : campGuidanceElements('.camp-prototype-edit-dock > button[data-camp-category="house"]');
       },
       reconcile: function() { if ((document.body.dataset.ongletActif || "gang") === "camp") renduCampPrototype(); },
       onActionCommitted: function(action) {
@@ -14653,7 +14622,7 @@ function campGuidanceDescripteurActif() {
           : campGuidanceElements("#camp-house-construction-modal .camp-task-slot, #camp-house-construction-modal .camp-task-cat-choice:not([disabled]), #camp-house-construction-modal #camp-task-start:not([disabled])");
         if (primary.length) return primary;
         const box = document.querySelector('[data-camp-type="cardboardBox"]');
-        return box ? [box] : campGuidanceElements('[data-camp-category="house"]');
+        return box ? [box] : campGuidanceElements('.camp-prototype-edit-dock > button[data-camp-category="house"]');
       },
       reconcile: function() {
         if ((document.body.dataset.ongletActif || "gang") === "camp") renduCampPrototype();
@@ -15855,8 +15824,11 @@ const CAMP_PROTOTYPE_FUNCTION_ICON_BY_ID = Object.freeze({
 function iconeFonctionCampPrototype(functionId) {
   const src = CAMP_PROTOTYPE_FUNCTION_ICON_BY_ID[functionId];
   return src
-    ? '<img class="camp-action-icon" src="' + src + '" alt="">'
+    ? '<img class="camp-action-icon camp-semantic-action-icon" src="' + src + '" alt="">'
     : '<span aria-hidden="true">→</span>';
+}
+function contenuActionSemantiqueCampPrototype(iconHtml) {
+  return '<span class="camp-semantic-action-content" aria-hidden="true">' + iconHtml + '</span>';
 }
 const CAMP_BUILDING_REPAIR_DURATIONS = Object.freeze({
   sawmill: 60,
@@ -20492,9 +20464,11 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
     const audio = globalThis.CatInc && globalThis.CatInc.audio;
     const radioOn = Boolean(audio && typeof audio.isRadioOn === "function" && audio.isRadioOn());
     const radioLabel = "Turn Radio " + (radioOn ? "Off" : "On");
-    menu.innerHTML = '<button type="button" class="camp-function-action camp-radio-action" role="menuitem"'
+    menu.innerHTML = '<button type="button" class="camp-function-action camp-semantic-action camp-radio-action" role="menuitem"'
       + ' data-camp-menu-action="toggle-radio" aria-label="' + radioLabel + '" title="' + radioLabel + '">'
-      + interfaceIconHtml(radioOn ? "pause" : "play", "camp-action-icon") + '</button>';
+      + contenuActionSemantiqueCampPrototype(interfaceIconHtml(
+        radioOn ? "pause" : "play", "camp-action-icon camp-semantic-action-icon"
+      )) + '</button>';
   } else if (maison) {
     menu.innerHTML = campHousePanelMarkup(item, upgradeDisponible, stickerEligible);
   } else if (batimentCampRepare(type.id) || !definitionReparationCamp(type.id)) {
@@ -20513,11 +20487,11 @@ function ouvrirMenuInteractionCampPrototype(uid, options) {
       menu.innerHTML = famille
         ? campProductionPanelMarkup(item, famille)
         : (fonction
-          ? '<button type="button" class="camp-function-action' + (type.id === "operationsTable" ? ' camp-exploration-action' : '')
+          ? '<button type="button" class="camp-function-action camp-semantic-action' + (type.id === "operationsTable" ? ' camp-exploration-action' : '')
             + (type.id === "jobCenter" ? ' camp-jobs-action' : '')
             + '" role="menuitem" data-camp-menu-action="function" aria-label="Open '
             + echapperAttributHtml(type.id === "jobCenter" ? "Jobs" : type.label) + '">'
-            + iconeFonctionCampPrototype(fonction) + '</button>'
+            + contenuActionSemantiqueCampPrototype(iconeFonctionCampPrototype(fonction)) + '</button>'
           : '');
       if (!famille && upgradeDisponible) menu.innerHTML += boutonAmeliorationCamp(type, upgradeDisponible, true);
     } else {
@@ -20717,10 +20691,12 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
       + echapperAttributHtml(cible.label) + '">' + rewardHtml
       + CHECK_ICON + '<strong>Validate</strong></button>';
   } else {
-    menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action" role="menuitem"'
+    menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action camp-semantic-action" role="menuitem"'
       + ' data-camp-menu-action="demolition"'
       + ' aria-label="Demolish ' + echapperAttributHtml(cible.label)
-      + '"><img src="img/interface/Trash_Final.png?v=0.0001" alt=""></button>';
+      + '">' + contenuActionSemantiqueCampPrototype(
+        '<img class="camp-semantic-action-icon" src="img/interface/Trash_Final.png?v=0.0001" alt="">'
+      ) + '</button>';
   }
   const declencheur = document.querySelector(
     cible.kind === "layout"
@@ -21518,8 +21494,10 @@ function renduBoutiqueMarketStall() {
   const portrait = document.getElementById("market-stall-shop-portrait");
   definirSourceImageRuntime(portrait, cannelle && cannelle.visage || CAT_FACES.cannelle);
   ecrireTexte(document.getElementById("market-stall-shop-level"), level);
-  ecrireTexte(document.getElementById("market-stall-shop-tier-hint"),
-    "New items at Level " + SHOP_DATA.nextMerchandiseLevel(level));
+  const nextMerchandiseLevel = SHOP_DATA.nextMerchandiseLevel(level);
+  ecrireTexte(document.getElementById("market-stall-shop-tier-hint"), nextMerchandiseLevel === null
+    ? "All current merchandise unlocked"
+    : "New items at Level " + nextMerchandiseLevel);
   ecrireTexte(document.getElementById("market-stall-shop-status"), availability.reason);
   const status = document.getElementById("market-stall-shop-status");
   if (status) status.hidden = availability.available;
@@ -21607,7 +21585,7 @@ function ouvrirBoutiqueMarketStall() {
     dismissible: true,
     fermer: fermerBoutiqueMarketStall,
     focusSelector: ".market-stall-shop-tab",
-    returnFocusSelector: '[data-camp-category="building"]'
+    returnFocusSelector: '.camp-prototype-edit-dock > button[data-camp-category="building"]'
   });
   return true;
 }
@@ -21622,6 +21600,50 @@ function fermerBoutiqueMarketStall() {
 
 const NAYA_INN_RARITIES = Object.freeze(["common", "rare", "epic", "legendary"]);
 let nayaInnTravelerSelections = { campaign: {}, scouting: {} };
+
+function niveauNayaAuberge() {
+  const naya = etat && Array.isArray(etat.kittiesData)
+    ? etat.kittiesData.find(function(kitty) { return kitty && kitty.nom === "Naya"; })
+    : null;
+  return naya ? Math.max(1, Number(naya.niveau) || 1) : 1;
+}
+
+function nayaInnEffectiveConfig(nayaLevel) {
+  const effective = {
+    stateVersion: NAYA_INN_CONFIG.stateVersion,
+    rarityWeights: Object.assign({}, NAYA_INN_CONFIG.rarityWeights),
+    contracts: Object.fromEntries(NAYA_INN_RARITIES.map(function(rarity) {
+      return [rarity, Object.assign({}, NAYA_INN_CONFIG.contracts[rarity])];
+    })),
+    travelers: {
+      helperPower: Object.assign({}, NAYA_INN_CONFIG.travelers.helperPower),
+      guideReductionPercent: Object.assign({}, NAYA_INN_CONFIG.travelers.guideReductionPercent)
+    }
+  };
+  (Array.isArray(NAYA_INN_CONFIG.levelMilestones) ? NAYA_INN_CONFIG.levelMilestones : [])
+    .filter(function(milestone) { return milestone && Number(milestone.level) <= Number(nayaLevel); })
+    .slice().sort(function(a, b) { return Number(a.level) - Number(b.level); })
+    .forEach(function(milestone) {
+      if (milestone.kind === "rarity") effective.rarityWeights = Object.assign({}, milestone.rarityWeights);
+      if (milestone.kind === "effects") {
+        effective.contracts = Object.fromEntries(NAYA_INN_RARITIES.map(function(rarity) {
+          return [rarity, Object.assign({}, milestone.contracts[rarity])];
+        }));
+        effective.travelers = {
+          helperPower: Object.assign({}, milestone.travelers.helperPower),
+          guideReductionPercent: Object.assign({}, milestone.travelers.guideReductionPercent)
+        };
+      }
+    });
+  return effective;
+}
+
+function nextNayaInnMilestone(nayaLevel, kind) {
+  return (Array.isArray(NAYA_INN_CONFIG.levelMilestones) ? NAYA_INN_CONFIG.levelMilestones : [])
+    .filter(function(milestone) {
+      return milestone && milestone.kind === kind && Number(milestone.level) > Number(nayaLevel);
+    }).slice().sort(function(a, b) { return Number(a.level) - Number(b.level); })[0] || null;
+}
 
 function aubergeNayaOperationnelle() {
   const item = itemCampPrototypeParType("nayaSInn");
@@ -21643,11 +21665,12 @@ function hasardDeterministeAuberge(dateKey) {
   };
 }
 
-function rareteAubergeDepuisRoll(roll) {
+function rareteAubergeDepuisRoll(roll, config) {
+  const effective = config || nayaInnEffectiveConfig(niveauNayaAuberge());
   let cursor = 0;
   const target = roll * 100;
   return NAYA_INN_RARITIES.find(function(rarity) {
-    cursor += Number(NAYA_INN_CONFIG.rarityWeights[rarity]) || 0;
+    cursor += Number(effective.rarityWeights[rarity]) || 0;
     return target < cursor;
   }) || "legendary";
 }
@@ -21662,7 +21685,7 @@ function ressourcesAubergeEligibles() {
   });
 }
 
-function creerContratAuberge(rarity, random) {
+function creerContratAuberge(rarity, random, config) {
   const resources = ressourcesAubergeEligibles();
   const materials = resources.filter(function(resource) {
     return resource.family === "wood" || resource.family === "rock";
@@ -21679,7 +21702,7 @@ function creerContratAuberge(rarity, random) {
   const output = rarity === "legendary"
     ? { id: "cannedCatFood" }
     : (foodPool[Math.floor(random() * foodPool.length)] || { id: "salads" });
-  const balance = NAYA_INN_CONFIG.contracts[rarity];
+  const balance = (config || nayaInnEffectiveConfig(niveauNayaAuberge())).contracts[rarity];
   return {
     templateId: "v2-" + rarity + "-" + input.id + "-" + output.id,
     rarity: rarity,
@@ -21694,20 +21717,25 @@ function creerContratAuberge(rarity, random) {
 function creerEtatAubergeNaya(dateKey) {
   const random = hasardDeterministeAuberge(dateKey);
   const faces = CAT_FACES_ALEATOIRES.length ? CAT_FACES_ALEATOIRES : [CAT_FACES.naya];
+  const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
   return {
     version: NAYA_INN_CONFIG.stateVersion,
     dateKey: dateKey,
     travelers: ["helper", "guide"].map(function(templateId) {
+      const rarity = rareteAubergeDepuisRoll(random(), effective);
       return {
         templateId: templateId,
-        rarity: rareteAubergeDepuisRoll(random()),
+        rarity: rarity,
+        effectValue: templateId === "helper"
+          ? Number(effective.travelers.helperPower[rarity])
+          : Number(effective.travelers.guideReductionPercent[rarity]),
         face: faces[Math.floor(random() * faces.length)],
         invited: false,
         consumed: false
       };
     }),
     contracts: Array.from({ length: 3 }, function() {
-      return creerContratAuberge(rareteAubergeDepuisRoll(random()), random);
+      return creerContratAuberge(rareteAubergeDepuisRoll(random(), effective), random, effective);
     })
   };
 }
@@ -21786,6 +21814,7 @@ function consommerVoyageursAubergePourMission(kind, id) {
     return {
       templateId: traveler.templateId,
       rarity: traveler.rarity,
+      effectValue: traveler.effectValue,
       face: traveler.face,
       missionKind: kind,
       missionId: id
@@ -21799,10 +21828,11 @@ function bonusVoyageursAuberge(travelers) {
   const list = Array.isArray(travelers) ? travelers : [];
   const helper = list.find(function(traveler) { return traveler.templateId === "helper"; });
   const guide = list.find(function(traveler) { return traveler.templateId === "guide"; });
+  const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
   return {
-    power: helper ? Number(NAYA_INN_CONFIG.travelers.helperPower[helper.rarity]) || 0 : 0,
+    power: helper ? Number(Number.isFinite(Number(helper.effectValue)) ? helper.effectValue : effective.travelers.helperPower[helper.rarity]) || 0 : 0,
     durationMultiplier: guide
-      ? 1 - (Number(NAYA_INN_CONFIG.travelers.guideReductionPercent[guide.rarity]) || 0) / 100
+      ? 1 - (Number(Number.isFinite(Number(guide.effectValue)) ? guide.effectValue : effective.travelers.guideReductionPercent[guide.rarity]) || 0) / 100
       : 1
   };
 }
@@ -21820,6 +21850,7 @@ function htmlVoyageursAubergeMission(kind, id, basePower, difficulty, baseDurati
   const selected = new Set(selectionVoyageursAuberge(kind, id));
   const selectedTravelers = available.filter(function(traveler) { return selected.has(traveler.templateId); });
   const bonus = bonusVoyageursAuberge(selectedTravelers);
+  const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
   const effectivePower = Number(basePower) + bonus.power;
   const effectiveDuration = Number(baseDuration) * bonus.durationMultiplier;
   const chance = effectivePower > 0 && Number(difficulty) > 0
@@ -21827,9 +21858,11 @@ function htmlVoyageursAubergeMission(kind, id, basePower, difficulty, baseDurati
   return '<section class="inn-travelers-mission" aria-label="Inn Travelers"><strong>Inn Travelers</strong><div>'
     + available.map(function(traveler) {
       const isSelected = selected.has(traveler.templateId);
+      const effectValue = Number.isFinite(Number(traveler.effectValue)) ? Number(traveler.effectValue)
+        : (traveler.templateId === "helper" ? effective.travelers.helperPower[traveler.rarity] : effective.travelers.guideReductionPercent[traveler.rarity]);
       const value = traveler.templateId === "helper"
-        ? "+" + NAYA_INN_CONFIG.travelers.helperPower[traveler.rarity] + " Power"
-        : "-" + NAYA_INN_CONFIG.travelers.guideReductionPercent[traveler.rarity] + "% Duration";
+        ? "+" + effectValue + " Power"
+        : "-" + effectValue + "% Duration";
       return '<button type="button" class="inn-traveler-choice inn-rarity-' + traveler.rarity
         + (isSelected ? ' selected' : '') + '" aria-pressed="' + isSelected + '" onclick="basculerVoyageurAubergeMission(\''
         + kind + '\',\'' + echapperAttributHtml(id) + '\',\'' + traveler.templateId + '\')"><img src="'
@@ -21875,13 +21908,17 @@ function renduAubergeNaya() {
   const root = document.getElementById("naya-inn-content");
   if (!root) return;
   initialiserAubergeNaya();
+  const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
+  renduInfoAubergeNaya();
   let html = '<p class="naya-inn-reset">Today · resets in ' + formaterCompteAReboursQuetes(millisecondesAvantMinuitParis(Date.now())) + '</p>'
     + '<p class="naya-inn-kicker">TODAY\'S TRAVELERS</p><div class="naya-inn-travelers">';
   etat.innDaily.travelers.forEach(function(traveler) {
     const rarityLabel = traveler.rarity[0].toUpperCase() + traveler.rarity.slice(1);
+    const effectValue = Number.isFinite(Number(traveler.effectValue)) ? Number(traveler.effectValue)
+      : (traveler.templateId === "helper" ? effective.travelers.helperPower[traveler.rarity] : effective.travelers.guideReductionPercent[traveler.rarity]);
     const value = traveler.templateId === "helper"
-      ? "+" + NAYA_INN_CONFIG.travelers.helperPower[traveler.rarity] + " Exploration Power"
-      : "-" + NAYA_INN_CONFIG.travelers.guideReductionPercent[traveler.rarity] + "% Mission Duration";
+      ? "+" + effectValue + " Exploration Power"
+      : "-" + effectValue + "% Mission Duration";
     const status = traveler.consumed ? "Committed today" : (traveler.invited ? "Invited — available in Exploration" : "Available to invite");
     html += '<section class="naya-inn-traveler naya-inn-rarity-' + traveler.rarity + '"><img class="naya-inn-visitor" src="'
       + echapperAttributHtml(traveler.face) + '" alt="Visiting Cat"><div><strong>' + rarityLabel + ' '
@@ -21903,6 +21940,40 @@ function renduAubergeNaya() {
   root.innerHTML = html + '</div>';
 }
 
+function renduInfoAubergeNaya() {
+  const root = document.getElementById("naya-inn-info");
+  if (!root) return;
+  const level = niveauNayaAuberge();
+  const effective = nayaInnEffectiveConfig(level);
+  const nextRarity = nextNayaInnMilestone(level, "rarity");
+  const nextEffects = nextNayaInnMilestone(level, "effects");
+  const nextLabel = function(milestone, kind) {
+    return milestone ? "Next " + kind + " upgrade: Naya Level " + milestone.level : "No further " + kind + " upgrade currently configured";
+  };
+  const rows = function(values, suffix) {
+    return NAYA_INN_RARITIES.map(function(rarity) {
+      return '<span><b>' + rarity[0].toUpperCase() + rarity.slice(1) + '</b><em>' + values[rarity] + suffix + '</em></span>';
+    }).join("");
+  };
+  root.innerHTML = '<h3>Naya\'s Inn — Naya Level ' + level + '</h3>'
+    + '<h4>Rarity chances</h4><div class="naya-inn-info-grid">' + rows(effective.rarityWeights, "%") + '</div><p>' + nextLabel(nextRarity, "rarity") + '</p>'
+    + '<h4>Current Contract effects</h4><div class="naya-inn-info-grid">'
+    + NAYA_INN_RARITIES.map(function(rarity) { return '<span><b>' + rarity[0].toUpperCase() + rarity.slice(1) + '</b><em>Give ' + effective.contracts[rarity].inputAmount + ' · Get ' + effective.contracts[rarity].outputAmount + '</em></span>'; }).join("")
+    + '</div><h4>Current Traveler effects</h4><div class="naya-inn-info-grid">'
+    + NAYA_INN_RARITIES.map(function(rarity) { return '<span><b>' + rarity[0].toUpperCase() + rarity.slice(1) + '</b><em>Helper +' + effective.travelers.helperPower[rarity] + ' · Guide -' + effective.travelers.guideReductionPercent[rarity] + '%</em></span>'; }).join("")
+    + '</div><p>' + nextLabel(nextEffects, "effects") + '</p>';
+}
+
+function toggleNayaInnInfo() {
+  const root = document.getElementById("naya-inn-info");
+  const button = document.getElementById("naya-inn-info-button");
+  if (!root || !button) return;
+  const open = root.hidden;
+  root.hidden = !open;
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open) renduInfoAubergeNaya();
+}
+
 function ouvrirAubergeNayaDepuisCamp(item) {
   if (!item || item.type !== "nayaSInn" || !aubergeNayaOperationnelle()) return false;
   return ouvrirAubergeNaya();
@@ -21911,12 +21982,16 @@ function ouvrirAubergeNayaDepuisCamp(item) {
 function ouvrirAubergeNaya() {
   if (!aubergeNayaOperationnelle() || !document.getElementById("naya-inn-modal")) return false;
   definirSourceImageRuntime(document.getElementById("naya-inn-portrait"), CAT_FACES.naya);
+  const info = document.getElementById("naya-inn-info");
+  const infoButton = document.getElementById("naya-inn-info-button");
+  if (info) info.hidden = true;
+  if (infoButton) infoButton.setAttribute("aria-expanded", "false");
   renduAubergeNaya();
   ouvrirDialogueModal("naya-inn-modal", {
     dismissible: true,
     fermer: fermerAubergeNaya,
     focusSelector: ".naya-inn-traveler button",
-    returnFocusSelector: '[data-camp-category="building"]'
+    returnFocusSelector: '.camp-prototype-edit-dock > button[data-camp-category="building"]'
   });
   return true;
 }
@@ -22603,7 +22678,7 @@ function ouvrirModalConstructionMaisonCamp() {
     dismissible: true,
     fermer: fermerModalConstructionMaisonCamp,
     focusSelector: ".camp-task-slot",
-    returnFocusSelector: '[data-camp-category="house"]'
+    returnFocusSelector: '.camp-prototype-edit-dock > button[data-camp-category="house"]'
   });
   ancrerCampTaskPanel();
   return true;
@@ -22957,7 +23032,7 @@ function ouvrirModalConstructionBatimentCamp() {
     dismissible: true,
     fermer: fermerModalConstructionBatimentCamp,
     focusSelector: ".camp-task-slot",
-    returnFocusSelector: '[data-camp-category="building"]'
+    returnFocusSelector: '.camp-prototype-edit-dock > button[data-camp-category="building"]'
   });
   ancrerCampTaskPanel();
   return true;
@@ -24570,14 +24645,15 @@ function actualiserCommandesCampPrototype() {
     gommeClotures.setAttribute("aria-pressed", campPrototypeGommeClotures ? "true" : "false");
   }
   const typeActif = typeCampPrototype(campPrototypeTypeAPlacer);
-  document.querySelectorAll("[data-camp-category]").forEach(function(bouton) {
+  document.querySelectorAll(".camp-prototype-edit-dock > button[data-camp-category]").forEach(function(bouton) {
     const categorie = bouton.dataset.campCategory;
     const visible = categorieDockCampPrototypeVisible(categorie);
     bouton.hidden = !visible;
     if (categorie === "building") actualiserIconeCategorieBatimentCamp(bouton, visible);
-    if (categorie === "house") {
-      bouton.classList.toggle("camp-first-box-house-cue", firstBoxHouseCueActif());
-    }
+    bouton.classList.toggle(
+      "camp-first-box-house-cue",
+      categorie === "house" && firstBoxHouseCueActif()
+    );
     const actif = campPrototypeCategorieOuverte === categorie
       || (typeActif && typeActif.category === categorie)
       || (categorie === "road" && campPrototypeGommeRoutes)
@@ -24665,6 +24741,11 @@ function rendrePaletteCampPrototype() {
   palette.dataset.campCategory = categorie || "";
   const categorySheet = palette.closest(".camp-prototype-category-sheet");
   if (categorySheet) categorySheet.dataset.campCategory = categorie || "";
+  [palette, categorySheet].forEach(function(container) {
+    if (!container) return;
+    container.classList.remove("camp-first-box-house-cue", "camp-prototype-category-active");
+    container.removeAttribute("aria-pressed");
+  });
   if (!categorie) {
     actualiserCommandesCampPrototype();
     return;
@@ -24944,7 +25025,7 @@ function quitterEditionCampPrototype(restaurerFocus) {
   renduCampPrototype();
   if (restaurerFocus === false) return;
   requestAnimationFrame(function() {
-    const houses = document.querySelector('[data-camp-category="house"]');
+    const houses = document.querySelector('.camp-prototype-edit-dock > button[data-camp-category="house"]');
     if (houses && !houses.hidden) houses.focus();
   });
 }

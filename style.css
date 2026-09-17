@@ -5657,8 +5657,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 }
 .camp-production-upgrade strong { align-self: end; font-size: .76rem; }
 .camp-production-upgrade span { align-self: start; color: inherit; font-size: .58rem; letter-spacing: .04em; }
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-sticker-customize-action img,
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-jobs-action img {
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-sticker-customize-action img {
   width: 50px;
   height: 50px;
   object-fit: contain;
@@ -5678,6 +5677,30 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   border-color: transparent;
   background: transparent;
 }
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-semantic-action {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 0;
+}
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-semantic-action-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  line-height: 0;
+}
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-semantic-action-icon {
+  display: block;
+  place-self: center;
+  width: var(--camp-semantic-icon-size, 58px);
+  height: var(--camp-semantic-icon-size, 58px);
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  pointer-events: none;
+}
 @media (hover: hover) and (pointer: fine) {
   .camp-prototype-interaction-menu:not(.camp-production-menu) .camp-function-action:hover {
     color: #27834f;
@@ -5685,22 +5708,11 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
     filter: brightness(1.06);
   }
 }
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-function-action .camp-action-icon {
-  width: 58px;
-  height: 58px;
-}
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-radio-action .camp-action-icon {
-  width: 66px;
-  height: 66px;
-  max-width: none;
-  max-height: none;
+.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-radio-action {
+  --camp-semantic-icon-size: 66px;
 }
 .camp-prototype-interaction-menu:not(.camp-production-menu) .camp-upgrade-compact {
   grid-template: 1fr / 1fr;
-}
-.camp-prototype-interaction-menu:not(.camp-production-menu) .camp-exploration-action .camp-action-icon {
-  width: 58px;
-  height: 58px;
 }
 .camp-house-panel {
   display: grid;
@@ -6105,13 +6117,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
     background: transparent;
     filter: brightness(1.06);
   }
-}
-.camp-prototype-demolition-action > img {
-  width: 58px;
-  height: 58px;
-  max-width: none;
-  object-fit: contain;
-  pointer-events: none;
 }
 .camp-prototype-interaction-menu .camp-prototype-repair-action {
   border-color: #b97829;
@@ -15605,31 +15610,12 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   pointer-events: none;
 }
 .camp-sawmill-tutorial-target {
-  position: relative !important;
   z-index: 261 !important;
   isolation: isolate;
   outline: 3px solid #ffe07a !important;
   outline-offset: 3px;
   box-shadow: 0 0 0 6px rgba(255, 224, 122, .58), 0 0 22px rgba(255, 206, 87, .86) !important;
-}
-.camp-sawmill-tutorial-target::before,
-.camp-sawmill-tutorial-target::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-}
-.camp-sawmill-tutorial-target::before {
-  inset: -7px;
-  border: 3px solid rgba(255, 237, 156, .96);
-  box-shadow: 0 0 0 8px rgba(255, 245, 199, .25), 0 0 34px rgba(255, 224, 111, .94);
-  animation: camp-task-ready-pulse 1.15s ease-out infinite;
-}
-.camp-sawmill-tutorial-target::after {
-  inset: -12px;
-  background: radial-gradient(ellipse, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
-  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
 }
 .camp-sawmill-tutorial-target:focus-visible {
   outline-color: #fff !important;
@@ -15647,7 +15633,6 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
 }
 .camp-first-box-house-cue {
-  position: relative;
   z-index: 13;
   outline: 3px solid #ffe07a !important;
   outline-offset: 3px;
@@ -15706,8 +15691,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-re
 
 @media (prefers-reduced-motion: reduce) {
   .camp-sawmill-tutorial-target,
-  .camp-sawmill-tutorial-target::before,
-  .camp-sawmill-tutorial-target::after,
   .camp-guided-junk-target,
   .camp-catchen-tutorial-target,
   .camp-first-box-house-cue,
@@ -15717,14 +15700,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-re
   .camp-recruit-route-tutorial-attention * {
     animation: none !important;
     transition: none !important;
-  }
-  .camp-sawmill-tutorial-target::before {
-    opacity: .78;
-    transform: none;
-  }
-  .camp-sawmill-tutorial-target::after {
-    opacity: .55;
-    transform: none;
   }
 }
 
@@ -15971,8 +15946,9 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 
 /* Naya's Inn shares the compact modal vocabulary of Cannelle's shop. */
 #overlay-root > .naya-inn-modal .naya-inn-panel { width:min(820px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:16px; overflow:auto; box-sizing:border-box; }
-.naya-inn-header { display:grid; grid-template-columns:58px 1fr auto; align-items:center; gap:10px; }
+.naya-inn-header { display:grid; grid-template-columns:58px 1fr 36px auto; align-items:center; gap:10px; }
 .naya-inn-header > span { display:grid; gap:3px; }
+.naya-inn-header #naya-inn-info-button { width:36px; height:36px; }
 .naya-inn-header small,.naya-inn-reset { color:var(--texte-secondaire,#685b50); font-size:.8rem; }
 .naya-inn-portrait,.naya-inn-visitor { width:54px; height:54px; object-fit:contain; border-radius:50%; background:#fff8e8; }
 .naya-inn-reset { margin:8px 0; text-align:right; }
@@ -15999,6 +15975,14 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 .naya-inn-resource { display:inline-flex; align-items:center; gap:3px; margin-right:5px; white-space:nowrap; }
 .naya-inn-resource img { width:34px; height:34px; object-fit:contain; }
 .naya-inn-contract small { min-height:1.2em; color:var(--texte-secondaire,#685b50); font-weight:700; }
+.naya-inn-info { margin:10px 0; padding:12px; border:1px solid rgba(90,65,45,.25); border-radius:12px; background:#fffaf0; }
+.naya-inn-info h3,.naya-inn-info h4,.naya-inn-info p { margin:0 0 8px; }
+.naya-inn-info h4 { margin-top:12px; color:#713810; font-size:.76rem; letter-spacing:.08em; text-transform:uppercase; }
+.naya-inn-info p { color:var(--texte-secondaire,#685b50); font-size:.78rem; }
+.naya-inn-info-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.naya-inn-info-grid span { display:grid; gap:2px; padding:7px; border-radius:8px; background:#fff; }
+.naya-inn-info-grid b { font-size:.72rem; }
+.naya-inn-info-grid em { font-size:.75rem; font-style:normal; }
 .inn-travelers-mission { display:grid; gap:6px; margin:10px 0; padding:9px; border:1px solid rgba(90,65,45,.2); border-radius:10px; background:rgba(255,250,238,.8); }
 .inn-travelers-mission > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
 .inn-traveler-choice { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:6px; min-height:52px; padding:5px 8px; border:2px solid #8d8d8d; border-radius:9px; background:#fff; text-align:left; }
@@ -16009,11 +15993,12 @@ body[data-onglet-actif="camp"] #panneau-objectifs.reduit {
 .inn-traveler-choice em { font-style:normal; font-weight:900; }
 @media (max-width:600px) {
   #overlay-root > .naya-inn-modal .naya-inn-panel { width:calc(100vw - 24px); max-height:calc(100dvh - 24px); padding:10px; }
-  .naya-inn-header { grid-template-columns:46px 1fr auto; gap:7px; }
+  .naya-inn-header { grid-template-columns:46px 1fr 36px auto; gap:7px; }
   .naya-inn-portrait { width:44px; height:44px; }
   .naya-inn-travelers { grid-template-columns:1fr; }
   .naya-inn-traveler { grid-template-columns:54px minmax(0,1fr); padding:9px; }
   .naya-inn-contracts { grid-template-columns:1fr; }
+  .naya-inn-info-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .inn-travelers-mission > div { grid-template-columns:1fr; }
 }
 

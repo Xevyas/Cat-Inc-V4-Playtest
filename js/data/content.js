@@ -106,6 +106,7 @@ const RESOURCE_INFO = Object.freeze((CatInc.resources?.definitions() || []).redu
 }, {}));
 
 const BOOK_LEARNING_CONTENT = CatInc.data.campGameplay?.bookLearning || {};
+const PURCHASABLE_CONTENT = CatInc.data.campGameplay?.purchasableContent || {};
 function studioBookContent(itemId) {
   const authored = BOOK_LEARNING_CONTENT[itemId];
   return authored
@@ -117,9 +118,9 @@ const ITEMS = {
   smallFountainBlueprint: {
     id:           "smallFountainBlueprint",
     category:     "blueprint",
-    nom:          "Small Fountain Blueprint",
+    nom:          PURCHASABLE_CONTENT.smallFountainBlueprint?.name || "",
     emoji:        LIVRE_ICONE,
-    description:  "Cannelle's plan for a compact stone fountain that brings a little calm to the Camp.",
+    description:  PURCHASABLE_CONTENT.smallFountainBlueprint?.description || "",
     unlocksLabel: "Small Fountain in Camp Decorations",
     studyDuration: 3600000,
     learningMode: "timer-only",
@@ -130,9 +131,9 @@ const ITEMS = {
   cardboardLitterboxBlueprint: {
     id:           "cardboardLitterboxBlueprint",
     category:     "blueprint",
-    nom:          "Cardboard Litterbox Blueprint",
+    nom:          PURCHASABLE_CONTENT.cardboardLitterboxBlueprint?.name || "",
     emoji:        LIVRE_ICONE,
-    description:  "Cannelle's practical plan for a compact cardboard litterbox at the Camp.",
+    description:  PURCHASABLE_CONTENT.cardboardLitterboxBlueprint?.description || "",
     unlocksLabel: "Cardboard Litterbox in Camp Decorations",
     studyDuration: 3600000,
     learningMode: "timer-only",

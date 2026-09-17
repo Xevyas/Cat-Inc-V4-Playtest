@@ -1117,6 +1117,56 @@
                   "height": 1.9
                 }
               },
+              "animation": {
+                "revision": 1,
+                "status": "live",
+                "baseRevision": 3,
+                "familyId": "foliage-rustle",
+                "mode": "overlay-apng",
+                "frameCount": 8,
+                "frameDurationMs": 120,
+                "sprites": {
+                  "down": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/animation-1/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/animation-1/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/animation-1/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/junk-flower-bush/tier-1/animation-1/animation-left.png"
+                },
+                "composition": "replace-base",
+                "registration": {
+                  "down": {
+                    "width": 512,
+                    "height": 256,
+                    "baseWidth": 512,
+                    "baseHeight": 256,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "right": {
+                    "width": 512,
+                    "height": 256,
+                    "baseWidth": 512,
+                    "baseHeight": 256,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "up": {
+                    "width": 512,
+                    "height": 256,
+                    "baseWidth": 512,
+                    "baseHeight": 256,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "left": {
+                    "width": 512,
+                    "height": 256,
+                    "baseWidth": 512,
+                    "baseHeight": 256,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  }
+                }
+              },
               "gameplay": {
                 "clearDurationSeconds": 1800,
                 "minCatLevel": 2,

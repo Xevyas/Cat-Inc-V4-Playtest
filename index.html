@@ -1322,8 +1322,10 @@
       <div class="explo-modal-header naya-inn-header">
         <img id="naya-inn-portrait" class="naya-inn-portrait" src="" alt="Naya">
         <span><strong id="naya-inn-title">Naya's Inn</strong><small>Innkeeper · Daily opportunities</small></span>
+        <button id="naya-inn-info-button" type="button" aria-label="Naya's Inn level benefits" aria-expanded="false" aria-controls="naya-inn-info" title="Level benefits" onclick="toggleNayaInnInfo()" class="interface-details-control"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
         <button class="explo-modal-close" type="button" aria-label="Close Naya's Inn" onclick="fermerAubergeNaya()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
+      <section id="naya-inn-info" class="naya-inn-info" aria-live="polite" hidden></section>
       <div id="naya-inn-content"></div>
     </div>
   </div>

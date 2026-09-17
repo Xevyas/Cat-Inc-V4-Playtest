@@ -3,67 +3,40 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
 
-  const merchandise = Object.freeze([
-    Object.freeze({
-      id: "small-fountain-blueprint",
-      category: "blueprints",
-      name: "Small Fountain Blueprint",
-      requiredLevel: 0,
-      previewAssetId: "small-fountain",
-      priceResource: "cannedCatFood",
-      priceAmount: 1,
-      rewardType: "inventory-item",
-      rewardId: "smallFountainBlueprint",
-      repeatable: false
-    }),
-    Object.freeze({
-      id: "cardboard-litterbox-blueprint",
-      category: "blueprints",
-      name: "Cardboard Litterbox Blueprint",
-      requiredLevel: 10,
-      previewAssetId: "cardboard-litterbox",
-      priceResource: "cannedCatFood",
-      priceAmount: 1,
-      rewardType: "inventory-item",
-      rewardId: "cardboardLitterboxBlueprint",
-      repeatable: false
-    }),
-    Object.freeze({
-      id: "bird-whistle",
-      category: "boosts",
-      name: "Bird Whistle",
-      description: "Calls the next Bird event immediately.",
-      requiredLevel: 10,
-      iconId: "items-bird-whistle",
-      iconRuntimePath: "img/items/bird-whistle.png",
-      priceResource: "cannelleTokens",
-      priceAmount: 3,
-      rewardType: "boost-quantity",
-      rewardId: "birdWhistle",
-      repeatable: true
-    }),
-    Object.freeze({
-      id: "shortcut-map",
-      category: "boosts",
-      name: "Shortcut Map",
-      description: "Exploration Speed ×2 for 10 real-time minutes.",
-      requiredLevel: 10,
-      iconId: "items-shortcut-map",
-      iconRuntimePath: "img/items/shortcut-map.png",
-      priceResource: "cannelleTokens",
-      priceAmount: 3,
-      rewardType: "boost-quantity",
-      rewardId: "shortcutMap",
-      repeatable: true
-    })
-  ]);
+  const gameplay = CatInc.data.campGameplay;
+  if (!gameplay || !gameplay.purchasableContent || !gameplay.cannelleShop) {
+    throw new Error("Cannelle's Shop requires canonical Gameplay & Balance data");
+  }
+  const merchandise = Object.freeze(gameplay.cannelleShop.merchandise.map(function(entry) {
+    const content = gameplay.purchasableContent[entry.contentId];
+    if (!content) throw new Error("Cannelle's Shop contains unknown content " + entry.contentId);
+    const product = {
+      id: entry.id,
+      category: entry.category,
+      name: content.name,
+      requiredLevel: entry.requiredLevel,
+      priceResource: entry.priceResource,
+      priceAmount: entry.priceAmount,
+      rewardType: content.contentType,
+      rewardId: entry.contentId,
+      repeatable: entry.repeatable
+    };
+    if (content.previewAssetId) product.previewAssetId = content.previewAssetId;
+    if (content.iconId) product.iconId = content.iconId;
+    if (content.iconRuntimePath) product.iconRuntimePath = content.iconRuntimePath;
+    if (content.contentType === "boost-quantity") product.description = content.description;
+    return Object.freeze(product);
+  }));
 
   function isShopOwner(kitty) {
     return Boolean(kitty && kitty.nom === "Cannelle" && kitty.metier === "shop-owner");
   }
 
   function nextMerchandiseLevel(level) {
-    return (Math.floor(Math.max(0, Number(level) || 0) / 10) + 1) * 10;
+    const current = Math.max(0, Number(level) || 0);
+    const future = merchandise.map(function(product) { return product.requiredLevel; })
+      .filter(function(requiredLevel) { return requiredLevel > current; });
+    return future.length ? Math.min.apply(null, future) : null;
   }
 
   function productOwned(state, product) {

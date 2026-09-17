@@ -953,6 +953,36 @@
     Object.freeze({ label: "Other", changes: Object.freeze([]) })
   ]);
 
+  const release0100Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Naya's Inn now improves its rarity chances, contracts and Traveler bonuses as Naya reaches new level milestones."
+      ])
+    }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Camp action pictograms now stay consistently centered across building, radio and demolition controls.",
+        "Flower Bush Junk now uses a subtle directional foliage animation in the Camp."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Repeated Studio promotions now preserve newer Exploration drafts instead of overwriting them."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([
+        "Work recipes, Cannelle's Shop merchandise and Camp category settings now use their canonical Studio-authored data.",
+        "Legacy raster animation bases can now be brought into the governed Studio animation workflow."
+      ])
+    })
+  ]);
+
   const release0099Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1374,7 +1404,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0099",
+    baseVersion: "0.0100",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1387,6 +1417,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0100",
+      date: "2026-09-17",
+      categories: release0100Categories
+    }),
     Object.freeze({
       version: "0.0099",
       date: "2026-09-15",
