@@ -3765,9 +3765,52 @@ function nomProchainChat() {
   return nomProchainChatDepuisListe(etat.kittiesData);
 }
 
+function normaliserRotationVisagesChatons(source) {
+  const pool = CatInc.data.liveCatFaces && Array.isArray(CatInc.data.liveCatFaces.randomCats)
+    ? CatInc.data.liveCatFaces.randomCats : [];
+  const liveIds = new Set(pool.map(function(face) { return face.id; }));
+  let used;
+  if (Array.isArray(source.randomCatFaceRotationUsedIds)) {
+    used = new Set(source.randomCatFaceRotationUsedIds.filter(function(id) { return liveIds.has(id); }));
+  } else {
+    // Old saves have no ledger: the trailing distinct generic run is the only
+    // bounded history we can safely infer. Named Cats never interrupt that run.
+    used = new Set();
+    const cats = source.kittiesData || [];
+    for (let index = cats.length - 1; index >= 0; index -= 1) {
+      const kitty = cats[index];
+      if (!kitty || estNomChatUnique(kitty.nom)) continue;
+      const id = idVisageChatLivePourSource(kitty.visage);
+      if (!liveIds.has(id)) continue;
+      if (used.has(id)) break;
+      used.add(id);
+      if (used.size === pool.length) break;
+    }
+  }
+  if (used.size === pool.length) used.clear();
+  source.randomCatFaceRotationUsedIds = Array.from(used);
+  const eligible = pool.filter(function(face) { return !used.has(face.id); });
+  if (source.prochainVisageChaton && !estNomChatUnique(nomProchainChatDepuisListe(source.kittiesData))) {
+    const id = idVisageChatLivePourSource(source.prochainVisageChaton);
+    const prepared = eligible.find(function(face) { return face.id === id; });
+    source.prochainVisageChaton = sourceVisageChatLive(prepared
+      || eligible[Math.floor(Math.random() * eligible.length)]);
+  }
+  return eligible;
+}
+
 function assurerVisageProchainChat() {
+  const ancienVisage = etat.prochainVisageChaton;
+  const ancienneRotation = JSON.stringify(etat.randomCatFaceRotationUsedIds);
+  const eligible = normaliserRotationVisagesChatons(etat);
   if (!etat.prochainVisageChaton) {
-    etat.prochainVisageChaton = assignerVisageChaton(nomProchainChat());
+    const nom = nomProchainChat();
+    etat.prochainVisageChaton = estNomChatUnique(nom)
+      ? assignerVisageChaton(nom)
+      : sourceVisageChatLive(eligible[Math.floor(Math.random() * eligible.length)]);
+  }
+  if (ancienVisage !== etat.prochainVisageChaton
+      || ancienneRotation !== JSON.stringify(etat.randomCatFaceRotationUsedIds)) {
     sauvegarder();
   }
   return etat.prochainVisageChaton;
@@ -4267,6 +4310,7 @@ function charger() {
     jobIds: Object.keys(METIERS).concat(saveCore.PERMANENT_SPECIALIST_JOB_IDS),
     assignerVisageChaton: assignerVisageChaton,
     normaliserVisageChaton: normaliserVisageChaton,
+    normaliserRotationVisagesChatons: normaliserRotationVisagesChatons,
     nomProchainChat: nomProchainChatDepuisListe,
     estVisageGeneriqueLegacy: estVisageGeneriqueLegacy,
     legacyGenericCatFaces: VISAGES_GENERIQUES_LEGACY,
@@ -4278,6 +4322,7 @@ function charger() {
         return kitty && kitty.visage || null;
       }),
       prochain: source.prochainVisageChaton || null,
+      rotation: source.randomCatFaceRotationUsedIds,
       avatar: source.campProfile && source.campProfile.avatarCatFaceId || null
     });
   };
@@ -8201,11 +8246,15 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
   const gatherLevelPercent = Math.round((Math.pow(GATHER_LEVEL_MULTIPLIER, 1) - 1) * 100);
   const processLevelPercent = Math.round((productionProcBonus({ niveau: 1 }) - 1) * 100);
   const managerLevelPercent = Math.round((jobLevelMultiplier({ niveau: 1 }) - 1) * 100);
-  const managerSpeedBonusLine = !isEngineer && k.metier && !isShopOwner
-    && METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille]
+  const managerSpeedBonusApplicable = Boolean(!isEngineer && k.metier && !isShopOwner
+    && METIERS[k.metier] && METIER_PAR_FAMILLE[METIERS[k.metier].famille]);
+  const managerSpeedBonusLine = managerSpeedBonusApplicable
     ? "<span class='xp-bonus-ligne'><span class='bonus-var'>x"
       + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2)
       + "</span> Manager Speed Bonus</span>"
+    : "";
+  const managerSpeedBonusHelpLine = managerSpeedBonusApplicable
+    ? "<span>Manager Speed Bonus by " + managerLevelPercent + "%</span>"
     : "";
   const explorationPowerAvailable = explorationCampFonctionnelle();
   const explorationPowerHelpLine = explorationPowerAvailable
@@ -8219,7 +8268,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
       + "<span>Gather Production Bonus by " + gatherLevelPercent + "%</span>"
       + "<span>Process Production Bonus by " + processLevelPercent + "%</span>"
       + explorationPowerHelpLine
-      + "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>"
+      + managerSpeedBonusHelpLine
       + campActionSpeedHelpLine
       + (k.nom === "Naya" ? "<span>The Inn also improves at Studio-authored Naya level milestones.</span>" : "");
   const levelBonuses = k.niveau > 0 ? (
@@ -13392,6 +13441,10 @@ function terminerSequence() {
   const nom = nomProchainChat();
   const metierInitial = saveCore.permanentSpecialistRoleForName(nom);
   etat.kittiesData.push({ nom: nom, metier: metierInitial, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: Date.now(), visage: visage, jobNiveau: 0 });
+  const faceId = idVisageChatLivePourSource(visage);
+  if (!estNomChatUnique(nom) && faceId && !etat.randomCatFaceRotationUsedIds.includes(faceId)) {
+    etat.randomCatFaceRotationUsedIds.push(faceId);
+  }
   etat.prochainVisageChaton = null;
   jouerSonMiaulement();
   if (!etaitRecruit) afficherNotification(nom + " joined the gang!");
@@ -30057,6 +30110,8 @@ if (globalThis.CatInc.devTools) {
         jobIds: Object.keys(METIERS).concat(saveCore.PERMANENT_SPECIALIST_JOB_IDS),
         assignerVisageChaton: assignerVisageChaton,
         normaliserVisageChaton: normaliserVisageChaton,
+        normaliserRotationVisagesChatons: normaliserRotationVisagesChatons,
+        nomProchainChat: nomProchainChatDepuisListe,
         estVisageGeneriqueLegacy: estVisageGeneriqueLegacy,
         legacyGenericCatFaces: VISAGES_GENERIQUES_LEGACY,
         catFaceIdForRuntimePath: idVisageChatLivePourSource

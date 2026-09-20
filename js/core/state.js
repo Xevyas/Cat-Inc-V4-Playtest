@@ -206,6 +206,7 @@ function creerEtatInitial() {
   sequenceDerniereMajTs:   0,
   sequenceVitesseDerniere: 1,
   prochainVisageChaton:    null,
+  randomCatFaceRotationUsedIds: [],
   clicCount:               0,
   reductionAuMomentDuClic: 0,
   afficherTempsAjusteRecrutement: false,

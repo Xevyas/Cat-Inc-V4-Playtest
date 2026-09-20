@@ -464,6 +464,14 @@ function validerStructureSauvegarde(d) {
       && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300)) {
     return "Invalid next cat portrait.";
   }
+  if (d.randomCatFaceRotationUsedIds !== undefined
+      && (!Array.isArray(d.randomCatFaceRotationUsedIds)
+        || d.randomCatFaceRotationUsedIds.length > 10000
+        || d.randomCatFaceRotationUsedIds.some(function(id) {
+          return typeof id !== "string" || id.length > 200 || !/^cat-faces-[a-z0-9-]+$/.test(id);
+        }))) {
+    return "Invalid Random Cat portrait rotation.";
+  }
   if (d.releaseNotesSeenVersion !== undefined
       && (typeof d.releaseNotesSeenVersion !== "string" || d.releaseNotesSeenVersion.length > 30 || /[<>]/.test(d.releaseNotesSeenVersion))) {
     return "Invalid release notes version.";
@@ -1120,6 +1128,7 @@ function analyserSauvegardeBrute(raw) {
     sequenceDerniereMajTs:   etat.sequenceDerniereMajTs,
     sequenceVitesseDerniere: etat.sequenceVitesseDerniere,
     prochainVisageChaton:    etat.prochainVisageChaton,
+    randomCatFaceRotationUsedIds: etat.randomCatFaceRotationUsedIds,
     clicCount:               etat.clicCount,
     reductionAuMomentDuClic: etat.reductionAuMomentDuClic,
     afficherTempsAjusteRecrutement: etat.afficherTempsAjusteRecrutement,
@@ -1817,6 +1826,15 @@ function analyserSauvegardeBrute(raw) {
   });
   if (ancienAvatarGenerique) {
     etat.campProfile.avatarCatFaceId = avatarGeneriqueMigre;
+  }
+  // Reconcile only after roster portraits have reached their canonical Live
+  // identities. Missing rotation state is distinct from an explicit new cycle.
+  etat.randomCatFaceRotationUsedIds = Array.isArray(d.randomCatFaceRotationUsedIds)
+    ? d.randomCatFaceRotationUsedIds.slice() : null;
+  if (typeof options.normaliserRotationVisagesChatons === "function") {
+    options.normaliserRotationVisagesChatons(etat);
+  } else {
+    etat.randomCatFaceRotationUsedIds = etat.randomCatFaceRotationUsedIds || [];
   }
 
     return etat;
