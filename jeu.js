@@ -25100,11 +25100,11 @@ function categorieDockCampPrototypeVisible(categorie) {
   return DEV_MODE;
 }
 
-function actualiserIconeCategorieBatimentCamp(bouton) {
+function actualiserIconeCategorieCamp(bouton) {
   if (!bouton) return;
-  const icone = bouton.querySelector('[data-camp-building-icon="storage"]');
-  const storageType = typeCampPrototype("storage");
-  const src = assetCampPrototypePourRotation(storageType, 0, 1);
+  const icone = bouton.querySelector("[data-camp-category-icon]");
+  const type = icone && typeCampPrototype(icone.dataset.campCategoryIcon);
+  const src = assetCampPrototypePourRotation(type, 0, 1);
   if (icone && src && icone.getAttribute("src") !== src) icone.src = src;
 }
 
@@ -25220,7 +25220,7 @@ function actualiserCommandesCampPrototype() {
     const categorie = bouton.dataset.campCategory;
     const visible = categorieDockCampPrototypeVisible(categorie);
     bouton.hidden = !visible;
-    if (categorie === "building") actualiserIconeCategorieBatimentCamp(bouton, visible);
+    actualiserIconeCategorieCamp(bouton);
     bouton.classList.toggle(
       "camp-first-box-house-cue",
       categorie === "house" && firstBoxHouseCueActif()

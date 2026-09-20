@@ -220,7 +220,7 @@
           "zoneId": "home",
           "reward": {
             "resourceId": "cardboardPlanks",
-            "quantity": 1,
+            "quantity": 2,
             "oneShot": true
           }
         },

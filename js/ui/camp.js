@@ -29,7 +29,6 @@
   if (!TERRAIN_TYPES[DEFAULT_TERRAIN_TYPE_ID]) {
     throw new Error("The active Camp template must declare its default terrain type.");
   }
-  const OBSTACLE_ASSET_ROOT = "img/Maps/Camp%20Runtime/Obstacles/";
   const RUNTIME_MANIFEST = CatInc.data && CatInc.data.campAssets
     ? CatInc.data.campAssets
     : { assets: {} };
@@ -582,8 +581,7 @@
       category: "house",
       rotatable: true,
       blocksMovement: true,
-      access: CARDBOARD_BOX_ACCESS,
-      asset: "img/Buildings/Camp%20Runtime/cardboard-box/tier-1/revision-5/down.png?v=0.0001"
+      access: CARDBOARD_BOX_ACCESS
     })),
     woodCathouse: gameplayItem("woodCathouse", gameplayRuntimeItem("woodCathouse", {
       id: "woodCathouse",
@@ -605,14 +603,7 @@
       category: "building",
       rotatable: true,
       blocksMovement: true,
-      access: JOB_CENTER_ACCESS,
-      asset: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001",
-      assets: Object.freeze({
-        down: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/down.png?v=0.0001",
-        right: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/right.png?v=0.0001",
-        up: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/up.png?v=0.0001",
-        left: "img/Buildings/Camp%20Runtime/job-center/tier-1/revision-7/left.png?v=0.0001"
-      })
+      access: JOB_CENTER_ACCESS
     }),
     sawmill: runtimeItem("sawmill", {
       id: "sawmill",
@@ -621,8 +612,7 @@
       height: 1,
       color: "wood",
       category: "building",
-      rotatable: true,
-      asset: "img/Buildings/Camp%20Runtime/sawmill/tier-1/revision-3/down.png?v=0.0001"
+      rotatable: true
     }),
     catchen: runtimeItem("catchen", {
       id: "catchen",
@@ -633,8 +623,7 @@
       category: "building",
       rotatable: true,
       blocksMovement: true,
-      access: CATCHEN_ACCESS,
-      asset: "img/Buildings/Camp%20Runtime/catchen/tier-1/revision-4/down.png?v=0.0001"
+      access: CATCHEN_ACCESS
     }),
     pawsonry: runtimeItem("pawsonry", {
       id: "pawsonry",
@@ -645,8 +634,7 @@
       category: "building",
       rotatable: true,
       blocksMovement: true,
-      access: PAWSONRY_ACCESS,
-      asset: "img/Buildings/Camp%20Runtime/pawsonry/tier-1/revision-4/down.png?v=0.0001"
+      access: PAWSONRY_ACCESS
     }),
     operationsTable: gameplayItem("operationsTable", gameplayRuntimeItem("operationsTable", {
       id: "operationsTable",
@@ -742,8 +730,7 @@
       width: 2,
       height: 2,
       color: "nature",
-      category: "decoration",
-      asset: "img/Buildings/Camp%20Runtime/garden-tree/tier-1/revision-6/down.png?v=0.0001"
+      category: "decoration"
     }),
     catToy: Object.freeze({
       id: "catToy",
@@ -760,7 +747,6 @@
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
       minCatLevel: 0,
       durationSeconds: 20 * 60
     }),
@@ -771,7 +757,6 @@
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
       minCatLevel: 2,
       durationSeconds: 20 * 60
     }),
@@ -782,7 +767,6 @@
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
       minCatLevel: 0,
       durationSeconds: 20 * 60
     }),
@@ -793,7 +777,6 @@
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
       minCatLevel: 0,
       durationSeconds: 10 * 60
     }),
@@ -804,7 +787,6 @@
       height: 2,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
       minCatLevel: 4,
       durationSeconds: 80 * 60
     }),
@@ -815,7 +797,6 @@
       height: 1,
       color: "junk",
       category: "junk",
-      asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001",
       minCatLevel: 0,
       durationSeconds: 10 * 60
     }),
@@ -1045,8 +1026,7 @@
       width: 2,
       height: 1,
       minCatLevel: 0,
-      durationSeconds: 20 * 60,
-      asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      durationSeconds: 20 * 60
     }),
     runtimeObstacle("junkThornBush", {
       id: "thornBush",
@@ -1054,8 +1034,7 @@
       width: 2,
       height: 1,
       minCatLevel: 2,
-      durationSeconds: 20 * 60,
-      asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      durationSeconds: 20 * 60
     }),
     runtimeObstacle("junkFlowerBush", {
       id: "flowerBush",
@@ -1063,8 +1042,7 @@
       width: 2,
       height: 1,
       minCatLevel: 0,
-      durationSeconds: 20 * 60,
-      asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      durationSeconds: 20 * 60
     }),
     runtimeObstacle("junkPebblePile", {
       id: "pebblePile",
@@ -1072,8 +1050,7 @@
       width: 1,
       height: 1,
       minCatLevel: 0,
-      durationSeconds: 10 * 60,
-      asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      durationSeconds: 10 * 60
     }),
     runtimeObstacle("junkStoneBlockPile", {
       id: "stoneBlockPile",
@@ -1081,8 +1058,7 @@
       width: 2,
       height: 2,
       minCatLevel: 4,
-      durationSeconds: 80 * 60,
-      asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      durationSeconds: 80 * 60
     }),
     runtimeObstacle("junkTallGrass", {
       id: "tallGrass",
@@ -1090,8 +1066,7 @@
       width: 1,
       height: 1,
       minCatLevel: 0,
-      durationSeconds: 10 * 60,
-      asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+      durationSeconds: 10 * 60
     })
   ]);
   const OBSTACLE_TYPES = Object.freeze(LEGACY_OBSTACLE_TYPES.concat(liveStudioJunkObstacleTypes()));

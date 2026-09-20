@@ -366,6 +366,10 @@
           {
             "type": "unlockCampItem",
             "assetId": "pebble-path"
+          },
+          {
+            "type": "appeal",
+            "amount": 1
           }
         ]
       },
@@ -420,6 +424,10 @@
           {
             "type": "appeal",
             "amount": 2
+          },
+          {
+            "type": "unlockCampItem",
+            "assetId": "stone-paved-path"
           }
         ]
       }
@@ -431,7 +439,7 @@
     },
     "recruitment": {
       "authoredBaseSeconds": {
-        "3": 60,
+        "3": 30,
         "4": 120
       },
       "curveBaseSeconds": 5,

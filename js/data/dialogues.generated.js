@@ -1080,7 +1080,7 @@
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "He also said the human would be easy to train, and I dislike that he was right."
+          "html": "Indeed, but that was the easy part."
         },
         {
           "classes": [],
@@ -1154,14 +1154,14 @@
           "speakerClass": "mochi",
           "speakerName": "Mochi",
           "portraitClass": "mochi",
-          "html": "Can it make beds?"
+          "html": "Can it make food?"
         },
         {
           "classes": [],
           "speakerClass": "luna",
           "speakerName": "Luna",
           "portraitClass": "luna",
-          "html": "It only makes planks, so someone still has to build the bed."
+          "html": "No, unless you eat wood Mochi."
         },
         {
           "classes": [],
