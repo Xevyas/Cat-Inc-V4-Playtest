@@ -1004,6 +1004,22 @@
     })
   ]);
 
+  const release0103Categories = Object.freeze([
+    Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({ label: "Quality of Life", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Camp Manual Focus status pills now stay compact and anchored inside the visible Camp area.",
+        "Notifications now remain readable within the viewport, clear of mobile navigation and nonmodal controls, while staying behind open dialogs.",
+        "The opening feeding tutorial now permits only its intended Mochi action, and Exploration Power stays hidden until Exploration is available.",
+        "Cannelle's Shop blueprints now reliably unlock their matching Studio-authored Camp decorations."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0100Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1455,7 +1471,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0102",
+    baseVersion: "0.0103",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1468,6 +1484,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0103",
+      date: "2026-09-20",
+      categories: release0103Categories
+    }),
     Object.freeze({
       version: "0.0102",
       date: "2026-09-20",

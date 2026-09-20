@@ -686,7 +686,8 @@ body.camp-prologue-reveal .camp-prototype-map {
   position: absolute;
   right: auto;
   left: auto;
-  width: min(180px, calc(100vw - 16px));
+  width: clamp(72px, 9vw, 112px);
+  max-width: calc(100vw - 16px);
   min-width: 0;
   box-sizing: border-box;
 }
@@ -10285,6 +10286,9 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   position: fixed;
   bottom: 32px;
   left: 50%;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
   transform: translateX(-50%);
   background: var(--couleur-texte);
   color: white;
@@ -10295,10 +10299,23 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   opacity: 0;
   transition: opacity 400ms ease;
   pointer-events: none;
-  white-space: nowrap;
-  z-index: 100;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+  z-index: 300;
 }
 .notification.visible { opacity: 1; }
+
+/* Notifications lead nonmodal runtime controls, but never a blocking dialogue. */
+body:has([role="dialog"][aria-modal="true"][aria-hidden="false"]) > .notification {
+  z-index: 199;
+}
+
+@media (max-width: 768px) {
+  .notification {
+    bottom: calc(var(--hauteur-navigation-mobile) + 12px);
+  }
+}
 
 /* Level feedback belongs to the XP row; its existing queue owns its lifetime. */
 #detail-experience .detail-level-row { position: relative; }
@@ -10390,7 +10407,13 @@ body[data-ui-theme="stylish"] #detail-experience .detail-level-row { min-height:
   transition: background-color 150ms;
 }
 .btn-xp-feed .cout-icone { width: 40px; height: 40px; }
-.btn-xp-feed:hover { background: #40916c; }
+.btn-xp-feed:hover:not(:disabled) { background: #40916c; }
+.btn-xp-feed:disabled {
+  background: #ddd;
+  color: #777;
+  cursor: not-allowed;
+  filter: grayscale(.45);
+}
 
 .btn-xp-auto {
   font-family: 'Nunito', sans-serif;

@@ -7990,6 +7990,7 @@ function renduFoodManagement() {
     return '<button class="fm-pct-btn' + (_foodMgmtPct === p ? ' fm-pct-actif' : '') + '" onclick="setFoodMgmtPct(' + p + ')">' + p + '%</button>';
   }).join('');
 
+  var tutorialFeedLocked = !chefKissFeedTutorialAutoriseNourriture(null, null, "bulk", 0);
   var noFood = totalXp === 0;
 
   var helpHtml = '';
@@ -8006,15 +8007,17 @@ function renduFoodManagement() {
     + '<div class="fm-section-titre">Amount to distribute</div>'
     + '<div class="fm-pct-btns">' + pctBtns + '</div>'
     + '<div class="fm-xp-preview">' + xpPreview + ' XP will be distributed (' + _foodMgmtPct + '%)</div>'
+    + (tutorialFeedLocked ? '<div class="fm-empty">Feed Mochi to continue the tutorial.</div>' : '')
     + '<div class="fm-actions">'
-    + '<div class="fm-action-option"><button class="interface-details-control fm-help-btn" type="button" aria-label="Explain distribute evenly" aria-expanded="' + (_foodMgmtHelp === 'egal' ? 'true' : 'false') + '" onclick="toggleFoodManagementHelp(\'egal\')"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><button class="fm-action-btn" onclick="distribuerFood(\'egal\')"' + (noFood ? ' disabled' : '') + '>Distribute evenly</button></div>'
-    + '<div class="fm-action-option"><button class="interface-details-control fm-help-btn" type="button" aria-label="Explain prioritize low-level cats" aria-expanded="' + (_foodMgmtHelp === 'basniveau' ? 'true' : 'false') + '" onclick="toggleFoodManagementHelp(\'basniveau\')"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><button class="fm-action-btn" onclick="distribuerFood(\'basniveau\')"' + (noFood ? ' disabled' : '') + '>Prioritize low-level cats</button></div>'
+    + '<div class="fm-action-option"><button class="interface-details-control fm-help-btn" type="button" aria-label="Explain distribute evenly" aria-expanded="' + (_foodMgmtHelp === 'egal' ? 'true' : 'false') + '" onclick="toggleFoodManagementHelp(\'egal\')"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><button class="fm-action-btn" onclick="distribuerFood(\'egal\')"' + (noFood || tutorialFeedLocked ? ' disabled' : '') + '>Distribute evenly</button></div>'
+    + '<div class="fm-action-option"><button class="interface-details-control fm-help-btn" type="button" aria-label="Explain prioritize low-level cats" aria-expanded="' + (_foodMgmtHelp === 'basniveau' ? 'true' : 'false') + '" onclick="toggleFoodManagementHelp(\'basniveau\')"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><button class="fm-action-btn" onclick="distribuerFood(\'basniveau\')"' + (noFood || tutorialFeedLocked ? ' disabled' : '') + '>Prioritize low-level cats</button></div>'
     + '</div>'
     + helpHtml
     + '</div>';
 }
 
 function distribuerFood(mode) {
+  if (!chefKissFeedTutorialAutoriseNourriture(null, null, "bulk", 0)) return;
   var feedbackOrigins = capturerOriginesFeedbackNourriture("#food-management-panel .fm-cell[data-food-type]");
   var feedbackKittyIdx = kittySelectionnee;
   var totalXp  = totalFoodXp();
@@ -8204,12 +8207,18 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
       + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2)
       + "</span> Manager Speed Bonus</span>"
     : "";
+  const explorationPowerAvailable = explorationCampFonctionnelle();
+  const explorationPowerHelpLine = explorationPowerAvailable
+    ? "<span>Exploration Power by 1</span>" : "";
+  const explorationPowerLine = explorationPowerAvailable
+    ? "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>"
+    : "";
   const helpBody = isEngineer
     ? "<strong>Each additional level increases the following passives:</strong><span>" + (engineerInfo ? engineerInfo.help : "AFK Timer Bonus by 6 minutes per level") + "</span>" + campActionSpeedHelpLine
     : "<strong>Each additional level increases these bonuses:</strong>"
       + "<span>Gather Production Bonus by " + gatherLevelPercent + "%</span>"
       + "<span>Process Production Bonus by " + processLevelPercent + "%</span>"
-      + "<span>Exploration Power by 1</span>"
+      + explorationPowerHelpLine
       + "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>"
       + campActionSpeedHelpLine
       + (k.nom === "Naya" ? "<span>The Inn also improves at Studio-authored Naya level milestones.</span>" : "");
@@ -8221,7 +8230,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyGatherProductionMultiplier(k).toFixed(2) + "</span> Gather Production Bonus</span>"
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyProcessProductionMultiplier(k).toFixed(2) + "</span> Process Production Bonus</span>"
         + managerSpeedBonusLine
-        + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>"
+        + explorationPowerLine
         + "</div>"
   ) : "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "</div>";
   return { helpBody: helpBody, levelBonuses: levelBonuses };
@@ -8367,14 +8376,17 @@ function renduManagement() {
     const atMaxLevel = Number.isFinite(maxLevel) && k.niveau >= maxLevel;
     const xpNext = atMaxLevel ? 0 : xpPourNiveau(k.niveau);
     const xpPct  = atMaxLevel ? 100 : Math.min(100, Math.floor((k.xp / xpNext) * 100));
+    const tutorialFeedLocked = chefKissFeedTutorialActif();
     const feedBtns = atMaxLevel ? "" : Object.keys(FOOD_XP).filter(function(f) { return etat[f] > 0; }).map(function(f) {
       const info  = FOOD_DISPLAY[f] || { nom: f };
       const icone = info.sprite ? '<img class="cout-icone" src="' + info.sprite + '" alt="' + info.nom + '">' : "";
-      return "<button class='btn-xp-feed' data-food-type='" + f + "' onclick='nourrir(" + kittySelectionnee + ",\"" + f + "\")'>" + icone + "<span class='xp-gain'>+" + FOOD_XP[f] + " XP</span><span class='xp-stock'>×" + etat[f] + "</span></button>";
+      const feedDisabled = !chefKissFeedTutorialAutoriseNourriture(kittySelectionnee, f, "manual", 1);
+      return "<button class='btn-xp-feed' data-food-type='" + f + "'" + (feedDisabled ? " disabled" : "") + " onclick='nourrir(" + kittySelectionnee + ",\"" + f + "\")'>" + icone + "<span class='xp-gain'>+" + FOOD_XP[f] + " XP</span><span class='xp-stock'>×" + etat[f] + "</span></button>";
     }).join("");
     const xpManquant   = atMaxLevel ? 0 : xpNext - k.xp;
     const xpDisponible = Object.keys(FOOD_XP).reduce(function(s, f) { return s + etat[f] * FOOD_XP[f]; }, 0);
-    const autoBtnDisabled = atMaxLevel || xpDisponible < xpManquant;
+    const autoBtnDisabled = atMaxLevel || xpDisponible < xpManquant
+      || !chefKissFeedTutorialAutoriseNourriture(kittySelectionnee, null, "auto", 0);
     const autoLevelBtn = atMaxLevel
       ? "<div class='xp-max-level'>Maximum level reached</div>"
       : "<button class='btn-xp-auto'" + (autoBtnDisabled ? " disabled" : "") + " onclick='nourrirAutoNiveau(" + kittySelectionnee + ")'>Auto-feed to next level (<span class='xp-gain'>" + xpManquant + " XP needed</span>)</button>";
@@ -8395,6 +8407,7 @@ function renduManagement() {
       "<div class='conteneur-barre'><div class='barre barre-verte' style='width:" + xpPct + "%'></div></div>" +
       levelBonuses +
       autoLevelBtn +
+      (tutorialFeedLocked ? "<div class='xp-aliments-vide'>Feed Mochi to continue the tutorial.</div>" : "") +
       (feedBtns ? "<div class='xp-aliments'>" + feedBtns + "</div>" : "<div class='xp-aliments-vide'>" + (atMaxLevel ? "Maximum level reached." : "No food available.") + "</div>") +
       "</div>";
   }
@@ -11197,13 +11210,10 @@ function apprendreLivre(itemId) {
   if (etat.itemsAppris.includes(itemId)) return;
   if (!ITEMS[itemId]) return;
   etat.itemsAppris.push(itemId);
-  if (itemId === "smallFountainBlueprint") {
-    afficherNotification("Small Fountain Blueprint learned! Small Fountain is now available in Camp Decorations.");
-    ajouterLog("unlock", "Small Fountain Blueprint learned — Small Fountain unlocked in Camp Decorations.");
-  }
-  if (itemId === "cardboardLitterboxBlueprint") {
-    afficherNotification("Cardboard Litterbox Blueprint learned! Cardboard Litterbox is now available in Camp Decorations.");
-    ajouterLog("unlock", "Cardboard Litterbox Blueprint learned — Cardboard Litterbox unlocked in Camp Decorations.");
+  const blueprintUnlockName = ITEMS[itemId].blueprintUnlockName;
+  if (blueprintUnlockName) {
+    afficherNotification(ITEMS[itemId].nom + " learned! " + blueprintUnlockName + " is now available in Camp Decorations.");
+    ajouterLog("unlock", ITEMS[itemId].nom + " learned — " + blueprintUnlockName + " unlocked in Camp Decorations.");
   }
   if (itemId === "schoolGuide") {
     etat.jobCenterDebloque = true;
@@ -13452,6 +13462,7 @@ function nourrir(kittyIdx, foodType) {
   if (!xpGain || etat[foodType] < 1) return;
   const k = etat.kittiesData[kittyIdx];
   if (!k) return;
+  if (!chefKissFeedTutorialAutoriseNourriture(kittyIdx, foodType, "manual", 1)) return;
   const niveauMax = niveauMaxChat(k);
   if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) return;
   const niveauAvant = k.niveau;
@@ -13522,6 +13533,7 @@ function calculerPlanNourritureAuto(xpCible) {
 function nourrirAutoNiveau(kittyIdx) {
   const k = etat.kittiesData[kittyIdx];
   if (!k) return;
+  if (!chefKissFeedTutorialAutoriseNourriture(kittyIdx, null, "auto", 0)) return;
   const niveauMax = niveauMaxChat(k);
   if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) return;
   const niveauAvant = k.niveau;
@@ -13531,6 +13543,7 @@ function nourrirAutoNiveau(kittyIdx) {
   if (!plan) return;
 
   const appliquerPlan = function() {
+    if (!chefKissFeedTutorialAutoriseNourriture(kittyIdx, null, "auto", 0)) return;
     const feedbackOrigins = capturerOriginesFeedbackNourriture("#detail-experience [data-food-type]");
     Object.keys(plan.quantities).forEach(function(foodType) {
       etat[foodType] -= plan.quantities[foodType];
@@ -14686,6 +14699,15 @@ function chefKissFeedTutorialEnregistrerPremiereSalade(options) {
 
 function chefKissFeedTutorialMochiIndex() {
   return (etat.kittiesData || []).findIndex(function(kitty) { return kitty && kitty.nom === "Mochi"; });
+}
+
+function chefKissFeedTutorialAutoriseNourriture(kittyIndex, foodType, mode, quantity) {
+  if (!chefKissFeedTutorialActif()) return true;
+  return chefKissFeedTutorialStage() === "feed"
+    && mode === "manual"
+    && quantity === 1
+    && foodType === "salads"
+    && kittyIndex === chefKissFeedTutorialMochiIndex();
 }
 
 function chefKissFeedTutorialInstruction(stage) {
@@ -16747,11 +16769,8 @@ function conditionGameplayUnlockCamp(unlock) {
   if (unlock.kind === "runtime-rule" && unlock.id === "nayaRecruitStoryComplete") {
     return storyEstVue("storyNayaRecruitVue");
   }
-  if (unlock.kind === "runtime-rule" && unlock.id === "smallFountainBlueprintLearned") {
-    return etat.itemsAppris.includes("smallFountainBlueprint");
-  }
-  if (unlock.kind === "runtime-rule" && unlock.id === "cardboardLitterboxBlueprintLearned") {
-    return etat.itemsAppris.includes("cardboardLitterboxBlueprint");
+  if (unlock.kind === "blueprint-learned") {
+    return etat.itemsAppris.includes(unlock.itemId);
   }
   if (unlock.kind === "runtime-rule" && unlock.id === "seminarGuideLearned") {
     return etat.itemsAppris.includes("seminarGuide");
@@ -20658,6 +20677,9 @@ function activerManualFocusCampPourTache(tache) {
       );
     }
   });
+  if (typeof synchroniserPositionsUiTachesCamp === "function") {
+    synchroniserPositionsUiTachesCamp();
+  }
   return true;
 }
 
@@ -20880,6 +20902,7 @@ function calculerAncrageUiFlottanteCampPrototype(stageRect, visibleRect, targetR
 }
 
 function positionnerUiFlottanteCampPrototype() {
+  synchroniserPositionsUiTachesCamp();
   const menu = document.getElementById("camp-prototype-interaction-menu");
   if (menu && !menu.hidden) {
     if (menu.classList.contains("camp-production-menu")) {
@@ -26675,8 +26698,10 @@ function ajouterTacheTemporeeChatsCamp(element, presences) {
 function synchroniserPositionsUiTachesCamp() {
   const board = document.getElementById("camp-prototype-board");
   const layer = document.getElementById("camp-task-ui-layer");
-  if (!board || !layer || !board.getBoundingClientRect) return;
+  const viewport = document.querySelector(".camp-prototype-viewport");
+  if (!board || !layer || !viewport || !board.getBoundingClientRect) return;
   const boardRect = board.getBoundingClientRect();
+  const viewportRect = viewport.getBoundingClientRect();
   if (!(boardRect.width > 0) || !(boardRect.height > 0)) return;
   const workers = Array.from(document.querySelectorAll("[data-camp-task-ui-key]"))
     .filter(function(element) { return element.classList.contains("camp-task-worker"); });
@@ -26686,8 +26711,16 @@ function synchroniserPositionsUiTachesCamp() {
     });
     if (!worker || !worker.getBoundingClientRect) return;
     const workerRect = worker.getBoundingClientRect();
-    status.style.left = ((workerRect.left + workerRect.width / 2 - boardRect.left)
-      / boardRect.width * 100) + "%";
+    const availableWidth = Math.max(0, viewportRect.width - 16);
+    status.style.maxWidth = availableWidth + "px";
+    const position = calculerAncrageUiFlottanteCampPrototype(
+      boardRect,
+      viewportRect,
+      workerRect,
+      { width: status.offsetWidth, height: 0 },
+      8
+    );
+    status.style.left = position.left + "px";
     status.style.top = ((workerRect.top - boardRect.top) / boardRect.height * 100) + "%";
   });
 }

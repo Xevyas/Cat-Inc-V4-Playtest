@@ -114,33 +114,34 @@ function studioBookContent(itemId) {
     : {description: "", learningGame: null};
 }
 
+const BLUEPRINT_ITEMS = Object.freeze(Object.entries(PURCHASABLE_CONTENT).reduce(function(items, entry) {
+  const itemId = entry[0];
+  const content = entry[1];
+  if (!content || content.contentType !== "inventory-item") return items;
+  const definition = Object.values(CatInc.data.campGameplay?.definitions || {}).find(function(candidate) {
+    return candidate && candidate.unlock && candidate.unlock.kind === "blueprint-learned"
+      && candidate.unlock.itemId === itemId;
+  });
+  if (!definition) return items;
+  items[itemId] = {
+    id: itemId,
+    category: "blueprint",
+    nom: content.name,
+    emoji: LIVRE_ICONE,
+    description: content.description,
+    unlocksLabel: definition.name + " in Camp Decorations",
+    blueprintUnlockName: definition.name,
+    studyDuration: 3600000,
+    learningMode: "timer-only",
+    actions: [
+      { id: "study", label: "Study (1h)" }
+    ]
+  };
+  return items;
+}, {}));
+
 const ITEMS = {
-  smallFountainBlueprint: {
-    id:           "smallFountainBlueprint",
-    category:     "blueprint",
-    nom:          PURCHASABLE_CONTENT.smallFountainBlueprint?.name || "",
-    emoji:        LIVRE_ICONE,
-    description:  PURCHASABLE_CONTENT.smallFountainBlueprint?.description || "",
-    unlocksLabel: "Small Fountain in Camp Decorations",
-    studyDuration: 3600000,
-    learningMode: "timer-only",
-    actions: [
-      { id: "study", label: "Study (1h)" }
-    ]
-  },
-  cardboardLitterboxBlueprint: {
-    id:           "cardboardLitterboxBlueprint",
-    category:     "blueprint",
-    nom:          PURCHASABLE_CONTENT.cardboardLitterboxBlueprint?.name || "",
-    emoji:        LIVRE_ICONE,
-    description:  PURCHASABLE_CONTENT.cardboardLitterboxBlueprint?.description || "",
-    unlocksLabel: "Cardboard Litterbox in Camp Decorations",
-    studyDuration: 3600000,
-    learningMode: "timer-only",
-    actions: [
-      { id: "study", label: "Study (1h)" }
-    ]
-  },
+  ...BLUEPRINT_ITEMS,
   compass: {
     id:           "compass",
     type:         "unique",

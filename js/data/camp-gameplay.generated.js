@@ -356,7 +356,7 @@
         "rewards": [
           {
             "type": "campActionSpeed",
-            "amount": 5
+            "amount": 10
           }
         ]
       },
@@ -405,7 +405,7 @@
         "rewards": [
           {
             "type": "campActionSpeed",
-            "amount": 5
+            "amount": 10
           }
         ]
       },
@@ -435,7 +435,7 @@
   },
   "generalRules": {
     "catLeveling": {
-      "xpGrowthExponent": 2.1
+      "xpGrowthExponent": 1.7
     },
     "recruitment": {
       "authoredBaseSeconds": {
@@ -452,7 +452,7 @@
     },
     "afk": {
       "minimumAbsenceSeconds": 60,
-      "baseRatio": 0.2,
+      "baseRatio": 0.25,
       "baseMaxSeconds": 14400,
       "engineerRank1CapMinutesPerLevel": 6,
       "engineerRank2RatioPercentPerLevel": 0.5,
@@ -480,112 +480,112 @@
         "required": 3,
         "answerSeconds": 27,
         "targetSize": 54,
-        "speed": 55
+        "speed": 60
       },
       {
         "cat": 6,
         "required": 3,
         "answerSeconds": 27,
         "targetSize": 51,
-        "speed": 55
+        "speed": 60
       },
       {
         "cat": 7,
         "required": 3,
         "answerSeconds": 27,
         "targetSize": 51,
-        "speed": 60
+        "speed": 65
       },
       {
         "cat": 8,
         "required": 4,
         "answerSeconds": 27,
         "targetSize": 51,
-        "speed": 60
+        "speed": 65
       },
       {
         "cat": 9,
         "required": 4,
         "answerSeconds": 24,
         "targetSize": 51,
-        "speed": 60
+        "speed": 70
       },
       {
         "cat": 10,
         "required": 4,
         "answerSeconds": 24,
         "targetSize": 48,
-        "speed": 60
+        "speed": 70
       },
       {
         "cat": 11,
         "required": 4,
         "answerSeconds": 24,
         "targetSize": 48,
-        "speed": 65
+        "speed": 75
       },
       {
         "cat": 12,
         "required": 4,
         "answerSeconds": 21,
         "targetSize": 48,
-        "speed": 65
+        "speed": 75
       },
       {
         "cat": 13,
         "required": 4,
         "answerSeconds": 21,
         "targetSize": 45,
-        "speed": 65
+        "speed": 80
       },
       {
         "cat": 14,
         "required": 4,
         "answerSeconds": 21,
         "targetSize": 45,
-        "speed": 70
+        "speed": 80
       },
       {
         "cat": 15,
         "required": 5,
         "answerSeconds": 21,
         "targetSize": 45,
-        "speed": 70
+        "speed": 85
       },
       {
         "cat": 16,
         "required": 5,
         "answerSeconds": 18,
         "targetSize": 45,
-        "speed": 70
+        "speed": 85
       },
       {
         "cat": 17,
         "required": 5,
         "answerSeconds": 18,
         "targetSize": 42,
-        "speed": 70
+        "speed": 90
       },
       {
         "cat": 18,
         "required": 5,
         "answerSeconds": 18,
         "targetSize": 42,
-        "speed": 75
+        "speed": 90
       },
       {
         "cat": 19,
         "required": 5,
         "answerSeconds": 15,
         "targetSize": 42,
-        "speed": 75
+        "speed": 95
       },
       {
         "cat": 20,
         "required": 5,
         "answerSeconds": 15,
         "targetSize": 39,
-        "speed": 75
+        "speed": 95
       }
     ]
   },
@@ -675,10 +675,31 @@
       "description": "Exploration Speed ×2 for 10 real-time minutes.",
       "iconId": "items-shortcut-map",
       "iconRuntimePath": "img/items/shortcut-map.png"
+    },
+    "lanternOnPoleBlueprint": {
+      "contentType": "inventory-item",
+      "name": "Lantern on pole Blueprint",
+      "description": "A blueprint for building Lantern on pole in Camp Decorations.",
+      "previewAssetId": "lantern-on-pole"
+    },
+    "catTreeV2Blueprint": {
+      "contentType": "inventory-item",
+      "name": "Wood Cat Tree Blueprint",
+      "description": "A blueprint for building Wood Cat Tree in Camp Decorations.",
+      "previewAssetId": "cat-tree-v2"
     }
   },
   "cannelleShop": {
     "merchandise": [
+      {
+        "id": "cardboard-litterbox-blueprint",
+        "category": "blueprints",
+        "contentId": "cardboardLitterboxBlueprint",
+        "requiredLevel": 0,
+        "priceResource": "cannedCatFood",
+        "priceAmount": 1,
+        "repeatable": false
+      },
       {
         "id": "small-fountain-blueprint",
         "category": "blueprints",
@@ -689,12 +710,12 @@
         "repeatable": false
       },
       {
-        "id": "cardboard-litterbox-blueprint",
+        "id": "lantern-on-pole-blueprint",
         "category": "blueprints",
-        "contentId": "cardboardLitterboxBlueprint",
+        "contentId": "lanternOnPoleBlueprint",
         "requiredLevel": 10,
         "priceResource": "cannedCatFood",
-        "priceAmount": 1,
+        "priceAmount": 3,
         "repeatable": false
       },
       {
@@ -714,6 +735,15 @@
         "priceResource": "cannelleTokens",
         "priceAmount": 3,
         "repeatable": true
+      },
+      {
+        "id": "cat-tree-v2-blueprint",
+        "category": "blueprints",
+        "contentId": "catTreeV2Blueprint",
+        "requiredLevel": 20,
+        "priceResource": "cannedCatFood",
+        "priceAmount": 5,
+        "repeatable": false
       }
     ]
   },
@@ -947,7 +977,7 @@
     },
     "fishingGuide": {
       "name": "Fishing Guide for Dummies",
-      "description": "A complete beginner's guide to feline fishing. Spoiler: you don't need a rod.",
+      "description": "A complete beginner's guide to fishing.",
       "unlocksLabel": "Anchovy fishing and Grilled Anchovy",
       "learningGame": {
         "phraseParts": [
@@ -961,7 +991,7 @@
           "fisher",
           "water",
           "anchovy",
-          "Catchen"
+          "Kitchen"
         ]
       }
     },
@@ -1083,11 +1113,11 @@
     },
     "sturdyHousePlans": {
       "name": "Sturdy House Plans",
-      "description": "Detailed human blueprints for a compact stone house, with strict instructions on foundations, load-bearing walls, and structural stability. Excessively serious, but apparently very good at keeping a roof where it belongs.",
+      "description": "Detailed human blueprints for a compact stone building, with strict instructions on foundations, load-bearing walls, and structural stability. Excessively serious, but apparently very good at keeping a roof where it belongs.",
       "unlocksLabel": "Stone Storage Shed",
       "learningGame": {
         "phraseParts": [
-          "A durable stone house depends on firm ",
+          "A durable stone building depends on firm ",
           ", carefully fitted ",
           ", reinforced ",
           ", evenly distributed ",
@@ -1483,8 +1513,8 @@
         "height": 1
       },
       "unlock": {
-        "kind": "runtime-rule",
-        "id": "smallFountainBlueprintLearned"
+        "kind": "blueprint-learned",
+        "itemId": "smallFountainBlueprint"
       },
       "effects": {
         "appeal": 1
@@ -1523,8 +1553,8 @@
         "height": 1
       },
       "unlock": {
-        "kind": "runtime-rule",
-        "id": "cardboardLitterboxBlueprintLearned"
+        "kind": "blueprint-learned",
+        "itemId": "cardboardLitterboxBlueprint"
       },
       "effects": {
         "campXp": 8
@@ -1645,7 +1675,8 @@
         "height": 1
       },
       "unlock": {
-        "kind": "not-wired"
+        "kind": "blueprint-learned",
+        "itemId": "lanternOnPoleBlueprint"
       },
       "effects": {
         "appeal": 1.5
@@ -1663,7 +1694,7 @@
         "baseCosts": {
           "basicWoodPlanks": 10
         },
-        "growth": 1.7,
+        "growth": 10,
         "authoredRanks": {
           "1": {
             "basicWoodPlanks": 10
@@ -1671,7 +1702,7 @@
         },
         "rounding": "ceil",
         "refundRate": 0.5,
-        "durationGrowth": 1.4
+        "durationGrowth": 5
       }
     },
     "stoneStorageShed": {
@@ -1756,6 +1787,47 @@
           "pebbleBricks": 40,
           "basicWoodPlanks": 50
         }
+      }
+    },
+    "catTreeV2": {
+      "assetId": "cat-tree-v2",
+      "name": "Wood Cat Tree",
+      "category": "decoration",
+      "repeatable": true,
+      "footprint": {
+        "width": 1,
+        "height": 1
+      },
+      "unlock": {
+        "kind": "blueprint-learned",
+        "itemId": "catTreeV2Blueprint"
+      },
+      "effects": {
+        "appeal": 2,
+        "campXp": 10
+      },
+      "upgradeTiers": {},
+      "simulation": {
+        "ranks": 12
+      },
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 5400
+      },
+      "law": {
+        "family": "cat-tree-v2",
+        "baseCosts": {
+          "basicWoodPlanks": 5
+        },
+        "growth": 10,
+        "authoredRanks": {
+          "1": {
+            "basicWoodPlanks": 5
+          }
+        },
+        "rounding": "ceil",
+        "refundRate": 0.5,
+        "durationGrowth": 5
       }
     }
   }
