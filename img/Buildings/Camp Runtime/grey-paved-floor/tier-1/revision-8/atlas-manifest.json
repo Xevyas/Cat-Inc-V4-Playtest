@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "authority": "constructed-topology-atlas-v1",
+  "profile": "constructed",
+  "tilePixels": 256,
+  "visualVariantsPerRole": 4,
+  "source": {
+    "path": "tools/camp_asset_studio/library/assets/grey-paved-floor/tier-1/revision-3/stylized-source-surface.png",
+    "sha256": "14e0b7da252eb9db397d8c5642e2cdac36d3c5a5efe73ad94a35b7067e12dfab",
+    "revision": 3,
+    "attempt": "20260919-211043-grey-paved-floor-t1-r3-f4b78ef2"
+  },
+  "producer": {
+    "id": "constructed-atlas-raster",
+    "mode": "whole-paver-edge-matched-bitmask",
+    "geometryBaseline": "1af5ff8b505c8e31a4b9c10c3cc409fdaac7a49a",
+    "imageGenerationCalls": 0,
+    "blenderUsed": false
+  },
+  "roles": {
+    "isolated-none": [
+      "isolated-none-v1.png",
+      "isolated-none-v2.png",
+      "isolated-none-v3.png",
+      "isolated-none-v4.png"
+    ],
+    "end-north": [
+      "end-north-v1.png",
+      "end-north-v2.png",
+      "end-north-v3.png",
+      "end-north-v4.png"
+    ],
+    "end-east": [
+      "end-east-v1.png",
+      "end-east-v2.png",
+      "end-east-v3.png",
+      "end-east-v4.png"
+    ],
+    "end-south": [
+      "end-south-v1.png",
+      "end-south-v2.png",
+      "end-south-v3.png",
+      "end-south-v4.png"
+    ],
+    "end-west": [
+      "end-west-v1.png",
+      "end-west-v2.png",
+      "end-west-v3.png",
+      "end-west-v4.png"
+    ],
+    "straight-vertical": [
+      "straight-vertical-v1.png",
+      "straight-vertical-v2.png",
+      "straight-vertical-v3.png",
+      "straight-vertical-v4.png"
+    ],
+    "straight-horizontal": [
+      "straight-horizontal-v1.png",
+      "straight-horizontal-v2.png",
+      "straight-horizontal-v3.png",
+      "straight-horizontal-v4.png"
+    ],
+    "corner-north-east": [
+      "corner-north-east-v1.png",
+      "corner-north-east-v2.png",
+      "corner-north-east-v3.png",
+      "corner-north-east-v4.png"
+    ],
+    "corner-east-south": [
+      "corner-east-south-v1.png",
+      "corner-east-south-v2.png",
+      "corner-east-south-v3.png",
+      "corner-east-south-v4.png"
+    ],
+    "corner-south-west": [
+      "corner-south-west-v1.png",
+      "corner-south-west-v2.png",
+      "corner-south-west-v3.png",
+      "corner-south-west-v4.png"
+    ],
+    "corner-north-west": [
+      "corner-north-west-v1.png",
+      "corner-north-west-v2.png",
+      "corner-north-west-v3.png",
+      "corner-north-west-v4.png"
+    ],
+    "tee-missing-north": [
+      "tee-missing-north-v1.png",
+      "tee-missing-north-v2.png",
+      "tee-missing-north-v3.png",
+      "tee-missing-north-v4.png"
+    ],
+    "tee-missing-east": [
+      "tee-missing-east-v1.png",
+      "tee-missing-east-v2.png",
+      "tee-missing-east-v3.png",
+      "tee-missing-east-v4.png"
+    ],
+    "tee-missing-south": [
+      "tee-missing-south-v1.png",
+      "tee-missing-south-v2.png",
+      "tee-missing-south-v3.png",
+      "tee-missing-south-v4.png"
+    ],
+    "tee-missing-west": [
+      "tee-missing-west-v1.png",
+      "tee-missing-west-v2.png",
+      "tee-missing-west-v3.png",
+      "tee-missing-west-v4.png"
+    ],
+    "cross-none": [
+      "cross-none-v1.png",
+      "cross-none-v2.png",
+      "cross-none-v3.png",
+      "cross-none-v4.png"
+    ]
+  },
+  "cornerFills": {
+    "north-west": "solid-north-west.png",
+    "north-east": "solid-north-east.png",
+    "south-east": "solid-south-east.png",
+    "south-west": "solid-south-west.png"
+  },
+  "buildingJoin": {
+    "single": {
+      "north": "building-single-north.png",
+      "east": "building-single-east.png",
+      "south": "building-single-south.png",
+      "west": "building-single-west.png"
+    },
+    "merged": {
+      "north": "building-merged-north.png",
+      "east": "building-merged-east.png",
+      "south": "building-merged-south.png",
+      "west": "building-merged-west.png"
+    }
+  },
+  "reviewSheet": "atlas-review-sheet.png",
+  "sharedEdgeProof": "shared-edge-proof.json"
+}

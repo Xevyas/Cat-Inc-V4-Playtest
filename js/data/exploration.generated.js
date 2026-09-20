@@ -364,7 +364,8 @@
       "recompense": "engineerGuide",
       "zone": "D1",
       "unlockAfterStory": "storyHouseEvacuationVue",
-      "lockedReason": "Human inside the house. Your cats can't search it yet."
+      "lockedReason": "Human inside the house. Your cats can't search it yet.",
+      "demoUnavailable": true
     },
     "searchNeighborTrash": {
       "id": "searchNeighborTrash",
@@ -396,7 +397,9 @@
       "slots": 2,
       "recompense": null,
       "zone": "E1",
-      "lockedReason": "This Campaign is not available yet."
+      "unlockAfterStory": "storyRightHouseEvacuationVue",
+      "lockedReason": "Human inside the house. Your cats can't search it yet.",
+      "demoUnavailable": true
     },
     "searchLeftNeighborTrash": {
       "id": "searchLeftNeighborTrash",
@@ -430,7 +433,8 @@
       "recompense": "teamworkGuide",
       "zone": "C1",
       "unlockAfterStory": "storyLeftHouseEvacuationVue",
-      "lockedReason": "Human inside the house. Your cats can't search it yet."
+      "lockedReason": "Human inside the house. Your cats can't search it yet.",
+      "demoUnavailable": true
     },
     "exploreSquattedGarden": {
       "id": "exploreSquattedGarden",

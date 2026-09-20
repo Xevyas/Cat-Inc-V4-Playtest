@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "northSouthMouthSha256": "f974a322b0192ae837bdf9c541522a2b247d54e3d83b80e77ab6977aa0487eb9",
+  "northSouthCompatible": true,
+  "eastWestMouthSha256": "28c1618de20c2faa7039c407e74b11e2272d0d8ab1321de176a6cc30360dea63",
+  "eastWestCompatible": true,
+  "piecesChecked": 64,
+  "connectorWidthPixels": 216,
+  "silhouetteWidthFraction": 0.84,
+  "sharedWholePaverDepthPixels": 40,
+  "interiorCourses": 5,
+  "groutPixels": 6,
+  "orthogonalBorders": true,
+  "method": "opposite halves of the same whole edge paver; all variants share edge stones",
+  "neutralizedEdgePixels": 0,
+  "runtimeSeamOverlays": 0
+}

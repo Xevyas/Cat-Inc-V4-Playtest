@@ -951,7 +951,8 @@ body[data-ui-theme="stylish"] #contenu-work .work-recipe-cat-rate { color: #4161
 body[data-ui-theme="stylish"] #contenu-work .work-recipe-cat-cycle { font-size: .7rem; }
 body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource.work-manual-focus-available { cursor: pointer; box-shadow: inset 0 0 0 1px #98612d; }
 body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource.work-manual-focus-active { box-shadow: inset 0 0 0 2px #98612d; }
-body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource .work-manual-focus-badge { position: static !important; grid-column: 1 / -1; grid-row: 1; box-sizing: border-box; width: 100%; background: #efd095; border-color: #98612d; font-size: .64rem !important; }
+body[data-ui-theme="stylish"] .work-manual-focus-badge { background: #efd095; border-color: #98612d; font-size: .64rem !important; }
+body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource .work-manual-focus-badge { position: static !important; grid-column: 1 / -1; grid-row: 1; box-sizing: border-box; width: 100%; }
 body[data-ui-theme="stylish"] #contenu-work .work-manual-focus-row { flex-wrap: wrap; }
 body[data-ui-theme="stylish"] #contenu-work .work-manual-focus-tap { animation: none; }
 body[data-ui-theme="stylish"] #contenu-work :is(button, [role="button"]):focus-visible { outline: 3px solid #98612d; outline-offset: 2px; }
@@ -994,7 +995,8 @@ body[data-ui-theme="stylish"] #contenu-work :is(button, [role="button"]):focus-v
   body[data-ui-theme="stylish"] #contenu-work .work-recipe-flow::after { font-size: 1rem; }
   body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource { grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: 24px 14px 28px 14px 28px 8px auto; min-height: 0; padding: 5px; gap: 0 2px; justify-items: start; align-content: start; text-align: left; }
   body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource > :is(span, strong, small) { grid-column: 2; }
-  body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource .work-manual-focus-badge { grid-row: 1; width: calc(100% - 28px); justify-self: start; padding: 2px; font-size: .55rem !important; }
+  body[data-ui-theme="stylish"] .work-manual-focus-badge { padding: 2px; font-size: .55rem !important; }
+  body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource .work-manual-focus-badge { grid-row: 1; width: calc(100% - 28px); justify-self: start; }
   body[data-ui-theme="stylish"] #contenu-work .work-manual-focus-row { flex-wrap: nowrap; justify-content: space-between; }
   body[data-ui-theme="stylish"] #contenu-work .work-recipe-info-btn { top: 3px; right: 2px; }
   body[data-ui-theme="stylish"] #contenu-work .work-recipe-resource img { grid-column: 1; grid-row: 2 / 6; width: 32px; height: 32px; }

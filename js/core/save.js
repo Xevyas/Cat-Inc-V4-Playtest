@@ -62,8 +62,36 @@
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
   const JOB_IDS = [
     "lumberjack", "carpenter", "farmer", "chef", "explorator", "builder",
-    "miner", "stonemason", "gang-leader", "camp-engineer", "shop-owner"
+    "miner", "stonemason", "gang-leader", "camp-engineer", "shop-owner", "innkeeper"
   ];
+  const PERMANENT_SPECIALIST_ROLES = Object.freeze({
+    "shop-owner": Object.freeze({
+      label: "Shop Owner",
+      catName: "Cannelle",
+      activityLabel: "Tending the shop",
+      homeBuilding: "marketStall",
+      installedAfter: "storyMarketStallCompleteVue"
+    }),
+    "innkeeper": Object.freeze({
+      label: "Innkeeper",
+      catName: "Naya",
+      activityLabel: "Tending the Inn",
+      homeBuilding: "nayaSInn",
+      installedAfter: "storyNayaInnCompleteVue"
+    })
+  });
+  const PERMANENT_SPECIALIST_JOB_IDS = Object.freeze(Object.keys(PERMANENT_SPECIALIST_ROLES));
+
+  function permanentSpecialistRoleForKitty(kitty) {
+    return kitty && PERMANENT_SPECIALIST_ROLES[kitty.metier] || null;
+  }
+
+  function permanentSpecialistRoleForName(name) {
+    const roleId = PERMANENT_SPECIALIST_JOB_IDS.find(function(candidate) {
+      return PERMANENT_SPECIALIST_ROLES[candidate].catName === name;
+    });
+    return roleId || null;
+  }
   const SCOUTING_REWARD_IDS = resourceApi.globalDefinitions().map(function(resource) { return resource.id; });
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
   const CAMP_CANONICAL_REPAIR_IDS = [
@@ -78,7 +106,18 @@
     // Production upgrades predate per-tier authored unlock/visual records.
     return CAMP_BUILDING_IDS.includes(typeId) && startTier === 1 && targetTier === 2;
   }
-  function canonicalCampUpgradeQuoteValid(upgrade) {
+  function canonicalCampCommittedCostsValid(costs) {
+    const costIds = estObjetSauvegarde(costs) ? Object.keys(costs) : [];
+    return costIds.length > 0
+      && costIds.length <= 8
+      && costIds.every(function(resourceId) {
+        return (SCOUTING_REWARD_IDS.includes(resourceId) || resourceId === "cannelleTokens")
+          && typeof costs[resourceId] === "number"
+          && Number.isFinite(costs[resourceId])
+          && costs[resourceId] >= 0;
+      });
+  }
+  function canonicalCampUpgradeReceiptValid(upgrade) {
     const definition = CatInc.data && CatInc.data.campGameplay
       && CatInc.data.campGameplay.definitions && CatInc.data.campGameplay.definitions[upgrade.type];
     const tier = definition && definition.upgradeTiers
@@ -87,23 +126,7 @@
       && upgrade.startTier === 1 && upgrade.targetTier === 2;
     const rank = Number.isInteger(upgrade.rank) && upgrade.rank > 0
       ? upgrade.rank : (legacyProduction && upgrade.rank === undefined ? 1 : null);
-    const law = CatInc.incrementorLaw;
-    if (!tier || rank === null || !law || typeof law.scaleCosts !== "function") return false;
-    const expected = law.scaleCosts(
-      tier.costs,
-      rank,
-      Number(tier.costGrowth) || 1,
-      definition && definition.law && definition.law.rounding || "ceil"
-    );
-    const expectedKeys = Object.keys(expected).sort();
-    const actualKeys = Object.keys(upgrade.costs).sort();
-    return expectedKeys.length === actualKeys.length
-      && expectedKeys.every(function(resourceId, index) {
-        return actualKeys[index] === resourceId
-          && typeof upgrade.costs[resourceId] === "number"
-          && Number.isFinite(upgrade.costs[resourceId])
-          && upgrade.costs[resourceId] === expected[resourceId];
-      });
+    return Boolean(tier && rank !== null && canonicalCampCommittedCostsValid(upgrade.costs));
   }
   function canonicalCampRepairEligible(typeId, definition) {
     if (
@@ -357,7 +380,7 @@ function validerStructureSauvegarde(d) {
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
     "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "basicWoodPlanksTotalProduit", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
-    "cannelleTokens", "cannelleBargainNextAt", "shortcutMapFinTs",
+    "cannelleTokens", "cannelleBargainNextAt", "shortcutMapFinTs", "highestCampLevelReached",
     "workBoostFinTs", "manualFocusOnboardingCompletedTs", "birdPremierSpawnTs", "birdNextSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
     "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "campCatPortraitScale"
   ];
@@ -376,6 +399,10 @@ function validerStructureSauvegarde(d) {
   }
   if (d.birdPityEchecs !== undefined && (!Number.isInteger(d.birdPityEchecs) || d.birdPityEchecs < 0)) {
     return "Invalid Bird pity data.";
+  }
+  if (d.highestCampLevelReached !== undefined
+      && (!Number.isInteger(d.highestCampLevelReached) || d.highestCampLevelReached < 0)) {
+    return "Invalid highest Camp Level milestone.";
   }
 
   if (d.dailyQuests !== undefined) {
@@ -452,7 +479,7 @@ function validerStructureSauvegarde(d) {
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
     "jobCenterDebloque", "jobCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremierDeclenche", "birdPremiereReussie",
-    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons", "campAnimationsEnabled", "cannelleBargainRulesSeen"
+    "managersDebloques", "managerRoleTutorialShown", "hideCampCatIcons", "campAnimationsEnabled", "showCampTierBadges", "cannelleBargainRulesSeen"
   ];
   // Accepted only so pre-removal saves remain valid; migration intentionally ignores it.
   const champsBooleensLegacy = ["tutorialCompletionPopupSeen"];
@@ -781,15 +808,7 @@ function validerStructureSauvegarde(d) {
           && typeof upgrade.startTs === "number" && Number.isFinite(upgrade.startTs) && upgrade.startTs >= 0
           && typeof upgrade.duration === "number" && Number.isFinite(upgrade.duration) && upgrade.duration > 0
           && typeof upgrade.readyToClaim === "boolean"
-          && estObjetSauvegarde(upgrade.costs)
-          && Object.keys(upgrade.costs).length <= 8
-          && Object.keys(upgrade.costs).every(function(resourceId) {
-            return typeof resourceId === "string" && /^[A-Za-z][A-Za-z0-9]*$/.test(resourceId)
-              && typeof upgrade.costs[resourceId] === "number"
-              && Number.isFinite(upgrade.costs[resourceId])
-              && upgrade.costs[resourceId] >= 0;
-          })
-          && canonicalCampUpgradeQuoteValid(upgrade);
+          && canonicalCampUpgradeReceiptValid(upgrade);
       });
     if (!ameliorationsCampValides) return "Invalid Camp upgrade data.";
   }
@@ -1058,7 +1077,8 @@ function analyserSauvegardeBrute(raw) {
       ...data,
       campProfile: normaliserProfilCampSauvegarde(data.campProfile),
       uiTheme: normaliserUiTheme(data.uiTheme),
-      campAnimationsEnabled: data.campAnimationsEnabled !== false
+      campAnimationsEnabled: data.campAnimationsEnabled !== false,
+      showCampTierBadges: data.showCampTierBadges !== false
     };
   }
   const erreur = validerStructureSauvegarde(data);
@@ -1109,8 +1129,10 @@ function analyserSauvegardeBrute(raw) {
     campCatPortraitScale:    etat.campCatPortraitScale,
     hideCampCatIcons:          etat.hideCampCatIcons,
     campAnimationsEnabled:   etat.campAnimationsEnabled !== false,
+    showCampTierBadges:      etat.showCampTierBadges !== false,
     resourceBarHidden:       etat.resourceBarHidden,
     campProfile:             normaliserProfilCampSauvegarde(etat.campProfile),
+    highestCampLevelReached: Math.max(0, Math.floor(Number(etat.highestCampLevelReached) || 0)),
     scieriBloquee:              etat.scieriBloquee,
     basicSawmillBloquee:        etat.basicSawmillBloquee,
     brickBloquee:               etat.brickBloquee,
@@ -1207,6 +1229,60 @@ function analyserSauvegardeBrute(raw) {
     const d = JSON.parse(JSON.stringify(data));
     const etat = stateCore.creerEtatInitial(maintenant);
 
+    // Freeze canonically demo-unavailable Campaigns before hydration derives
+    // unlocks from learned Books. Completed downstream progress is preserved,
+    // while unfinished runs and rewards from retired demo definitions vanish.
+    const explorationCampaigns = CatInc.data && CatInc.data.exploration
+      && CatInc.data.exploration.campaigns || {};
+    const demoUnavailableIds = new Set(Object.keys(explorationCampaigns).filter(function(campaignId) {
+      return explorationCampaigns[campaignId].demoUnavailable === true;
+    }));
+    const removeFromArray = function(value, removedId) {
+      return Array.isArray(value) ? value.filter(function(entry) { return entry !== removedId; }) : [];
+    };
+    const rawCamp = d.camp && typeof d.camp === "object" ? d.camp : {};
+    const labStarted = d.laboratoryConstruit === true
+      || (Array.isArray(rawCamp.layout) && rawCamp.layout.some(function(item) { return item && item.type === "laboratory"; }))
+      || (rawCamp.constructions && typeof rawCamp.constructions === "object"
+        && Object.values(rawCamp.constructions).some(function(construction) { return construction && construction.type === "laboratory"; }))
+      || Boolean(d.formationIngenieurEnCours)
+      || Boolean(d.formationIngenieurTermineeEnAttente)
+      || (Array.isArray(d.kittiesData) && d.kittiesData.some(function(kitty) { return kitty && kitty.metier === "camp-engineer"; }));
+    const d1Completed = Array.isArray(d.campaignsCompletees) && d.campaignsCompletees.includes("searchHomeHouse");
+    const engineerGuidePresent = [d.itemsAcquis, d.itemsEtudies, d.itemsAppris].some(function(items) {
+      return Array.isArray(items) && items.includes("engineerGuide");
+    }) || Boolean(d.learningEnCours && d.learningEnCours.itemId === "engineerGuide");
+    if (demoUnavailableIds.has("searchHomeHouse") && d1Completed && engineerGuidePresent && !labStarted) {
+      d.campaignsCompletees = removeFromArray(d.campaignsCompletees, "searchHomeHouse");
+      d.itemsAcquis = removeFromArray(d.itemsAcquis, "engineerGuide");
+      d.itemsEtudies = removeFromArray(d.itemsEtudies, "engineerGuide");
+      d.itemsAppris = removeFromArray(d.itemsAppris, "engineerGuide");
+      if (d.learningEnCours && d.learningEnCours.itemId === "engineerGuide") d.learningEnCours = null;
+      d.laboratoryDebloque = false;
+    }
+    const c1Untouched = Array.isArray(d.campaignsCompletees) && d.campaignsCompletees.includes("searchLeftHouse")
+      && Array.isArray(d.itemsAcquis) && d.itemsAcquis.includes("teamworkGuide")
+      && !(Array.isArray(d.itemsEtudies) && d.itemsEtudies.includes("teamworkGuide"))
+      && !(Array.isArray(d.itemsAppris) && d.itemsAppris.includes("teamworkGuide"))
+      && !(d.learningEnCours && d.learningEnCours.itemId === "teamworkGuide")
+      && d.engineerRankUpgradesDebloques !== true;
+    if (demoUnavailableIds.has("searchLeftHouse") && c1Untouched) {
+      d.campaignsCompletees = removeFromArray(d.campaignsCompletees, "searchLeftHouse");
+      d.itemsAcquis = removeFromArray(d.itemsAcquis, "teamworkGuide");
+    }
+    const completedAfterRollback = new Set(Array.isArray(d.campaignsCompletees) ? d.campaignsCompletees : []);
+    d.exploEnCours = Array.isArray(d.exploEnCours) ? d.exploEnCours.filter(function(mission) {
+      return !mission || !demoUnavailableIds.has(mission.id) || completedAfterRollback.has(mission.id);
+    }) : [];
+    if (d.resultatsCampaigns && typeof d.resultatsCampaigns === "object") {
+      demoUnavailableIds.forEach(function(campaignId) {
+        if (!completedAfterRollback.has(campaignId)) delete d.resultatsCampaigns[campaignId];
+      });
+    }
+    if (d.explorationRetries && d.explorationRetries.campaigns) {
+      demoUnavailableIds.forEach(function(campaignId) { delete d.explorationRetries.campaigns[campaignId]; });
+    }
+
 
   etat.dernierTimestamp       = d.dernierTimestamp       || maintenant;
   etat.chatons                = d.chatons                || 0;
@@ -1263,6 +1339,9 @@ function analyserSauvegardeBrute(raw) {
     ? d.manualFocusOnboardingCompletedTs
     : 0;
   etat.campProfile = normaliserProfilCampSauvegarde(d.campProfile);
+  etat.highestCampLevelReached = Number.isInteger(d.highestCampLevelReached)
+    ? Math.max(0, d.highestCampLevelReached)
+    : 0;
   const ancienAvatarGenerique = legacyGenericCatFaces.find(function(face) {
     return face && face.id === etat.campProfile.avatarCatFaceId
       && typeof face.runtimePath === "string";
@@ -1315,6 +1394,7 @@ function analyserSauvegardeBrute(raw) {
     : 1;
   etat.hideCampCatIcons          = d.hideCampCatIcons === true;
   etat.campAnimationsEnabled = d.campAnimationsEnabled !== false;
+  etat.showCampTierBadges = d.showCampTierBadges !== false;
   etat.resourceBarHidden = Array.isArray(d.resourceBarHidden)
     ? Array.from(new Set(d.resourceBarHidden.filter(function(id) { return RESOURCE_BAR_KEYS.includes(id); })))
     : [];
@@ -1614,11 +1694,11 @@ function analyserSauvegardeBrute(raw) {
   }
   if (etat.formationEnCours) {
     etat.formationEnCours.metier = normaliserJobId(etat.formationEnCours.metier);
-    if (!etat.formationEnCours.metier || etat.formationEnCours.metier === "shop-owner") etat.formationEnCours = null;
+    if (!etat.formationEnCours.metier || PERMANENT_SPECIALIST_ROLES[etat.formationEnCours.metier]) etat.formationEnCours = null;
   }
   if (etat.formationTermineeEnAttente) {
     etat.formationTermineeEnAttente.metier = normaliserJobId(etat.formationTermineeEnAttente.metier);
-    if (!etat.formationTermineeEnAttente.metier || etat.formationTermineeEnAttente.metier === "shop-owner") etat.formationTermineeEnAttente = null;
+    if (!etat.formationTermineeEnAttente.metier || PERMANENT_SPECIALIST_ROLES[etat.formationTermineeEnAttente.metier]) etat.formationTermineeEnAttente = null;
   }
   if (etat.formationIngenieurEnCours && etat.formationIngenieurEnCours.metier !== "camp-engineer") {
     etat.formationIngenieurEnCours = null;
@@ -1633,24 +1713,39 @@ function analyserSauvegardeBrute(raw) {
     const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
     etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: null, visage: assignerVisageChaton(nom), jobNiveau: 0 });
   }
-  let cannelleRoleBound = false;
+  const specialistRoleBound = new Set();
   etat.kittiesData.forEach(function(k) {
-    if (k.nom === "Cannelle" && !cannelleRoleBound) {
-      k.metier = "shop-owner";
-      cannelleRoleBound = true;
-    } else if (k.metier === "shop-owner") {
+    const canonicalRole = permanentSpecialistRoleForName(k.nom);
+    if (canonicalRole && !specialistRoleBound.has(canonicalRole)) {
+      k.metier = canonicalRole;
+      specialistRoleBound.add(canonicalRole);
+    } else if (PERMANENT_SPECIALIST_ROLES[k.metier]) {
       k.metier = null;
     }
   });
-  // Permanent specialists cannot occupy a training station in any lifecycle
-  // state. Resolve reservations after specialist roles have been rebound.
-  ["perkLearningEnCours", "formationEnCours", "formationTermineeEnAttente",
+  // Permanent specialists cannot acquire an ordinary Job or Engineer role.
+  // Paid book/perk learning already in flight is a non-replaceable transaction
+  // and is grandfathered by the runtime reconciler until it completes.
+  ["formationEnCours", "formationTermineeEnAttente",
     "formationIngenieurEnCours", "formationIngenieurTermineeEnAttente"].forEach(function(field) {
     const reservation = etat[field];
     const kitty = reservation && Number.isInteger(reservation.kittyIndex)
       ? etat.kittiesData[reservation.kittyIndex]
       : null;
-    if (kitty && kitty.metier === "shop-owner") etat[field] = null;
+    if (permanentSpecialistRoleForKitty(kitty)) etat[field] = null;
+  });
+  // Replaceable assignments can be released without losing paid progress.
+  // Timed Camp/Exploration/learning transactions are intentionally left for
+  // the runtime occupation reconciler to grandfather until completion.
+  Object.keys(etat.managers || {}).forEach(function(family) {
+    const kitty = etat.kittiesData[etat.managers[family]];
+    if (permanentSpecialistRoleForKitty(kitty)) etat.managers[family] = null;
+  });
+  Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
+    (slots || []).forEach(function(slot) {
+      const kitty = slot && etat.kittiesData[slot.kittyIndex];
+      if (permanentSpecialistRoleForKitty(kitty)) slot.kittyIndex = null;
+    });
   });
   // Older current-version saves assigned the profession when the timer ended,
   // even though the ready record still awaited explicit validation. The ready
@@ -1673,7 +1768,7 @@ function analyserSauvegardeBrute(raw) {
       if (prematureReadyKittyIndices.has(etat.managers[family])) etat.managers[family] = null;
     });
     const regularJobs = new Set(JOB_IDS.filter(function(jobId) {
-      return !["gang-leader", "camp-engineer", "shop-owner"].includes(jobId);
+      return !["gang-leader", "camp-engineer"].concat(PERMANENT_SPECIALIST_JOB_IDS).includes(jobId);
     }));
     const managerJobs = new Set([
       "lumberjack", "carpenter", "farmer", "chef", "builder", "miner", "stonemason"
@@ -1733,6 +1828,10 @@ function analyserSauvegardeBrute(raw) {
     SAVE_KEY: SAVE_KEY,
     SAVE_RECOVERY_KEY: SAVE_RECOVERY_KEY,
     SAVE_VERSION: SAVE_VERSION,
+    PERMANENT_SPECIALIST_ROLES: PERMANENT_SPECIALIST_ROLES,
+    PERMANENT_SPECIALIST_JOB_IDS: PERMANENT_SPECIALIST_JOB_IDS,
+    permanentSpecialistRoleForKitty: permanentSpecialistRoleForKitty,
+    permanentSpecialistRoleForName: permanentSpecialistRoleForName,
     estObjetSauvegarde: estObjetSauvegarde,
     validerStructureSauvegarde: validerStructureSauvegarde,
     analyserSauvegardeBrute: analyserSauvegardeBrute,

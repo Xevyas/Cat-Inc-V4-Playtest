@@ -314,7 +314,116 @@
   "campLevelRules": {
     "baseXp": 3,
     "growth": 1.5,
-    "appealPerLevel": 1
+    "levelRewards": [
+      {
+        "level": 1,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "rewards": [
+          {
+            "type": "unlockCampItem",
+            "assetId": "dirt-path"
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 2
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "rewards": [
+          {
+            "type": "campActionSpeed",
+            "amount": 5
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "rewards": [
+          {
+            "type": "unlockCampItem",
+            "assetId": "pebble-path"
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 2
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 2
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "rewards": [
+          {
+            "type": "unlockCampItem",
+            "assetId": "grey-paved-floor"
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "rewards": [
+          {
+            "type": "campActionSpeed",
+            "amount": 5
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 2
+          }
+        ]
+      },
+      {
+        "level": 12,
+        "rewards": [
+          {
+            "type": "appeal",
+            "amount": 2
+          }
+        ]
+      }
+    ]
   },
   "generalRules": {
     "catLeveling": {
@@ -602,45 +711,210 @@
   },
   "nayaInn": {
     "stateVersion": 2,
+    "maxTierChancePercent": 30,
     "rarityWeights": {
-      "common": 50,
-      "rare": 30,
-      "epic": 15,
-      "legendary": 5
+      "common": 80,
+      "rare": 15,
+      "epic": 4,
+      "legendary": 1
     },
     "contracts": {
       "common": {
-        "inputAmount": 4,
-        "outputAmount": 4
+        "inputAmount": 2,
+        "outputAmount": 2
       },
       "rare": {
-        "inputAmount": 5,
-        "outputAmount": 8
+        "inputAmount": 3,
+        "outputAmount": 4
       },
       "epic": {
-        "inputAmount": 6,
-        "outputAmount": 12
+        "inputAmount": 4,
+        "outputAmount": 6
       },
       "legendary": {
-        "inputAmount": 12,
-        "outputAmount": 1
+        "inputAmount": 5,
+        "outputAmount": 8
       }
     },
     "travelers": {
       "helperPower": {
-        "common": 10,
-        "rare": 15,
-        "epic": 20,
-        "legendary": 25
+        "common": 5,
+        "rare": 10,
+        "epic": 15,
+        "legendary": 20
       },
       "guideReductionPercent": {
-        "common": 15,
-        "rare": 25,
-        "epic": 35,
-        "legendary": 50
+        "common": 5,
+        "rare": 10,
+        "epic": 15,
+        "legendary": 20
       }
     },
-    "levelMilestones": []
+    "levelMilestones": [
+      {
+        "level": 5,
+        "kind": "rarity",
+        "rarityWeights": {
+          "common": 70,
+          "rare": 20,
+          "epic": 8,
+          "legendary": 2
+        }
+      },
+      {
+        "level": 10,
+        "kind": "effects",
+        "contracts": {
+          "common": {
+            "inputAmount": 3,
+            "outputAmount": 3
+          },
+          "rare": {
+            "inputAmount": 4,
+            "outputAmount": 6
+          },
+          "epic": {
+            "inputAmount": 5,
+            "outputAmount": 8
+          },
+          "legendary": {
+            "inputAmount": 6,
+            "outputAmount": 10
+          }
+        },
+        "travelers": {
+          "helperPower": {
+            "common": 7,
+            "rare": 12,
+            "epic": 17,
+            "legendary": 25
+          },
+          "guideReductionPercent": {
+            "common": 7,
+            "rare": 12,
+            "epic": 17,
+            "legendary": 25
+          }
+        }
+      },
+      {
+        "level": 15,
+        "kind": "tierChance",
+        "maxTierChancePercent": 40
+      },
+      {
+        "level": 20,
+        "kind": "rarity",
+        "rarityWeights": {
+          "common": 60,
+          "rare": 25,
+          "epic": 10,
+          "legendary": 5
+        }
+      },
+      {
+        "level": 25,
+        "kind": "effects",
+        "contracts": {
+          "common": {
+            "inputAmount": 4,
+            "outputAmount": 4
+          },
+          "rare": {
+            "inputAmount": 5,
+            "outputAmount": 8
+          },
+          "epic": {
+            "inputAmount": 6,
+            "outputAmount": 10
+          },
+          "legendary": {
+            "inputAmount": 7,
+            "outputAmount": 13
+          }
+        },
+        "travelers": {
+          "helperPower": {
+            "common": 10,
+            "rare": 15,
+            "epic": 20,
+            "legendary": 30
+          },
+          "guideReductionPercent": {
+            "common": 10,
+            "rare": 15,
+            "epic": 20,
+            "legendary": 30
+          }
+        }
+      },
+      {
+        "level": 30,
+        "kind": "tierChance",
+        "maxTierChancePercent": 50
+      },
+      {
+        "level": 35,
+        "kind": "rarity",
+        "rarityWeights": {
+          "common": 45,
+          "rare": 35,
+          "epic": 15,
+          "legendary": 5
+        }
+      },
+      {
+        "level": 40,
+        "kind": "effects",
+        "contracts": {
+          "common": {
+            "inputAmount": 5,
+            "outputAmount": 5
+          },
+          "rare": {
+            "inputAmount": 6,
+            "outputAmount": 10
+          },
+          "epic": {
+            "inputAmount": 7,
+            "outputAmount": 12
+          },
+          "legendary": {
+            "inputAmount": 8,
+            "outputAmount": 16
+          }
+        },
+        "travelers": {
+          "helperPower": {
+            "common": 15,
+            "rare": 20,
+            "epic": 25,
+            "legendary": 40
+          },
+          "guideReductionPercent": {
+            "common": 15,
+            "rare": 20,
+            "epic": 25,
+            "legendary": 40
+          }
+        }
+      },
+      {
+        "level": 45,
+        "kind": "tierChance",
+        "maxTierChancePercent": 65
+      },
+      {
+        "level": 50,
+        "kind": "rarity",
+        "rarityWeights": {
+          "common": 25,
+          "rare": 50,
+          "epic": 20,
+          "legendary": 5
+        }
+      }
+    ]
   },
   "bookLearning": {
     "schoolGuide": {

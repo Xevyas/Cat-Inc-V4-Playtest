@@ -614,13 +614,24 @@
         <div id="camp-profile-progress" class="camp-profile-progress">
           <span class="camp-level-xp"><b>Camp XP</b><em id="camp-profile-panel-xp">0 / 10</em></span>
           <span id="camp-profile-panel-progress" class="camp-level-progress" role="progressbar" aria-label="Camp XP toward the next level" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><i></i></span>
-          <span class="camp-profile-bonus">Current Level bonus <strong id="camp-profile-panel-bonus">Appeal +0</strong></span>
+          <span class="camp-profile-bonus">Next Level Rewards <strong id="camp-profile-panel-bonus">No reward</strong></span>
         </div>
         <section class="camp-profile-avatar-section" aria-labelledby="camp-profile-avatar-title">
           <h3 id="camp-profile-avatar-title">Camp Icon selection</h3>
           <div id="camp-profile-avatar-picker" class="camp-profile-avatar-picker"></div>
         </section>
       </div>
+    </div>
+  </div>
+  <div id="camp-level-up-modal" class="explo-modal camp-level-up-modal" data-overlay-managed="true" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-level-up-title" style="display:none">
+    <div class="explo-modal-panneau camp-level-up-panel" role="document" tabindex="-1">
+      <p class="camp-level-up-kicker">Congratulations!</p>
+      <div class="camp-level-up-identity"><span class="camp-profile-avatar camp-profile-avatar-large"><img id="camp-level-up-avatar" src="img/interface/Gang_Final.png?v=0.0029" alt=""></span><strong id="camp-level-up-camp-name">My Camp</strong></div>
+      <h2 id="camp-level-up-title">Camp Level</h2>
+      <p id="camp-level-up-transition" class="camp-level-up-transition">0 → 1</p>
+      <span id="camp-level-up-progress" class="camp-level-progress camp-level-up-progress" role="progressbar" aria-label="Camp XP threshold completed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i></span>
+      <section class="camp-level-up-rewards" aria-labelledby="camp-level-up-rewards-title"><h3 id="camp-level-up-rewards-title">Rewards unlocked</h3><div id="camp-level-up-reward-rows"></div></section>
+      <button id="camp-level-up-continue" class="btn-inv-action" type="button" onclick="fermerDialogueModal('camp-level-up-modal')">Continue</button>
     </div>
   </div>
   <div id="ecran-story-cannelle-bargain-intro" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cannelle's Bargain" style="display:none">
@@ -682,7 +693,7 @@
   <main id="contenu-principal">
 
   <!-- CONTENU CAMP -->
-  <div id="contenu-camp" role="tabpanel" aria-labelledby="onglet-camp" aria-hidden="true" style="display:none">
+  <div id="contenu-camp" role="tabpanel" aria-labelledby="onglet-camp" aria-hidden="true" hidden>
     <section id="camp-prototype-panel" class="panneau camp-prototype-panel" aria-label="Base Camp">
       <div class="camp-prototype-stage">
         <div class="camp-prototype-heading">
@@ -879,7 +890,7 @@
   </div>
 
   <!-- CONTENU WORK: family recipe slots -->
-  <div id="contenu-work" role="tabpanel" aria-labelledby="onglet-work" aria-hidden="true" style="display:none">
+  <div id="contenu-work" role="tabpanel" aria-labelledby="onglet-work" aria-hidden="true" hidden>
     <div class="work-sheet">
     <div id="gang-leader-banner" style="display:none"></div>
     <div class="work-filtres">
@@ -909,7 +920,7 @@
   </div> <!-- /contenu-work -->
 
   <!-- CONTENU FACILITIES -->
-  <div id="contenu-facilities" role="tabpanel" aria-labelledby="onglet-facilities" aria-hidden="true" style="display:none">
+  <div id="contenu-facilities" role="tabpanel" aria-labelledby="onglet-facilities" aria-hidden="true" hidden>
     <div id="facilities-subtabs" class="facilities-subtabs" role="tablist" aria-label="Jobs sections" aria-hidden="true" data-has-tabs="false">
       <button id="facilities-subtab-jobs" class="facilities-subtab btn-filtre-work facilities-subtab-active btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="section-job-center" onclick="selectionnerVueFacilitiesMobile('jobs')">Jobs</button>
       <button id="facilities-subtab-lab" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-laboratory" onclick="selectionnerVueFacilitiesMobile('lab')" style="display:none">Lab</button>
@@ -948,7 +959,7 @@
 
 
   <!-- CONTENU INVENTAIRE -->
-  <div id="contenu-inventaire" role="tabpanel" aria-labelledby="onglet-inventaire" aria-hidden="true" style="display:none">
+  <div id="contenu-inventaire" role="tabpanel" aria-labelledby="onglet-inventaire" aria-hidden="true" hidden>
     <div id="inv-res-tabs"></div>
     <div class="bag-sheet">
     <div class="grille grille-2col">
@@ -981,7 +992,7 @@
   </div> <!-- /contenu-inventaire -->
 
   <!-- CONTENU EXPLORATIONS -->
-  <div id="contenu-explorations" role="tabpanel" aria-labelledby="onglet-explorations" aria-hidden="true" style="display:none">
+  <div id="contenu-explorations" role="tabpanel" aria-labelledby="onglet-explorations" aria-hidden="true" hidden>
 
     <section class="panneau" id="section-explo-map">
       <div class="explo-map-heading">
@@ -1068,7 +1079,7 @@
   </div>
 
   <!-- CONTENU LOGS -->
-  <div id="contenu-logs" role="tabpanel" aria-labelledby="onglet-logs" aria-hidden="true" style="display:none">
+  <div id="contenu-logs" role="tabpanel" aria-labelledby="onglet-logs" aria-hidden="true" hidden>
     <div class="work-sheet">
     <div class="logs-heading">
       <h2>Gang history</h2>
@@ -1175,8 +1186,13 @@
           <span class="settings-toggle-switch"></span>
         </label>
         <label class="settings-toggle-row">
-          <span>Camp animations<small>Animate buildings and decorations in Camp.</small></span>
+          <span>Camp animations</span>
           <input type="checkbox" id="toggle-camp-animations" onchange="basculerAnimationsCamp(this.checked)" checked>
+          <span class="settings-toggle-switch"></span>
+        </label>
+        <label class="settings-toggle-row">
+          <span>Show Camp Tier badges</span>
+          <input type="checkbox" id="toggle-camp-tier-badges" onchange="basculerBadgesTierCamp(this.checked)" checked>
           <span class="settings-toggle-switch"></span>
         </label>
         <div class="settings-separateur"></div>
@@ -1322,10 +1338,9 @@
       <div class="explo-modal-header naya-inn-header">
         <img id="naya-inn-portrait" class="naya-inn-portrait" src="" alt="Naya">
         <span><strong id="naya-inn-title">Naya's Inn</strong><small>Innkeeper · Daily opportunities</small></span>
-        <button id="naya-inn-info-button" type="button" aria-label="Naya's Inn level benefits" aria-expanded="false" aria-controls="naya-inn-info" title="Level benefits" onclick="toggleNayaInnInfo()" class="interface-details-control"><span class="interface-symbol interface-details" aria-hidden="true"></span></button>
+        <span class="panneau-aide-wrap naya-inn-help-wrap"><button id="naya-inn-info-button" type="button" aria-label="Naya's Inn level benefits" aria-expanded="false" aria-controls="naya-inn-info" title="Level benefits" onclick="togglePanneauAide(event)" class="interface-details-control detail-help-btn panneau-aide-btn"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="naya-inn-info" class="detail-help-popover panneau-aide-popover naya-inn-info" role="note" aria-hidden="true" style="display:none"></span></span>
         <button class="explo-modal-close" type="button" aria-label="Close Naya's Inn" onclick="fermerAubergeNaya()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
-      <section id="naya-inn-info" class="naya-inn-info" aria-live="polite" hidden></section>
       <div id="naya-inn-content"></div>
     </div>
   </div>

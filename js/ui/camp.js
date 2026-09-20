@@ -124,15 +124,6 @@
     return String(path) + separator + "camp-runtime=" + revision.tier + "." + revision.revision;
   }
 
-  function runtimeReviewRevision(typeId, preferredTier) {
-    const family = runtimeAssetFamily(typeId);
-    const tier = family && family.tiers
-      && family.tiers[String(preferredTier || 1)];
-    if (!tier || !Number.isInteger(tier.liveRevision)) return null;
-    const revision = tier.revisions && tier.revisions[String(tier.liveRevision)];
-    return revision && revision.status === "live" ? revision : null;
-  }
-
   function normaliserStickerSlot(value) {
     if (!value || typeof value !== "object") return null;
     if (value.enabled === false) return null;
@@ -342,16 +333,34 @@
   }
 
   function runtimePathType(typeId, fallback) {
-    const revision = runtimeReviewRevision(typeId, 1);
+    const family = runtimeAssetFamily(typeId);
+    const revision = runtimeRevision(typeId, 1);
     if (!revision || !revision.buildingJoin) return Object.freeze(fallback);
+    const constructedAtlas = revision.constructedAtlas && {
+      ...revision.constructedAtlas,
+      cornerFills: Object.fromEntries(Object.entries(revision.constructedAtlas.cornerFills || {}).map(function(entry) {
+        return [entry[0], runtimeSpritePath(entry[1], revision)];
+      })),
+      roles: Object.fromEntries(Object.entries(revision.constructedAtlas.roles || {}).map(function(entry) {
+        return [entry[0], entry[1].map(function(path) { return runtimeSpritePath(path, revision); })];
+      })),
+      buildingJoin: Object.fromEntries(Object.entries(revision.constructedAtlas.buildingJoin || {}).map(function(entry) {
+        return [entry[0], Object.fromEntries(Object.entries(entry[1]).map(function(directionEntry) {
+          return [directionEntry[0], runtimeSpritePath(directionEntry[1], revision)];
+        }))];
+      }))
+    };
     return Object.freeze({
       ...fallback,
+      runtimeAssetId: family && family.assetId || typeId,
       label: revision.name || fallback.label,
       roadMaterial: typeId,
+      pathProfile: revision.pathProfile === "constructed" ? "constructed" : "organic",
       buildingJoin: Object.freeze({
         ...revision.buildingJoin,
         merged: Object.freeze({...revision.buildingJoin.merged})
       }),
+      constructedAtlas: constructedAtlas ? Object.freeze(constructedAtlas) : null,
       asset: runtimeSpritePath(
         revision.sprites && revision.sprites.down,
         revision
@@ -931,11 +940,41 @@
     return uniqueTypes;
   }
 
+  function liveStudioPathTypes(baseTypes) {
+    const pathTypes = {};
+    const existingAssetIds = new Set(Object.values(baseTypes).map(function(type) {
+      return type && (type.runtimeAssetId || type.id);
+    }));
+    Object.keys(RUNTIME_MANIFEST.assets || {}).sort().forEach(function(runtimeId) {
+      const family = RUNTIME_MANIFEST.assets[runtimeId];
+      if (!family || family.category !== "path" || existingAssetIds.has(family.assetId)) return;
+      const tier = family.tiers && family.tiers["1"];
+      const revision = tier && Number.isInteger(tier.liveRevision)
+        ? tier.revisions && tier.revisions[String(tier.liveRevision)]
+        : null;
+      if (!revision || revision.status !== "live" || !revision.buildingJoin) return;
+      pathTypes[runtimeId] = runtimePathType(runtimeId, {
+        id: runtimeId,
+        label: revision.name || family.name || family.assetId,
+        width: revision.width,
+        height: revision.height,
+        color: "road",
+        category: "road",
+        continuous: true,
+        blocksMovement: false,
+        roadMaterial: runtimeId,
+        asset: revision.sprites && revision.sprites.down || ""
+      });
+    });
+    return pathTypes;
+  }
+
   const FENCE_TYPES = Object.freeze({
     campBoundaryFence: runtimeFenceType("campBoundaryFence")
   });
   const ITEM_TYPES = Object.freeze({
     ...BASE_ITEM_TYPES,
+    ...liveStudioPathTypes(BASE_ITEM_TYPES),
     ...uniqueItemTypes(BASE_ITEM_TYPES),
     ...Object.keys(FENCE_TYPES).reduce(function(types, typeId) {
       if (FENCE_TYPES[typeId]) types[typeId] = FENCE_TYPES[typeId];
@@ -1760,7 +1799,9 @@
           cell: { x: cellule.x, y: cellule.y },
           direction: direction,
           material: routeType.roadMaterial || routeType.id,
+          profile: routeType.pathProfile === "constructed" ? "constructed" : "organic",
           sprite: routeType.asset || "",
+          constructedAtlas: routeType.constructedAtlas || null,
           visual: visuel,
           sourceCellCount: portCalcule.cells.length,
           automaticAnchor: ancrageAutomatique
@@ -1770,7 +1811,7 @@
     const candidatesUniques = new Map();
     cellulesCandidates.forEach(function(candidate) {
       const key = [
-        candidate.direction, candidate.material,
+        candidate.direction, candidate.material, candidate.profile,
         candidate.cell.x, candidate.cell.y
       ].join(":");
       const existant = candidatesUniques.get(key);
@@ -1786,7 +1827,7 @@
     const groupesParVisuel = new Map();
     candidatesUniques.forEach(function(candidate) {
       const key = JSON.stringify([
-        candidate.direction, candidate.material, candidate.sprite
+        candidate.direction, candidate.material, candidate.sprite, candidate.profile
       ]);
       if (!groupesParVisuel.has(key)) groupesParVisuel.set(key, []);
       groupesParVisuel.get(key).push(candidate);
@@ -1820,6 +1861,46 @@
     groupesContigus.forEach(function(cellulesRaccordees) {
       const premier = cellulesRaccordees[0];
       const visuel = premier.visual;
+      if (premier.profile === "constructed") {
+        // One local rectangle joins the approach tile's painted edge. Organic
+        // offsets are footprint-relative and can stop short of an atlas cap.
+        const vertical = premier.direction === "north" || premier.direction === "south";
+        const merged = cellulesRaccordees.length > 1 && visuel.merged;
+        const width = merged ? Number(visuel.maxWidth) : Number(visuel.width);
+        const length = merged ? Number(visuel.merged.length) : Number(visuel.length);
+        const center = cellulesRaccordees.reduce(function(sum, entry) {
+          return sum + (vertical ? entry.cell.x : entry.cell.y) + 0.5;
+        }, 0) / cellulesRaccordees.length;
+        const reach = 0.12; // Past the 8% atlas inset; the road paints above it.
+        const cell = premier.cell;
+        const x = vertical ? center - width / 2 : premier.direction === "east"
+          ? cell.x + reach - length : cell.x + 1 - reach;
+        const y = !vertical ? center - width / 2 : premier.direction === "south"
+          ? cell.y + reach - length : cell.y + 1 - reach;
+        const boxWidth = vertical ? width : length;
+        const boxHeight = vertical ? length : width;
+        // Register the existing one-cell atlas material to this approach cell,
+        // not to the connector's center. No world texture or saved phase.
+        const texture = Number(visuel.textureScaleCells);
+        const position = function(origin, start, size) {
+          return size === texture ? 0 : arrondirGeometrieRaccord((origin - start) / (size - texture) * 100);
+        };
+        raccords.push({
+          portId: premier.portId, cell: cell,
+          cells: cellulesRaccordees.map(function(entry) { return entry.cell; }),
+          direction: premier.direction, material: premier.material, profile: premier.profile,
+          sprite: premier.constructedAtlas?.buildingJoin?.[merged ? "merged" : "single"]?.[premier.direction],
+          shape: merged ? "merged-cone" : undefined,
+          anchor: vertical ? (center - rectangle.x) / rectangle.width : (center - rectangle.y) / rectangle.height,
+          width: width / (vertical ? rectangle.width : rectangle.height),
+          length: length / (vertical ? rectangle.height : rectangle.width), innerRatio: 1,
+          atlasBox: { x: (x - rectangle.x) / rectangle.width, y: (y - rectangle.y) / rectangle.height,
+            width: boxWidth / rectangle.width, height: boxHeight / rectangle.height },
+          textureX: texture / boxWidth * 100, textureY: texture / boxHeight * 100,
+          texturePositionX: position(cell.x, x, boxWidth), texturePositionY: position(cell.y, y, boxHeight)
+        });
+        return;
+      }
       if (cellulesRaccordees.length > 1 && visuel.merged) {
         const axeVertical = premier.direction === "north"
           || premier.direction === "south";
@@ -1848,7 +1929,9 @@
           cells: cellulesRaccordees.map(function(raccord) { return raccord.cell; }),
           direction: premier.direction,
           material: premier.material,
-          sprite: premier.sprite,
+          profile: premier.profile,
+          sprite: premier.constructedAtlas?.buildingJoin?.merged?.[premier.direction]
+            || premier.sprite,
           shape: "merged-cone",
           anchor: Math.max(0, Math.min(1, ancrage)),
           width: Math.max(0.02, Math.min(
@@ -1890,7 +1973,9 @@
           cell: raccordCellule.cell,
           direction: direction,
           material: raccordCellule.material,
-          sprite: raccordCellule.sprite,
+          profile: raccordCellule.profile,
+          sprite: raccordCellule.constructedAtlas?.buildingJoin?.single?.[direction]
+            || raccordCellule.sprite,
           anchor: Math.max(0, Math.min(1, raccordCellule.automaticAnchor)),
           width: Math.max(0.02, Math.min(
             1,

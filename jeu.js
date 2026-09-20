@@ -988,7 +988,7 @@ function estSpecialistePermanentNonAssignable(kittyOuIndex) {
   const kitty = Number.isInteger(kittyOuIndex)
     ? etat.kittiesData[kittyOuIndex]
     : kittyOuIndex;
-  return Boolean(kitty && kitty.metier === "shop-owner");
+  return Boolean(globalThis.CatInc.save.permanentSpecialistRoleForKitty(kitty));
 }
 
 function kittyEligiblePourAffectationOrdinaire(kittyOuIndex) {
@@ -1124,7 +1124,7 @@ function autoAssignExplo(type, id) {
   var difficulte, slots, nbSlots;
   if (type === 'campaign') {
     var camp = CONFIG.campaigns[id];
-    if (!camp) return;
+    if (!camp || !disponibiliteCampaign(camp).available) return;
     difficulte = camp.difficulte; nbSlots = camp.slots;
     if (!exploKittiesSelectionnees[id]) exploKittiesSelectionnees[id] = new Array(nbSlots).fill(null);
     slots = exploKittiesSelectionnees[id];
@@ -1264,39 +1264,45 @@ function normaliserOccupationsChatons() {
     var kitty = etat.kittiesData[ki];
     return typeof estIngenieur === "function" ? estIngenieur(kitty) : !!(kitty && /engineer/i.test(String(kitty.metier || "")));
   };
-  var claim = function(ki, autoriserBernardo) {
-    if (!kittyValide(ki) || estIngenieurEtat(ki) || estSpecialistePermanentNonAssignable(ki)
+  var claim = function(ki, autoriserBernardo, options) {
+    var allowGrandfatheredSpecialist = options && options.allowGrandfatheredSpecialist === true;
+    if (!kittyValide(ki) || estIngenieurEtat(ki)
+        || (estSpecialistePermanentNonAssignable(ki) && !allowGrandfatheredSpecialist)
         || (!autoriserBernardo && estBernardoSuperviseur(ki)) || claimed.has(ki)) return false;
     if (arguments[2] && arguments[2].preflight === true) return true;
     claimed.add(ki);
     return true;
   };
-  var cleanIndices = function(indices) {
-    if (!Array.isArray(indices)) return [];
-    var result = [];
-    indices.forEach(function(ki) {
-      if (claim(ki)) result.push(ki);
-      else changed = true;
+  var claimTransactionExistante = function(ki, autoriserBernardo, options) {
+    return claim(ki, autoriserBernardo, {
+      allowGrandfatheredSpecialist: true,
+      preflight: Boolean(options && options.preflight === true)
     });
-    return result;
   };
-
   if (etat.exploZoneEnCours) {
     var zoneBefore = etat.exploZoneEnCours.kittyIndices;
-    var zoneAfter = cleanIndices(zoneBefore);
+    var zoneAfter = Array.isArray(zoneBefore) ? zoneBefore.filter(function(ki) {
+      if (claim(ki, false, { allowGrandfatheredSpecialist: true })) return true;
+      changed = true;
+      return false;
+    }) : [];
     if (!Array.isArray(zoneBefore) || zoneAfter.length !== zoneBefore.length) changed = true;
     etat.exploZoneEnCours.kittyIndices = zoneAfter;
   }
   (etat.exploEnCours || []).forEach(function(mission) {
     if (!mission) return;
     var before = mission.kittyIndices;
-    var after = cleanIndices(before);
+    var after = Array.isArray(before) ? before.filter(function(ki) {
+      if (claim(ki, false, { allowGrandfatheredSpecialist: true })) return true;
+      changed = true;
+      return false;
+    }) : [];
     if (!Array.isArray(before) || after.length !== before.length) changed = true;
     mission.kittyIndices = after;
   });
   Object.keys(etat.scoutingsEnCours || {}).forEach(function(id) {
     var scouting = etat.scoutingsEnCours[id];
-    if (!scouting || !claim(scouting.kittyIndex)) {
+    if (!scouting || !claim(scouting.kittyIndex, false, { allowGrandfatheredSpecialist: true })) {
       delete etat.scoutingsEnCours[id];
       changed = true;
     }
@@ -1309,33 +1315,33 @@ function normaliserOccupationsChatons() {
       changed = true;
     }
   });
-  if (etat.perkLearningEnCours && !claim(etat.perkLearningEnCours.kittyIndex, true)) {
+  if (etat.perkLearningEnCours && !claim(etat.perkLearningEnCours.kittyIndex, true, { allowGrandfatheredSpecialist: true })) {
     etat.perkLearningEnCours = null;
     changed = true;
   }
-  if (etat.learningEnCours && !claim(etat.learningEnCours.kittyIndex, true)) {
+  if (etat.learningEnCours && !claim(etat.learningEnCours.kittyIndex, true, { allowGrandfatheredSpecialist: true })) {
     etat.learningEnCours = null;
     changed = true;
   }
   if (
     typeof normaliserConstructionsMaisonsCamp === "function"
-    && normaliserConstructionsMaisonsCamp(claim)
+    && normaliserConstructionsMaisonsCamp(claimTransactionExistante)
   ) changed = true;
   if (
     typeof normaliserConstructionsBatimentsCamp === "function"
-    && normaliserConstructionsBatimentsCamp(claim)
+    && normaliserConstructionsBatimentsCamp(claimTransactionExistante)
   ) changed = true;
   if (
     typeof normaliserReparationsCamp === "function"
-    && normaliserReparationsCamp(claim)
+    && normaliserReparationsCamp(claimTransactionExistante)
   ) changed = true;
   if (
     typeof normaliserAmeliorationsCamp === "function"
-    && normaliserAmeliorationsCamp(claim)
+    && normaliserAmeliorationsCamp(claimTransactionExistante)
   ) changed = true;
   if (
     typeof normaliserDemolitionsCampPrototype === "function"
-    && normaliserDemolitionsCampPrototype(claim)
+    && normaliserDemolitionsCampPrototype(claimTransactionExistante)
   ) changed = true;
   Object.keys(etat.managers || {}).forEach(function(famille) {
     var ki = etat.managers[famille];
@@ -1379,7 +1385,10 @@ function kittyAllocationLabel(kittyIdx) {
     return { text: "Supervising Camp", cls: "kitty-statut-work" };
   }
   if (estSpecialistePermanentNonAssignable(kittyForLabel)) {
-    return { text: "Tending the shop", cls: "kitty-statut-work" };
+    return {
+      text: globalThis.CatInc.save.permanentSpecialistRoleForKitty(kittyForLabel).activityLabel,
+      cls: "kitty-statut-work"
+    };
   }
   if (kittyIsLearningBook(kittyIdx)) {
     const book = etat.learningEnCours && ITEMS[etat.learningEnCours.itemId];
@@ -1763,7 +1772,7 @@ function terminerScouting(scoutingId) {
     + (butinScoutingReclamable(butin) ? "Rewards are waiting on the map." : "No rewards were collected."));
   if (disponibleApresRun) {
     // Auto-restart with the same kitty while preserving any elapsed remainder.
-    var restartDuree = scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree;
+    var restartDuree = dureeEffectiveExploration(scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree);
     etat.scoutingsEnCours[scoutingId] = {
       kittyIndex: sc.kittyIndex,
       power: kittyEP(sc.kittyIndex),
@@ -1789,8 +1798,10 @@ function assignerKittyScouting(scoutingId, kittyIndex) {
   if (!def || !scoutingDebloquee(def)) return false;
   var visitors = consommerVoyageursAubergePourMission("scouting", scoutingId);
   var visitorBonus = bonusVoyageursAuberge(visitors);
-  var duree = def ? (scoutingHalveTime(kittyIndex) ? def.duree / 2 : def.duree) : 120;
-  duree *= visitorBonus.durationMultiplier;
+  var duree = dureeEffectiveExploration(
+    def ? (scoutingHalveTime(kittyIndex) ? def.duree / 2 : def.duree) : 120,
+    visitorBonus.durationMultiplier
+  );
   etat.scoutingsEnCours[scoutingId] = {
     kittyIndex: kittyIndex,
     power: kittyEP(kittyIndex) + visitorBonus.power,
@@ -2258,7 +2269,12 @@ function dureeEffectiveActionCamp(dureeBase, kittyIndices, taskKind, details) {
     details.baseDuration = duree;
   }
   const teamSpeed = multiplicateurVitesseActionsCamp(kittyIndices, taskKind, details && details.cats);
-  const totalSpeed = teamSpeed * multiplicateurVitesseGlobaleConstructionCamp(taskKind, details && details.modifiers);
+  const globalSpeed = multiplicateurVitesseGlobaleConstructionCamp(taskKind, details && details.modifiers);
+  const campLevelSpeed = multiplicateurVitesseActionCampNiveau();
+  if (details && campLevelSpeed > 1) {
+    details.modifiers.push({label: "Camp Level reward", factor: campLevelSpeed});
+  }
+  const totalSpeed = teamSpeed * globalSpeed * campLevelSpeed;
   const duration = duree / totalSpeed;
   if (details) Object.assign(details, {teamSpeed: teamSpeed, totalSpeed: totalSpeed, duration: duration});
   return duration;
@@ -2420,20 +2436,96 @@ function multiplicateurCoutFamille(action) {
 }
 
 const RECRUITMENT_FORMULA_VERSION = 3;
-const CAMP_LEVEL_RULES_FALLBACK = Object.freeze({ baseXp: 10, growth: 1.7, appealPerLevel: 1 });
+const CAMP_LEVEL_RULES_FALLBACK = Object.freeze({ baseXp: 10, growth: 1.7, levelRewards: Object.freeze([]) });
 
 function reglesNiveauCamp() {
   const authored = typeof campGameplayData !== "undefined" && campGameplayData
     ? campGameplayData.campLevelRules || {} : {};
   const baseXp = Number(authored.baseXp);
   const growth = Number(authored.growth);
-  const appealPerLevel = Number(authored.appealPerLevel);
+  const levelRewards = Array.isArray(authored.levelRewards) ? authored.levelRewards : [];
   return {
     baseXp: Number.isInteger(baseXp) && baseXp > 0 ? baseXp : CAMP_LEVEL_RULES_FALLBACK.baseXp,
     growth: Number.isFinite(growth) && growth >= 1 ? growth : CAMP_LEVEL_RULES_FALLBACK.growth,
-    appealPerLevel: Number.isFinite(appealPerLevel) && appealPerLevel >= 0
-      ? appealPerLevel : CAMP_LEVEL_RULES_FALLBACK.appealPerLevel
+    levelRewards: levelRewards
   };
+}
+
+function recompensesNiveauCamp(level) {
+  const row = reglesNiveauCamp().levelRewards.find(function(entry) {
+    return entry && entry.level === level;
+  });
+  return row && Array.isArray(row.rewards) ? row.rewards : [];
+}
+
+function recompensesNiveauxCampEntre(fromExclusive, toInclusive) {
+  const debut = Math.max(0, Math.floor(Number(fromExclusive) || 0));
+  const fin = Math.max(debut, Math.floor(Number(toInclusive) || 0));
+  return reglesNiveauCamp().levelRewards.filter(function(row) {
+    return row && row.level > debut && row.level <= fin;
+  }).flatMap(function(row) {
+    return row.rewards.map(function(reward) {
+      return Object.assign({level: row.level}, reward);
+    });
+  });
+}
+
+function appealPermanentNiveauCamp(highestLevel) {
+  return bonusPermanentsNiveauCamp(highestLevel).appeal;
+}
+
+function bonusPermanentsNiveauCamp(highestLevel) {
+  return recompensesNiveauxCampEntre(0, highestLevel).reduce(function(totals, reward) {
+    const amount = Number(reward && reward.amount);
+    if (reward && reward.type === "appeal") {
+      totals.appeal = normaliserValeurAppeal(totals.appeal + (Number.isFinite(amount) ? amount : 0));
+    } else if (reward && reward.type === "campActionSpeed" && Number.isFinite(amount) && amount > 0) {
+      totals.campActionSpeedPercent += amount;
+    } else if (reward && reward.type === "explorationSpeed" && Number.isFinite(amount) && amount > 0) {
+      totals.explorationSpeedPercent += amount;
+    }
+    return totals;
+  }, { appeal: 0, campActionSpeedPercent: 0, explorationSpeedPercent: 0 });
+}
+
+function multiplicateurVitesseActionCampNiveau() {
+  return 1 + bonusPermanentsNiveauCamp(etat.highestCampLevelReached).campActionSpeedPercent / 100;
+}
+
+function dureeEffectiveExploration(dureeBase, multiplicateurExistant) {
+  const duree = Number(dureeBase);
+  const existing = Number(multiplicateurExistant);
+  if (!Number.isFinite(duree) || duree <= 0) return 0;
+  const multiplier = Number.isFinite(existing) && existing > 0 ? existing : 1;
+  const speed = 1 + bonusPermanentsNiveauCamp(etat.highestCampLevelReached).explorationSpeedPercent / 100;
+  return duree * multiplier / speed;
+}
+
+function niveauDeblocageAssetCamp(assetId) {
+  const row = reglesNiveauCamp().levelRewards.find(function(entry) {
+    return entry && entry.rewards.some(function(reward) {
+      return reward.type === "unlockCampItem" && reward.assetId === assetId;
+    });
+  });
+  return row ? row.level : null;
+}
+
+function assetCampDebloqueParNiveau(assetId, highestLevel) {
+  const requiredLevel = niveauDeblocageAssetCamp(assetId);
+  return requiredLevel === null
+    || Math.max(0, Math.floor(Number(highestLevel) || 0)) >= requiredLevel;
+}
+
+function assetIdPourTypeCamp(typeId) {
+  const type = typeof typeCampPrototype === "function" ? typeCampPrototype(typeId) : null;
+  return type && (type.runtimeAssetId || type.id) || typeId;
+}
+
+function contenuCampDebloqueParNiveau(typeId) {
+  return assetCampDebloqueParNiveau(
+    assetIdPourTypeCamp(typeId),
+    etat.highestCampLevelReached
+  );
 }
 
 function coutEtapeNiveauCamp(level) {
@@ -2455,7 +2547,7 @@ function progressionNiveauCampPourXp(totalXp) {
     stepCost = coutEtapeNiveauCamp(level);
   }
   const nextThreshold = currentThreshold + stepCost;
-  const appeal = normaliserValeurAppeal(level * reglesNiveauCamp().appealPerLevel);
+  const appeal = appealPermanentNiveauCamp(level);
   return {
     xp: xp,
     level: level,
@@ -2512,11 +2604,16 @@ function sourcesXpNiveauCamp(layout) {
       count: source.count,
       value: source.value
     };
+  }).sort(function(a, b) {
+    if (b.value !== a.value) return b.value - a.value;
+    return a.label < b.label ? -1 : (a.label > b.label ? 1 : 0);
   });
 }
 
 function calculerProgressionNiveauCampDirecte() {
-  return progressionNiveauCampPourXp(xpActuelNiveauCamp(campPrototypeLayout));
+  const progression = progressionNiveauCampPourXp(xpActuelNiveauCamp(campPrototypeLayout));
+  progression.appeal = appealPermanentNiveauCamp(etat.highestCampLevelReached);
+  return progression;
 }
 
 function progressionNiveauCamp() {
@@ -2530,8 +2627,78 @@ globalThis.CatInc.campLevel = Object.freeze({
   current: progressionNiveauCamp,
   currentXp: function() { return progressionNiveauCamp().xp; },
   currentLevel: function() { return progressionNiveauCamp().level; },
-  currentAppeal: function() { return progressionNiveauCamp().appeal; }
+  highestLevelReached: function() { return Math.max(0, Math.floor(Number(etat.highestCampLevelReached) || 0)); },
+  rewardsForLevel: recompensesNiveauCamp,
+  rewardsBetween: recompensesNiveauxCampEntre,
+  currentAppeal: function() { return appealPermanentNiveauCamp(etat.highestCampLevelReached); },
+  earnedBonuses: function() { return bonusPermanentsNiveauCamp(etat.highestCampLevelReached); }
 });
+
+function initialiserRecordNiveauCampDepuisEtatCharge() {
+  const currentLevel = calculerProgressionNiveauCampDirecte().level;
+  const savedHighest = Math.max(0, Math.floor(Number(etat.highestCampLevelReached) || 0));
+  if (savedHighest >= currentLevel) return false;
+  etat.highestCampLevelReached = currentLevel;
+  invaliderMetriquesDeriveesCamp();
+  return true;
+}
+
+function enregistrerNouveauRecordNiveauCamp(previousProgress) {
+  const currentLevel = calculerProgressionNiveauCampDirecte().level;
+  const previousHighest = Math.max(0, Math.floor(Number(etat.highestCampLevelReached) || 0));
+  if (currentLevel <= previousHighest) return null;
+  etat.highestCampLevelReached = currentLevel;
+  invaliderMetriquesDeriveesCamp();
+  const previousCurrentLevel = previousProgress && Math.max(0, Math.floor(Number(previousProgress.level) || 0));
+  const startProgressRatio = previousCurrentLevel === previousHighest
+    ? Math.max(0, Math.min(1, Number(previousProgress.stepProgressRatio) || 0))
+    : 0;
+  return {
+    fromLevel: Math.max(previousHighest, previousCurrentLevel || 0),
+    toLevel: currentLevel,
+    startProgressRatio: startProgressRatio,
+    rewards: recompensesNiveauxCampEntre(previousHighest, currentLevel)
+  };
+}
+
+function afficherCelebrationNiveauCamp(beat) {
+  const modal = document.getElementById("camp-level-up-modal");
+  if (!modal || !beat) return false;
+  const profile = profilCampNormalise();
+  const avatar = avatarSelectionneProfilCamp();
+  ecrireTexte(document.getElementById("camp-level-up-camp-name"), profile.name);
+  appliquerImageProfilCamp(document.getElementById("camp-level-up-avatar"), avatar);
+  ecrireTexte(document.getElementById("camp-level-up-transition"), beat.fromLevel + " → " + beat.toLevel);
+  const progressFill = modal.querySelector(".camp-level-up-progress i");
+  if (progressFill) {
+    const startPercent = Math.round(Math.max(0, Math.min(1, Number(beat.startProgressRatio) || 0)) * 10000) / 100;
+    progressFill.style.setProperty("--camp-level-start-progress", startPercent + "%");
+  }
+  const rows = recompensesNiveauCampAffichables(beat.rewards);
+  const root = document.getElementById("camp-level-up-reward-rows");
+  if (root) root.innerHTML = rows.length ? rows.map(function(row) {
+    return '<span><b>' + echapperAttributHtml(row.label) + '</b><em>'
+      + echapperAttributHtml(row.value) + '</em></span>';
+  }).join("") : '<span><b>Camp milestone</b><em>Reached</em></span>';
+  modal.classList.remove("is-revealed");
+  if (ouvrirDialogueModal("camp-level-up-modal", {returnFocusSelector: "#camp-profile-summary"}) === false) return false;
+  requestAnimationFrame(function() { modal.classList.add("is-revealed"); });
+  jouerSonGrandeRecompense();
+  return true;
+}
+
+function planifierCelebrationNiveauCamp(beat, localFeedbackShown) {
+  if (!beat) return;
+  const attempt = function() {
+    const topmost = dialogueOuvertAuPremierPlan();
+    if (topmost && topmost.id !== "camp-level-up-modal") {
+      setTimeout(attempt, 250);
+      return;
+    }
+    afficherCelebrationNiveauCamp(beat);
+  };
+  setTimeout(attempt, localFeedbackShown ? 1400 : 0);
+}
 
 const CAMP_APPEAL_RULES = Object.freeze({
   recruitmentSpeedBase: CAMP_RECRUITMENT_RULES.appealSpeedPerPoint,
@@ -2615,7 +2782,7 @@ function calculerScoreAttractiviteCampDirect(progressNiveauCamp, cellulesBasicTr
       value: value
     };
   }).filter(Boolean);
-  const campLevelAppeal = progressNiveauCamp.appeal;
+  const campLevelAppeal = appealPermanentNiveauCamp(etat.highestCampLevelReached);
   const base = normaliserValeurAppeal(
     items.reduce(function(total, item) { return total + item.base; }, 0) + campLevelAppeal
   );
@@ -2648,6 +2815,133 @@ function formaterMultiplicateurAppealUi(value) {
   const parts = Number(value || 0).toFixed(3).split(".");
   while (parts[1].length > 2 && parts[1].endsWith("0")) parts[1] = parts[1].slice(0, -1);
   return parts.join(".");
+}
+
+function typeCampPourAssetId(assetId) {
+  return Object.values(campPrototypeApi.ITEM_TYPES).find(function(type) {
+    return type && (type.runtimeAssetId === assetId || type.id === assetId);
+  }) || null;
+}
+
+function nomAssetCampCanonique(assetId) {
+  const catalogue = typeof CatInc !== "undefined" && CatInc.data && CatInc.data.campAssets;
+  const collections = catalogue
+    ? [catalogue.assets, catalogue.environmentAssets, catalogue.edgeAssets]
+    : [];
+  for (const collection of collections) {
+    if (!collection || typeof collection !== "object") continue;
+    const family = Object.values(collection).find(function(candidate) {
+      return candidate && candidate.assetId === assetId;
+    });
+    if (!family) continue;
+    const tier = family.tiers && family.tiers["1"];
+    const revision = tier && Number.isInteger(tier.liveRevision)
+      ? tier.revisions && tier.revisions[String(tier.liveRevision)]
+      : null;
+    return revision && revision.name || family.name || null;
+  }
+  const type = typeCampPourAssetId(assetId);
+  return type && type.label || null;
+}
+
+function recompensesNiveauCampAffichables(rewards) {
+  const appeal = normaliserValeurAppeal((Array.isArray(rewards) ? rewards : []).reduce(function(total, reward) {
+    return total + (reward && reward.type === "appeal" ? Number(reward.amount) || 0 : 0);
+  }, 0));
+  const rows = appeal > 0 ? [{label: "Appeal", value: "+" + formaterNombreAppealUi(appeal, 6)}] : [];
+  const bonuses = (Array.isArray(rewards) ? rewards : []).reduce(function(totals, reward) {
+    if (!reward || (reward.type !== "campActionSpeed" && reward.type !== "explorationSpeed")) return totals;
+    totals[reward.type] += Number(reward.amount) || 0;
+    return totals;
+  }, {campActionSpeed: 0, explorationSpeed: 0});
+  if (bonuses.campActionSpeed > 0) rows.push({label: "Camp Action Speed", value: "+" + formaterNombre(bonuses.campActionSpeed) + "%"});
+  if (bonuses.explorationSpeed > 0) rows.push({label: "Exploration Speed", value: "+" + formaterNombre(bonuses.explorationSpeed) + "%"});
+  const seenAssets = new Set();
+  (Array.isArray(rewards) ? rewards : []).forEach(function(reward) {
+    if (!reward || reward.type !== "unlockCampItem" || seenAssets.has(reward.assetId)) return;
+    seenAssets.add(reward.assetId);
+    const label = nomAssetCampCanonique(reward.assetId);
+    if (!label) {
+      console.warn("Camp Level reward references an unknown Camp asset.", reward.assetId);
+      rows.push({label: "Unavailable Camp item", value: "Check required"});
+      return;
+    }
+    rows.push({label: label, value: "Unlocked"});
+  });
+  return rows;
+}
+
+function resumeCompactRecompensesNiveauCamp(rewards, maximum) {
+  const rows = recompensesNiveauCampAffichables(rewards);
+  const limit = Math.max(1, Math.floor(Number(maximum) || 2));
+  if (!rows.length) return "No reward";
+  const summaries = rows.slice(0, limit).map(function(row) {
+    if (row.value === "Unlocked") return row.label;
+    return row.value + " " + row.label;
+  });
+  if (rows.length > limit) summaries.push("+" + (rows.length - limit) + " more");
+  return summaries.join(" · ");
+}
+
+function resumeInlineRecompensesNiveauCamp(rewards) {
+  return recompensesNiveauCampAffichables(rewards).map(function(row) {
+    return row.value === "Unlocked" ? row.label : row.value + " " + row.label;
+  }).join(" · ");
+}
+
+function renduRecompensesNiveauCampHtml(rewards, emptyLabel) {
+  const rows = recompensesNiveauCampAffichables(rewards);
+  return rows.length
+    ? '<span>' + rows.map(function(row) {
+        return '<i>' + echapperAttributHtml(row.label) + '<em>'
+          + echapperAttributHtml(row.value) + '</em></i>';
+      }).join("") + '</span>'
+    : '<i class="camp-appeal-detail-empty">' + echapperAttributHtml(emptyLabel) + '</i>';
+}
+
+let campLevelXpSourcesExpanded = false;
+let campLevelRewardsExpanded = false;
+
+function toggleCampLevelXpSources() {
+  campLevelXpSourcesExpanded = !campLevelXpSourcesExpanded;
+  renduDetailsNiveauCamp();
+  const disclosure = document.querySelector('[data-camp-level-disclosure="xp"]');
+  if (disclosure) disclosure.focus();
+}
+
+function toggleCampLevelRewardHistory() {
+  campLevelRewardsExpanded = !campLevelRewardsExpanded;
+  renduDetailsNiveauCamp();
+  const disclosure = document.querySelector('[data-camp-level-disclosure="rewards"]');
+  if (disclosure) disclosure.focus();
+}
+
+function renduDisclosureNiveauCampHtml(total, expanded, handler) {
+  if (total <= 5) return "";
+  const disclosure = handler === "toggleCampLevelXpSources" ? "xp" : "rewards";
+  return '<button class="camp-level-disclosure" data-camp-level-disclosure="' + disclosure
+    + '" type="button" onclick="event.stopPropagation();' + handler + '()">'
+    + (expanded ? "Show latest 5" : "Show " + (total - 5) + " more") + '</button>';
+}
+
+function recompensesPermanentesNiveauCampAffichables(highestLevel) {
+  const highest = Math.max(0, Math.floor(Number(highestLevel) || 0));
+  return reglesNiveauCamp().levelRewards.filter(function(row) {
+    return row && row.level <= highest && recompensesNiveauCampAffichables(row.rewards).length > 0;
+  }).sort(function(a, b) {
+    return b.level - a.level;
+  });
+}
+
+function renduHistoriqueRecompensesNiveauCampHtml(highestLevel) {
+  const groups = recompensesPermanentesNiveauCampAffichables(highestLevel);
+  if (!groups.length) return '<i class="camp-appeal-detail-empty">Nothing earned yet</i>';
+  const visible = campLevelRewardsExpanded ? groups : groups.slice(0, 5);
+  return '<span class="camp-level-reward-history">' + visible.map(function(group) {
+    return '<span class="camp-level-reward-group"><b>Level ' + group.level + '</b><span>'
+      + echapperAttributHtml(resumeInlineRecompensesNiveauCamp(group.rewards)) + '</span></span>';
+  }).join("") + '</span>'
+    + renduDisclosureNiveauCampHtml(groups.length, campLevelRewardsExpanded, "toggleCampLevelRewardHistory");
 }
 
 function sourcesAppealCamp(score) {
@@ -2717,6 +3011,7 @@ function renduDetailsNiveauCamp() {
   if (!panneau || panneau.hidden) return;
   const progression = progressionNiveauCamp();
   const sources = sourcesXpNiveauCamp(campPrototypeLayout);
+  const visibleSources = campLevelXpSourcesExpanded ? sources : sources.slice(0, 5);
   const progressPercent = Math.max(0, Math.min(100, progression.stepProgressRatio * 100));
   panneau.innerHTML = '<strong>Camp Level ' + progression.level + '</strong>'
     + '<span class="camp-level-xp"><b>Camp XP</b><em>' + progression.xp + ' / '
@@ -2726,17 +3021,20 @@ function renduDetailsNiveauCamp() {
     + '" aria-valuenow="' + progression.stepProgress + '"><i style="width:' + progressPercent + '%"></i></span>'
     + '<span class="camp-appeal-detail-section"><b>Camp XP sources</b>'
     + (sources.length
-      ? '<span>' + sources.map(function(source) {
+      ? '<span>' + visibleSources.map(function(source) {
           return '<i>' + echapperAttributHtml(source.label)
             + (source.count > 1 ? ' ×' + source.count : '')
             + '<em>+' + formaterNombre(source.value) + '</em></i>';
         }).join("") + '</span>'
+        + renduDisclosureNiveauCampHtml(sources.length, campLevelXpSourcesExpanded, "toggleCampLevelXpSources")
       : '<i class="camp-appeal-detail-empty">Nothing included yet</i>')
     + '</span>'
-    + '<span class="camp-appeal-detail-section"><b>Current bonuses</b><span><i>Appeal<em>+'
-    + formaterNombreAppealUi(progression.appeal, 6) + '</em></i></span></span>'
-    + '<span class="camp-appeal-rule">Each Camp Level grants +'
-    + formaterNombreAppealUi(reglesNiveauCamp().appealPerLevel, 6) + ' Appeal.</span>';
+    + '<span class="camp-appeal-detail-section"><b>Permanent Camp Level rewards</b>'
+    + renduHistoriqueRecompensesNiveauCampHtml(etat.highestCampLevelReached)
+    + '</span>'
+    + '<span class="camp-appeal-detail-section"><b>Next Level rewards</b>'
+    + renduRecompensesNiveauCampHtml(recompensesNiveauCamp(progression.level + 1), "No authored reward")
+    + '</span>';
   positionnerDetailsNiveauCamp();
 }
 
@@ -2776,8 +3074,9 @@ function actualiserAffichageAppealCamp() {
   renduDetailsAttractiviteCamp();
 }
 
-function positionnerPopoverTopBar(bouton, panneau) {
+function positionnerPopoverTopBar(bouton, panneau, options) {
   if (!bouton || !panneau || panneau.hidden || typeof window === "undefined") return;
+  const config = options || {};
   if (!bouton.closest("#camp-profile-modal") && panneau.parentElement !== document.body) document.body.appendChild(panneau);
   const marge = 8;
   const rect = bouton.getBoundingClientRect();
@@ -2788,12 +3087,24 @@ function positionnerPopoverTopBar(bouton, panneau) {
   );
   panneau.style.width = largeur + "px";
   panneau.style.left = gauche + "px";
-  panneau.style.maxHeight = Math.max(120, window.innerHeight - marge * 2) + "px";
+  const maxHeight = config.bounded
+    ? Math.max(120, Math.min(
+        window.innerWidth <= 600 ? 420 : 440,
+        window.innerHeight * (window.innerWidth <= 600 ? 0.54 : 0.58)
+      ))
+    : Math.max(120, window.innerHeight - marge * 2);
+  panneau.style.maxHeight = maxHeight + "px";
+  if (config.stable && panneau.dataset.popoverAnchorTop && !config.force) {
+    panneau.style.top = panneau.dataset.popoverAnchorTop;
+    panneau.style.transform = "none";
+    return;
+  }
   const hauteur = Math.min(panneau.offsetHeight, window.innerHeight - marge * 2);
   const dessous = rect.bottom + 8;
   const dessus = rect.top - hauteur - 8;
   const top = dessous + hauteur <= window.innerHeight - marge ? dessous : Math.max(marge, dessus);
   panneau.style.top = Math.min(window.innerHeight - hauteur - marge, Math.max(marge, top)) + "px";
+  if (config.stable) panneau.dataset.popoverAnchorTop = panneau.style.top;
   panneau.style.transform = "none";
 }
 
@@ -2815,10 +3126,11 @@ function positionnerDetailsAttractiviteCamp() {
   );
 }
 
-function positionnerDetailsNiveauCamp() {
+function positionnerDetailsNiveauCamp(force) {
   positionnerPopoverTopBar(
     document.getElementById("camp-level-summary"),
-    document.getElementById("camp-level-details")
+    document.getElementById("camp-level-details"),
+    {stable: true, bounded: true, force: force === true}
   );
 }
 
@@ -2833,6 +3145,7 @@ function fermerPopoverTopBar(idPanneau) {
   const panneau = document.getElementById(idPanneau);
   if (!panneau || panneau.hidden) return;
   panneau.hidden = true;
+  delete panneau.dataset.popoverAnchorTop;
   const bouton = document.querySelector('[aria-controls="' + idPanneau + '"]');
   if (bouton) bouton.setAttribute("aria-expanded", "false");
 }
@@ -3044,7 +3357,10 @@ function actualiserAffichageProfilCamp() {
   const panelProgress = document.getElementById("camp-profile-progress");
   if (panelProgress) panelProgress.hidden = !appealUnlocked;
   ecrireTexte(document.getElementById("camp-profile-panel-xp"), progression.xp + " / " + progression.nextThreshold);
-  ecrireTexte(document.getElementById("camp-profile-panel-bonus"), "Appeal +" + formaterNombreAppealUi(progression.appeal, 6));
+  ecrireTexte(
+    document.getElementById("camp-profile-panel-bonus"),
+    resumeCompactRecompensesNiveauCamp(recompensesNiveauCamp(progression.level + 1), 2)
+  );
   const progress = document.getElementById("camp-profile-panel-progress");
   if (progress) {
     progress.setAttribute("aria-label", "Camp XP toward Level " + (progression.level + 1));
@@ -3153,7 +3469,7 @@ if (typeof document !== "undefined") {
     }
   });
   window.addEventListener("resize", function() {
-    positionnerDetailsNiveauCamp();
+    positionnerDetailsNiveauCamp(true);
     positionnerDetailsAttractiviteCamp();
     positionnerDetailsHousingCamp();
     renduDetailsDureeArriveeCamp(true);
@@ -3807,6 +4123,7 @@ let rattrapageAfkEnCours = false;
 let suspensionAfkConfirmee = false;
 let suspensionAfkDebutTs = null;
 let migrationSauvegardeAPersister = false;
+let campPrototypeRestaurationAutoritaire = false;
 
 function jouerSonAffectation() {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
@@ -3947,7 +4264,7 @@ function charger() {
   const nouvelEtat = saveCore.migrerDonneesSauvegarde(analyse.data, {
     maintenant: Date.now(),
     nomsKitties: NOMS_KITTIES,
-    jobIds: Object.keys(METIERS).concat(["shop-owner"]),
+    jobIds: Object.keys(METIERS).concat(saveCore.PERMANENT_SPECIALIST_JOB_IDS),
     assignerVisageChaton: assignerVisageChaton,
     normaliserVisageChaton: normaliserVisageChaton,
     nomProchainChat: nomProchainChatDepuisListe,
@@ -3964,11 +4281,33 @@ function charger() {
       avatar: source.campProfile && source.campProfile.avatarCatFaceId || null
     });
   };
+  const empreinteMetiers = function(source) {
+    return JSON.stringify((Array.isArray(source.kittiesData) ? source.kittiesData : []).map(function(kitty) {
+      return kitty && kitty.metier || null;
+    }));
+  };
+  const empreinteGelCampaignsDemo = function(source) {
+    return JSON.stringify({
+      campaignsCompletees: source.campaignsCompletees || [],
+      itemsAcquis: source.itemsAcquis || [],
+      itemsEtudies: source.itemsEtudies || [],
+      itemsAppris: source.itemsAppris || [],
+      learningEnCours: source.learningEnCours || null,
+      laboratoryDebloque: source.laboratoryDebloque === true,
+      exploEnCours: source.exploEnCours || [],
+      resultatsCampaigns: source.resultatsCampaigns || {}
+    });
+  };
   migrationSauvegardeAPersister = !Array.isArray(analyse.data.storySeenOrder)
-    || empreinteVisages(analyse.data) !== empreinteVisages(nouvelEtat);
+    || empreinteVisages(analyse.data) !== empreinteVisages(nouvelEtat)
+    || empreinteMetiers(analyse.data) !== empreinteMetiers(nouvelEtat)
+    || empreinteGelCampaignsDemo(analyse.data) !== empreinteGelCampaignsDemo(nouvelEtat);
+  campPrototypeRestaurationAutoritaire = false;
   remplacerEtat(etat, nouvelEtat);
   workStructureInitialisee = false;
-  if (typeof normaliserOccupationsChatons === "function" && normaliserOccupationsChatons()) sauvegarder();
+  if (typeof normaliserOccupationsChatons === "function" && normaliserOccupationsChatons()) {
+    migrationSauvegardeAPersister = true;
+  }
 
   // Promotion remains in the browser layer because it creates a notification and a log.
   if (etat.itemsAppris.includes("schoolGuide") || etat.jobCenterConstruit) assignerGangLeader();
@@ -4022,6 +4361,8 @@ function ouvrirModalSettings() {
   if (campCatIconsToggle) campCatIconsToggle.checked = etat.hideCampCatIcons === true;
   const campAnimationsToggle = document.getElementById("toggle-camp-animations");
   if (campAnimationsToggle) campAnimationsToggle.checked = etat.campAnimationsEnabled !== false;
+  const campTierBadgesToggle = document.getElementById("toggle-camp-tier-badges");
+  if (campTierBadgesToggle) campTierBadgesToggle.checked = etat.showCampTierBadges !== false;
   const campCatPortraitSizeInput = document.getElementById("settings-camp-cat-portrait-size");
   const sfxInput = document.getElementById("settings-sfx-volume");
   const musicInput = document.getElementById("settings-music-volume");
@@ -4119,6 +4460,11 @@ function basculerIconesChatsCamp(checked) {
 }
 function basculerAnimationsCamp(checked) {
   etat.campAnimationsEnabled = checked !== false;
+  sauvegarder();
+  renduCampPrototype();
+}
+function basculerBadgesTierCamp(checked) {
+  etat.showCampTierBadges = checked !== false;
   sauvegarder();
   renduCampPrototype();
 }
@@ -5632,15 +5978,7 @@ function actualiserFocusManuelWork() {
     card.classList.toggle("work-manual-focus-active", actif);
     card.classList.toggle("work-manual-focus-low", visible && reserve <= WORK_MANUAL_FOCUS_LOW_SECONDS);
     const badge = card.querySelector(".work-manual-focus-badge");
-    if (badge) {
-      badge.setAttribute("aria-hidden", visible ? "false" : "true");
-      const label = badge.querySelector(".work-manual-focus-label");
-      const timer = badge.querySelector(".work-manual-focus-time");
-      const fill = badge.querySelector(".work-manual-focus-fill");
-      if (label) label.textContent = libelleManualFocus();
-      if (timer) timer.textContent = libelleTempsManualFocus(reserve);
-      if (fill) fill.style.width = Math.min(100, reserve / manualFocusMaxSeconds() * 100) + "%";
-    }
+    actualiserBadgeManualFocus(badge, visible, reserve);
     const slotKey = familyId + ":" + slotIdx;
     if (!slotsActualises.has(slotKey)) {
       slotsActualises.add(slotKey);
@@ -5747,6 +6085,19 @@ function libelleTempsManualFocus(reserve) {
   return reserve.toFixed(1) + (compact ? "/" + maxSeconds + "s" : "s / " + maxSeconds + "s");
 }
 
+function actualiserBadgeManualFocus(badge, actif, reserve) {
+  if (!badge) return;
+  const visible = Boolean(actif) && reserve > 0;
+  badge.setAttribute("aria-hidden", visible ? "false" : "true");
+  badge.hidden = !visible;
+  const label = badge.querySelector(".work-manual-focus-label");
+  const timer = badge.querySelector(".work-manual-focus-time");
+  const fill = badge.querySelector(".work-manual-focus-fill");
+  if (label) label.textContent = libelleManualFocus();
+  if (timer) timer.textContent = libelleTempsManualFocus(reserve);
+  if (fill) fill.style.width = Math.min(100, reserve / manualFocusMaxSeconds() * 100) + "%";
+}
+
 function manualFocusBadgeHtml(actif, reserve) {
   const visible = actif;
   const label = libelleManualFocus();
@@ -5756,6 +6107,14 @@ function manualFocusBadgeHtml(actif, reserve) {
     + '<span class="work-manual-focus-row"><span class="work-manual-focus-label">' + label + '</span><span class="work-manual-focus-time">' + temps + '</span></span>'
     + '<span class="work-manual-focus-track"><span class="work-manual-focus-fill" style="width:' + largeur + '%"></span></span>'
     + '</span>';
+}
+
+function creerBadgeManualFocus(actif, reserve) {
+  const conteneur = document.createElement("span");
+  conteneur.innerHTML = manualFocusBadgeHtml(actif, reserve);
+  const badge = conteneur.firstElementChild;
+  actualiserBadgeManualFocus(badge, actif, reserve);
+  return badge;
 }
 
 function initialiserWorkStructure() {
@@ -7785,15 +8144,13 @@ function distribuerFood(mode) {
 
 function presentationBonusNiveauExperience(k, engineerInfo) {
   const isEngineer = k.metier === ENGINEER_JOB_ID;
-  const isShopOwner = estSpecialistePermanentNonAssignable(k);
+  const specialistRole = saveCore.permanentSpecialistRoleForKitty(k);
+  const isShopOwner = k.metier === "shop-owner";
   const isBernardo = k.nom === "Bernardo";
   const campActionSpeedHelpLine = "<span>Camp Actions Speed by 2%</span>";
   const campActionSpeedLine = "<span class='xp-bonus-ligne'><span class='bonus-var'>×"
     + multiplicateurVitesseActionCampKitty(k).toFixed(2)
     + "</span> Camp Actions Speed</span>";
-  const nayaInnProgressionLine = k.nom === "Naya"
-    ? "<span class='xp-bonus-ligne'>As Naya levels up, the Inn improves with better contracts and traveler bonuses.</span>"
-    : "";
 
   if (isBernardo) {
     if (k.metier !== "gang-leader") {
@@ -7825,6 +8182,19 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
     };
   }
 
+  if (specialistRole) {
+    const nayaProgression = k.nom === "Naya" ? htmlProgressionAubergeNaya(k.niveau) : "";
+    return {
+      helpBody: "<strong>" + specialistRole.label + " Level " + k.niveau + "</strong>"
+        + (k.nom === "Naya"
+          ? "<span>Level up Naya to strengthen the Inn through its authored milestones.</span>"
+          : "<span>This permanent specialist has no ordinary Work, Camp, Manager or Exploration bonuses.</span>"),
+      levelBonuses: "<div class='xp-bonus-actifs'>" + (k.nom === "Naya"
+        ? nayaProgression
+        : "<span class='xp-bonus-ligne'>" + specialistRole.label + " · dedicated role</span>") + "</div>"
+    };
+  }
+
   const gatherLevelPercent = Math.round((Math.pow(GATHER_LEVEL_MULTIPLIER, 1) - 1) * 100);
   const processLevelPercent = Math.round((productionProcBonus({ niveau: 1 }) - 1) * 100);
   const managerLevelPercent = Math.round((jobLevelMultiplier({ niveau: 1 }) - 1) * 100);
@@ -7852,7 +8222,6 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + kittyProcessProductionMultiplier(k).toFixed(2) + "</span> Process Production Bonus</span>"
         + managerSpeedBonusLine
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>"
-        + nayaInnProgressionLine
         + "</div>"
   ) : "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "</div>";
   return { helpBody: helpBody, levelBonuses: levelBonuses };
@@ -8041,6 +8410,8 @@ function renduManagement() {
       const jobBonus = k.metier ? (
         k.metier === "shop-owner"
           ? "<div class='detail-job-bonus'>Unique permanent specialist · Cannelle's level unlocks Market Stall merchandise</div>"
+          : k.metier === "innkeeper"
+          ? "<div class='detail-job-bonus'>Unique permanent specialist · Naya's dedicated role at the Inn</div>"
           : k.metier === "gang-leader"
           ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + gangLeaderBonus().toFixed(2) + "</span> Work speed for all workers<div class='bonus-sub'>Scales with gang size · own level amplifies</div></div>"
             + gangLeaderPerksHtml(kittySelectionnee)
@@ -8765,8 +9136,9 @@ function renderCampaignCards() {
       if (power > 0) {
         var zoneHalves = slots.some(function(ki) { return ki !== null && scoutingHalveTime(ki); });
         var zoneHalvesLabel = slots.some(function(ki) { return ki !== null && etat.kittiesData[ki] && etat.kittiesData[ki].metier === 'explorator'; }) ? 'Explorator' : 'Exploration perk';
-        var zoneEffDuree = zoneHalves ? zone.duree / 2 : zone.duree;
-        var zoneTimeNote = zoneHalves ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(zoneEffDuree) + '</strong> (' + zoneHalvesLabel + ')' : '';
+        var zoneBaseDuree = zoneHalves ? zone.duree / 2 : zone.duree;
+        var zoneEffDuree = dureeEffectiveExploration(zoneBaseDuree);
+        var zoneTimeNote = (zoneHalves || zoneEffDuree !== zoneBaseDuree) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(zoneEffDuree) + '</strong>' + (zoneHalves ? ' (' + zoneHalvesLabel + ')' : '') : '';
         html += '<div class="explo-power-display">Exploration Power: ' + (Math.round(power * 100) / 100) + ' / ' + zone.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + zoneTimeNote + '</div>';
       } else {
         html += '<div class="explo-power-display explo-power-hint">Assign cats to start the exploration.</div>';
@@ -8807,26 +9179,32 @@ function renderCampaignCards() {
       }
       const slots = exploKittiesSelectionnees[camp.id];
 
-      const requiredItemMissing = camp.requiredItem && !etat.itemsAcquis.includes(camp.requiredItem);
-      const storyLock = camp.unlockAfterStory && !storyEstVue(camp.unlockAfterStory);
-      const campaignLocked = (storyLock && camp.lockedReason) || requiredItemMissing || (!camp.unlockAfterStory && camp.lockedReason);
-      const campaignDescription = campaignLocked && camp.lockedDescription ? camp.lockedDescription : camp.description;
+      const availability = disponibiliteCampaign(camp);
+      const campaignLocked = !availability.available;
+      if (availability.demoUnavailable) exploKittiesSelectionnees[camp.id] = new Array(camp.slots).fill(null);
+      const campaignDescription = completed && camp.demoUnavailable
+        ? ""
+        : (availability.demoUnavailable
+          ? "Not available in demo"
+          : (campaignLocked && camp.lockedDescription ? camp.lockedDescription : camp.description));
       html += '<div class="explo-card' + (campaignLocked && !completed ? ' explo-card-locked' : '')
         + '" data-campaign-id="' + echapperAttributHtml(camp.id) + '">';
       html += '<div class="explo-nom">' + camp.nom + '</div>';
-      html += '<div class="explo-description">' + campaignDescription + '</div>';
+      if (campaignDescription) html += '<div class="explo-description">' + campaignDescription + '</div>';
 
-      if (resultatCampaign) {
+      if (completed) {
+        html += '<div class="explo-complete">' + CHECK_ICON + ' Completed' + (camp.demoUnavailable ? '' : ' &#x2014; ' + recompenseLabel(camp)) + '</div>';
+      } else if (campaignLocked) {
+        if (!availability.demoUnavailable) {
+          html += '<div class="explo-locked-reason"><span class="interface-symbol interface-warning" aria-hidden="true"></span> ' + retirerEmojisInterface(availability.reason) + '</div>';
+        }
+      } else if (resultatCampaign) {
         if (resultatCampaign.success) {
           html += renduRecompensesCampaignEnAttente(resultatCampaign.recompenses);
           html += '<button class="explo-result-action explo-result-reward" onclick="recupererRecompenseCampaign(\'' + camp.id + '\')"><img class="interface-icon" src="img/interface/reward.png" alt=""> Claim campaign reward</button>';
         } else {
           html += '<button class="explo-result-action explo-result-failure" onclick="reessayerCampaign(\'' + camp.id + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">Try again</button>';
         }
-      } else if (completed) {
-        html += '<div class="explo-complete">' + CHECK_ICON + ' Completed &#x2014; ' + recompenseLabel(camp) + '</div>';
-      } else if (campaignLocked) {
-        html += '<div class="explo-locked-reason"><span class="interface-symbol interface-warning" aria-hidden="true"></span> ' + retirerEmojisInterface(camp.lockedReason || ('Requires ' + (ITEMS[camp.requiredItem] ? ITEMS[camp.requiredItem].nom : camp.requiredItem) + '.')) + '</div>';
       } else if (inProgress) {
         const elapsed   = (Date.now() - inProgress.startTs) / 1000;
         const remaining = Math.max(0, inProgress.duree - elapsed);
@@ -8870,9 +9248,9 @@ function renderCampaignCards() {
         if (selPower > 0) {
           var campHalves = slots.some(function(ki) { return ki !== null && scoutingHalveTime(ki); });
           var campHalvesLabel = slots.some(function(ki) { return ki !== null && etat.kittiesData[ki] && etat.kittiesData[ki].metier === 'explorator'; }) ? 'Explorator' : 'Exploration perk';
-          var campEffDuree = campHalves ? camp.duree / 2 : camp.duree;
-          campEffDuree *= campaignTravelerBonus.durationMultiplier;
-          var campTimeNote = campHalves ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(campEffDuree) + '</strong> (' + campHalvesLabel + ')' : '';
+          var campBaseDuree = campHalves ? camp.duree / 2 : camp.duree;
+          var campEffDuree = dureeEffectiveExploration(campBaseDuree, campaignTravelerBonus.durationMultiplier);
+          var campTimeNote = (campHalves || campaignTravelerBonus.durationMultiplier < 1 || campEffDuree !== campBaseDuree) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(campEffDuree) + '</strong>' + (campHalves ? ' (' + campHalvesLabel + ')' : '') : '';
           html += '<div class="explo-power-display">Exploration Power: ' + (Math.round(selPower * 100) / 100)
             + (campaignTravelerBonus.power ? ' + ' + campaignTravelerBonus.power + ' = ' + (Math.round(previewPower * 100) / 100) : '')
             + ' / ' + camp.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + campTimeNote + '</div>';
@@ -8970,10 +9348,10 @@ function renderCampaignCards() {
             var scoutingTravelers = voyageursAubergeSelectionnes("scouting", sc.id);
             var scoutingTravelerBonus = bonusVoyageursAuberge(scoutingTravelers);
             var scoutHalves = stagedKi !== undefined && scoutingHalveTime(stagedKi);
-            var scoutEffDuree = scoutHalves ? sc.duree / 2 : sc.duree;
-            scoutEffDuree *= scoutingTravelerBonus.durationMultiplier;
+            var scoutBaseDuree = scoutHalves ? sc.duree / 2 : sc.duree;
+            var scoutEffDuree = dureeEffectiveExploration(scoutBaseDuree, scoutingTravelerBonus.durationMultiplier);
             var scoutHalvesLabel = stagedK && stagedK.metier === 'explorator' ? 'Explorator' : 'Exploration perk';
-            var scoutTimeNote = (scoutHalves || scoutingTravelerBonus.durationMultiplier < 1) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(scoutEffDuree) + '</strong>' + (scoutHalves ? ' (' + scoutHalvesLabel + ')' : '') : '';
+            var scoutTimeNote = (scoutHalves || scoutingTravelerBonus.durationMultiplier < 1 || scoutEffDuree !== scoutBaseDuree) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(scoutEffDuree) + '</strong>' + (scoutHalves ? ' (' + scoutHalvesLabel + ')' : '') : '';
             var scoutPreviewPower = selPower + scoutingTravelerBonus.power;
             chance = scoutPreviewPower > 0 ? Math.min(100, Math.round(scoutPreviewPower / sc.difficulte * 100)) : 0;
             scoutHtml += '<div class="explo-power-display">Exploration Power: ' + selPower
@@ -9585,6 +9963,7 @@ function renduExplorationsDynamique(u) {
 }
 
 function ouvrirModalExplo(campId, slotIndex) {
+  if (!disponibiliteCampaign(CONFIG.campaigns[campId]).available) return;
   exploModalOuvert = { campId: campId, slotIndex: slotIndex };
   renduModalExplo();
   ouvrirDialogueModal("explo-modal", {
@@ -9738,7 +10117,7 @@ function selectionnerKittySlot(kittyIndex) {
 
   const { campId, slotIndex } = exploModalOuvert;
   const camp = CONFIG.campaigns[campId];
-  if (!camp) return;
+  if (!camp || !disponibiliteCampaign(camp).available) { fermerModalExplo(); return; }
 
   if (!exploKittiesSelectionnees[campId]) {
     exploKittiesSelectionnees[campId] = new Array(camp.slots).fill(null);
@@ -9868,7 +10247,7 @@ function lancerExploZone() {
   }
   var hasHalvesTime = slots.some(function(ki) { return ki !== null && scoutingHalveTime(ki); });
   var launchPower = explorationRetryPower("zones", zoneId, slots.reduce(function(s, ki) { return s + kittyEP(ki); }, 0));
-  etat.exploZoneEnCours = { zoneId: zoneId, kittyIndices: slots.slice(), power: launchPower, startTs: Date.now(), duree: hasHalvesTime ? z.duree / 2 : z.duree };
+  etat.exploZoneEnCours = { zoneId: zoneId, kittyIndices: slots.slice(), power: launchPower, startTs: Date.now(), duree: dureeEffectiveExploration(hasHalvesTime ? z.duree / 2 : z.duree) };
   if (estExplorationMobile()) {
     explorationMobileVue = "map";
     explorationMobileTypeMission = "campaigns";
@@ -9945,14 +10324,27 @@ function reessayerExploZone(zoneId) {
   sauvegarder(); rendu();
 }
 
+function disponibiliteCampaign(campaign) {
+  if (!campaign) return { available: false, reason: "Campaign unavailable." };
+  if (campaign.unlockAfterStory && !storyEstVue(campaign.unlockAfterStory)) {
+    return { available: false, reason: campaign.lockedReason || "Campaign locked.", prerequisite: true };
+  }
+  if (campaign.unlockAfterCampaign && !etat.campaignsCompletees.includes(campaign.unlockAfterCampaign)) {
+    return { available: false, reason: campaign.lockedReason || "Campaign locked.", prerequisite: true };
+  }
+  if (campaign.requiredItem && !etat.itemsAcquis.includes(campaign.requiredItem)) {
+    return { available: false, reason: "Requires " + (ITEMS[campaign.requiredItem] ? ITEMS[campaign.requiredItem].nom : campaign.requiredItem) + ".", prerequisite: true };
+  }
+  if (campaign.demoUnavailable === true) return { available: false, reason: "Not available in demo", demoUnavailable: true };
+  if (!campaign.unlockAfterStory && campaign.lockedReason) return { available: false, reason: campaign.lockedReason };
+  return { available: true, reason: "" };
+}
+
 function lancerExplo(id) {
   if (!autoriserActionTableOperationsCamp()) return;
   const slots = exploKittiesSelectionnees[id];
   const camp  = CONFIG.campaigns[id];
-  if (!camp || !slots || etat.resultatsCampaigns[id] || etat.exploEnCours.some(function(mission) { return mission.id === id; })) return;
-  if (camp.unlockAfterStory && !storyEstVue(camp.unlockAfterStory)) return;
-  if (camp.unlockAfterCampaign && !etat.campaignsCompletees.includes(camp.unlockAfterCampaign)) return;
-  if (camp.requiredItem && !etat.itemsAcquis.includes(camp.requiredItem)) return;
+  if (!camp || !disponibiliteCampaign(camp).available || !slots || etat.resultatsCampaigns[id] || etat.exploEnCours.some(function(mission) { return mission.id === id; })) return;
   const kittyIndices = slots.filter(function(x) { return x !== null; });
   if (kittyIndices.length < camp.slots) return;
   if (new Set(kittyIndices).size !== kittyIndices.length || kittyIndices.some(function(ki) {
@@ -9967,8 +10359,10 @@ function lancerExplo(id) {
   var hasHalvesTime = kittyIndices.some(function(ki) { return scoutingHalveTime(ki); });
   var basePower = kittyIndices.reduce(function(s, ki) { return s + kittyEP(ki); }, 0);
   var launchPower = explorationRetryPower("campaigns", id, basePower) + visitorBonus.power;
-  var duration = hasHalvesTime ? camp.duree / 2 : camp.duree;
-  duration *= visitorBonus.durationMultiplier;
+  var duration = dureeEffectiveExploration(
+    hasHalvesTime ? camp.duree / 2 : camp.duree,
+    visitorBonus.durationMultiplier
+  );
   etat.exploEnCours.push({ id: id, kittyIndices: kittyIndices, power: launchPower, startTs: Date.now(), duree: duration, innTravelers: visitors });
   exploKittiesSelectionnees[id] = new Array(camp.slots).fill(null);
   exploTabDirty = true;
@@ -9977,7 +10371,7 @@ function lancerExplo(id) {
 
 function terminerExplo(explo) {
   const camp = CONFIG.campaigns[explo.id];
-  if (!camp || (etat.resultatsCampaigns && etat.resultatsCampaigns[explo.id]) || etat.campaignsCompletees.includes(explo.id)) return;
+  if (!camp || camp.demoUnavailable === true || (etat.resultatsCampaigns && etat.resultatsCampaigns[explo.id]) || etat.campaignsCompletees.includes(explo.id)) return;
 
   const power   = Number.isFinite(explo.power) ? explo.power : explorationRetryPower("campaigns", explo.id, explo.kittyIndices.reduce(function(s, i) {
     return s + kittyEP(i);
@@ -10010,7 +10404,7 @@ function terminerExplo(explo) {
 function recupererRecompenseCampaign(campaignId) {
   const resultat = etat.resultatsCampaigns[campaignId];
   const camp = CONFIG.campaigns[campaignId];
-  if (!resultat || !resultat.success || !camp) return;
+  if (!resultat || !resultat.success || !camp || camp.demoUnavailable === true) return;
   if (!autoriserActionTableOperationsCamp()) return false;
   const repartition = repartirRecompensesExploration(resultat.recompenses, true);
   if (!repartition.reclamees.length) return false;
@@ -12986,7 +13380,7 @@ function terminerSequence() {
   etat.chatons        += 1;
   etat.clicCount      += 1;
   const nom = nomProchainChat();
-  const metierInitial = nom === "Cannelle" ? "shop-owner" : null;
+  const metierInitial = saveCore.permanentSpecialistRoleForName(nom);
   etat.kittiesData.push({ nom: nom, metier: metierInitial, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: Date.now(), visage: visage, jobNiveau: 0 });
   etat.prochainVisageChaton = null;
   jouerSonMiaulement();
@@ -13588,14 +13982,26 @@ function ratioAfkHorsLigne() {
   return Math.min(CAMP_AFK_RULES.maxRatio, VITESSE_HORS_LIGNE + bonusPercent / 100);
 }
 
-function tempsSimuleHorsLigne(ecouleReelMs) {
+function calculerProgressionHorsLigne(ecouleReelMs) {
   const plafondAfk = maxAfkSeconds(); // MAX_AFK_SECONDS plus engineer extensions
   // VITESSE_HORS_LIGNE remains the base ratio; rank bonuses are layered on top.
-  const secondesReelles = Math.min(
+  const dureeReelleSec = Math.max(0, Number(ecouleReelMs) || 0) / 1000;
+  const dureeCompteeSec = Math.min(
     plafondAfk,
-    Math.max(0, Number(ecouleReelMs) || 0) / 1000
+    dureeReelleSec
   );
-  return secondesReelles * ratioAfkHorsLigne();
+  const ratioAfk = ratioAfkHorsLigne();
+  return {
+    dureeReelleSec,
+    dureeCompteeSec,
+    plafondAfkSec: plafondAfk,
+    ratioAfk,
+    dureeSimuleeSec: dureeCompteeSec * ratioAfk
+  };
+}
+
+function tempsSimuleHorsLigne(ecouleReelMs) {
+  return calculerProgressionHorsLigne(ecouleReelMs).dureeSimuleeSec;
 }
 
 // Timers use wall-clock timestamps while the game is open. During an AFK
@@ -13671,7 +14077,8 @@ function appliquerProgressionHorsLigne() {
     grilledAnchovy: etat.grilledAnchovy
   };
 
-  const dtSimTotal = tempsSimuleHorsLigne(ecouleReelMs);
+  const progressionAfk = calculerProgressionHorsLigne(ecouleReelMs);
+  const dtSimTotal = progressionAfk.dureeSimuleeSec;
   // Timestamp-owned timers must discard the complete part of the wall-clock
   // gap that AFK simulation did not authorize, including time beyond the cap.
   const decalageMs = ecouleReelMs - (dtSimTotal * 1000);
@@ -13749,7 +14156,10 @@ function appliquerProgressionHorsLigne() {
   sauvegarder();
 
   return {
-    dureeReelleSec: ecouleReelMs / 1000,
+    dureeReelleSec: progressionAfk.dureeReelleSec,
+    dureeCompteeSec: progressionAfk.dureeCompteeSec,
+    plafondAfkSec: progressionAfk.plafondAfkSec,
+    ratioAfk: progressionAfk.ratioAfk,
     dureeSimuleeSec: dtSimTotal,
     cardboardPlanks: etat.cardboardPlanks - avant.cardboardPlanks,
     basicWoodPlanks: etat.basicWoodPlanks - avant.basicWoodPlanks,
@@ -13766,21 +14176,16 @@ function afficherResumeAbsence(resume) {
   if (!conteneur) return;
   conteneur.innerHTML = "";
 
-  // MAX_AFK_SECONDS is the base cap. Rank 1 Camp Engineers extend the cap; rank 2 Camp Engineers increase the
-  // effective AFK ratio. Both values are derived from the same live state used
-  // by the catch-up simulation above. VITESSE_HORS_LIGNE is the base ratio.
-  const maxAfkHeures = maxAfkSeconds() / 3600;
-  const maxAfkLabel = Number.isInteger(maxAfkHeures)
-    ? maxAfkHeures + "h"
-    : formaterTemps(maxAfkSeconds());
-  const ratioLabel = (ratioAfkHorsLigne() * 100).toLocaleString("en-US", {
+  // New summaries carry the exact values used by the canonical AFK calculation.
+  // The fallbacks keep a summary prepared by an older published version readable
+  // after its one-time update reload.
+  const plafondAfkSec = Number.isFinite(resume.plafondAfkSec) ? resume.plafondAfkSec : maxAfkSeconds();
+  const ratioAfk = Number.isFinite(resume.ratioAfk) ? resume.ratioAfk : ratioAfkHorsLigne();
+  const capAtteint = resume.dureeReelleSec >= plafondAfkSec;
+  const maxAfkLabel = formaterTemps(plafondAfkSec);
+  const ratioLabel = (ratioAfk * 100).toLocaleString("en-US", {
     maximumFractionDigits: 2
   }) + "%";
-  const parametres = document.createElement("div");
-  parametres.className = "absence-regles";
-  parametres.setAttribute("role", "note");
-  parametres.textContent = "Max AFK : " + maxAfkLabel + " / Ratio : " + ratioLabel + " of real time";
-  conteneur.appendChild(parametres);
 
   function ligne(label, valeur, iconeSrc) {
     const el = document.createElement("div");
@@ -13802,11 +14207,46 @@ function afficherResumeAbsence(resume) {
     val.textContent = valeur;
     el.appendChild(lbl);
     el.appendChild(val);
-    conteneur.appendChild(el);
+    return el;
   }
 
-  ligne("Time away", formaterTemps(resume.dureeReelleSec), "img/interface/Settings_Final.png");
-  ligne("Game time applied", formaterTemps(resume.dureeSimuleeSec), "img/interface/Work_Final.png");
+  const resultat = document.createElement("div");
+  resultat.className = "absence-resultat";
+  const tempsReel = document.createElement("span");
+  tempsReel.className = "absence-resultat-reel";
+  tempsReel.textContent = formaterTemps(resume.dureeReelleSec) + " away";
+  const fleche = document.createElement("span");
+  fleche.className = "absence-resultat-fleche";
+  fleche.setAttribute("aria-hidden", "true");
+  fleche.textContent = "→";
+  const tempsGagne = document.createElement("strong");
+  tempsGagne.className = "absence-resultat-gagne";
+  tempsGagne.textContent = "+" + formaterTemps(resume.dureeSimuleeSec) + " game time";
+  resultat.appendChild(tempsReel);
+  resultat.appendChild(fleche);
+  resultat.appendChild(tempsGagne);
+  conteneur.appendChild(resultat);
+
+  const parametres = document.createElement("p");
+  parametres.className = "absence-regles";
+  parametres.setAttribute("role", "note");
+  parametres.textContent = capAtteint
+    ? maxAfkLabel + " AFK cap reached · " + ratioLabel + " efficiency"
+    : ratioLabel + " AFK efficiency · " + maxAfkLabel + " max";
+  conteneur.appendChild(parametres);
+
+  const production = document.createElement("section");
+  production.className = "absence-production";
+  const productionTitre = document.createElement("strong");
+  productionTitre.className = "absence-production-titre";
+  productionTitre.textContent = "Production";
+  production.appendChild(productionTitre);
+  conteneur.appendChild(production);
+
+  function ligneProduction(label, valeur, iconeSrc) {
+    const el = ligne(label, valeur, iconeSrc);
+    production.appendChild(el);
+  }
 
   const ressources = [
     ["Cardboard Planks", resume.cardboardPlanks, "img/resources/Cardboard Plank_Final.png"],
@@ -13818,13 +14258,13 @@ function afficherResumeAbsence(resume) {
   ];
   let produit = false;
   ressources.forEach(function(r) {
-    if (r[1] > 0) { ligne(r[0], "+" + formaterNombre(r[1]), r[2]); produit = true; }
+    if (r[1] > 0) { ligneProduction(r[0], "+" + formaterNombre(r[1]), r[2]); produit = true; }
   });
-  if (!produit) ligne("Production", "Nothing produced", "img/interface/Work_Final.png");
+  if (!produit) ligneProduction("Result", "Nothing produced", "img/interface/Work_Final.png");
 
   if (resume.kittyAttrape) {
     const kitty = etat.kittiesData.find(function(k) { return k.nom === resume.kittyAttrape; });
-    ligne("New cat", resume.kittyAttrape + " joined the gang!", kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo);
+    ligneProduction("New cat", resume.kittyAttrape + " joined the gang!", kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo);
   }
 
   afficherModal("ecran-absence");
@@ -16239,6 +16679,7 @@ function reconcilierUniqueItemsCampCharges() {
 
 function synchroniserEtatCampDepuisPrototype() {
   const camp = assurerEtatCampPrincipal();
+  if (!campPrototypeRestaurationAutoritaire) return camp;
   camp.schemaVersion = 2;
   camp.layout = (Array.isArray(campPrototypeLayout) ? campPrototypeLayout : []).map(function(item) {
     return Object.assign({}, item);
@@ -16285,7 +16726,10 @@ function campDebloque() {
 
 function conditionGameplayCampDebloquee(typeId) {
   const definition = definitionGameplayCamp(typeId);
-  return conditionGameplayUnlockCamp(definition && definition.unlock);
+  return !contenuCampDebloqueParNiveau(typeId)
+    ? false
+    : conditionGameplayUnlockCamp(definition && definition.unlock)
+      || niveauDeblocageAssetCamp(assetIdPourTypeCamp(typeId)) !== null;
 }
 
 function conditionGameplayUnlockCamp(unlock) {
@@ -16415,6 +16859,8 @@ function rangSuivantMaisonCamp(typeId) {
   );
 }
 
+const CAMP_TUTORIAL_FAST_DURATION_SECONDS = 10;
+
 function devisMaisonCamp(typeId) {
   const rank = rangSuivantMaisonCamp(typeId);
   const definition = definitionGameplayCamp(typeId);
@@ -16425,15 +16871,21 @@ function devisMaisonCamp(typeId) {
     theoreticalCosts,
     woodHouseCostMultiplier(definition)
   );
+  const dureeNormale = incrementorLawApi.scaleValue(
+    definition && definition.build && definition.build.durationSeconds,
+    rank,
+    definition && definition.law && definition.law.durationGrowth,
+    definition && definition.law && definition.law.rounding
+  );
+  const tutorialDuration = typeId === "cardboardBox"
+    && rank === 1
+    && typeof firstBoxTutorialStage === "function"
+    && ["place", "assign"].includes(firstBoxTutorialStage());
   return theoreticalCosts && costs ? {
     rank: rank,
     costs: costs,
-    duration: incrementorLawApi.scaleValue(
-      definition && definition.build && definition.build.durationSeconds,
-      rank,
-      definition && definition.law && definition.law.durationGrowth,
-      definition && definition.law && definition.law.rounding
-    )
+    duration: tutorialDuration
+      ? CAMP_TUTORIAL_FAST_DURATION_SECONDS : dureeNormale
   } : null;
 }
 
@@ -16655,6 +17107,7 @@ function validerConstructionMaisonCamp(uid) {
     sauvegarder();
     return false;
   }
+  const niveauCampAvant = calculerProgressionNiveauCampDirecte();
   item.construit = true;
   item.lawRank = construction.lawRank;
   item.paidCosts = coutsPayesMaisonCamp(construction);
@@ -16677,11 +17130,13 @@ function validerConstructionMaisonCamp(uid) {
     afficherModal("ecran-story-greatest-incrementor-part-1");
     renduStories();
   }
+  const beatNiveauCamp = enregistrerNouveauRecordNiveauCamp(niveauCampAvant);
   sauvegarderCampPrototype();
   const objectifsOntRendu = verifierObjectifs();
   sauvegarder();
   rendreApresValidationTacheCamp(objectifsOntRendu);
-  declencherFeedbackCompletionCamp(uid, construction.type, 0, 1);
+  const feedbackLocal = declencherFeedbackCompletionCamp(uid, construction.type, 0, 1);
+  planifierCelebrationNiveauCamp(beatNiveauCamp, feedbackLocal);
   return true;
 }
 
@@ -16870,6 +17325,7 @@ function validerConstructionBatimentCamp(uid) {
     sauvegarder();
     return false;
   }
+  const niveauCampAvant = calculerProgressionNiveauCampDirecte();
   item.construit = true;
   if (Number.isInteger(construction.lawRank) && construction.lawRank > 0) {
     item.lawRank = construction.lawRank;
@@ -16896,10 +17352,12 @@ function validerConstructionBatimentCamp(uid) {
   if (construction.type === "nayaSInn" && !storyEstVue("storyNayaInnCompleteVue")) {
     afficherModal("ecran-story-naya-inn-complete");
   }
+  const beatNiveauCamp = enregistrerNouveauRecordNiveauCamp(niveauCampAvant);
   sauvegarderCampPrototype();
   sauvegarder();
   rendreApresValidationTacheCamp(false);
-  declencherFeedbackCompletionCamp(uid, construction.type, 0, 1);
+  const feedbackLocal = declencherFeedbackCompletionCamp(uid, construction.type, 0, 1);
+  planifierCelebrationNiveauCamp(beatNiveauCamp, feedbackLocal);
   return true;
 }
 
@@ -17010,6 +17468,7 @@ function terminerReparationsCamp(maintenant) {
 function validerReparationCamp(buildingId) {
   const reparation = reparationCampPourBatiment(buildingId);
   if (!reparation || !reparation.readyToClaim) return false;
+  const niveauCampAvant = calculerProgressionNiveauCampDirecte();
   if (!Array.isArray(etat.camp.repairedBuildingIds)) etat.camp.repairedBuildingIds = [];
   if (!etat.camp.repairedBuildingIds.includes(buildingId)) {
     etat.camp.repairedBuildingIds.push(buildingId);
@@ -17035,9 +17494,11 @@ function validerReparationCamp(buildingId) {
     }
   }
   if (buildingId === "pawsonry") mettreDialogueRapideCampEnFile("pawsonryRepaired");
+  const beatNiveauCamp = enregistrerNouveauRecordNiveauCamp(niveauCampAvant);
   sauvegarder();
   rendreApresValidationTacheCamp(false);
-  if (item) declencherFeedbackCompletionCamp(item.uid, buildingId, 0, 1);
+  const feedbackLocal = item ? declencherFeedbackCompletionCamp(item.uid, buildingId, 0, 1) : false;
+  planifierCelebrationNiveauCamp(beatNiveauCamp, feedbackLocal);
   return true;
 }
 
@@ -17139,6 +17600,7 @@ function validerAmeliorationCamp(uid) {
     sauvegarder();
     return false;
   }
+  const niveauCampAvant = calculerProgressionNiveauCampDirecte();
   item.tier = job.targetTier;
   libererWorkersBatimentProductionCamp(item.type);
   delete etat.camp.upgrades[uid];
@@ -17147,10 +17609,12 @@ function validerAmeliorationCamp(uid) {
   ajouterLog("event", (kitty ? kitty.nom : "A Cat") + " upgraded "
     + (type ? type.label : job.type) + " to Tier " + job.targetTier + ".");
   afficherNotification((type ? type.label : job.type) + " reached Tier " + job.targetTier + "!");
+  const beatNiveauCamp = enregistrerNouveauRecordNiveauCamp(niveauCampAvant);
   sauvegarderCampPrototype();
   sauvegarder();
   rendreApresValidationTacheCamp(false);
-  declencherFeedbackCompletionCamp(uid, job.type, job.startTier, job.targetTier);
+  const feedbackLocal = declencherFeedbackCompletionCamp(uid, job.type, job.startTier, job.targetTier);
+  planifierCelebrationNiveauCamp(beatNiveauCamp, feedbackLocal);
   return true;
 }
 
@@ -17492,6 +17956,10 @@ const CATCHEN_PATH_COORDINATES = Object.freeze([
   Object.freeze({ x: 10, y: 6 }),
   Object.freeze({ x: 10, y: 7 })
 ]);
+const EXPLORATION_TABLE_GUIDED_JUNK_UIDS = Object.freeze([
+  "home:6:4",
+  "home:7:4"
+]);
 
 function obstaclesCheminCatchenCamp() {
   return CATCHEN_PATH_COORDINATES.map(function(position) {
@@ -17520,12 +17988,45 @@ function nettoyageCheminCatchenTermine() {
   return nettoyageJunksDebloque() && !prochaineCibleCheminCatchenCamp();
 }
 
+function cibleNettoyageTutorielAcceleree(cible) {
+  if (!cible || cible.kind !== "terrain" || batimentCampRepare("catchen")) return false;
+  return obstaclesCheminCatchenCamp().some(function(obstacle) {
+    return obstacle.uid === cible.uid;
+  });
+}
+
+function prochaineCibleExplorationTableUidCamp() {
+  if (!batimentCampRepare("catchen")) return null;
+  return EXPLORATION_TABLE_GUIDED_JUNK_UIDS.find(function(uid) {
+    return Boolean(obstacleCampPrototypeActif(uid)
+      || demolitionCampPrototypePourCible(uid, "terrain"));
+  }) || null;
+}
+
+function cibleGuideeExplorationTableDisponibleCamp() {
+  const prochaineUid = prochaineCibleExplorationTableUidCamp();
+  if (!prochaineUid || demolitionCampPrototypePourCible(prochaineUid, "terrain")) return null;
+  const cible = cibleDemolitionCampPrototype(prochaineUid, "terrain");
+  return cible && peutDemolirCibleCampPrototype(cible).valide ? cible.obstacle : null;
+}
+
+function explorationTableJunkGuidanceActif(obstacle) {
+  const cibleGuidee = cibleGuideeExplorationTableDisponibleCamp();
+  return Boolean(obstacle && cibleGuidee && cibleGuidee.uid === obstacle.uid);
+}
+
 function nettoyageJunksNormalDebloque() {
   return nettoyageCheminCatchenTermine() && batimentCampRepare("catchen");
 }
 
 function cibleNettoyageDebutAutorisee(cible) {
-  if (!cible || cible.kind === "access" || nettoyageJunksNormalDebloque()) return true;
+  if (!cible || cible.kind === "access") return true;
+  if (cible.kind === "terrain"
+      && batimentCampRepare("catchen")
+      && EXPLORATION_TABLE_GUIDED_JUNK_UIDS.includes(cible.uid)) {
+    return prochaineCibleExplorationTableUidCamp() === cible.uid;
+  }
+  if (nettoyageJunksNormalDebloque()) return true;
   if (demolitionCampPrototypePourCible(cible.uid, cible.kind)) return true;
   const cibleGuidee = cibleGuideeCheminCatchenDisponibleCamp();
   return Boolean(cibleGuidee && cible.kind === "terrain" && cible.uid === cibleGuidee.uid);
@@ -17956,8 +18457,15 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
     const dureeActuelle = cible && typeof campPrototypeApi.dureeDemolitionObstacle === "function"
       ? Number(campPrototypeApi.dureeDemolitionObstacle(cible))
       : 0;
+    const tutorialDuration = Boolean(demolition
+      && demolition.tutorialDurationSeconds === 10
+      && cible
+      && cible.kind === "terrain"
+      && obstaclesCheminCatchenCamp().some(function(obstacle) { return obstacle.uid === cible.uid; }));
     const duree = grandfatheredRightAccessPaid
       ? dureeStockee
+      : tutorialDuration
+      ? 10
       : Number.isFinite(dureeActuelle) && dureeActuelle > 0
       ? dureeEffectiveActionCamp(dureeActuelle, kittyIndices, "junk")
       : dureeStockee;
@@ -17996,6 +18504,9 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       if (paidCosts && typeof paidCosts === "object" && !Array.isArray(paidCosts)) {
         entree.paidCosts = Object.assign({}, paidCosts);
       }
+      if (tutorialDuration) {
+        entree.tutorialDurationSeconds = 10;
+      }
     }
     if (
       demolition.obstacleUid !== entree.obstacleUid
@@ -18004,6 +18515,7 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
       || (modernAssignment && JSON.stringify(demolition.kittyIndices) !== JSON.stringify(entree.kittyIndices))
       || (modernAssignment && demolition.requiredCats !== entree.requiredCats)
       || (modernAssignment && JSON.stringify(demolition.paidCosts || null) !== JSON.stringify(entree.paidCosts || null))
+      || demolition.tutorialDurationSeconds !== entree.tutorialDurationSeconds
       || (!modernAssignment && Object.prototype.hasOwnProperty.call(demolition, "requiredCats"))
       || demolition.startTs !== entree.startTs
       || demolition.duree !== entree.duree
@@ -18250,6 +18762,7 @@ function sauvegarderCampPrototype() {
 }
 
 function chargerCampPrototype() {
+  campPrototypeRestaurationAutoritaire = false;
   invaliderConnexionsCampPrototype();
   campPrototypeLayout = creerLayoutInitialCampPrototype();
   campPrototypeClotures = [];
@@ -18322,6 +18835,14 @@ function chargerCampPrototype() {
           return result;
         }, {})
       : {};
+  } catch (error) {
+    campPrototypeLayout = creerLayoutInitialCampPrototype();
+    campPrototypeClotures = [];
+    campPrototypeTerrain = campPrototypeApi.creerTerrainInitial();
+    campPrototypeDemolitions = [];
+    campPrototypeGroundRewards = {};
+  }
+  try {
     if (typeof localStorage !== "undefined") {
       const zoomBrut = Number(localStorage.getItem(CAMP_PROTOTYPE_ZOOM_STORAGE_KEY));
       if (Number.isFinite(zoomBrut) && zoomBrut > 0) {
@@ -18333,12 +18854,10 @@ function chargerCampPrototype() {
       }
     }
   } catch (error) {
-    campPrototypeLayout = creerLayoutInitialCampPrototype();
-    campPrototypeClotures = [];
-    campPrototypeTerrain = campPrototypeApi.creerTerrainInitial();
-    campPrototypeDemolitions = [];
-    campPrototypeGroundRewards = {};
+    campPrototypeZoom = 1;
+    campPrototypeZoomChoisiManuellement = false;
   }
+  campPrototypeRestaurationAutoritaire = true;
   const groundRewardsAnchorsChanged = normaliserAncragesRecompensesCampPrototype();
   const groundRewardTutorialChanged = firstGroundRewardTutorialReconciliation();
   const sawmillTutorialChanged = campTutorialReconciliation();
@@ -18529,7 +19048,9 @@ function actualiserCadrageMobileCampPrototype() {
   viewport.classList.toggle("camp-mobile-home-only", !voisins.red && !voisins.green);
   const minimum = zoomMinimumCampPrototype();
   if (!campPrototypeCadrageMobileInitialise && !voisins.red && !voisins.green) {
-    campPrototypeZoom = minimum;
+    if (!campPrototypeZoomChoisiManuellement || campPrototypeZoom < minimum) {
+      campPrototypeZoom = minimum;
+    }
     campPrototypeCadrageMobileInitialise = true;
     appliquerZoomCampPrototype(false);
   } else if (campPrototypeZoom < minimum) {
@@ -18613,21 +19134,6 @@ function invaliderLargeurBaseCampPrototype() {
   if (map) map.style.removeProperty("width");
 }
 
-function conteneurDefilementVerticalCampPrototype(viewport) {
-  if (!viewport || typeof document === "undefined") return null;
-  let candidat = viewport.parentElement;
-  while (candidat && candidat !== document.body && candidat !== document.documentElement) {
-    const style = typeof getComputedStyle === "function" ? getComputedStyle(candidat) : null;
-    const peutDefiler = style && /^(auto|scroll|overlay)$/.test(style.overflowY);
-    if (peutDefiler && candidat.scrollHeight > candidat.clientHeight + 1) return candidat;
-    candidat = candidat.parentElement;
-  }
-  const racine = document.scrollingElement;
-  return racine && racine !== viewport && racine.scrollHeight > racine.clientHeight + 1
-    ? racine
-    : null;
-}
-
 function memoriserAncrageCameraCampPrototype() {
   const viewport = document.querySelector(".camp-prototype-viewport");
   const board = document.getElementById("camp-prototype-board");
@@ -18692,14 +19198,7 @@ function appliquerZoomCampPrototype(conserverCentre, ancrageClient) {
     const decalageX = nouveauBoardRect.left + ratioX * nouveauBoardRect.width - clientX;
     const decalageY = nouveauBoardRect.top + ratioY * nouveauBoardRect.height - clientY;
     viewport.scrollLeft += decalageX;
-    const ancienScrollTopViewport = viewport.scrollTop;
     viewport.scrollTop += decalageY;
-    const decalageVerticalRestant = decalageY
-      - (viewport.scrollTop - ancienScrollTopViewport);
-    if (Math.abs(decalageVerticalRestant) > 0.5) {
-      const conteneurVertical = conteneurDefilementVerticalCampPrototype(viewport);
-      if (conteneurVertical) conteneurVertical.scrollTop += decalageVerticalRestant;
-    }
     memoriserAncrageCameraCampPrototype();
     positionnerUiFlottanteCampPrototype();
     return;
@@ -19268,9 +19767,19 @@ function ajouterRaccordsRouteBatimentCampPrototype(
         "camp-prototype-building-road-connector-" + raccord.shape
       );
     }
+    connecteur.classList.add(
+      "camp-prototype-path-profile-" + (raccord.profile === "constructed" ? "constructed" : "organic")
+    );
     connecteur.dataset.roadMaterial = raccord.material;
     connecteur.dataset.campAccessPort = raccord.portId;
     connecteur.setAttribute("aria-hidden", "true");
+    if (raccord.atlasBox) {
+      for (const key of ["x", "y", "width", "height"]) {
+        connecteur.style.setProperty("--camp-join-" + key, (raccord.atlasBox[key] * 100) + "%");
+      }
+      connecteur.style.setProperty("--camp-join-texture-x", raccord.texturePositionX + "%");
+      connecteur.style.setProperty("--camp-join-texture-y", raccord.texturePositionY + "%");
+    }
     if (raccord.sprite) {
       connecteur.style.backgroundImage = "url(" + JSON.stringify(raccord.sprite) + ")";
     }
@@ -19677,7 +20186,8 @@ function occupantsMaisonCampParSlot(houseUid, capacite) {
 
 function nomRoleChaton(kitty) {
   if (!kitty) return "Cat";
-  if (kitty.metier === "shop-owner") return "Shop Owner";
+  const specialistRole = saveCore.permanentSpecialistRoleForKitty(kitty);
+  if (specialistRole) return specialistRole.label;
   return kitty.metier && METIERS[kitty.metier] ? METIERS[kitty.metier].nom : "Cat";
 }
 
@@ -20070,11 +20580,6 @@ function manualFocusTacheCampActif(tache) {
   return Boolean(cible && memeCibleManualFocusCamp(workManualFocus, cible));
 }
 
-function libelleFocusCamp(reserveSeconds) {
-  const reserve = Math.max(0, Number(reserveSeconds) || 0);
-  return "Focus: " + reserve.toFixed(1) + "s/" + manualFocusMaxSeconds() + "s";
-}
-
 function actualiserFocusVisuelTacheCamp(worker, reserveSeconds) {
   if (!worker) return;
   const reserve = Math.max(0, Number(reserveSeconds) || 0);
@@ -20086,8 +20591,7 @@ function actualiserFocusVisuelTacheCamp(worker, reserveSeconds) {
       return element.dataset.campTaskUiKey === uiKey;
     });
   if (!status) return;
-  status.hidden = !actif;
-  if (actif) status.textContent = libelleFocusCamp(reserve);
+  actualiserBadgeManualFocus(status, actif, reserve);
 }
 
 function cibleManualFocusCampPourTache(tache) {
@@ -21611,6 +22115,7 @@ function niveauNayaAuberge() {
 function nayaInnEffectiveConfig(nayaLevel) {
   const effective = {
     stateVersion: NAYA_INN_CONFIG.stateVersion,
+    maxTierChancePercent: Number(NAYA_INN_CONFIG.maxTierChancePercent),
     rarityWeights: Object.assign({}, NAYA_INN_CONFIG.rarityWeights),
     contracts: Object.fromEntries(NAYA_INN_RARITIES.map(function(rarity) {
       return [rarity, Object.assign({}, NAYA_INN_CONFIG.contracts[rarity])];
@@ -21633,6 +22138,9 @@ function nayaInnEffectiveConfig(nayaLevel) {
           helperPower: Object.assign({}, milestone.travelers.helperPower),
           guideReductionPercent: Object.assign({}, milestone.travelers.guideReductionPercent)
         };
+      }
+      if (milestone.kind === "tierChance") {
+        effective.maxTierChancePercent = Number(milestone.maxTierChancePercent);
       }
     });
   return effective;
@@ -21685,23 +22193,40 @@ function ressourcesAubergeEligibles() {
   });
 }
 
+function tiersContratAubergeEligibles(resources) {
+  const list = Array.isArray(resources) ? resources : ressourcesAubergeEligibles();
+  return list.map(function(resource) { return resource.tier; }).filter(function(tier, index, values) {
+    return values.indexOf(tier) === index
+      && list.some(function(resource) { return (resource.family === "wood" || resource.family === "rock") && resource.tier === tier; })
+      && list.some(function(resource) { return resource.family === "food" && resource.tier === tier; });
+  }).sort(function(a, b) { return a - b; });
+}
+
+function maxEligibleContractTier() {
+  const tiers = tiersContratAubergeEligibles();
+  return tiers.length ? tiers[tiers.length - 1] : 1;
+}
+
+function tierContratAubergeDepuisRoll(roll, config, resources) {
+  const tiers = tiersContratAubergeEligibles(resources);
+  if (!tiers.length) return 1;
+  const maxTier = tiers[tiers.length - 1];
+  const previousTier = maxTier - 1;
+  if (maxTier <= 1 || !tiers.includes(previousTier)) return maxTier;
+  const chance = Math.max(0, Math.min(100, Number(config.maxTierChancePercent) || 0));
+  return roll * 100 < chance ? maxTier : previousTier;
+}
+
 function creerContratAuberge(rarity, random, config) {
   const resources = ressourcesAubergeEligibles();
   const materials = resources.filter(function(resource) {
     return resource.family === "wood" || resource.family === "rock";
   });
-  const eligibleTiers = materials.map(function(resource) { return resource.tier; }).filter(function(tier, index, values) {
-    return values.indexOf(tier) === index && (rarity === "legendary" || resources.some(function(resource) {
-      return resource.family === "food" && resource.tier === tier;
-    }));
-  });
-  const tier = eligibleTiers[Math.floor(random() * eligibleTiers.length)] || 1;
+  const tier = tierContratAubergeDepuisRoll(random(), config || nayaInnEffectiveConfig(niveauNayaAuberge()), resources);
   const inputPool = materials.filter(function(resource) { return resource.tier === tier; });
   const input = inputPool[Math.floor(random() * inputPool.length)] || { id: "cardboardPlanks", tier: 1 };
   const foodPool = resources.filter(function(resource) { return resource.family === "food" && resource.tier === tier; });
-  const output = rarity === "legendary"
-    ? { id: "cannedCatFood" }
-    : (foodPool[Math.floor(random() * foodPool.length)] || { id: "salads" });
+  const output = foodPool[Math.floor(random() * foodPool.length)] || { id: "salads", tier: 1 };
   const balance = (config || nayaInnEffectiveConfig(niveauNayaAuberge())).contracts[rarity];
   return {
     templateId: "v2-" + rarity + "-" + input.id + "-" + output.id,
@@ -21709,9 +22234,22 @@ function creerContratAuberge(rarity, random, config) {
     inputId: input.id,
     inputQty: Number(balance.inputAmount),
     outputId: output.id,
-    outputQty: rarity === "legendary" ? 1 : Number(balance.outputAmount),
+    tier: tier,
+    outputQty: Number(balance.outputAmount),
     completed: false
   };
+}
+
+function reconcilierContratsAubergeNaya(previous, dateKey, effective) {
+  if (!previous || !Array.isArray(previous.contracts)) return false;
+  let changed = false;
+  previous.contracts.forEach(function(contract, index) {
+    if (!contract || contract.completed || contract.outputId !== "cannedCatFood") return;
+    const random = hasardDeterministeAuberge(dateKey + "|legacy-contract|" + index);
+    previous.contracts[index] = creerContratAuberge(contract.rarity || "legendary", random, effective);
+    changed = true;
+  });
+  return changed;
 }
 
 function creerEtatAubergeNaya(dateKey) {
@@ -21743,6 +22281,7 @@ function creerEtatAubergeNaya(dateKey) {
 function initialiserAubergeNaya() {
   const dateKey = cleDateParis(Date.now());
   const previous = etat.innDaily;
+  const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
   if (!previous || previous.dateKey !== dateKey || previous.version !== NAYA_INN_CONFIG.stateVersion
       || !Array.isArray(previous.travelers) || previous.travelers.length !== 2
       || !Array.isArray(previous.contracts) || previous.contracts.length !== 3) {
@@ -21764,7 +22303,9 @@ function initialiserAubergeNaya() {
     nayaInnTravelerSelections = { campaign: {}, scouting: {} };
     return true;
   }
-  return false;
+  const reconciled = reconcilierContratsAubergeNaya(previous, dateKey, effective);
+  if (reconciled) sauvegarder();
+  return reconciled;
 }
 
 function voyageursAubergeDisponibles() {
@@ -21852,7 +22393,7 @@ function htmlVoyageursAubergeMission(kind, id, basePower, difficulty, baseDurati
   const bonus = bonusVoyageursAuberge(selectedTravelers);
   const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
   const effectivePower = Number(basePower) + bonus.power;
-  const effectiveDuration = Number(baseDuration) * bonus.durationMultiplier;
+  const effectiveDuration = dureeEffectiveExploration(baseDuration, bonus.durationMultiplier);
   const chance = effectivePower > 0 && Number(difficulty) > 0
     ? Math.min(100, Math.round(effectivePower / Number(difficulty) * 100)) : 0;
   return '<section class="inn-travelers-mission" aria-label="Inn Travelers"><strong>Inn Travelers</strong><div>'
@@ -21947,31 +22488,42 @@ function renduInfoAubergeNaya() {
   const effective = nayaInnEffectiveConfig(level);
   const nextRarity = nextNayaInnMilestone(level, "rarity");
   const nextEffects = nextNayaInnMilestone(level, "effects");
-  const nextLabel = function(milestone, kind) {
-    return milestone ? "Next " + kind + " upgrade: Naya Level " + milestone.level : "No further " + kind + " upgrade currently configured";
-  };
-  const rows = function(values, suffix) {
-    return NAYA_INN_RARITIES.map(function(rarity) {
-      return '<span><b>' + rarity[0].toUpperCase() + rarity.slice(1) + '</b><em>' + values[rarity] + suffix + '</em></span>';
-    }).join("");
-  };
-  root.innerHTML = '<h3>Naya\'s Inn — Naya Level ' + level + '</h3>'
-    + '<h4>Rarity chances</h4><div class="naya-inn-info-grid">' + rows(effective.rarityWeights, "%") + '</div><p>' + nextLabel(nextRarity, "rarity") + '</p>'
-    + '<h4>Current Contract effects</h4><div class="naya-inn-info-grid">'
-    + NAYA_INN_RARITIES.map(function(rarity) { return '<span><b>' + rarity[0].toUpperCase() + rarity.slice(1) + '</b><em>Give ' + effective.contracts[rarity].inputAmount + ' · Get ' + effective.contracts[rarity].outputAmount + '</em></span>'; }).join("")
-    + '</div><h4>Current Traveler effects</h4><div class="naya-inn-info-grid">'
-    + NAYA_INN_RARITIES.map(function(rarity) { return '<span><b>' + rarity[0].toUpperCase() + rarity.slice(1) + '</b><em>Helper +' + effective.travelers.helperPower[rarity] + ' · Guide -' + effective.travelers.guideReductionPercent[rarity] + '%</em></span>'; }).join("")
-    + '</div><p>' + nextLabel(nextEffects, "effects") + '</p>';
+  const nextTierChance = nextNayaInnMilestone(level, "tierChance");
+  const maxTier = maxEligibleContractTier();
+  const maxTierChance = maxTier <= 1 ? 100 : effective.maxTierChancePercent;
+  const previousTierChance = maxTier <= 1 ? 0 : 100 - maxTierChance;
+  root.innerHTML = '<strong>Naya\'s Inn · Level ' + level + '</strong>'
+    + '<span>Level up Naya to make the Inn stronger.</span>'
+    + '<span class="naya-inn-info-kicker">Current stats</span>'
+    + '<div class="naya-inn-stats" role="table" aria-label="Current Inn stats">'
+    + '<div class="naya-inn-stats-row naya-inn-stats-head" role="row"><b role="columnheader">Rarity</b><span role="columnheader">Chance</span><span role="columnheader">Contract</span><span role="columnheader">Helper</span><span role="columnheader">Guide</span></div>'
+    + NAYA_INN_RARITIES.map(function(rarity) {
+      const label = rarity[0].toUpperCase() + rarity.slice(1);
+      return '<div class="naya-inn-stats-row" role="row"><b role="rowheader">' + label + '</b>'
+        + '<span role="cell" data-label="Chance">' + effective.rarityWeights[rarity] + '%</span>'
+        + '<span role="cell" data-label="Contract">' + effective.contracts[rarity].inputAmount + ' → ' + effective.contracts[rarity].outputAmount + '</span>'
+        + '<span role="cell" data-label="Helper">+' + effective.travelers.helperPower[rarity] + '</span>'
+        + '<span role="cell" data-label="Guide">-' + effective.travelers.guideReductionPercent[rarity] + '%</span></div>';
+    }).join("") + '</div>'
+    + '<span class="naya-inn-info-kicker">Contract tier</span>'
+    + (maxTier <= 1
+      ? '<span class="naya-inn-tier-chance"><b>Tier 1 only</b><em>100%</em></span>'
+      : '<span class="naya-inn-tier-chance"><b>Highest available Tier ' + maxTier + '</b><em>' + maxTierChance + '%</em></span>'
+        + '<span class="naya-inn-tier-chance"><b>Previous Tier ' + (maxTier - 1) + '</b><em>' + previousTierChance + '%</em></span>')
+    + '<span class="naya-inn-info-kicker">Next upgrades</span>'
+    + '<span class="naya-inn-next-upgrade"><b>Rarity chances</b><em>' + (nextRarity ? 'Level ' + nextRarity.level : 'Maxed for now') + '</em></span>'
+    + '<span class="naya-inn-next-upgrade"><b>Effects</b><em>' + (nextEffects ? 'Level ' + nextEffects.level : 'Maxed for now') + '</em></span>'
+    + '<span class="naya-inn-next-upgrade"><b>Contract Tier</b><em>' + (nextTierChance ? 'Level ' + nextTierChance.level : 'Maxed for now') + '</em></span>';
 }
 
-function toggleNayaInnInfo() {
-  const root = document.getElementById("naya-inn-info");
-  const button = document.getElementById("naya-inn-info-button");
-  if (!root || !button) return;
-  const open = root.hidden;
-  root.hidden = !open;
-  button.setAttribute("aria-expanded", open ? "true" : "false");
-  if (open) renduInfoAubergeNaya();
+function htmlProgressionAubergeNaya(nayaLevel) {
+  const nextRarity = nextNayaInnMilestone(nayaLevel, "rarity");
+  const nextEffects = nextNayaInnMilestone(nayaLevel, "effects");
+  const nextTierChance = nextNayaInnMilestone(nayaLevel, "tierChance");
+  return "<span class='xp-bonus-ligne naya-inn-gang-progression'>Level up Naya to strengthen the Inn.</span>"
+    + "<span class='xp-bonus-ligne'>Next rarity upgrade: " + (nextRarity ? "Level " + nextRarity.level : "Maxed for now") + "</span>"
+    + "<span class='xp-bonus-ligne'>Next effects upgrade: " + (nextEffects ? "Level " + nextEffects.level : "Maxed for now") + "</span>"
+    + "<span class='xp-bonus-ligne'>Next Contract Tier upgrade: " + (nextTierChance ? "Level " + nextTierChance.level : "Maxed for now") + "</span>";
 }
 
 function ouvrirAubergeNayaDepuisCamp(item) {
@@ -21982,10 +22534,7 @@ function ouvrirAubergeNayaDepuisCamp(item) {
 function ouvrirAubergeNaya() {
   if (!aubergeNayaOperationnelle() || !document.getElementById("naya-inn-modal")) return false;
   definirSourceImageRuntime(document.getElementById("naya-inn-portrait"), CAT_FACES.naya);
-  const info = document.getElementById("naya-inn-info");
-  const infoButton = document.getElementById("naya-inn-info-button");
-  if (info) info.hidden = true;
-  if (infoButton) infoButton.setAttribute("aria-expanded", "false");
+  fermerPanneauAides();
   renduAubergeNaya();
   ouvrirDialogueModal("naya-inn-modal", {
     dismissible: true,
@@ -22047,7 +22596,9 @@ function campTaskPanelDefinition() {
       actionLabel: obstacle.kind === "access" ? obstacle.actionLabel : "Clear " + obstacle.label,
       icon: obstacle.kind === "access" ? null : "img/interface/Trash_Final.png",
       iconAlt: obstacle.kind === "access" ? "" : "Clear junk",
-      duration: campPrototypeApi.dureeDemolitionObstacle(obstacle),
+      duration: cibleNettoyageTutorielAcceleree(obstacle)
+        ? CAMP_TUTORIAL_FAST_DURATION_SECONDS
+        : campPrototypeApi.dureeDemolitionObstacle(obstacle),
       minLevel: niveauMinimumCibleDemolition(obstacle),
       requiredCats: Math.max(1, Number(obstacle.requiredCats) || 1),
       costs: Object.assign({}, obstacle.costs || {}),
@@ -22880,6 +23431,11 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
   const type = placement && typeCampPrototype(placement.type);
   const devis = devisMaisonCamp(typeId);
   const duree = devis && devis.duration;
+  const tutorialDuration = Boolean(devis
+    && typeId === "cardboardBox"
+    && devis.rank === 1
+    && typeof firstBoxTutorialStage === "function"
+    && firstBoxTutorialStage() === "assign");
   const cout = devis && devis.costs;
   const resultat = actualiserValiditePlacementCampPrototype();
   if (
@@ -22916,11 +23472,16 @@ function selectionnerKittyConstructionMaisonCamp(kittyIndex) {
     type: typeId,
     kittyIndex: kittyIndex,
     startTs: Date.now(),
-    duree: dureeEffectiveActionCamp(duree, [kittyIndex], "construction"),
+    duree: tutorialDuration
+      ? CAMP_TUTORIAL_FAST_DURATION_SECONDS
+      : dureeEffectiveActionCamp(duree, [kittyIndex], "construction"),
     lawRank: devis.rank,
     paidCosts: incrementorLawApi.copyCosts(cout),
     readyToClaim: false
   };
+  if (tutorialDuration) {
+    etat.camp.houseConstructions[item.uid].tutorialDurationSeconds = CAMP_TUTORIAL_FAST_DURATION_SECONDS;
+  }
   campPrototypeLayout.push(item);
   campPrototypePlacementEnCours = null;
   campPrototypeSelectionUid = null;
@@ -23690,11 +24251,13 @@ function demarrerDemolitionCampPrototype() {
   if (kittyIndices.some(function(index) {
     return !kittyPeutEtreSelectionnePourTacheCamp(index, niveauMinimumCibleDemolition(obstacle));
   })) return false;
-  const duree = dureeEffectiveActionCamp(
+  const tutorialDuration = cibleNettoyageTutorielAcceleree(obstacle);
+  const dureeNormale = dureeEffectiveActionCamp(
     campPrototypeApi.dureeDemolitionObstacle(obstacle),
     kittyIndices,
     "junk"
   );
+  const duree = tutorialDuration ? CAMP_TUTORIAL_FAST_DURATION_SECONDS : dureeNormale;
   if (!duree) return false;
   const costs = Object.assign({}, obstacle.costs || {});
   if (!Object.keys(costs).every(function(resourceId) {
@@ -23708,7 +24271,7 @@ function demarrerDemolitionCampPrototype() {
     etat[resourceId] -= Number(costs[resourceId]) || 0;
   });
   const kitty = etat.kittiesData[kittyIndices[0]];
-  campPrototypeDemolitions.push({
+  const demolition = {
     obstacleUid: obstacle.uid,
     targetKind: obstacle.kind,
     kittyIndex: kittyIndices[0],
@@ -23718,7 +24281,9 @@ function demarrerDemolitionCampPrototype() {
     startTs: Date.now(),
     duree: duree,
     readyToClaim: false
-  });
+  };
+  if (tutorialDuration) demolition.tutorialDurationSeconds = CAMP_TUTORIAL_FAST_DURATION_SECONDS;
+  campPrototypeDemolitions.push(demolition);
   sauvegarderDemolitionsCampPrototype();
   jouerSonAffectation();
   const taskVerb = obstacle.kind === "access" ? " started opening " : " started demolishing ";
@@ -24407,6 +24972,9 @@ function rendreTerrainCampPrototype(presencesCamp) {
     if (prochaineCibleCatchen && prochaineCibleCatchen.uid === obstacle.uid) {
       bouton.classList.add("camp-guided-junk-target");
     }
+    if (explorationTableJunkGuidanceActif(obstacle)) {
+      bouton.classList.add("camp-guided-junk-target");
+    }
     bouton.dataset.campObstacleUid = obstacle.uid;
     bouton.dataset.campObstacleLabel = obstacle.label;
     bouton.dataset.campDemolitionLabel = obstacle.label;
@@ -24524,7 +25092,10 @@ function categorieDockCampPrototypeVisible(categorie) {
   }
   if (categorie === "building") return batimentCampDisponiblePlacement() || DEV_MODE;
   if (categorie === "decoration") return batimentCampDisponiblePlacement("smallFountain") || DEV_MODE;
-  if (categorie === "road") return appealCampDebloque() || DEV_MODE;
+  if (categorie === "road") {
+    const levelAuthored = niveauDeblocageAssetCamp(assetIdPourTypeCamp("road")) !== null;
+    return DEV_MODE || (levelAuthored ? contenuCampDebloqueParNiveau("road") : appealCampDebloque());
+  }
   if (categorie === "fence") return Boolean(campPrototypeApi.FENCE_TYPES.campBoundaryFence);
   return DEV_MODE;
 }
@@ -24636,7 +25207,7 @@ function actualiserCommandesCampPrototype() {
   if (sortieTrailMobile) {
     sortieTrailMobile.hidden = !(
       campPrototypeModeEdition
-      && (campPrototypeTypeAPlacer === "road" || campPrototypeGommeRoutes)
+      && ((typeCampPrototype(campPrototypeTypeAPlacer) || {}).category === "road" || campPrototypeGommeRoutes)
     );
   }
   const gommeClotures = document.getElementById("camp-prototype-fence-erase");
@@ -24842,6 +25413,7 @@ function rendrePaletteCampPrototype() {
   Object.keys(campPrototypeApi.ITEM_TYPES).forEach(function(typeId) {
     const type = typeCampPrototype(typeId);
     if (type.category !== categorie) return;
+    if (!DEV_MODE && !contenuCampDebloqueParNiveau(typeId)) return;
     if (categorie === "house" && !maisonCampDebloquee(typeId)) return;
     if ((categorie === "building" || categorie === "decoration")
         && !DEV_MODE && !batimentCampDisponiblePlacement(typeId)) return;
@@ -24949,7 +25521,7 @@ function rendrePaletteCampPrototype() {
       definirMessageCampPrototype(type.continuous
         ? (type.edgePlacement
             ? "Drag along grid edges to paint fences one edge at a time."
-            : "Drag across the grid to paint Basic Trails.")
+            : "Drag across the grid to paint " + type.label + ".")
         : "Tap the grid to preview " + type.label
           + ", then confirm or cancel its placement.");
     });
@@ -24974,7 +25546,7 @@ function rendrePaletteCampPrototype() {
     gomme.type = "button";
     gomme.className = "camp-prototype-palette-item camp-prototype-road-eraser";
     gomme.setAttribute("aria-pressed", "false");
-    gomme.innerHTML = "<strong>Trail eraser</strong><span>Drag over Basic Trails to remove them</span>";
+    gomme.innerHTML = "<strong>Path eraser</strong><span>Drag over Paths to remove them</span>";
     gomme.addEventListener("click", basculerGommeRoutesCampPrototype);
     palette.appendChild(gomme);
   }
@@ -25333,6 +25905,58 @@ function configurerDeclencheurPanneauCamp(bouton, popupRole, controlsId) {
   bouton.setAttribute("aria-controls", controlsId);
 }
 
+function profilAutotuileCheminConstruit(connexions) {
+  const directions = ["north", "east", "south", "west"];
+  const actives = directions.filter(function(direction) {
+    return Boolean(connexions && connexions[direction]);
+  });
+  if (actives.length === 0) return { role: "isolated", orientation: "none" };
+  if (actives.length === 1) return { role: "end", orientation: actives[0] };
+  if (actives.length === 4) return { role: "cross", orientation: "none" };
+  if (actives.length === 3) {
+    return {
+      role: "tee",
+      orientation: "missing-" + directions.find(function(direction) {
+        return !connexions[direction];
+      })
+    };
+  }
+  if (
+    (connexions.north && connexions.south)
+    || (connexions.east && connexions.west)
+  ) {
+    return {
+      role: "straight",
+      orientation: connexions.north ? "vertical" : "horizontal"
+    };
+  }
+  return { role: "corner", orientation: actives.join("-") };
+}
+
+function pieceAtlasCheminConstruit(type, autotile, x, y) {
+  const atlas = type && type.constructedAtlas;
+  if (!atlas || !atlas.roles) return null;
+  const key = autotile.role + "-" + autotile.orientation;
+  const pieces = atlas.roles[key];
+  if (!Array.isArray(pieces) || pieces.length === 0) return null;
+  const variante = Math.abs((Number(x) * 3 + Number(y) * 5) % pieces.length);
+  return { src: pieces[variante], variant: variante + 1, key: key };
+}
+
+function coinsPleinsCheminConstruit(type, x, y, contexteRenduRoutes) {
+  const fills = type && type.constructedAtlas && type.constructedAtlas.cornerFills;
+  if (!fills || !contexteRenduRoutes) return [];
+  const routes = contexteRenduRoutes.routesParCellule;
+  const memeFamille = function(dx, dy) {
+    return routes.get((x + dx) + ":" + (y + dy)) === type;
+  };
+  return [["north-west", -1, -1], ["north-east", 1, -1],
+    ["south-east", 1, 1], ["south-west", -1, 1]].filter(function(coin) {
+    return fills[coin[0]] && memeFamille(coin[1], 0)
+      && memeFamille(0, coin[2]) && memeFamille(coin[1], coin[2]);
+  }).map(function(coin) { return coin[0]; });
+}
+
 function rendreItemsCampPrototype(presencesCamp) {
   campPrototypeDernierApercuPlacement = null;
   const conteneur = document.getElementById("camp-prototype-items");
@@ -25425,6 +26049,7 @@ function rendreItemsCampPrototype(presencesCamp) {
     bouton.dataset.campVisualRotation = String(dimensions.rotation);
     bouton.dataset.campVisualTier = String(tierAffiche);
     if (type.category === "junk") bouton.dataset.campDemolitionLabel = type.label;
+    let connexionsRouteVisuelles = null;
     if (type.category === "road") {
       const connexions = campPrototypeApi.connexionsRoute(
         contexteConnexions.layout,
@@ -25432,6 +26057,7 @@ function rendreItemsCampPrototype(presencesCamp) {
         item.y,
         contexteRenduRoutes
       );
+      connexionsRouteVisuelles = connexions;
       bouton.classList.add("camp-prototype-road");
       let connexionsRoutesVoisines = 0;
       ["north", "east", "south", "west"].forEach(function(direction) {
@@ -25514,11 +26140,47 @@ function rendreItemsCampPrototype(presencesCamp) {
       );
     }
     if (type.category === "road") {
-      bouton.innerHTML = '<i class="camp-prototype-road-center" aria-hidden="true"></i>'
-        + '<i class="camp-prototype-road-segment camp-prototype-road-segment-north" aria-hidden="true"></i>'
-        + '<i class="camp-prototype-road-segment camp-prototype-road-segment-east" aria-hidden="true"></i>'
-        + '<i class="camp-prototype-road-segment camp-prototype-road-segment-south" aria-hidden="true"></i>'
-        + '<i class="camp-prototype-road-segment camp-prototype-road-segment-west" aria-hidden="true"></i>';
+      bouton.classList.add(
+        "camp-prototype-path-profile-" + (type.pathProfile === "constructed" ? "constructed" : "organic")
+      );
+      bouton.dataset.roadMaterial = type.roadMaterial || type.runtimeAssetId || type.id;
+      if (type.asset) {
+        bouton.style.setProperty("--camp-road-surface", "url(" + JSON.stringify(type.asset) + ")");
+      }
+      if (type.pathProfile === "constructed") {
+        // Building access owns a separate straight connector. Do not paint a
+        // second full-width mouth on every contributing approach cell.
+        const autotile = profilAutotuileCheminConstruit(connexionsRouteVisuelles.road);
+        // Adjacent percentage boxes can rasterize on opposite subpixels at
+        // intermediate zooms. Extend paint only toward a connected next cell.
+        for (const direction of ["east", "south"]) {
+          bouton.style.setProperty("--camp-constructed-bleed-" + direction,
+            connexionsRouteVisuelles.road[direction] ? "1px" : "0px");
+        }
+        const pieceAtlas = pieceAtlasCheminConstruit(type, autotile, xAffiche, yAffiche);
+        bouton.dataset.constructedPathRole = autotile.role;
+        bouton.dataset.constructedPathOrientation = autotile.orientation;
+        if (pieceAtlas) {
+          bouton.dataset.constructedAtlasPiece = pieceAtlas.key;
+          bouton.dataset.constructedAtlasVariant = String(pieceAtlas.variant);
+          bouton.style.setProperty("--camp-constructed-atlas-piece", "url(" + JSON.stringify(pieceAtlas.src) + ")");
+        }
+        const coinsPleins = coinsPleinsCheminConstruit(type, xAffiche, yAffiche, contexteRenduRoutes);
+        bouton.dataset.constructedSolidCorners = coinsPleins.join(" ");
+        coinsPleins.forEach(function(coin) {
+          bouton.style.setProperty("--camp-constructed-solid-" + coin,
+            "url(" + JSON.stringify(type.constructedAtlas.cornerFills[coin]) + ")");
+        });
+        bouton.innerHTML = '<i class="camp-prototype-constructed-tile camp-prototype-constructed-role-'
+          + autotile.role + '" data-constructed-orientation="' + autotile.orientation
+          + '" aria-hidden="true"></i>';
+      } else {
+        bouton.innerHTML = '<i class="camp-prototype-road-center" aria-hidden="true"></i>'
+          + '<i class="camp-prototype-road-segment camp-prototype-road-segment-north" aria-hidden="true"></i>'
+          + '<i class="camp-prototype-road-segment camp-prototype-road-segment-east" aria-hidden="true"></i>'
+          + '<i class="camp-prototype-road-segment camp-prototype-road-segment-south" aria-hidden="true"></i>'
+          + '<i class="camp-prototype-road-segment camp-prototype-road-segment-west" aria-hidden="true"></i>';
+      }
     } else {
       remplirItemCampPrototype(bouton, type, rotationAffiche, tierAffiche, item);
       ajouterCellulesHitCampPrototype(bouton, item, tierAffiche, rotationAffiche);
@@ -25551,7 +26213,7 @@ function rendreItemsCampPrototype(presencesCamp) {
         );
         if (nombreRaccords > 0) cheminsConteneur.appendChild(raccordsConteneur);
       }
-      if ((item.tier || 1) > 1) {
+      if ((item.tier || 1) > 1 && etat.showCampTierBadges !== false) {
         const tierBadge = document.createElement("span");
         tierBadge.className = "camp-building-tier-badge";
         tierBadge.textContent = "T" + (item.tier || 1);
@@ -25777,18 +26439,13 @@ function localisationChatCamp(kittyIndex) {
     return { kind: "type", type: batimentsManagers[familleManager] };
   }
 
-  if (estSpecialistePermanentNonAssignable(kittyIndex)
-      && storyEstVue("storyMarketStallCompleteVue")) {
-    const marketStall = itemCampPrototypeParType("marketStall");
-    if (marketStall && marketStall.construit === true) {
-      return { kind: "item", uid: marketStall.uid };
-    }
-  }
-
   const kitty = etat.kittiesData[kittyIndex];
-  if (kitty && kitty.nom === "Naya" && aubergeNayaOperationnelle()) {
-    const inn = itemCampPrototypeParType("nayaSInn");
-    if (inn) return { kind: "item", uid: inn.uid };
+  const specialistRole = saveCore.permanentSpecialistRoleForKitty(kitty);
+  if (specialistRole && storyEstVue(specialistRole.installedAfter)) {
+    const specialistHome = itemCampPrototypeParType(specialistRole.homeBuilding);
+    if (specialistHome && specialistHome.construit === true) {
+      return { kind: "item", uid: specialistHome.uid };
+    }
   }
 
   const prepareExploration = Object.keys(carteExploSlots || {}).some(function(zoneId) {
@@ -25996,13 +26653,10 @@ function ajouterTacheTemporeeChatsCamp(element, presences) {
   frame.appendChild(marqueurs);
   worker.appendChild(frame);
 
-  const focusStatus = document.createElement("small");
-  focusStatus.className = "camp-task-focus-status";
+  const focusStatus = creerBadgeManualFocus(focusReserve > 0, focusReserve);
+  focusStatus.classList.add("camp-task-focus-status");
   focusStatus.dataset.campTaskFocusStatus = "true";
   focusStatus.dataset.campTaskUiKey = taskUiKey;
-  focusStatus.setAttribute("aria-hidden", "true");
-  focusStatus.hidden = !(focusReserve > 0);
-  if (focusReserve > 0) focusStatus.textContent = libelleFocusCamp(focusReserve);
   const taskUiLayer = typeof document.getElementById === "function"
     ? document.getElementById("camp-task-ui-layer") : null;
   (taskUiLayer || worker).appendChild(focusStatus);
@@ -26501,7 +27155,7 @@ function placerItemCampPrototype(typeId, x, y, rotation) {
   return definirPositionPlacementCampPrototype(typeId, x, y, rotation, null);
 }
 
-function modifierRoutesCampPrototype(cellules, effacer) {
+function modifierRoutesCampPrototype(cellules, effacer, typeId) {
   if (!campPrototypeModeEdition || (!DEV_MODE && !appealCampDebloque())) return false;
   const uniques = [];
   const dejaVues = new Set();
@@ -26518,7 +27172,8 @@ function modifierRoutesCampPrototype(cellules, effacer) {
     }));
     const avant = campPrototypeLayout.length;
     campPrototypeLayout = campPrototypeLayout.filter(function(item) {
-      return item.type !== "road" || !cles.has(item.x + ":" + item.y);
+      const type = typeCampPrototype(item.type);
+      return !type || type.category !== "road" || !cles.has(item.x + ":" + item.y);
     });
     modifications = avant - campPrototypeLayout.length;
   } else {
@@ -26526,14 +27181,14 @@ function modifierRoutesCampPrototype(cellules, effacer) {
       if (!evaluerPlacementCampPrototype({
         mode: "new",
         uid: null,
-        type: "road",
+        type: typeId || "road",
         x: cellule.x,
         y: cellule.y,
         rotation: 0
       }).valide) return;
       campPrototypeLayout.push({
         uid: nouvelleUidCampPrototype(),
-        type: "road",
+        type: typeId || "road",
         tier: 1,
         x: cellule.x,
         y: cellule.y
@@ -26548,8 +27203,9 @@ function modifierRoutesCampPrototype(cellules, effacer) {
   actualiserAffichageProfilCamp();
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(effacer
-    ? "Basic Trail tile" + (modifications === 1 ? "" : "s") + " removed."
-    : "Basic Trail extended by " + modifications + " tile" + (modifications === 1 ? "." : "s."));
+    ? "Path tile" + (modifications === 1 ? "" : "s") + " removed."
+    : (typeCampPrototype(typeId || "road").label + " extended by " + modifications
+      + " tile" + (modifications === 1 ? "." : "s.")));
   return true;
 }
 
@@ -26600,8 +27256,8 @@ function basculerGommeRoutesCampPrototype() {
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(campPrototypeGommeRoutes
-    ? "Drag across Basic Trail tiles to erase them."
-    : "Trail eraser disabled.");
+    ? "Drag across Path tiles to erase them."
+    : "Path eraser disabled.");
 }
 
 function basculerGommeCloturesCampPrototype() {
@@ -27103,18 +27759,19 @@ function demarrerInteractionCampPrototype(event) {
     event.preventDefault();
     return;
   }
-  if (campPrototypeGommeRoutes || campPrototypeTypeAPlacer === "road") {
-    const positionRoute = positionCampDepuisPointeur(event, "road", 0, 0);
+  if (campPrototypeGommeRoutes || (typeContinuActif && typeContinuActif.category === "road")) {
+    const activeRoadType = campPrototypeGommeRoutes ? "road" : typeContinuActif.id;
+    const positionRoute = positionCampDepuisPointeur(event, activeRoadType, 0, 0);
     if (!positionRoute) return;
     const effacer = campPrototypeGommeRoutes;
     campPrototypePointeur = {
       pointerId: event.pointerId,
       mode: effacer ? "erase-road" : "paint-road",
-      type: "road",
+      type: activeRoadType,
       x: positionRoute.x,
       y: positionRoute.y
     };
-    modifierRoutesCampPrototype([positionRoute], effacer);
+    modifierRoutesCampPrototype([positionRoute], effacer, activeRoadType);
     board.setPointerCapture(event.pointerId);
     event.preventDefault();
     return;
@@ -27283,7 +27940,7 @@ function deplacerInteractionCampPrototype(event) {
     campPrototypePointeur.mode === "paint-road"
     || campPrototypePointeur.mode === "erase-road"
   ) {
-    const positionRoute = positionCampDepuisPointeur(event, "road", 0, 0);
+    const positionRoute = positionCampDepuisPointeur(event, campPrototypePointeur.type, 0, 0);
     if (!positionRoute) return;
     const cellules = campPrototypeApi.cellulesLigne(
       campPrototypePointeur.x,
@@ -27293,7 +27950,8 @@ function deplacerInteractionCampPrototype(event) {
     );
     modifierRoutesCampPrototype(
       cellules,
-      campPrototypePointeur.mode === "erase-road"
+      campPrototypePointeur.mode === "erase-road",
+      campPrototypePointeur.type
     );
     campPrototypePointeur.x = positionRoute.x;
     campPrototypePointeur.y = positionRoute.y;
@@ -27464,8 +28122,8 @@ function terminerInteractionCampPrototype(event, annulee) {
       );
     } else if (interaction.mode === "paint-road" || interaction.mode === "erase-road") {
       definirMessageCampPrototype(interaction.mode === "paint-road"
-        ? "Basic Trail tool active. Keep dragging to extend paths."
-        : "Trail eraser active. Keep dragging to remove paths.");
+        ? typeCampPrototype(interaction.type).label + " tool active. Keep dragging to extend paths."
+        : "Path eraser active. Keep dragging to remove paths.");
     } else if (interaction.mode === "paint-fence" || interaction.mode === "erase-fence") {
       definirMessageCampPrototype(interaction.mode === "paint-fence"
         ? "Fence tool active. Keep dragging along grid edges to extend it."
@@ -27894,7 +28552,7 @@ function changerOnglet(id, options) {
     const actif = id === tab;
     const panneau = document.getElementById("contenu-" + tab);
     const bouton = document.getElementById("onglet-" + tab);
-    panneau.style.display = actif ? "block" : "none";
+    panneau.hidden = !actif;
     panneau.setAttribute("aria-hidden", actif ? "false" : "true");
     bouton.classList.toggle("onglet-actif", actif);
     bouton.setAttribute("aria-selected", actif ? "true" : "false");
@@ -29331,6 +29989,9 @@ mobileInputDiagnostic.configure({
   }
 });
 initialiserCampPrototype();
+if (partieExistante && initialiserRecordNiveauCampDepuisEtatCharge()) {
+  migrationSauvegardeAPersister = true;
+}
 normaliserFormuleRecrutementCamp();
 if (partieExistante && migrationSauvegardeAPersister) sauvegarder();
 if (globalThis.CatInc.devTools) {
@@ -29360,7 +30021,7 @@ if (globalThis.CatInc.devTools) {
       const normalized = saveCore.migrerDonneesSauvegarde(analysis.data, {
         maintenant: Date.now(),
         nomsKitties: NOMS_KITTIES,
-        jobIds: Object.keys(METIERS).concat(["shop-owner"]),
+        jobIds: Object.keys(METIERS).concat(saveCore.PERMANENT_SPECIALIST_JOB_IDS),
         assignerVisageChaton: assignerVisageChaton,
         normaliserVisageChaton: normaliserVisageChaton,
         estVisageGeneriqueLegacy: estVisageGeneriqueLegacy,
@@ -30204,6 +30865,29 @@ if (/(?:^|[?&])inputOverlayTest=1(?:&|$)/.test(devQuery)) {
     prepareNeighborPolish: preparerVoisinPolishTest,
     prepareReadyTrainingPolish: preparerFormationPretePolishTest,
     prepareActiveTrainingPolish: preparerFormationActivePolishTest,
+    showCampLevelCelebration: function(options) {
+      preparerSurfaceInputOverlayTest();
+      const config = options || {};
+      etat.campProfile.name = config.campName || "Whisker Haven";
+      const fromLevel = Math.max(0, Math.floor(Number(config.fromLevel) || 0));
+      const toLevel = Math.max(fromLevel + 1, Math.floor(Number(config.toLevel) || fromLevel + 1));
+      const rewards = Array.isArray(config.rewards) ? config.rewards : [
+        {level: toLevel, type: "appeal", amount: 2}
+      ];
+      return afficherCelebrationNiveauCamp({
+        fromLevel: fromLevel,
+        toLevel: toLevel,
+        startProgressRatio: Math.max(0, Math.min(1, Number(config.startProgressRatio) || 0)),
+        rewards: rewards
+      });
+    },
+    campLevelMilestoneSnapshot: function() {
+      return Object.freeze({
+        currentLevel: calculerProgressionNiveauCampDirecte().level,
+        highestLevelReached: etat.highestCampLevelReached,
+        appeal: appealPermanentNiveauCamp(etat.highestCampLevelReached)
+      });
+    },
     finishActiveTrainingPolish: function() {
       if (!etat.formationEnCours) return false;
       etat.formationEnCours.startTs = Date.now() - etat.formationEnCours.duree * 1000;

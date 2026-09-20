@@ -215,12 +215,16 @@ function creerEtatInitial() {
   campCatPortraitScale:    1,
   hideCampCatIcons:          false,
   campAnimationsEnabled:   true,
+  showCampTierBadges:      true,
   // Resources hidden from the compact top rail. An empty list means every
   // unlocked resource is displayed by default.
   resourceBarHidden:       [],
   // Local presentation choices only. Camp Level, recruited Cat count and
   // Appeal stay derived from their gameplay authorities.
   campProfile:             { name: "My Camp", avatarCatFaceId: null },
+  // Permanent first-reach Camp milestone. Current Camp Level remains derived
+  // and may decrease independently of this monotonic reward authority.
+  highestCampLevelReached: 0,
 
   // Bird event progression. The first event is deliberately fixed at five
   // minutes; later events return to the normal random schedule.

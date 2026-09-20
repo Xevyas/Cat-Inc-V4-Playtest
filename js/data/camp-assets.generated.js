@@ -95,6 +95,7 @@
                 "up": "img/Maps/Camp Runtime/Paths/Basic Trail_Camp_TopDown_Watercolor_Game_v1.png",
                 "left": "img/Maps/Camp Runtime/Paths/Basic Trail_Camp_TopDown_Watercolor_Game_v1.png"
               },
+              "pathProfile": "organic",
               "buildingJoin": {
                 "width": 0.32,
                 "maxWidth": 0.8,
@@ -1063,6 +1064,46 @@
         }
       }
     },
+    "dirtPath": {
+      "assetId": "dirt-path",
+      "name": "Dirt Path",
+      "category": "path",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "name": "Dirt Path",
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/dirt-path/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/dirt-path/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/dirt-path/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/dirt-path/tier-1/revision-1/left.png"
+              },
+              "pathProfile": "organic",
+              "buildingJoin": {
+                "width": 0.32,
+                "maxWidth": 0.8,
+                "length": 0.34,
+                "multiCellLength": 0.68,
+                "textureScaleCells": 1.394,
+                "merged": {
+                  "outerInset": 0.09,
+                  "innerWidth": 0.62,
+                  "length": 0.8
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "junkFlowerBush": {
       "assetId": "junk-flower-bush",
       "name": "Flowering Bush",
@@ -1235,6 +1276,181 @@
                 "clearDurationSeconds": 1200,
                 "minCatLevel": 0,
                 "requiredCats": 2
+              }
+            }
+          }
+        }
+      }
+    },
+    "greyPavedFloor": {
+      "assetId": "grey-paved-floor",
+      "name": "Grey Paved Floor",
+      "category": "path",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 8,
+          "revisions": {
+            "8": {
+              "name": "Grey Paved Floor",
+              "tier": 1,
+              "revision": 8,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/down.png",
+                "right": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/right.png",
+                "up": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/up.png",
+                "left": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/left.png"
+              },
+              "pathProfile": "constructed",
+              "constructedAtlas": {
+                "schemaVersion": 1,
+                "authority": "constructed-topology-atlas-v1",
+                "tilePixels": 256,
+                "roles": {
+                  "isolated-none": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/isolated-none-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/isolated-none-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/isolated-none-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/isolated-none-v4.png"
+                  ],
+                  "end-north": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-north-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-north-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-north-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-north-v4.png"
+                  ],
+                  "end-east": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-east-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-east-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-east-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-east-v4.png"
+                  ],
+                  "end-south": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-south-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-south-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-south-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-south-v4.png"
+                  ],
+                  "end-west": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-west-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-west-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-west-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/end-west-v4.png"
+                  ],
+                  "straight-vertical": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-vertical-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-vertical-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-vertical-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-vertical-v4.png"
+                  ],
+                  "straight-horizontal": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-horizontal-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-horizontal-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-horizontal-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/straight-horizontal-v4.png"
+                  ],
+                  "corner-north-east": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-east-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-east-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-east-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-east-v4.png"
+                  ],
+                  "corner-east-south": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-east-south-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-east-south-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-east-south-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-east-south-v4.png"
+                  ],
+                  "corner-south-west": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-south-west-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-south-west-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-south-west-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-south-west-v4.png"
+                  ],
+                  "corner-north-west": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-west-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-west-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-west-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/corner-north-west-v4.png"
+                  ],
+                  "tee-missing-north": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-north-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-north-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-north-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-north-v4.png"
+                  ],
+                  "tee-missing-east": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-east-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-east-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-east-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-east-v4.png"
+                  ],
+                  "tee-missing-south": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-south-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-south-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-south-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-south-v4.png"
+                  ],
+                  "tee-missing-west": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-west-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-west-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-west-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/tee-missing-west-v4.png"
+                  ],
+                  "cross-none": [
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/cross-none-v1.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/cross-none-v2.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/cross-none-v3.png",
+                    "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/cross-none-v4.png"
+                  ]
+                },
+                "buildingJoin": {
+                  "single": {
+                    "north": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-single-north.png",
+                    "east": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-single-east.png",
+                    "south": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-single-south.png",
+                    "west": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-single-west.png"
+                  },
+                  "merged": {
+                    "north": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-merged-north.png",
+                    "east": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-merged-east.png",
+                    "south": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-merged-south.png",
+                    "west": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/building-merged-west.png"
+                  }
+                },
+                "reviewSheet": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/atlas-review-sheet.png",
+                "sharedEdgeProof": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/shared-edge-proof.json",
+                "manifest": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/atlas-manifest.json",
+                "provenance": {
+                  "profile": "constructed",
+                  "producer": "constructed-atlas-raster",
+                  "mode": "whole-paver-edge-matched-bitmask",
+                  "sourceRevision": 3,
+                  "sourceAttempt": "20260919-211043-grey-paved-floor-t1-r3-f4b78ef2",
+                  "imageGenerationCalls": 0,
+                  "blenderUsed": false
+                },
+                "cornerFills": {
+                  "north-west": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/solid-north-west.png",
+                  "north-east": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/solid-north-east.png",
+                  "south-east": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/solid-south-east.png",
+                  "south-west": "img/Buildings/Camp Runtime/grey-paved-floor/tier-1/revision-8/solid-south-west.png"
+                }
+              },
+              "buildingJoin": {
+                "width": 0.32,
+                "maxWidth": 0.84,
+                "length": 0.42,
+                "multiCellLength": 0.68,
+                "textureScaleCells": 1.0,
+                "merged": {
+                  "outerInset": 0.09,
+                  "innerWidth": 0.84,
+                  "length": 0.8
+                }
               }
             }
           }
@@ -2536,6 +2752,46 @@
         }
       }
     },
+    "pebblePath": {
+      "assetId": "pebble-path",
+      "name": "Pebble path",
+      "category": "path",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "name": "Pebble path",
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/pebble-path/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/pebble-path/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/pebble-path/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/pebble-path/tier-1/revision-1/left.png"
+              },
+              "pathProfile": "organic",
+              "buildingJoin": {
+                "width": 0.32,
+                "maxWidth": 0.8,
+                "length": 0.34,
+                "multiCellLength": 0.68,
+                "textureScaleCells": 1.394,
+                "merged": {
+                  "outerInset": 0.09,
+                  "innerWidth": 0.62,
+                  "length": 0.8
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "junkPebblePile": {
       "assetId": "junk-pebble-pile",
       "name": "Pile of Pebbles",
@@ -3145,6 +3401,46 @@
         }
       }
     },
+    "stonePavedPath": {
+      "assetId": "stone-paved-path",
+      "name": "Stone Paved path",
+      "category": "path",
+      "placeable": true,
+      "tiers": {
+        "1": {
+          "liveRevision": 1,
+          "revisions": {
+            "1": {
+              "name": "Stone Paved path",
+              "tier": 1,
+              "revision": 1,
+              "status": "live",
+              "width": 1,
+              "height": 1,
+              "sprites": {
+                "down": "img/Buildings/Camp Runtime/stone-paved-path/tier-1/revision-1/down.png",
+                "right": "img/Buildings/Camp Runtime/stone-paved-path/tier-1/revision-1/right.png",
+                "up": "img/Buildings/Camp Runtime/stone-paved-path/tier-1/revision-1/up.png",
+                "left": "img/Buildings/Camp Runtime/stone-paved-path/tier-1/revision-1/left.png"
+              },
+              "pathProfile": "constructed",
+              "buildingJoin": {
+                "width": 0.32,
+                "maxWidth": 0.8,
+                "length": 0.34,
+                "multiCellLength": 0.68,
+                "textureScaleCells": 1.394,
+                "merged": {
+                  "outerInset": 0.09,
+                  "innerWidth": 0.62,
+                  "length": 0.8
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "stoneStorageShed": {
       "assetId": "stone-storage-shed",
       "name": "Stone Storage Shed",
@@ -3700,26 +3996,26 @@
       "placeable": false,
       "tiers": {
         "1": {
-          "liveRevision": 9,
+          "liveRevision": 10,
           "revisions": {
-            "9": {
+            "10": {
               "name": "Garden Tree",
               "tier": 1,
-              "revision": 9,
+              "revision": 10,
               "status": "live",
               "width": 2,
               "height": 2,
               "sprites": {
-                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/down.png",
-                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/right.png",
-                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/up.png",
-                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/left.png"
+                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/down.png",
+                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/right.png",
+                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/up.png",
+                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/left.png"
               },
               "groundingSprites": {
-                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-down.png",
-                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-right.png",
-                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-up.png",
-                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-9/grounding-left.png"
+                "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/grounding-down.png",
+                "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/grounding-right.png",
+                "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/grounding-up.png",
+                "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/revision-10/grounding-left.png"
               },
               "groundingBounds": {
                 "down": {
@@ -3748,18 +4044,18 @@
                 }
               },
               "animation": {
-                "revision": 3,
+                "revision": 5,
                 "status": "live",
-                "baseRevision": 9,
+                "baseRevision": 10,
                 "familyId": "foliage-rustle",
                 "mode": "overlay-apng",
                 "frameCount": 8,
                 "frameDurationMs": 92,
                 "sprites": {
-                  "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-down.png",
-                  "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-right.png",
-                  "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-up.png",
-                  "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-3/animation-left.png"
+                  "down": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-5/animation-down.png",
+                  "right": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-5/animation-right.png",
+                  "up": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-5/animation-up.png",
+                  "left": "img/Buildings/Camp Runtime/garden-tree/tier-1/animation-5/animation-left.png"
                 },
                 "composition": "replace-base",
                 "registration": {
