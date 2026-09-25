@@ -5,6 +5,7 @@
   CatInc.ui = CatInc.ui || {};
 
   const VISIBLE_FILL = 0.9;
+  const CIRCLE_FILL = 0.98;
   const framingByPath = (CatInc.data && CatInc.data.liveCatFaces
     && CatInc.data.liveCatFaces.framingByPath) || {};
 
@@ -26,18 +27,19 @@
     return match ? match[1] : "";
   }
 
-  function framingVariables(framing) {
+  function framingVariables(framing, mode) {
     if (!framing || !framing.width || !framing.height || !framing.bounds) return null;
     const bounds = framing.bounds;
-    // Cat Face hosts are square. Derive the final transform entirely from the
-    // exported pixel bounds so it can be installed before the image is painted.
     const sourceScale = 1 / Math.max(framing.width, framing.height);
+    const circle = mode === "circle" && framing.circle;
     const visibleWidth = (bounds[2] - bounds[0]) * sourceScale;
     const visibleHeight = (bounds[3] - bounds[1]) * sourceScale;
-    if (!visibleWidth || !visibleHeight) return false;
-    const scale = VISIBLE_FILL / Math.max(visibleWidth, visibleHeight);
-    const centerX = (bounds[0] + bounds[2]) / 2;
-    const centerY = (bounds[1] + bounds[3]) / 2;
+    if (!visibleWidth || !visibleHeight) return null;
+    const scale = circle && circle.radius > 0
+      ? CIRCLE_FILL / (2 * circle.radius * sourceScale)
+      : VISIBLE_FILL / Math.max(visibleWidth, visibleHeight);
+    const centerX = circle ? circle.center[0] : (bounds[0] + bounds[2]) / 2;
+    const centerY = circle ? circle.center[1] : (bounds[1] + bounds[3]) / 2;
     return Object.freeze({
       scale: scale,
       x: -scale * (centerX - framing.width / 2) * sourceScale * 100,
@@ -45,8 +47,21 @@
     });
   }
 
-  function variablesForSource(source) {
-    return framingVariables(framingByPath[sourcePath(source)]);
+  function variablesForSource(source, mode) {
+    return framingVariables(framingByPath[sourcePath(source)], mode);
+  }
+
+  function usesCircularMask(image) {
+    for (let node = image; node && node !== document.body; node = node.parentElement) {
+      const style = root.getComputedStyle(node);
+      const circle = [style.borderTopLeftRadius, style.borderTopRightRadius,
+        style.borderBottomRightRadius, style.borderBottomLeftRadius]
+        .every(radius => radius === "50%");
+      if (node === image && circle) return true;
+      if (node !== image && /^(hidden|clip)$/.test(style.overflowX)
+          && /^(hidden|clip)$/.test(style.overflowY)) return circle;
+    }
+    return false;
   }
 
   function applyVariables(image, variables) {
@@ -65,7 +80,8 @@
       delete image.dataset.catFaceSource;
       return Promise.resolve(false);
     }
-    const variables = variablesForSource(declaredSource);
+    const variables = variablesForSource(declaredSource,
+      usesCircularMask(image) ? "circle" : "square");
     if (!variables) return Promise.resolve(false);
     image.dataset.catFaceSource = declaredSource;
     image.classList.add("cat-face-runtime-framed");
@@ -84,7 +100,8 @@
     image.style.removeProperty("--cat-face-frame-scale");
     image.style.removeProperty("--cat-face-frame-x");
     image.style.removeProperty("--cat-face-frame-y");
-    const variables = variablesForSource(source);
+    const variables = variablesForSource(source,
+      usesCircularMask(image) ? "circle" : "square");
     if (variables) {
       image.dataset.catFaceSource = source;
       image.classList.add("cat-face-runtime-framed");

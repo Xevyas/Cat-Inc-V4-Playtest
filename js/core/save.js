@@ -95,7 +95,7 @@
   const SCOUTING_REWARD_IDS = resourceApi.globalDefinitions().map(function(resource) { return resource.id; });
   const CAMP_BUILDING_IDS = ["sawmill", "catchen", "pawsonry"];
   const CAMP_CANONICAL_REPAIR_IDS = [
-    "cardboardBox", "storage", "operationsTable", "jobCenter",
+    "sawmill", "catchen", "pawsonry", "cardboardBox", "storage", "operationsTable", "jobCenter",
     "laboratory", "marketStall", "smallFountain"
   ];
   function canonicalCampUpgradeEligible(typeId, startTier, targetTier) {

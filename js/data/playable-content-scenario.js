@@ -3,6 +3,7 @@
 
   const CatInc = root.CatInc = root.CatInc || {};
   const data = CatInc.data = CatInc.data || {};
+  const sawmillRepair = data.campGameplay.definitions.sawmill.build;
 
   // LOT-006-A keeps one representative opening path adjustable as data. It
   // is an observation/checkpoint definition, not a second game simulator.
@@ -59,7 +60,8 @@
     }),
     Object.freeze({
       id: "repair-sawmill", action: "repair-sawmill", milestoneId: "sawmill-ready",
-      durationSeconds: 60, resources: Object.freeze({}), outputs: Object.freeze({}),
+      durationSeconds: sawmillRepair.durationSeconds,
+      resources: Object.freeze({...sawmillRepair.costs}), outputs: Object.freeze({}),
       unlocks: Object.freeze(["work"])
     }),
     Object.freeze({

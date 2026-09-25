@@ -680,13 +680,13 @@ body.camp-prologue-reveal .camp-prototype-map {
   --camp-task-progress-color: #dca632;
   --camp-task-progress-rest: rgba(123, 86, 38, .22);
 }
-.camp-task-focus-status {
+.work-manual-focus-badge.camp-task-focus-status {
   --manual-focus-pill-transform-hidden: translate(-50%, calc(-100% - 4px));
   --manual-focus-pill-transform-visible: translate(-50%, calc(-100% - 4px));
   position: absolute;
   right: auto;
-  left: auto;
-  width: clamp(72px, 9vw, 112px);
+  left: 0;
+  width: max-content;
   max-width: calc(100vw - 16px);
   min-width: 0;
   box-sizing: border-box;
@@ -1679,12 +1679,6 @@ body {
   max-width: 500px;
   text-align: center;
   border: 2px solid #d89a63;
-}
-.save-upgrade-logo {
-  width: min(220px, 70%);
-  max-height: 100px;
-  object-fit: contain;
-  margin: 0 auto;
 }
 .save-upgrade-title {
   color: var(--couleur-accent);
@@ -3327,8 +3321,6 @@ body[data-ui-theme="stylish"] #contenu-gang #detail-experience .barre {
   width: auto;
   object-fit: contain;
 }
-
-.settings-logo-mobile { display: none; }
 
 .zone-sequence {
   flex: 1;
@@ -13931,14 +13923,6 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   .titre-zone, .zone-sequence { display: contents; }
 
   .titre { display: none; }
-  .settings-logo-mobile {
-    display: block;
-    width: auto;
-    height: 48px;
-    max-width: min(220px, 80%);
-    object-fit: contain;
-    margin: 2px auto 10px;
-  }
   #bouton-vitesse { order: 0; padding: 6px 8px; font-size: 0.72rem; }
   .stats-attrapage-wrapper { order: 1; display: flex; }
   #bouton-sequence { order: 2; flex: 0 1 auto; min-width: 0; padding: 7px 8px; font-size: 0.78rem; }
@@ -16174,7 +16158,8 @@ body[data-ui-tuner-active="true"]{cursor:crosshair!important}body[data-ui-tuner-
 .camp-profile-bonus strong { color: #684c1c; }
 .camp-profile-avatar-section h3 { margin: 0 0 8px; }
 .camp-profile-avatar-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
-.camp-profile-avatar-choice { display: grid; justify-items: center; min-width: 0; padding: 6px 3px; border: 1px solid #ddceb0; border-radius: 10px; background: #fffaf0; color: #654817; font: inherit; cursor: pointer; }
+/* Bound framed portrait paint without extending the managed panel's scroll area. */
+.camp-profile-avatar-choice { display: grid; justify-items: center; min-width: 0; overflow: clip; padding: 6px 3px; border: 1px solid #ddceb0; border-radius: 10px; background: #fffaf0; color: #654817; font: inherit; cursor: pointer; }
 .camp-profile-avatar-choice img { width: 46px; height: 46px; object-fit: contain; }
 .camp-profile-avatar-choice.is-selected { border-color: #9a7421; background: #f3dfaa; box-shadow: inset 0 0 0 1px #9a7421; }
 .camp-profile-avatar-choice:focus-visible { outline: 2px solid #9a7421; outline-offset: 1px; }

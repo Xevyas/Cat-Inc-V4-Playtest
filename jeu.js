@@ -10864,10 +10864,10 @@ function workResourceDetails(pair, slot, phase, familyId, slotIdx) {
     speedBonuses.push({ label: manager.nom + " Manager", catName: manager.nom, value: managerSpeed });
     speedMultiplier *= managerSpeed;
   }
-  const devWorkSpeed = workBoostMult();
-  if (devWorkSpeed > 1) {
-    speedBonuses.push({ label: "Dev Work Boost", value: devWorkSpeed });
-    speedMultiplier *= devWorkSpeed;
+  const birdBoostSpeed = workBoostMult();
+  if (birdBoostSpeed > 1) {
+    speedBonuses.push({ label: "Bird Boost", value: birdBoostSpeed });
+    speedMultiplier *= birdBoostSpeed;
   }
   if (kitty && slot && familyId !== undefined && slotIdx !== undefined
       && workManualFocus && workManualFocus.kind !== "camp"
@@ -16345,18 +16345,8 @@ function iconeFonctionCampPrototype(functionId) {
 function contenuActionSemantiqueCampPrototype(iconHtml) {
   return '<span class="camp-semantic-action-content" aria-hidden="true">' + iconHtml + '</span>';
 }
-const CAMP_BUILDING_REPAIR_DURATIONS = Object.freeze({
-  sawmill: 60,
-  catchen: 10 * 60,
-  pawsonry: 20 * 60
-});
-const CAMP_BUILDING_REPAIR_COSTS = Object.freeze({
-  sawmill: Object.freeze({}),
-  catchen: Object.freeze({ cardboardPlanks: 2 }),
-  pawsonry: Object.freeze({ cardboardPlanks: 5 })
-});
 const CAMP_CANONICAL_REPAIR_IDS = Object.freeze([
-  "cardboardBox", "storage", "operationsTable", "jobCenter",
+  "sawmill", "catchen", "pawsonry", "cardboardBox", "storage", "operationsTable", "jobCenter",
   "laboratory", "marketStall", "smallFountain"
 ]);
 function definitionReparationCanoniqueCampEligible(buildingId, definition) {
@@ -16376,13 +16366,6 @@ function definitionReparationCanoniqueCampEligible(buildingId, definition) {
   return Boolean(revision && revision.status === "live");
 }
 function definitionReparationCamp(buildingId) {
-  if (CAMP_BUILDING_REPAIR_DURATIONS[buildingId]) {
-    return Object.freeze({
-      source: "runtime",
-      duration: CAMP_BUILDING_REPAIR_DURATIONS[buildingId],
-      costs: CAMP_BUILDING_REPAIR_COSTS[buildingId] || Object.freeze({})
-    });
-  }
   const definition = definitionGameplayCamp(buildingId);
   const build = definition && definition.build;
   if (!definitionReparationCanoniqueCampEligible(buildingId, definition)) return null;
@@ -17493,13 +17476,8 @@ function normaliserReparationsCamp(claimKitty) {
   Object.keys(etat.camp.repairs).forEach(function(buildingId) {
     const reparation = etat.camp.repairs[buildingId];
     const definition = definitionReparationCamp(buildingId);
-    const dureeAttendue = definition && dureeEffectiveActionCamp(
-      definition.duration,
-      [reparation && reparation.kittyIndex],
-      "repair"
-    );
     const valide = Boolean(
-      dureeAttendue
+      definition
       && !batimentCampRepare(buildingId)
       && reparation
       && Number.isInteger(reparation.kittyIndex)
@@ -17512,10 +17490,6 @@ function normaliserReparationsCamp(claimKitty) {
       delete etat.camp.repairs[buildingId];
       changed = true;
       return;
-    }
-    if (reparation.duree !== dureeAttendue) {
-      reparation.duree = dureeAttendue;
-      changed = true;
     }
   });
   return changed;
@@ -20663,7 +20637,16 @@ function actualiserFocusVisuelTacheCamp(worker, reserveSeconds) {
       return element.dataset.campTaskUiKey === uiKey;
     });
   if (!status) return;
+  const label = status.querySelector(".work-manual-focus-label");
+  const time = status.querySelector(".work-manual-focus-time");
+  const previousLabel = label && label.textContent;
+  const previousTimeLength = time && time.textContent.length;
+  const wasHidden = status.hidden;
   actualiserBadgeManualFocus(status, actif, reserve);
+  if (actif && (wasHidden || (label && previousLabel !== label.textContent)
+      || (time && previousTimeLength !== time.textContent.length))) {
+    synchroniserPositionsUiTachesCamp();
+  }
 }
 
 function cibleManualFocusCampPourTache(tache) {
@@ -26752,10 +26735,15 @@ function synchroniserPositionsUiTachesCamp() {
   const board = document.getElementById("camp-prototype-board");
   const layer = document.getElementById("camp-task-ui-layer");
   const viewport = document.querySelector(".camp-prototype-viewport");
-  if (!board || !layer || !viewport || !board.getBoundingClientRect) return;
+  const map = document.querySelector(".camp-prototype-map");
+  if (!board || !layer || !viewport || !map || !board.getBoundingClientRect) return;
   const boardRect = board.getBoundingClientRect();
   const viewportRect = viewport.getBoundingClientRect();
-  if (!(boardRect.width > 0) || !(boardRect.height > 0)) return;
+  const mapRect = map.getBoundingClientRect();
+  if (!(boardRect.width > 0) || !(boardRect.height > 0) || !(board.offsetWidth > 0)) return;
+  const scaleX = boardRect.width / board.offsetWidth;
+  const visibleLeft = Math.max(viewportRect.left, mapRect.left) + 8;
+  const visibleRight = Math.min(viewportRect.right, mapRect.right) - 8;
   const workers = Array.from(document.querySelectorAll("[data-camp-task-ui-key]"))
     .filter(function(element) { return element.classList.contains("camp-task-worker"); });
   layer.querySelectorAll("[data-camp-task-focus-status]").forEach(function(status) {
@@ -26764,17 +26752,16 @@ function synchroniserPositionsUiTachesCamp() {
     });
     if (!worker || !worker.getBoundingClientRect) return;
     const workerRect = worker.getBoundingClientRect();
-    const availableWidth = Math.max(0, viewportRect.width - 16);
-    status.style.maxWidth = availableWidth + "px";
-    const position = calculerAncrageUiFlottanteCampPrototype(
-      boardRect,
-      viewportRect,
-      workerRect,
-      { width: status.offsetWidth, height: 0 },
-      8
-    );
-    status.style.left = position.left + "px";
+    status.style.maxWidth = Math.max(0, visibleRight - visibleLeft) / scaleX + "px";
+    const center = (workerRect.left + workerRect.width / 2 - boardRect.left) / scaleX;
+    status.style.left = center + "px";
     status.style.top = ((workerRect.top - boardRect.top) / boardRect.height * 100) + "%";
+    if (status.hidden) return;
+    const rendered = status.getBoundingClientRect();
+    const correction = rendered.left < visibleLeft
+      ? visibleLeft - rendered.left
+      : (rendered.right > visibleRight ? visibleRight - rendered.right : 0);
+    if (correction) status.style.left = (center + correction / scaleX) + "px";
   });
 }
 

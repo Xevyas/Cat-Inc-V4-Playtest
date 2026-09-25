@@ -196,7 +196,12 @@
           "typeId": "tallGrass",
           "x": 8,
           "y": 7,
-          "zoneId": "home"
+          "zoneId": "home",
+          "reward": {
+            "resourceId": "cardboardPlanks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "home:6:5",
@@ -709,7 +714,12 @@
           "typeId": "greenBush",
           "x": 8,
           "y": 9,
-          "zoneId": "home"
+          "zoneId": "home",
+          "reward": {
+            "resourceId": "cardboardPlanks",
+            "quantity": 1,
+            "oneShot": true
+          }
         },
         {
           "uid": "home:10:9",

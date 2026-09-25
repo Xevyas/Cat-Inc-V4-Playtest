@@ -183,12 +183,12 @@
       "input": {
         "resourceId": "cardboardPieces",
         "quantity": 10,
-        "gatherSecondsPerUnit": 60
+        "gatherSecondsPerUnit": 30
       },
       "output": {
         "resourceId": "cardboardPlanks",
         "quantity": 1,
-        "processSeconds": 300
+        "processSeconds": 180
       },
       "production": {
         "buildingTypeId": "sawmill",
@@ -223,12 +223,12 @@
       "input": {
         "resourceId": "catnip",
         "quantity": 10,
-        "gatherSecondsPerUnit": 120
+        "gatherSecondsPerUnit": 60
       },
       "output": {
         "resourceId": "salads",
         "quantity": 1,
-        "processSeconds": 600
+        "processSeconds": 300
       },
       "production": {
         "buildingTypeId": "catchen",
@@ -263,12 +263,12 @@
       "input": {
         "resourceId": "pebbles",
         "quantity": 10,
-        "gatherSecondsPerUnit": 180
+        "gatherSecondsPerUnit": 903
       },
       "output": {
         "resourceId": "pebbleBricks",
         "quantity": 1,
-        "processSeconds": 900
+        "processSeconds": 600
       },
       "production": {
         "buildingTypeId": "pawsonry",
@@ -439,8 +439,8 @@
     },
     "recruitment": {
       "authoredBaseSeconds": {
-        "3": 30,
-        "4": 120
+        "3": 20,
+        "4": 60
       },
       "curveBaseSeconds": 5,
       "earlyMaxCats": 10,
@@ -1422,7 +1422,12 @@
           "effects": {}
         }
       },
-      "simulation": {}
+      "simulation": {},
+      "build": {
+        "entryMode": "repair",
+        "durationSeconds": 10,
+        "costs": {}
+      }
     },
     "catchen": {
       "assetId": "catchen",
@@ -1448,7 +1453,14 @@
           "effects": {}
         }
       },
-      "simulation": {}
+      "simulation": {},
+      "build": {
+        "entryMode": "repair",
+        "durationSeconds": 30,
+        "costs": {
+          "cardboardPlanks": 2
+        }
+      }
     },
     "pawsonry": {
       "assetId": "pawsonry",
@@ -1474,7 +1486,14 @@
           "effects": {}
         }
       },
-      "simulation": {}
+      "simulation": {},
+      "build": {
+        "entryMode": "repair",
+        "durationSeconds": 1200,
+        "costs": {
+          "cardboardPlanks": 5
+        }
+      }
     },
     "marketStall": {
       "assetId": "market-stall",
