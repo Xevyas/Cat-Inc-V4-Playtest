@@ -173,6 +173,75 @@
       "tier": 3,
       "feedXp": 30,
       "iconPath": "img/resources/small-prey.png"
+    },
+    "recoveredMetal": {
+      "name": "Recovered Metal",
+      "iconId": "resources-recovered-metal",
+      "family": "metal",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Recovered without combat by the Cat working this recipe. Kept privately in that Work slot.",
+      "tier": 1,
+      "iconPath": "img/resources/Recovered_Metal.png"
+    },
+    "metalIngots": {
+      "name": "Metal Ingot",
+      "iconId": "resources-metal-ingot",
+      "family": "metal",
+      "storageMode": "camp-storage",
+      "feedable": false,
+      "description": "A solid metal ingot smelted at the Foundry. Shared material for Camp crafting.",
+      "tier": 1,
+      "iconPath": "img/resources/Metal_Ingot.png"
+    },
+    "recoveredHides": {
+      "name": "Recovered Hides",
+      "iconId": "resources-recovered-hides",
+      "family": "leather",
+      "storageMode": "recipe-slot",
+      "feedable": false,
+      "description": "Recovered without combat by the Cat working this recipe. Kept privately in that Work slot.",
+      "tier": 1,
+      "iconPath": "img/resources/Recovered_Hides.png"
+    },
+    "leather": {
+      "name": "Leather",
+      "iconId": "resources-leather",
+      "family": "leather",
+      "storageMode": "camp-storage",
+      "feedable": false,
+      "description": "Soft leather prepared at the Tannery. Shared material for Camp crafting.",
+      "tier": 1,
+      "iconPath": "img/resources/Leather.png"
+    }
+  },
+  "equipment": {
+    "pairedDaggers": {
+      "name": "Paired Daggers",
+      "description": "A crafted pair of daggers for the Fighter. One pair occupies the weapon slot.",
+      "iconId": "items-paired-daggers",
+      "slot": "weapon",
+      "attack": 2,
+      "defense": 0,
+      "iconPath": "img/items/Paired_Daggers.png"
+    },
+    "leatherProtection": {
+      "name": "Leather Protection",
+      "description": "A crafted leather vest for the Fighter. Occupies the protection slot.",
+      "iconId": "items-leather-protection",
+      "slot": "protection",
+      "attack": 0,
+      "defense": 2,
+      "iconPath": "img/items/Leather_Protection.png"
+    },
+    "reinforcedDaggers": {
+      "name": "Reinforced Daggers",
+      "description": "A reinforced pair of daggers crafted from the Hollow Tree Lessons. One pair occupies the weapon slot.",
+      "iconId": "items-paired-daggers",
+      "slot": "weapon",
+      "attack": 3,
+      "defense": 0,
+      "iconPath": "img/items/Paired_Daggers.png"
     }
   },
   "workRecipes": {
@@ -263,7 +332,7 @@
       "input": {
         "resourceId": "pebbles",
         "quantity": 10,
-        "gatherSecondsPerUnit": 903
+        "gatherSecondsPerUnit": 90
       },
       "output": {
         "resourceId": "pebbleBricks",
@@ -295,6 +364,120 @@
         "minimumBuildingTier": 2
       },
       "unlockProfile": "stone-tier2"
+    },
+    "metalIngots": {
+      "name": "Metal Ingots",
+      "family": "metal",
+      "tier": 1,
+      "input": {
+        "resourceId": "recoveredMetal",
+        "quantity": 5,
+        "gatherSecondsPerUnit": 60
+      },
+      "output": {
+        "resourceId": "metalIngots",
+        "quantity": 1,
+        "processSeconds": 300
+      },
+      "production": {
+        "buildingTypeId": "foundry",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "workshop-metal"
+    },
+    "leather": {
+      "name": "Leather",
+      "family": "leather",
+      "tier": 1,
+      "input": {
+        "resourceId": "recoveredHides",
+        "quantity": 5,
+        "gatherSecondsPerUnit": 60
+      },
+      "output": {
+        "resourceId": "leather",
+        "quantity": 1,
+        "processSeconds": 300
+      },
+      "production": {
+        "buildingTypeId": "tannery",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "workshop-leather"
+    },
+    "pairedDaggers": {
+      "name": "Paired Daggers",
+      "family": "forge",
+      "tier": 1,
+      "mode": "craft",
+      "inputs": [
+        {
+          "resourceId": "metalIngots",
+          "quantity": 2
+        },
+        {
+          "resourceId": "leather",
+          "quantity": 1
+        }
+      ],
+      "output": {
+        "equipmentId": "pairedDaggers",
+        "quantity": 1,
+        "processSeconds": 600
+      },
+      "production": {
+        "buildingTypeId": "forge",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "workshop-forge"
+    },
+    "leatherProtection": {
+      "name": "Leather Protection",
+      "family": "leather",
+      "tier": 1,
+      "mode": "craft",
+      "inputs": [
+        {
+          "resourceId": "leather",
+          "quantity": 3
+        }
+      ],
+      "output": {
+        "equipmentId": "leatherProtection",
+        "quantity": 1,
+        "processSeconds": 600
+      },
+      "production": {
+        "buildingTypeId": "tannery",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "workshop-leather"
+    },
+    "reinforcedDaggers": {
+      "name": "Reinforced Daggers",
+      "family": "forge",
+      "tier": 1,
+      "mode": "craft",
+      "inputs": [
+        {
+          "resourceId": "metalIngots",
+          "quantity": 3
+        },
+        {
+          "resourceId": "leather",
+          "quantity": 1
+        }
+      ],
+      "output": {
+        "equipmentId": "reinforcedDaggers",
+        "quantity": 1,
+        "processSeconds": 900
+      },
+      "production": {
+        "buildingTypeId": "forge",
+        "minimumBuildingTier": 1
+      },
+      "unlockProfile": "hollow-tree-forge"
     }
   },
   "storageRules": {
@@ -308,7 +491,9 @@
       "rockBricks",
       "humanLeftovers",
       "humanWorkersFood",
-      "smallprey"
+      "smallprey",
+      "metalIngots",
+      "leather"
     ]
   },
   "campLevelRules": {
@@ -1847,6 +2032,82 @@
         "rounding": "ceil",
         "refundRate": 0.5,
         "durationGrowth": 5
+      }
+    },
+    "foundry": {
+      "assetId": "foundry",
+      "name": "Foundry",
+      "category": "production-building",
+      "repeatable": false,
+      "footprint": {
+        "width": 2,
+        "height": 2
+      },
+      "unlock": {
+        "kind": "blueprint-learned",
+        "itemId": "workshopPlans"
+      },
+      "effects": {},
+      "upgradeTiers": {},
+      "simulation": {},
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 900,
+        "costs": {
+          "basicWoodPlanks": 5,
+          "pebbleBricks": 5
+        }
+      }
+    },
+    "tannery": {
+      "assetId": "tannery",
+      "name": "Tannery",
+      "category": "production-building",
+      "repeatable": false,
+      "footprint": {
+        "width": 2,
+        "height": 2
+      },
+      "unlock": {
+        "kind": "blueprint-learned",
+        "itemId": "workshopPlans"
+      },
+      "effects": {},
+      "upgradeTiers": {},
+      "simulation": {},
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 900,
+        "costs": {
+          "basicWoodPlanks": 5,
+          "pebbleBricks": 5
+        }
+      }
+    },
+    "forge": {
+      "assetId": "forge",
+      "name": "Forge",
+      "category": "production-building",
+      "repeatable": false,
+      "footprint": {
+        "width": 2,
+        "height": 2
+      },
+      "unlock": {
+        "kind": "blueprint-learned",
+        "itemId": "workshopPlans"
+      },
+      "effects": {},
+      "upgradeTiers": {},
+      "simulation": {},
+      "build": {
+        "entryMode": "build",
+        "durationSeconds": 900,
+        "costs": {
+          "basicWoodPlanks": 5,
+          "pebbleBricks": 5,
+          "metalIngots": 2
+        }
       }
     }
   }

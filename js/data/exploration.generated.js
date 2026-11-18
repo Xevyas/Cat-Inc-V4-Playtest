@@ -13,7 +13,7 @@
     "startingNeighbourhood": {
       "id": "startingNeighbourhood",
       "nom": "Starting Neighbourhood",
-      "mapImg": "img/Maps/Starting Neighbourhood.webp",
+      "mapImg": "img/Maps/map-a8ada9eba13cc2b4bc7a-r7.webp",
       "zones": {
         "D1": {
           "id": "D1",
@@ -339,10 +339,275 @@
         }
       },
       "columns": 7,
-      "rows": 5
+      "rows": 5,
+      "artwork": {
+        "iconId": "map-a8ada9eba13cc2b4bc7a",
+        "revision": 7
+      }
+    },
+    "woodlandEntrance": {
+      "id": "woodlandEntrance",
+      "nom": "Woodland Entrance",
+      "columns": 6,
+      "rows": 5,
+      "startZone": "woodlandEntrance.entry",
+      "mapImg": "img/Maps/map-8b8f4a58ad4284e9046e-r2.webp",
+      "zones": {
+        "woodlandEntrance.entry": {
+          "id": "woodlandEntrance.entry",
+          "nom": "Woodland entrance",
+          "type": "other",
+          "gridLabel": "C1",
+          "description": "A wooden sign marks the trail back to the neighbourhood.",
+          "difficulte": 0,
+          "duree": 0,
+          "slots": 0,
+          "occupiedCells": [
+            {
+              "x": 2,
+              "y": 1
+            },
+            {
+              "x": 3,
+              "y": 1
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.training": {
+          "id": "woodlandEntrance.training",
+          "nom": "Training clearing",
+          "type": "other",
+          "gridLabel": "A1",
+          "description": "An open clearing among the trees, with training dummies ready for practice.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 1
+            },
+            {
+              "x": 0,
+              "y": 2
+            },
+            {
+              "x": 1,
+              "y": 2
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.berries": {
+          "id": "woodlandEntrance.berries",
+          "nom": "Berry grove",
+          "type": "forest",
+          "gridLabel": "E1",
+          "description": "Berry bushes grow beside the woodland trail.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 4,
+              "y": 1
+            },
+            {
+              "x": 5,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 2
+            },
+            {
+              "x": 5,
+              "y": 2
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.stream": {
+          "id": "woodlandEntrance.stream",
+          "nom": "Fallen-log crossing",
+          "type": "other",
+          "gridLabel": "D3",
+          "description": "A fallen trunk bridges the quiet stream.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 3,
+              "y": 3
+            },
+            {
+              "x": 4,
+              "y": 3
+            },
+            {
+              "x": 5,
+              "y": 3
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.cabin": {
+          "id": "woodlandEntrance.cabin",
+          "nom": "Abandoned cabin",
+          "type": "building",
+          "gridLabel": "A4",
+          "description": "A small abandoned cabin stands among the trees.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 4
+            },
+            {
+              "x": 1,
+              "y": 4
+            },
+            {
+              "x": 0,
+              "y": 5
+            },
+            {
+              "x": 1,
+              "y": 5
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.hollowTree": {
+          "id": "woodlandEntrance.hollowTree",
+          "nom": "Hollow tree",
+          "type": "forest",
+          "gridLabel": "E4",
+          "description": "A broad hollow tree overlooks the trail. A territorial woodland rat guards the notes hidden inside.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 4,
+              "y": 4
+            },
+            {
+              "x": 5,
+              "y": 4
+            },
+            {
+              "x": 4,
+              "y": 5
+            },
+            {
+              "x": 5,
+              "y": 5
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.paths": {
+          "id": "woodlandEntrance.paths",
+          "nom": "Woodland trail",
+          "type": "street",
+          "gridLabel": "C2",
+          "description": "A winding trail connects the woodland clearings.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 2,
+              "y": 2
+            },
+            {
+              "x": 3,
+              "y": 2
+            },
+            {
+              "x": 2,
+              "y": 3
+            },
+            {
+              "x": 2,
+              "y": 4
+            },
+            {
+              "x": 3,
+              "y": 4
+            },
+            {
+              "x": 3,
+              "y": 5
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.westWoods": {
+          "id": "woodlandEntrance.westWoods",
+          "nom": "Western trees",
+          "type": "forest",
+          "gridLabel": "A3",
+          "description": "A dense stand of trees on the western edge.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 0,
+              "y": 3
+            },
+            {
+              "x": 1,
+              "y": 3
+            }
+          ],
+          "icone": "forest"
+        },
+        "woodlandEntrance.northWoods": {
+          "id": "woodlandEntrance.northWoods",
+          "nom": "Northern trees",
+          "type": "forest",
+          "gridLabel": "C5",
+          "description": "The woods continue beyond the northern trail.",
+          "difficulte": 100,
+          "duree": 3600,
+          "slots": 2,
+          "occupiedCells": [
+            {
+              "x": 2,
+              "y": 5
+            }
+          ],
+          "icone": "forest"
+        }
+      },
+      "artwork": {
+        "iconId": "map-8b8f4a58ad4284e9046e",
+        "revision": 2
+      }
     }
   },
   "campaigns": {
+    "searchWoodlandCabin": {
+      "id": "searchWoodlandCabin",
+      "nom": "Search the abandoned workshop",
+      "description": "Search the cabin's shelves and workbench for workshop plans. No fighting is needed, and no finished equipment is hidden here.",
+      "difficulte": 100,
+      "duree": 3600,
+      "slots": 2,
+      "recompense": "workshopPlans",
+      "zone": "woodlandEntrance.cabin"
+    },
     "checkTheTrash": {
       "id": "checkTheTrash",
       "nom": "Search our trash",
@@ -825,6 +1090,35 @@
       "zone": "gasStation",
       "unlockCampaign": "sneakBackEntrance"
     }
+  },
+  "worldMap": {
+    "artworkManifest": "tools/camp_asset_studio/library/exploration-world-map/revision-1/approval.json",
+    "nodes": [
+      {
+        "id": "industrialOutskirts",
+        "nom": "Industrial Outskirts",
+        "mapImg": "img/Maps/world-map-r1-industrial-outskirts.webp",
+        "regionId": null
+      },
+      {
+        "id": "riversideHamlet",
+        "nom": "Riverside Hamlet",
+        "mapImg": "img/Maps/world-map-r1-riverside-hamlet.webp",
+        "regionId": null
+      },
+      {
+        "id": "woodlandEntrance",
+        "nom": "Woodland Entrance",
+        "mapImg": "img/Maps/world-map-r1-woodland-entrance.webp",
+        "regionId": "woodlandEntrance"
+      },
+      {
+        "id": "startingNeighbourhood",
+        "nom": "Starting Neighbourhood",
+        "mapImg": "img/Maps/world-map-r1-starting-neighbourhood.webp",
+        "regionId": "startingNeighbourhood"
+      }
+    ]
   }
 });
 })(typeof window !== "undefined" ? window : globalThis);

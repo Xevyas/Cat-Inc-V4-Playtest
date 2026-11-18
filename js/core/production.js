@@ -22,6 +22,33 @@
     };
     if (!state || !pair || !slot || slot.kittyIndex === null || !slot.recipeId || !(dt > 0)) return result;
 
+    if (pair.mode === "craft") {
+      const recipe = CatInc.data.campGameplay.workRecipes[slot.recipeId];
+      if (!recipe || recipe.mode !== "craft" || !(recipe.output.processSeconds > 0)) return result;
+      if (!(slot.phaseProgress > 0) && !CatInc.equipment.inputsAvailable(state, recipe)) return result;
+      slot.phase = "processing";
+      const positiveSpeed = function(value) { return Number.isFinite(value) && value > 0 ? value : 1; };
+      const rate = positiveSpeed(modifiers.processingSpeed) * positiveSpeed(modifiers.processingManualSpeed)
+        * positiveSpeed(modifiers.globalSpeed) / recipe.output.processSeconds;
+      let remaining = dt;
+      let guard = 0;
+      result.active = true;
+      while (remaining > 1e-9 && guard++ < 100000) {
+        if (!(slot.phaseProgress > 0) && !CatInc.equipment.inputsAvailable(state, recipe)) break;
+        const progress = Math.max(0, Math.min(1, slot.phaseProgress || 0));
+        const used = Math.min(remaining, (1 - progress) / rate);
+        slot.phaseProgress = Math.min(1, progress + used * rate);
+        remaining -= used;
+        if (slot.phaseProgress < 1 - 1e-9) break;
+        slot.phaseProgress = 1;
+        if (!CatInc.equipment.completeCraft(state, slot)) break;
+        result.produced += 1;
+        result.completedCycles += 1;
+        result.firstProducerIndex = slot.kittyIndex;
+      }
+      return result;
+    }
+
     const rawSeconds = Number(pair.rawSeconds);
     const processingSeconds = Number(pair.processingSeconds);
     const baseRawQuantity = Number(pair.rawQuantity);

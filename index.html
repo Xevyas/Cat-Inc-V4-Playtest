@@ -307,6 +307,22 @@
     </div>
   </div>
 
+  <!-- WORLD MAP : Compass and claimed forest crossing -->
+  <div id="ecran-story-world-map" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" onclick="ouvrirWorldMapDepuisStory()">Open World Map</button>
+    </div>
+  </div>
+
+  <!-- BRAMBLE : revealed woodland training clearing -->
+  <div id="ecran-story-bramble" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue"></div>
+      <button class="bouton-intro" onclick="apprendreFighterDepuisStory()">Learn Fighter training</button>
+    </div>
+  </div>
+
   <!-- STORY HOUSE EVACUATION : 15 cats recruited -->
   <div id="ecran-story-house-evacuation" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
@@ -477,7 +493,7 @@
         </div>
       </div>
       <p class="bird-minijeu-desc" id="bird-minijeu-desc">Click <strong>CATCH!</strong> when the cursor reaches the bird.</p>
-      <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>ONE ATTEMPT</span></div>
+      <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span id="bird-attempt-rule">ONE ATTEMPT</span></div>
       <div class="bird-track">
         <div class="bird-target">
           <img class="bird-target-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt="Bird target">
@@ -717,7 +733,7 @@
           <div class="camp-prototype-map camp-prototype-map-preparing camp-neighbor-red-unknown camp-neighbor-green-unknown" data-camp-visible-columns="1" data-camp-visible-start="1">
           <div class="camp-prototype-world-crop">
           <div id="camp-prototype-board" class="camp-prototype-board" tabindex="0" role="application" aria-label="Base Camp map, with three fixed rear-house facades above three equal 6 by 8 gardens">
-          <div class="camp-prototype-environment" aria-hidden="true">
+          <div class="camp-prototype-environment">
             <div class="camp-prototype-houses">
               <div class="camp-prototype-house-plot camp-prototype-house-plot-red" data-camp-garden-zone="redGarden" aria-hidden="true">
                 <img class="camp-prototype-house" data-camp-environment-src="img/Maps/Camp%20Runtime/Environment/Camp_Red_House_Rear_Watercolor_HighAngle_v5.webp?v=0.0001" alt="">
@@ -754,7 +770,6 @@
                   <span class="camp-recruit-visitor-portrait">
                     <img id="camp-recruit-visitor-face" src="img/interface/Gang_Final.png?v=0.0026" alt="">
                   </span>
-                  <span class="camp-recruit-visitor-question" aria-hidden="true">?</span>
                 </button>
                </div>
               <div class="camp-prototype-house-plot camp-prototype-house-plot-green" data-camp-garden-zone="greenGarden" aria-hidden="true">
@@ -774,7 +789,7 @@
               </div>
              </div>
               <span class="camp-prototype-gardens camp-prototype-garden-red" data-camp-garden-zone="redGarden" aria-hidden="true"></span>
-              <span class="camp-prototype-gardens camp-prototype-garden-home"></span>
+              <span class="camp-prototype-gardens camp-prototype-garden-home" aria-hidden="true"></span>
               <span class="camp-prototype-gardens camp-prototype-garden-green" data-camp-garden-zone="greenGarden" aria-hidden="true"></span>
            </div>
           <span id="camp-recruit-capacity-message" class="camp-recruit-capacity-message" role="status" aria-live="polite" hidden></span>
@@ -899,6 +914,9 @@
           <button class="btn-filtre-work" id="filtre-work-wood" aria-pressed="false" onclick="filtrerWork('wood')"><span>Wood</span><span class="work-family-warning" id="work-warning-wood" hidden></span></button>
           <button class="btn-filtre-work" id="filtre-work-food" aria-pressed="false" onclick="filtrerWork('food')"><span>Food</span><span class="work-family-warning" id="work-warning-food" hidden></span></button>
           <button class="btn-filtre-work" id="filtre-work-rock" aria-pressed="false" onclick="filtrerWork('rock')"><span>Rocks</span><span class="work-family-warning" id="work-warning-rock" hidden></span></button>
+          <button class="btn-filtre-work" id="filtre-work-metal" aria-pressed="false" onclick="filtrerWork('metal')"><span>Metal</span><span class="work-family-warning" id="work-warning-metal" hidden></span></button>
+          <button class="btn-filtre-work" id="filtre-work-forge" aria-pressed="false" onclick="filtrerWork('forge')"><span>Forge</span><span class="work-family-warning" id="work-warning-forge" hidden></span></button>
+          <button class="btn-filtre-work" id="filtre-work-leather" aria-pressed="false" onclick="filtrerWork('leather')"><span>Leather</span><span class="work-family-warning" id="work-warning-leather" hidden></span></button>
         </div>
       </div>
       <button class="btn-unaffect-all" id="btn-unaffect-all" onclick="deallouerTous()">Unassign all Cats</button>
@@ -992,10 +1010,29 @@
 
   <!-- CONTENU EXPLORATIONS -->
   <div id="contenu-explorations" role="tabpanel" aria-labelledby="onglet-explorations" aria-hidden="true" hidden>
+    <nav class="work-filtres exploration-region-navigation" aria-label="Explore views">
+      <div class="exploration-view-buttons" role="group" aria-label="Explore views">
+        <button id="exploration-region-map-button" class="btn-filtre-work" type="button" onclick="ouvrirCarteRegionExploration()">Region map</button>
+        <button id="exploration-world-map-button" class="btn-filtre-work" type="button" aria-describedby="exploration-world-map-status" onclick="ouvrirWorldMap()" disabled>World Map</button>
+        <button id="exploration-activities-button" class="btn-filtre-work" type="button" onclick="ouvrirActivitesExploration()">Activities</button>
+      </div>
+      <button id="exploration-context-back" class="btn-unaffect-all" type="button" onclick="retourContexteActivitesExploration()" hidden>Back</button>
+      <span id="exploration-world-map-status" class="text-secondary" hidden></span>
+    </nav>
+    <section id="exploration-activities" class="panneau" aria-labelledby="exploration-activities-title" hidden>
+      <h2 id="exploration-activities-title" class="exploration-view-title">Activities</h2>
+      <div id="exploration-activity-list"></div>
+    </section>
+    <section id="exploration-world-map" class="panneau" aria-labelledby="world-map-title" hidden>
+      <h2 id="world-map-title" class="exploration-view-title">World Map</h2>
+      <div id="world-map-viewport" aria-label="Discovered regions">
+        <div id="world-map-regions"></div>
+      </div>
+    </section>
 
     <section class="panneau" id="section-explo-map">
       <div class="explo-map-heading">
-        <h2 class="panneau-titre">Neighborhood map</h2>
+        <h2 id="exploration-region-title" class="panneau-titre" tabindex="-1">Starting Neighbourhood</h2>
         <span class="panneau-aide-wrap"><button type="button" class="interface-details-control detail-help-btn panneau-aide-btn" aria-label="Explain Neighborhood map" aria-expanded="false" aria-controls="neighborhood-map-help" onclick="togglePanneauAide(event)"><span class="interface-symbol interface-details" aria-hidden="true"></span></button><span id="neighborhood-map-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Select a zone to review its status, campaigns and scouting missions.</span></span>
       </div>
       <div id="explo-map-section"></div>
@@ -1004,14 +1041,21 @@
     <div id="exploration-mobile-zone-header" class="exploration-mobile-zone-header" aria-hidden="true">
       <span class="exploration-zone-inspector-label">Selected Zone</span>
       <div class="exploration-mobile-zone-top">
-        <button type="button" class="exploration-mobile-back" onclick="retourCarteExplorationMobile()" aria-label="Return to the neighborhood map">← Map</button>
+        <button type="button" class="exploration-mobile-back" onclick="retourCarteExplorationMobile()" aria-label="Return to the region map">← Map</button>
         <div class="exploration-mobile-zone-identity">
           <span id="exploration-mobile-zone-coordinate" class="exploration-mobile-zone-coordinate"></span>
-          <strong id="exploration-mobile-zone-title" class="exploration-mobile-zone-title">Unknown zone</strong>
+          <strong id="exploration-mobile-zone-title" class="exploration-mobile-zone-title" tabindex="-1">Unknown zone</strong>
         </div>
         <span id="exploration-mobile-zone-status" class="exploration-mobile-zone-status"></span>
       </div>
       <p id="exploration-mobile-zone-description" class="exploration-zone-description"></p>
+      <section id="exploration-bramble-encounter" class="explo-card" aria-label="Bramble's lesson" hidden>
+        <h3 class="explo-nom">Bramble</h3>
+        <p class="explo-description">A woodland Cat waits by the training dummies. He can teach your gang how to become Fighters.</p>
+        <button type="button" onclick="ouvrirRencontreBramble()">Talk to Bramble</button>
+      </section>
+      <section id="combat-training" class="explo-card" aria-label="Beginner dummy exercise" hidden></section>
+      <section id="hollow-tree-combat" class="explo-card" aria-label="Hollow Tree encounter" hidden></section>
       <div id="exploration-mobile-mission-tabs" class="exploration-mobile-mission-tabs" role="tablist" aria-label="Zone mission types">
         <button id="exploration-mobile-campaigns-tab" type="button" role="tab" aria-controls="section-campaigns" onclick="selectionnerTypeMissionExplorationMobile('campaigns')">
           Campaigns <span id="exploration-mobile-campaigns-count">0</span>
@@ -1236,6 +1280,18 @@
         <button class="explo-modal-close" aria-label="Close cat selection" onclick="fermerModalJC()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="jc-modal-contenu" class="cat-assignment-list"></div>
+    </div>
+  </div>
+
+  <!-- SHARED COMBAT CAT SELECTION -->
+  <div id="combat-assignment-modal" class="explo-modal cat-assignment-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="combat-assignment-modal-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalCombattants()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="combat-assignment-modal-title">Choose a cat</span>
+        <button class="explo-modal-close" aria-label="Close combat Cat selection" onclick="fermerModalCombattants()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <div id="combat-assignment-list" class="cat-assignment-list"></div>
     </div>
   </div>
 
@@ -1554,6 +1610,7 @@
       <button id="purrsuasion-v2-stop" class="purrsuasion-v2-action" data-touch-activation="reflex-release" type="button" onclick="arreterRoulettePurrsuasionV2()" hidden>STOP THE PAW</button>
       <div id="purrsuasion-v2-callout" class="purrsuasion-v2-callout" role="status" hidden>
         <strong id="purrsuasion-v2-result-copy"></strong>
+        <span id="purrsuasion-v2-breakdown" class="purrsuasion-v2-breakdown"></span>
         <span id="purrsuasion-v2-award" class="purrsuasion-v2-award"></span>
         <span id="purrsuasion-v2-reward" class="purrsuasion-v2-reward" aria-hidden="true"></span>
       </div>
@@ -1573,6 +1630,30 @@
       </div>
       <p id="recruit-result-message">The cat is convinced and agrees to join the Gang!</p>
       <button id="recruit-result-action" class="bird-success-btn" type="button" onclick="fermerPopupRecruitResult()">Continue</button>
+    </div>
+  </div>
+
+  <!-- HOLLOW TREE COMBAT VIEW -->
+  <div id="hollow-tree-dialog" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="hollow-tree-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerVueAffrontementArbre()"></div>
+    <div class="explo-modal-panneau encounter-panel" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <h3 class="explo-modal-titre" id="hollow-tree-title">Hollow Tree encounter</h3>
+        <button type="button" id="hollow-tree-close" class="explo-modal-close" aria-label="Close combat view" onclick="fermerVueAffrontementArbre()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <p id="hollow-tree-status" role="status" hidden></p>
+      <div class="encounter-body">
+        <div id="hollow-tree-arena" class="encounter-arena"></div>
+        <aside id="hollow-tree-defeat-advice" class="hollow-tree-defeat-advice" aria-labelledby="hollow-tree-advice-speaker" hidden>
+          <img id="hollow-tree-bernardo" alt="" width="64" height="64">
+          <div><strong id="hollow-tree-advice-speaker">Bernardo</strong><p id="hollow-tree-advice-copy"></p></div>
+        </aside>
+        <p id="hollow-tree-rewards" class="explo-description" hidden></p>
+      </div>
+      <div class="encounter-actions">
+        <button type="button" id="hollow-tree-retreat" class="btn-unaffect-all" onclick="abandonnerAffrontementArbre()">Retreat</button>
+        <button type="button" id="hollow-tree-claim" class="btn-inv-action" onclick="validerAffrontementArbre()" hidden>Claim lessons</button>
+      </div>
     </div>
   </div>
 
@@ -1636,6 +1717,7 @@
   <script src="js/ui/changelog.js?v=0.0001"></script>
   <script src="js/ui/camp-panel-diagnostic.js?v=0.0003"></script>
   <script src="js/ui/mobile-input-diagnostic.js?v=0.0002"></script>
+  <script src="js/ui/fog-renderer.js?v=0.0001"></script>
   <script src="jeu.js?v=0.0203"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>

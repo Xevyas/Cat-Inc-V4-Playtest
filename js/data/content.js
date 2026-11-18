@@ -63,6 +63,8 @@ const LIVRE_ICONE = '<img class="livre-icone" src="img/resources/Books_Final.png
 // Acquisition/use context stays with its owning runtime systems. Resource
 // identity, presentation, Tier and feeding values come from Gameplay Studio.
 const LEGACY_RESOURCE_CONTEXT = {
+  "inv-res-metal-ingots": {produce: "Gather Recovered Metal and process it in a Metal Ingots Work slot at the Foundry.", usage: "Shared material for Camp crafting."},
+  "inv-res-leather": {produce: "Gather Recovered Hides and process them in a Leather Work slot at the Tannery.", usage: "Shared material for Camp crafting."},
   "inv-res-cardboard": {produce: "Gathered by a Cat assigned to a Cardboard Planks recipe.", usage: "Used inside that recipe slot (10 pieces per plank). It is never stored globally."},
   "inv-res-cardboard-plank": {produce: "Assign a Cat to a Cardboard Planks recipe in Work. The slot gathers 10 Cardboard Pieces first.", usage: "Used to construct buildings like Houses."},
   "inv-res-basic-wood": {produce: "Gathered by a Cat assigned to a Basic Wood Planks recipe.", usage: "Used inside that recipe slot (10 logs per plank). It is never stored globally."},
@@ -142,6 +144,26 @@ const BLUEPRINT_ITEMS = Object.freeze(Object.entries(PURCHASABLE_CONTENT).reduce
 
 const ITEMS = {
   ...BLUEPRINT_ITEMS,
+  hollowTreeLessons: {
+    id: "hollowTreeLessons",
+    category: "blueprint",
+    nom: "Hollow Tree Lessons",
+    emoji: LIVRE_ICONE,
+    description: "Notes recovered from the hollow tree after clearing its guardian: a Reinforced Daggers recipe for the Forge and an advanced dummy exercise up to Combat Level 10. Already learned when the victory is claimed.",
+    unlocksLabel: "Reinforced Daggers at the Forge; advanced dummy exercise up to Combat Level 10",
+    actions: []
+  },
+  workshopPlans: {
+    id: "workshopPlans",
+    category: "blueprint",
+    nom: "Starter Workshop Plans",
+    emoji: LIVRE_ICONE,
+    description: "A bundle recovered from the abandoned woodland cabin: Foundry, Tannery and Forge plans, with recipes for Metal Ingots, Leather, Paired Daggers and Leather Protection. Study the whole bundle with Bernardo, then build the workshops at Camp. Recovered metal and hides can be gathered without fighting; no finished equipment comes with these plans.",
+    unlocksLabel: "Foundry, Tannery and Forge plans; Metal Ingots, Leather, Paired Daggers and Leather Protection recipes",
+    studyDuration: 3600000,
+    learningMode: "timer-only",
+    actions: [{ id: "study", label: "Study (1h)" }]
+  },
   compass: {
     id:           "compass",
     type:         "unique",
@@ -261,6 +283,7 @@ const INTERFACE_ICON_PATHS = Object.freeze({
   chef: "img/interface/chef.png",
   difficulty: "img/interface/difficulty.png",
   explorator: "img/interface/explorator.png",
+  fighter: "img/interface/fighter.png",
   farmer: "img/interface/farmer.png",
   "gang-leader": "img/interface/gang-leader.png",
   heart: "img/interface/heart.png",
@@ -290,6 +313,7 @@ const METIERS = {
   farmer:        { id: "farmer",      nom: "Farmer",       emoji: interfaceIconHtml("farmer", "job-icon"), famille: "food",    familleNom: "Food resource family",    duree: 3600 },
   chef:          { id: "chef",        nom: "Chef",         emoji: interfaceIconHtml("chef", "job-icon"), famille: "catchen",    familleNom: "Catchen resource family",    duree: 3600 },
   explorator:    { id: "explorator",  nom: "Explorator",   emoji: interfaceIconHtml("explorator", "job-icon"), famille: "exploration", familleNom: "Exploration family",         duree: 3600 },
+  fighter:       { id: "fighter",     nom: "Fighter",      emoji: interfaceIconHtml("fighter", "job-icon"), famille: null, familleNom: "Combat", duree: 3600, combat: true, unlockStory: "storyBrambleVue" },
   builder:       { id: "builder",     nom: "Builder",      emoji: interfaceIconHtml("builder", "job-icon"), famille: null,         familleNom: "Camp construction",          duree: 3600, unlockItem: "constructionPlan" },
   miner:         { id: "miner",       nom: "Miner",        emoji: interfaceIconHtml("miner", "job-icon"), famille: "rock",        familleNom: "Rock resource family",       duree: 3600, unlockItem: "stoneGuide" },
   stonemason:    { id: "stonemason",  nom: "Stonemason",   emoji: interfaceIconHtml("stonemason", "job-icon"), famille: "pawsonry",    familleNom: "Pawsonry resource family",   duree: 3600, unlockItem: "stoneGuide" },

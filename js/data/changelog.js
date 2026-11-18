@@ -1004,6 +1004,47 @@
     })
   ]);
 
+  const release0106Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Explore now has a World Map: after finding the Compass and claiming the Navigate through the woods reward, travel between regions and visit the new Woodland Entrance.",
+        "Meet Bramble at the Training clearing and train your first Fighter at the Job Center.",
+        "Fighters earn Combat XP and Combat Levels by practising on the Training clearing dummies, separately from their general level.",
+        "Searching the Woodland cabin recovers the plans for the Foundry, Tannery and Forge.",
+        "The Foundry turns Recovered Metal into Metal Ingots, and the Tannery turns Recovered Hides into Leather and Leather Protection.",
+        "The Forge crafts Paired Daggers, and the Fighter can equip a weapon and a protection.",
+        "The Fighter has its own perk tree, with requirements based on Combat Level.",
+        "The first combat awaits at the Hollow Tree: victory unlocks Reinforced Daggers and the next training exercise.",
+        "A new Activities view in Explore gathers active, ready and discovered places from every region, with direct access to each.",
+        "Neighbourhood trash Scoutings now change when their household moves out, including a new departure at 20 Cats."
+      ])
+    }),
+    Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "The Garden Tree now glows while a Bird is waiting.",
+        "Waiting Visitors no longer show a misleading question mark; the Visitor itself is the interaction.",
+        "Purrsuasion feedback now separates dialogue choice quality from timing performance.",
+        "Combat shows smooth gauges, readable hits and a danger preview.",
+        "The World Map shows region thumbnails along a trail, the Cats present in each region, and zoom.",
+        "Exploration, Camp and Perks fog now renders with a smoother animated effect.",
+        "Camp scrolling, animations and mini-games run more smoothly, especially in Firefox and on Android.",
+        "Game artwork now loads faster as lighter WebP images."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "Long absences are now always counted as normal AFK time instead of resolving oversized Scouting catch-ups.",
+        "Retrying a failed Campaign now clears its map Warning.",
+        "The first Cardboard Box preview, first Bird attempt text and a building typo now show the correct information."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0105Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1515,7 +1556,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0105",
+    baseVersion: "0.0106",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1528,6 +1569,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0106",
+      date: "2026-11-18",
+      categories: release0106Categories
+    }),
     Object.freeze({
       version: "0.0105",
       date: "2026-09-25",

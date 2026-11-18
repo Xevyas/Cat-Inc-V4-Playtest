@@ -1906,6 +1906,81 @@
         "x": 540,
         "y": 660
       }
+    },
+    {
+      "id": "fighterFoundation",
+      "jobId": "fighter",
+      "name": "Fighter",
+      "description": "Granted with the Fighter job. Paid combat perks are optional for the first encounter.",
+      "starting": false,
+      "granted": true,
+      "available": true,
+      "prerequisites": [],
+      "costs": {},
+      "effects": [],
+      "layout": {
+        "x": 60,
+        "y": 270
+      }
+    },
+    {
+      "id": "fighterAttack1",
+      "jobId": "fighter",
+      "name": "Attack I",
+      "description": "Adds +1 Attack in combat encounters only. No Camp or training bonus.",
+      "starting": false,
+      "granted": false,
+      "available": true,
+      "prerequisites": [
+        "fighterFoundation"
+      ],
+      "costs": {
+        "cannedCatFood": 1
+      },
+      "effects": [
+        {
+          "effectId": "combatAttackBonus",
+          "parameters": {
+            "amount": 1,
+            "jobId": "fighter"
+          }
+        }
+      ],
+      "layout": {
+        "x": 300,
+        "y": 270
+      },
+      "minCombatLevel": 3
+    },
+    {
+      "id": "fighterPowerStrike",
+      "jobId": "fighter",
+      "name": "Power Strike",
+      "description": "Every third attack in an encounter deals 150% of normal damage. The attack count resets each encounter.",
+      "starting": false,
+      "granted": false,
+      "available": true,
+      "prerequisites": [
+        "fighterAttack1"
+      ],
+      "costs": {
+        "cannedCatFood": 2
+      },
+      "effects": [
+        {
+          "effectId": "combatPeriodicAttack",
+          "parameters": {
+            "every": 3,
+            "factor": 1.5,
+            "jobId": "fighter"
+          }
+        }
+      ],
+      "layout": {
+        "x": 540,
+        "y": 270
+      },
+      "minCombatLevel": 5
     }
   ]
 });
@@ -2166,6 +2241,37 @@
         "maximum": 100
       }
     }
+  },
+  "combatAttackBonus": {
+    "shape": "combat-attack-bonus",
+    "parameters": {
+      "amount": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 100
+      },
+      "jobId": {
+        "type": "job-id"
+      }
+    }
+  },
+  "combatPeriodicAttack": {
+    "shape": "combat-periodic-attack",
+    "parameters": {
+      "every": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 100
+      },
+      "factor": {
+        "type": "number",
+        "exclusiveMinimum": 1,
+        "maximum": 10
+      },
+      "jobId": {
+        "type": "job-id"
+      }
+    }
   }
 });
   const nodesById = Object.create(null);
@@ -2202,6 +2308,14 @@
   }
 
   const effectImplementations = Object.freeze({
+    combatAttackBonus: function(current, parameters, context) {
+      return context && context.jobId === parameters.jobId ? current + parameters.amount : current;
+    },
+    combatPeriodicAttack: function(current, parameters, context) {
+      return context && context.jobId === parameters.jobId
+        && Number.isSafeInteger(context.attackNumber) && context.attackNumber > 0
+        && context.attackNumber % parameters.every === 0 ? Math.max(current, parameters.factor) : current;
+    },
     gangLeaderRecruitSpeed: function(current, parameters) { return Math.max(current, parameters.factor); },
     gangLeaderFoodManagement: function() { return true; },
     gangLeaderDailyReward: function(current, parameters) { return Math.max(current, parameters.amount); },
@@ -2315,6 +2429,10 @@
     if (!access || access.jobId !== node.jobId) return {ok: false, reason: "job"};
     const active = activeNodeIds(progress);
     if (active.has(perkId)) return {ok: false, reason: "learned"};
+    if (node.minCombatLevel && (!Number.isSafeInteger(access.combatLevel)
+        || access.combatLevel < node.minCombatLevel)) {
+      return {ok: false, reason: "combat-level"};
+    }
     if (!node.starting && !node.prerequisites.every(function(item) { return active.has(item); })) {
       return {ok: false, reason: "prerequisites"};
     }
@@ -2373,6 +2491,14 @@
     beginLearn: beginLearn,
     completeLearn: completeLearn,
     learn: learn,
+    // Encounter consumers supply the acting combat job and its 1-based attack
+    // number, reset per encounter. No Camp or training code consumes these.
+    combatAttackBonus: function(progress, jobId) {
+      return effectValue(progress, "combatAttackBonus", 0, {jobId: jobId});
+    },
+    combatAttackMultiplier: function(progress, jobId, attackNumber) {
+      return multiplier(progress, "combatPeriodicAttack", {jobId: jobId, attackNumber: attackNumber});
+    },
     recruitSpeedMultiplier: function(progress) { return multiplier(progress, "gangLeaderRecruitSpeed", null); },
     hasFoodManagement: function(progress) { return hasCapability(progress, "gangLeaderFoodManagement"); },
     dailyRewardAmount: function(progress) { return effectValue(progress, "gangLeaderDailyReward", 1, null); },

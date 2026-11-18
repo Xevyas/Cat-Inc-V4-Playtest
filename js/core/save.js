@@ -62,7 +62,7 @@
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
   const JOB_IDS = [
     "lumberjack", "carpenter", "farmer", "chef", "explorator", "builder",
-    "miner", "stonemason", "gang-leader", "camp-engineer", "shop-owner", "innkeeper"
+    "miner", "stonemason", "fighter", "gang-leader", "camp-engineer", "shop-owner", "innkeeper"
   ];
   const PERMANENT_SPECIALIST_ROLES = Object.freeze({
     "shop-owner": Object.freeze({
@@ -367,7 +367,7 @@ function validerStructureSauvegarde(d) {
     }
   }
 
-  const champsObjetsOuNuls = ["learningEnCours", "perkLearningEnCours", "formationEnCours", "formationIngenieurEnCours", "formationTermineeEnAttente", "formationIngenieurTermineeEnAttente", "exploZoneEnCours"];
+  const champsObjetsOuNuls = ["combatTraining", "learningEnCours", "perkLearningEnCours", "formationEnCours", "formationIngenieurEnCours", "formationTermineeEnAttente", "formationIngenieurTermineeEnAttente", "exploZoneEnCours"];
   for (const cle of champsObjetsOuNuls) {
     if (d[cle] !== undefined && d[cle] !== null && !estObjetSauvegarde(d[cle])) {
       return "Invalid field: " + cle + " must be an object or null.";
@@ -869,11 +869,23 @@ function validerStructureSauvegarde(d) {
     const kittiesValides = d.kittiesData.every(function(k) {
       if (!estObjetSauvegarde(k)) return false;
       if (k.nom !== undefined && (typeof k.nom !== "string" || k.nom.length > 100 || /[<>]/.test(k.nom))) return false;
+      if (k.equipment !== undefined && (!estObjetSauvegarde(k.equipment)
+          || !Object.keys(k.equipment).every(function(slot) {
+            const item = CatInc.equipment.definition(k.equipment[slot]);
+            return CatInc.equipment.slots.includes(slot) && item && item.slot === slot;
+          }))) return false;
+      if (k.combatProgress !== undefined && (!estObjetSauvegarde(k.combatProgress)
+          || !Number.isSafeInteger(k.combatProgress.level) || k.combatProgress.level < 1
+          || typeof k.combatProgress.xp !== "number" || !Number.isFinite(k.combatProgress.xp)
+          || k.combatProgress.xp < 0)) return false;
       return ["niveau", "xp", "tier", "managerMult", "jobNiveau", "engineerRank"].every(function(cle) {
         return k[cle] === undefined || (typeof k[cle] === "number" && Number.isFinite(k[cle]) && k[cle] >= 0);
       });
     });
     if (!kittiesValides) return "Invalid cat data.";
+    if (d.kittiesData.filter(function(k) { return k.metier === "fighter"; }).length > 1) {
+      return "Only one Cat can hold the Fighter job.";
+    }
   }
 
   if (d.reparationsCamp && !Object.values(d.reparationsCamp).every(function(reparation) {
@@ -892,7 +904,15 @@ function validerStructureSauvegarde(d) {
   })) {
     return "Invalid Work recipe slot data.";
   }
-  const recipeSlotsValides = WORK_FAMILIES.every(function(family) {
+  if (d.equipmentStock !== undefined && (!estObjetSauvegarde(d.equipmentStock)
+      || !Object.keys(d.equipmentStock).every(function(id) {
+        return CatInc.equipment.definition(id) && Number.isSafeInteger(d.equipmentStock[id]) && d.equipmentStock[id] >= 0;
+      }))) return "Invalid equipment stock.";
+  // Workshop families are absent in older V4 saves; validate them when present.
+  const recipeSlotsValides = WORK_FAMILIES.concat(["metal", "leather", "forge"].filter(function(family) {
+    return Object.prototype.hasOwnProperty.call(d.workRecipeSlots, family);
+  })).every(function(family) {
+    if (!Array.isArray(d.workRecipeSlots[family]) || d.workRecipeSlots[family].length < 2) return false;
     return d.workRecipeSlots[family].every(function(slot) {
       if (!estObjetSauvegarde(slot)
           || !indexKittyValide(slot.kittyIndex, true)
@@ -902,6 +922,9 @@ function validerStructureSauvegarde(d) {
           || typeof slot.outputCarry !== "number" || !Number.isFinite(slot.outputCarry) || slot.outputCarry < 0
           || !estObjetSauvegarde(slot.gatheredInputs)
           || !estObjetSauvegarde(slot.reservedInputs)) return false;
+      const recipe = CatInc.data.campGameplay.workRecipes[slot.recipeId];
+      if (recipe && recipe.mode === "craft" && (slot.phase !== "processing" || slot.phaseProgress > 1
+          || slot.outputCarry !== 0 || Object.keys(slot.gatheredInputs).length || Object.keys(slot.reservedInputs).length)) return false;
       return [slot.gatheredInputs, slot.reservedInputs].every(function(inputs) {
         return Object.keys(inputs).every(function(resourceId) {
           const quantity = inputs[resourceId];
@@ -1020,6 +1043,34 @@ function validerStructureSauvegarde(d) {
     if (!learningValide) return "Invalid Perk learning data.";
   }
 
+  if (d.combatTraining) {
+    const ki = d.combatTraining.kittyIndex;
+    if (!indexKittyValide(ki, false) || d.kittiesData[ki].metier !== "fighter"
+        || Object.keys(d.combatTraining).some(function(key) { return key !== "kittyIndex"; })) {
+      return "Invalid combat training data.";
+    }
+  }
+
+  if (d.hollowTreeEncounter != null && (!CatInc.combat || !CatInc.combat.validate(d.hollowTreeEncounter, d.kittiesData))) {
+    return "Invalid Hollow Tree encounter data.";
+  }
+  if (d.hollowTreeEncounter && CatInc.combat.result(d.hollowTreeEncounter).outcome === "running") {
+    const otherActions = [d.combatTraining, d.learningEnCours, d.perkLearningEnCours, d.formationEnCours,
+      d.formationIngenieurEnCours, d.exploZoneEnCours].concat(d.exploEnCours || [],
+      Object.values(d.scoutingsEnCours || {}), Object.values(d.workRecipeSlots || {}).flat(),
+      Object.values(d.managers || {}).map(function(ki) { return {kittyIndex:ki}; }),
+      Object.values(d.camp && d.camp.constructions || {}), Object.values(d.camp && d.camp.upgrades || {}),
+      Object.values(d.camp && d.camp.repairs || {}), Object.values(d.camp && d.camp.demolitions || {}),
+      Object.values(d.camp && d.camp.houseConstructions || {}),
+      Object.values(d.constructionsMaisonsCamp || {}), Object.values(d.reparationsCamp || {}));
+    if (d.hollowTreeEncounter.fighters.some(function(f) {
+      return !indexKittyValide(f.kittyIndex, false) || d.kittiesData[f.kittyIndex].metier !== f.jobId
+        || otherActions.some(function(a) {
+          return a && (a.kittyIndex === f.kittyIndex || (Array.isArray(a.kittyIndices) && a.kittyIndices.includes(f.kittyIndex)));
+        });
+    })) return "Invalid Hollow Tree combat occupation.";
+  }
+
   if (d.formationEnCours) {
     const formationValide = indexKittyValide(d.formationEnCours.kittyIndex, false)
       && typeof d.formationEnCours.metier === "string"
@@ -1126,7 +1177,6 @@ function analyserSauvegardeBrute(raw) {
     sequenceDuree:           etat.sequenceDuree,
     sequenceProgressBrute:   etat.sequenceProgressBrute,
     sequenceDerniereMajTs:   etat.sequenceDerniereMajTs,
-    sequenceVitesseDerniere: etat.sequenceVitesseDerniere,
     prochainVisageChaton:    etat.prochainVisageChaton,
     randomCatFaceRotationUsedIds: etat.randomCatFaceRotationUsedIds,
     clicCount:               etat.clicCount,
@@ -1171,6 +1221,9 @@ function analyserSauvegardeBrute(raw) {
     laboratoryDebloque:       etat.laboratoryDebloque,
     laboratoryConstruit:      etat.laboratoryConstruit,
     engineerRankUpgradesDebloques: etat.engineerRankUpgradesDebloques,
+    equipmentStock:           etat.equipmentStock,
+    combatTraining:           etat.combatTraining,
+    hollowTreeEncounter:      etat.hollowTreeEncounter,
     formationEnCours:         etat.formationEnCours,
     formationIngenieurEnCours: etat.formationIngenieurEnCours,
     formationTermineeEnAttente: etat.formationTermineeEnAttente,
@@ -1375,7 +1428,9 @@ function analyserSauvegardeBrute(raw) {
   etat.sequenceDuree           = d.sequenceDuree           || 0;
   etat.sequenceProgressBrute   = d.sequenceProgressBrute   !== undefined ? d.sequenceProgressBrute   : 0;
   etat.sequenceDerniereMajTs   = d.sequenceDerniereMajTs   !== undefined ? d.sequenceDerniereMajTs   : 0;
-  etat.sequenceVitesseDerniere = d.sequenceVitesseDerniere !== undefined ? d.sequenceVitesseDerniere : 1;
+  // A legacy sequenceVitesseDerniere is accepted but never restored: it may
+  // carry DEV debug acceleration. The next integration derives the canonical
+  // effective speed from the loaded state.
   if (d.prochainVisageChaton && normaliserVisageChaton) {
     const prochainNom = nomProchainChat
       ? nomProchainChat(Array.isArray(d.kittiesData) ? d.kittiesData : [])
@@ -1417,11 +1472,15 @@ function analyserSauvegardeBrute(raw) {
       }, 0);
 
   const makeWorkRecipeSlots = stateCore.makeWorkRecipeSlots;
-  etat.workRecipeSlots = d.workRecipeSlots || {
+  etat.workRecipeSlots = Object.assign({
+    forge: makeWorkRecipeSlots(2),
+    metal: makeWorkRecipeSlots(2),
+    leather: makeWorkRecipeSlots(2)
+  }, d.workRecipeSlots || {
     wood: makeWorkRecipeSlots(2),
     food: makeWorkRecipeSlots(2),
     rock: makeWorkRecipeSlots(2)
-  };
+  });
   const ancienneProgressionWood = Number(d.chatons) >= 3;
   const campSource = estObjetSauvegarde(d.camp) ? d.camp : {};
   etat.camp = stateCore.makeCampState();
@@ -1518,6 +1577,9 @@ function analyserSauvegardeBrute(raw) {
   etat.laboratoryDebloque       = d.laboratoryDebloque       || etat.itemsAppris.includes("engineerGuide");
   etat.laboratoryConstruit      = d.laboratoryConstruit      || false;
   etat.engineerRankUpgradesDebloques = d.engineerRankUpgradesDebloques || etat.itemsAppris.includes("teamworkGuide");
+  etat.equipmentStock           = Object.assign({}, d.equipmentStock || {});
+  etat.combatTraining           = d.combatTraining           || null;
+  etat.hollowTreeEncounter      = d.hollowTreeEncounter      || null;
   etat.formationEnCours         = d.formationEnCours         || null;
   etat.formationIngenieurEnCours = d.formationIngenieurEnCours || null;
   etat.dailyQuests              = d.dailyQuests || etat.dailyQuests;
@@ -1822,6 +1884,10 @@ function analyserSauvegardeBrute(raw) {
       avatarGeneriqueMigre = catFaceIdForRuntimePath(k.visage);
     }
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
+    // Combat progression is independent of the Cat's ordinary Camp level/XP.
+    if (k.metier === "fighter" && k.combatProgress === undefined) {
+      k.combatProgress = { level: 1, xp: 0 };
+    }
     if (k.metier === "camp-engineer" && k.engineerRank === undefined) k.engineerRank = 1;
   });
   if (ancienAvatarGenerique) {

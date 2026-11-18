@@ -32,7 +32,15 @@ function regionParId(regionId) {
 }
 
 function idRegionExplorationCourante() {
-  return explorationDevRegionId || etat.regionCourante;
+  return explorationDevRegionId || (regionExplorationAccessible(etat.regionCourante) ? etat.regionCourante : "startingNeighbourhood");
+}
+
+function worldMapDebloquee() {
+  return etat.itemsAcquis.includes("compass") && etat.campaignsCompletees.includes("navigateThroughWoods");
+}
+
+function regionExplorationAccessible(regionId) {
+  return regionId === "startingNeighbourhood" || (regionId === "woodlandEntrance" && worldMapDebloquee());
 }
 
 function zonesRegion() {
@@ -51,11 +59,14 @@ function nomKittyAvecMetierIconHtml(kitty) {
 }
 
 function zoneParId(zoneId) {
-  return explorationGeometry.zoneById(regionsExploration(), zoneId, idRegionExplorationCourante());
+  // Missions/results retain their global identity while the player views another region.
+  return explorationGeometry.zoneById(regionsExploration(), zoneId);
 }
 
-function zoneEstExploree(zoneId) {
-  return Boolean(explorationDevRegionId && Object.prototype.hasOwnProperty.call(zonesRegion(), zoneId))
+function zoneEstExploree(zoneId, reel) {
+  const region = Object.values(reel ? REGIONS : regionsExploration()).find(function(region) { return region.zones[zoneId]; });
+  return Boolean(!reel && explorationDevRegionId && Object.prototype.hasOwnProperty.call(zonesRegion(), zoneId))
+    || Boolean(region && region.id !== "startingNeighbourhood" && region.startZone === zoneId && regionExplorationAccessible(region.id))
     || etat.zonesExplorees.includes(zoneId);
 }
 
@@ -961,6 +972,526 @@ function kittyIsLearningPerk(kittyIdx) {
   return !!(etat.perkLearningEnCours && etat.perkLearningEnCours.kittyIndex === kittyIdx);
 }
 
+function kittyIsCombatTraining(kittyIdx) {
+  return !!(etat.combatTraining && etat.combatTraining.kittyIndex === kittyIdx);
+}
+
+function kittyIsInCombat(kittyIdx) { return CatInc.combat.occupies(etat, kittyIdx); }
+
+function plafondEntrainementCombat() { return CatInc.combat.trainingCap(etat); }
+function nomExerciceCombat() { return CatInc.combat.learned(etat) ? "Advanced dummy exercise" : "Beginner dummy exercise"; }
+
+function affrontementArbreDisponible() {
+  return worldMapDebloquee() && explorationCampFonctionnelle()
+    && zoneEstExploree(CONFIG.hollowTreeCombat.zoneId, true);
+}
+
+function equipeAffrontementDisponible() {
+  const jobs = new Set();
+  return etat.kittiesData.reduce(function(team, kitty, ki) {
+    if (!METIERS[kitty.metier]?.combat || jobs.has(kitty.metier) || raisonIndisponibiliteCombattant(ki)) return team;
+    jobs.add(kitty.metier); team.push(ki); return team;
+  }, []);
+}
+
+function lancerAffrontementArbre() {
+  if (rattraperApresSuspensionAfk() || sauvegardeVerrouillee || redemarrageMajeurRequis || afkReloadProgramme) return false;
+  if (!affrontementArbreDisponible() || etat.hollowTreeEncounter || CatInc.combat.learned(etat)) return false;
+  const team = equipeAffrontementDisponible();
+  if (!team.length) return false;
+  etat.hollowTreeEncounter = { elapsed: 0, enemyStats: CatInc.combat.enemyStats(),
+    fighters: team.map(function(ki) { return CatInc.combat.snapshot(etat, ki); }) };
+  exploTabDirty = true;
+  sauvegarder(); rendu();
+  ouvrirVueAffrontementArbre();
+  return true;
+}
+
+function avancerAffrontementArbre(dt) {
+  if (CatInc.combat.advance(etat, dt)) {
+    exploTabDirty = true;
+  }
+}
+
+function abandonnerAffrontementArbre() {
+  if (rattraperApresSuspensionAfk() || sauvegardeVerrouillee || redemarrageMajeurRequis || afkReloadProgramme) return false;
+  if (CatInc.combat.result(etat.hollowTreeEncounter)?.outcome !== "running") return false;
+  etat.hollowTreeEncounter.abandoned = true;
+  exploTabDirty = true;
+  sauvegarder();
+  actualiserVueAffrontementArbre(); rendu();
+  return true;
+}
+
+function validerAffrontementArbre() {
+  if (rattraperApresSuspensionAfk() || sauvegardeVerrouillee || redemarrageMajeurRequis || afkReloadProgramme) return false;
+  const victory = CatInc.combat.result(etat.hollowTreeEncounter)?.outcome === "won";
+  if (!CatInc.combat.claim(etat)) return false;
+  if (victory) ajouterLog("unlock", "Hollow Tree Lessons learned: Reinforced Daggers recipe and advanced dummy exercise (Combat Level 10).");
+  inventaireDirty = true; exploTabDirty = true; jcDirty = true;
+  fermerVueAffrontementArbre(); sauvegarder(); rendu();
+  return true;
+}
+
+function renduAffrontementArbre() {
+  const panel = domParId("hollow-tree-combat");
+  panel.hidden = carteZoneSelectionnee !== CONFIG.hollowTreeCombat.zoneId || !affrontementArbreDisponible();
+  if (panel.hidden) return;
+  const resolved = CatInc.combat.result(etat.hollowTreeEncounter);
+  let html = '<h3 class="explo-nom">Hollow Tree encounter</h3>';
+  if (CatInc.combat.learned(etat)) {
+    html += '<p class="explo-description">The trail is clear. Hollow Tree Lessons learned: craft Reinforced Daggers at the Forge and practise up to Combat Level 10 at the Training clearing.</p>';
+  } else if (resolved) {
+    html += '<p class="explo-description">' + libelleResultatAffrontement(resolved.outcome) + '</p>'
+      + '<button type="button" class="btn-lancer-explo" onclick="ouvrirVueAffrontementArbre()">'
+      + (resolved.outcome === "running" ? 'Watch combat' : 'View result') + '</button>';
+  } else {
+    const danger = dangerAffrontementArbre();
+    if (danger) html = '<h3 class="explo-nom">Hollow Tree encounter <span class="hollow-tree-danger" data-danger="'
+      + danger.level + '">' + danger.label + '</span></h3>';
+    html += '<p class="explo-description">A territorial Woodland Rat guards the hollow tree.</p>'
+      + '<p class="explo-description">Recommended: Combat Level 5 · Paired Daggers · Leather Protection.</p>';
+    const roster = etat.kittiesData.map(function(k, ki) { return {kitty:k, kittyIndex:ki}; }).filter(function(e) { return METIERS[e.kitty.metier]?.combat; });
+    html += roster.length ? roster.map(function(entry) {
+      const raison = raisonIndisponibiliteCombattant(entry.kittyIndex);
+      return htmlLigneAffectationKitty({ kitty:entry.kitty, iconHtml:kittyIconHtml(entry.kitty), className:"hollow-tree-fighter",
+        secondaryText:"Combat Level " + entry.kitty.combatProgress.level,
+        contextText:raison || "Ready to fight", disabled:!!raison });
+    }).join("") : '<p class="explo-description">Train a Fighter at the Job Center after meeting Bramble in the Training clearing.</p>';
+    html += '<button type="button" class="btn-lancer-explo"' + (equipeAffrontementDisponible().length ? '' : ' disabled')
+      + ' onclick="lancerAffrontementArbre()">Start encounter</button>';
+  }
+  panel.innerHTML = html;
+}
+
+// Preview only: replay the deterministic encounter for the team that would
+// leave now. Nothing is saved, reserved or started.
+function dangerAffrontementArbre() {
+  const team = equipeAffrontementDisponible();
+  if (!team.length) return null;
+  const preview = CatInc.combat.result({ elapsed: 3600, enemyStats: CatInc.combat.enemyStats(),
+    fighters: team.map(function(ki) { return CatInc.combat.snapshot(etat, ki); }) });
+  if (preview.outcome !== "won") return { level: "dangerous", label: "Dangerous" };
+  const hp = preview.fighters.reduce(function(sum, f) { return sum + f.hp; }, 0);
+  const maxHp = preview.fighters.reduce(function(sum, f) { return sum + f.maxHp; }, 0);
+  return hp / maxHp >= .5 ? { level: "easy", label: "Easy" } : { level: "close", label: "Close fight" };
+}
+
+// The arena backdrop is the encounter zone's own cells cropped from the
+// accepted region artwork; no separate scene asset exists.
+function decorAffrontementArbre() {
+  const zoneId = CONFIG.hollowTreeCombat.zoneId;
+  const region = Object.values(REGIONS).find(function(r) { return r.zones[zoneId]; });
+  const cells = region && region.mapImg && region.zones[zoneId].occupiedCells;
+  if (!cells || !cells.length) return null;
+  const xs = cells.map(function(c) { return c.x; }), ys = cells.map(function(c) { return c.y; });
+  const minX = Math.min.apply(null, xs), w = Math.max.apply(null, xs) - minX + 1;
+  const maxY = Math.max.apply(null, ys), h = maxY - Math.min.apply(null, ys) + 1;
+  const top = region.rows - maxY; // Rows count upward from 1 at the bottom.
+  const pos = function(start, span, total) { return span >= total ? 0 : start / (total - span) * 100; };
+  return { image: "url('" + region.mapImg + "')",
+    size: (region.columns / w * 100) + "% " + (region.rows / h * 100) + "%",
+    position: pos(minX, w, region.columns) + "% " + pos(top, h, region.rows) + "%" };
+}
+
+function libelleResultatAffrontement(outcome) {
+  return {running:"Combat in progress", won:"Victory", lost:"Defeat", abandoned:"Retreated"}[outcome];
+}
+
+function ouvrirVueAffrontementArbre() {
+  const attempt = etat.hollowTreeEncounter;
+  if (!attempt || !ouvrirSessionMiniJeu("hollow-tree")) return false;
+  hollowTreeVisualEvent = null;
+  const htmlPortrait = function(id, name, image) {
+    const label = echapperAttributHtml(name);
+    const bar = function(kind, accessibleName, textClass, trail) {
+      return '<div class="encounter-bar ' + kind + '" role="progressbar" aria-label="' + label + ' ' + accessibleName + '" aria-valuemin="0">'
+        + (trail ? '<span class="encounter-bar-trail" aria-hidden="true"></span>' : '')
+        + '<span class="encounter-bar-fill" aria-hidden="true"></span><span class="' + textClass + '" aria-hidden="true"></span></div>';
+    };
+    return '<div class="encounter-combatant" data-encounter-combatant="' + id + '">'
+      + '<div class="encounter-portrait"><span class="encounter-portrait-art">' + image + '</span></div>'
+      + '<strong class="encounter-name">' + label + '</strong>'
+      + bar("encounter-hp", "health", "encounter-health", true)
+      + bar("encounter-atk", "next attack", "encounter-attack-time", false)
+      + '<span class="encounter-skill" aria-hidden="true"></span></div>';
+  };
+  const teamHtml = attempt.fighters.map(function(f) { const k=etat.kittiesData[f.kittyIndex];
+    return htmlPortrait(f.kittyIndex,k.nom,kittyIconHtml(k)); }).join("");
+  const enemy = CONFIG.hollowTreeCombat.enemy;
+  const arena = domParId("hollow-tree-arena"), decor = decorAffrontementArbre();
+  ecrireAttributDynamique(arena,"data-density",attempt.fighters.length > 6 ? "crowded" : "normal");
+  ecrireVariableStyle(arena,"--encounter-scene-image",decor ? decor.image : "none");
+  ecrireVariableStyle(arena,"--encounter-scene-size",decor ? decor.size : "cover");
+  ecrireVariableStyle(arena,"--encounter-scene-position",decor ? decor.position : "center");
+  arena.innerHTML = '<div class="encounter-team encounter-enemies" role="group" aria-label="Enemies">'
+    + htmlPortrait("enemy",enemy.name,'<img src="' + enemy.portraitPath + '" alt="">') + '</div>'
+    + '<div class="encounter-team encounter-allies" role="group" aria-label="Allies">' + teamHtml + '</div>';
+  // Project the current state while the dialog is still hidden: the fresh bars
+  // then appear at their real values instead of transitioning up from empty.
+  actualiserVueAffrontementArbre();
+  ouvrirDialogueModal("hollow-tree-dialog", {dismissible:true, fermer:fermerVueAffrontementArbre,
+    focusSelector:"#hollow-tree-close", returnFocusSelector:"#hollow-tree-combat .btn-lancer-explo"});
+  ecrireAttributDynamique(domParId("hollow-tree-bernardo"), "src", CAT_FACES.bernardo);
+  ecrireTexte(domParId("hollow-tree-advice-copy"), CAMP_QUICK_DIALOGUES.hollowTreeDefeat);
+  demarrerAnimationMiniJeu("hollow-tree", function() { actualiserVueAffrontementArbre(); return true; });
+  return true;
+}
+
+function fermerVueAffrontementArbre() {
+  fermerDialogueModal("hollow-tree-dialog"); fermerSessionMiniJeu("hollow-tree");
+}
+
+// Last displayed hit instant. The first projection after opening only records
+// it, so reopening a view never replays an old hit.
+let hollowTreeVisualEvent = null;
+const HOLLOW_TREE_HIT_FEEDBACK_MS = 550;
+
+function afficherDegatsAffrontement(portrait, event) {
+  portrait.querySelectorAll(".encounter-float").forEach(function(old) { old.remove(); });
+  const float = document.createElement("span");
+  float.className = "encounter-float" + (event.power ? " is-power" : "");
+  float.setAttribute("aria-hidden", "true");
+  float.textContent = "−" + event.damage;
+  float.addEventListener("animationend", function() { float.remove(); }, { once: true });
+  portrait.appendChild(float);
+}
+
+function actualiserVueAffrontementArbre() {
+  if (!miniJeuRuntimeActif("hollow-tree")) return;
+  const attempt = etat.hollowTreeEncounter, resolved = CatInc.combat.result(attempt);
+  if (!resolved) return;
+  const eventKey = resolved.last ? JSON.stringify(resolved.events) : "";
+  const newEvent = !!hollowTreeVisualEvent && hollowTreeVisualEvent.key !== eventKey;
+  if (!hollowTreeVisualEvent || newEvent) {
+    hollowTreeVisualEvent = {key:eventKey, at:newEvent ? performance.now() : -Infinity};
+  }
+  const recent = performance.now() - hollowTreeVisualEvent.at < HOLLOW_TREE_HIT_FEEDBACK_MS;
+  const events = recent ? resolved.events : [];
+  // Display-only interpolation between 100 ms simulation ticks so the attack
+  // bars fill continuously. Text, ARIA values and outcomes keep the simulated time.
+  const interpolation = resolved.outcome === "running"
+    ? Math.min(TICK_DT, Math.max(0, (Date.now() - tempsComptabiliseJusquaTs) / 1000)) * vitesse : 0;
+  ecrireTexte(domParId("hollow-tree-status"),libelleResultatAffrontement(resolved.outcome));
+  ecrirePropriete(domParId("hollow-tree-status"),"hidden",resolved.outcome === "running");
+  ecrireAttributDynamique(domParId("hollow-tree-status"),"data-outcome",resolved.outcome);
+  ecrirePropriete(domParId("hollow-tree-defeat-advice"),"hidden",resolved.outcome !== "lost");
+  resolved.fighters.concat([Object.assign({kittyIndex:"enemy"},resolved.enemy)]).forEach(function(f) {
+    const el = document.querySelector('[data-encounter-combatant="' + f.kittyIndex + '"]');
+    if (!el) return;
+    const hp = el.querySelector(".encounter-hp");
+    ecrireAttributDynamique(hp,"aria-valuemax",f.maxHp);
+    ecrireAttributDynamique(hp,"aria-valuenow",f.hp);
+    ecrireAttributDynamique(hp,"aria-valuetext",f.hp + " of " + f.maxHp + " HP");
+    ecrireVariableStyle(hp,"--encounter-fill",String(f.hp / f.maxHp));
+    ecrireTexte(el.querySelector(".encounter-health"),f.hp + " / " + f.maxHp + " HP");
+    // The shared simulation owns elapsed time and attack counts. This is only
+    // their visible projection, with no UI clock, interval or saved charge.
+    const alive = resolved.outcome === "running" && f.hp > 0;
+    const charge = alive ? Math.max(0, Math.min(f.attackSeconds, attempt.elapsed - f.attacks * f.attackSeconds)) : 0;
+    const tenths = Math.floor((charge + 1e-8) * 10) / 10;
+    const shownCharge = alive ? Math.min(f.attackSeconds, charge + interpolation) : 0;
+    const attack = el.querySelector(".encounter-atk");
+    ecrireAttributDynamique(attack,"aria-valuemax",f.attackSeconds);
+    ecrireAttributDynamique(attack,"aria-valuenow",tenths);
+    ecrireAttributDynamique(attack,"aria-valuetext",tenths.toFixed(1) + " of " + f.attackSeconds + " seconds");
+    ecrireVariableStyle(attack,"--encounter-fill",String(shownCharge / f.attackSeconds));
+    ecrireTexte(el.querySelector(".encounter-attack-time"),tenths.toFixed(1) + " / " + f.attackSeconds + " s");
+    const attacking = events.find(function(e) { return e.source === f.kittyIndex; });
+    const hit = events.filter(function(e) { return e.target === f.kittyIndex; }).pop();
+    el.classList.toggle("is-attacking",!!attacking);
+    el.classList.toggle("is-hit",!!hit);
+    el.classList.toggle("is-defeated",f.hp === 0);
+    if (newEvent && hit) afficherDegatsAffrontement(el.querySelector(".encounter-portrait"), hit);
+    ecrireTexte(el.querySelector(".encounter-skill"),attacking && attacking.power ? "Power Strike" : "");
+  });
+  ecrirePropriete(domParId("hollow-tree-retreat"),"hidden",resolved.outcome !== "running");
+  ecrirePropriete(domParId("hollow-tree-claim"),"hidden",resolved.outcome === "running");
+  ecrireTexte(domParId("hollow-tree-claim"),resolved.outcome === "won" ? "Claim lessons" : "Continue");
+  ecrirePropriete(domParId("hollow-tree-rewards"),"hidden",resolved.outcome !== "won");
+  ecrireTexte(domParId("hollow-tree-rewards"),ITEMS.hollowTreeLessons.unlocksLabel);
+}
+
+let combatTrainingKittySelectionne = null;
+let combatSelectionModal = null;
+
+function raisonIndisponibiliteCombattant(kittyIndex, options) {
+  const kitty = etat.kittiesData[kittyIndex];
+  if (!Number.isInteger(kittyIndex) || !kitty || !METIERS[kitty.metier]?.combat) return "Combat Cats only.";
+  if (!kittyEligiblePourAffectationOrdinaire(kittyIndex) || kittyIsUnavailableForNewAssignment(kittyIndex)) return kittyAllocationLabel(kittyIndex).text;
+  return options && options.unavailableReason ? options.unavailableReason(kittyIndex) : "";
+}
+
+// Shared combat-only picker: consumers own their selection and launch rules.
+// Choosing a Cat here never reserves them or starts a gameplay action.
+function ouvrirModalCombattants(options) {
+  if (!options || typeof options.onSelect !== "function") return false;
+  combatSelectionModal = options;
+  renduModalCombattants();
+  ouvrirDialogueModal("combat-assignment-modal", {
+    dismissible: true,
+    fermer: fermerModalCombattants,
+    focusSelector: "[data-combat-kitty-choice][data-clavier-clic]",
+    returnFocusSelector: options.returnFocusSelector
+  });
+  return true;
+}
+
+function fermerModalCombattants() {
+  combatSelectionModal = null;
+  fermerDialogueModal("combat-assignment-modal");
+}
+
+function renduModalCombattants() {
+  if (!combatSelectionModal) return;
+  afficherTitreModalAffectationChat("combat-assignment-modal-title");
+  const roster = candidatsKittyAffectation(function(kitty) { return !!METIERS[kitty.metier]?.combat; });
+  const html = ordonnerCandidatsAffectationChats(roster.map(function(entry) {
+    const reason = raisonIndisponibiliteCombattant(entry.kittyIndex, combatSelectionModal);
+    return Object.assign({}, entry, { reason: reason, availableForCurrentAction: !reason });
+  })).map(function(entry) {
+    const ki = entry.kittyIndex;
+    const kitty = entry.kitty;
+    return htmlLigneAffectationKitty({
+      kitty: kitty,
+      iconHtml: kittyIconHtml(kitty),
+      data: { combatKittyChoice: ki },
+      disabled: !!entry.reason,
+      attributes: entry.reason ? ' aria-disabled="true"'
+        : attributsActivationClavier("Select " + kitty.nom + " for combat") + ' onclick="selectionnerCombattantModal(' + ki + ')"',
+      secondaryText: "Combat Level " + (kitty.combatProgress ? kitty.combatProgress.level : 1),
+      contextText: entry.reason || "Free"
+    });
+  }).join("");
+  domParId("combat-assignment-list").innerHTML = html || '<p class="worker-modal-vide">No combat Cats yet.</p>';
+}
+
+function selectionnerCombattantModal(kittyIndex) {
+  const options = combatSelectionModal;
+  if (!options) return false;
+  if (raisonIndisponibiliteCombattant(kittyIndex, options)) {
+    renduModalCombattants();
+    return false;
+  }
+  if (options.onSelect(kittyIndex) === false) return false;
+  fermerModalCombattants();
+  return true;
+}
+
+function ouvrirSelectionEntrainementCombat() {
+  if (!entrainementCombatDisponible() || etat.combatTraining) return false;
+  return ouvrirModalCombattants({
+    returnFocusSelector: "[data-combat-training-slot]",
+    unavailableReason: function(kittyIndex) {
+      if (!entrainementCombatDisponible()) return "Exercise unavailable.";
+      if (etat.kittiesData[kittyIndex].metier !== "fighter") return "Fighter required.";
+      return fighterEligibleExercice(kittyIndex) ? "" : "Exercise limit reached";
+    },
+    onSelect: function(kittyIndex) {
+      combatTrainingKittySelectionne = kittyIndex;
+      exploTabDirty = true;
+      rendu();
+    }
+  });
+}
+
+function retirerSelectionEntrainementCombat() {
+  if (etat.combatTraining) return false;
+  combatTrainingKittySelectionne = null;
+  exploTabDirty = true;
+  rendu();
+  return true;
+}
+
+function entrainementCombatDisponible() {
+  return rencontreBrambleDisponible() && storyEstVue("storyBrambleVue");
+}
+
+function xpCombatPourNiveau(level) {
+  return CONFIG.combatTraining.xpPerLevel * level;
+}
+
+function fighterEligibleExercice(kittyIndex) {
+  const kitty = etat.kittiesData[kittyIndex];
+  return !!(Number.isInteger(kittyIndex) && kitty && kitty.metier === "fighter" && !estBernardoSuperviseur(kitty)
+    && kitty.combatProgress && kitty.combatProgress.level < plafondEntrainementCombat());
+}
+
+function lancerEntrainementCombat(kittyIndex) {
+  // A click may precede the first tick after device sleep. Settle that gap
+  // before assigning a Cat; the AFK summary then leaves a normal retry path.
+  if (rattraperApresSuspensionAfk() || sauvegardeVerrouillee || redemarrageMajeurRequis || afkReloadProgramme) return false;
+  if (!entrainementCombatDisponible() || etat.combatTraining || !fighterEligibleExercice(kittyIndex)
+      || kittyIsUnavailableForNewAssignment(kittyIndex)) return false;
+  etat.combatTraining = { kittyIndex: kittyIndex };
+  exploTabDirty = true;
+  sauvegarder();
+  rendu();
+  return true;
+}
+
+function arreterEntrainementCombat() {
+  if (rattraperApresSuspensionAfk() || sauvegardeVerrouillee || redemarrageMajeurRequis || afkReloadProgramme) return false;
+  if (!etat.combatTraining) return false;
+  etat.combatTraining = null;
+  exploTabDirty = true;
+  sauvegarder();
+  rendu();
+  return true;
+}
+
+// Both the live simulation and the canonical AFK catch-up supply simulated
+// seconds. No wall-clock timer or second elapsed-time authority is persisted.
+function avancerEntrainementCombat(dt) {
+  const action = etat.combatTraining;
+  if (!action || !Number.isFinite(dt) || dt <= 0) return;
+  if (!entrainementCombatDisponible() || !fighterEligibleExercice(action.kittyIndex)) {
+    etat.combatTraining = null;
+    exploTabDirty = true;
+    return;
+  }
+  const progress = etat.kittiesData[action.kittyIndex].combatProgress;
+  const previousLevel = progress.level;
+  progress.xp += dt * CONFIG.combatTraining.xpPerSecond;
+  while (progress.level < plafondEntrainementCombat()
+      && progress.xp + 1e-9 >= xpCombatPourNiveau(progress.level)) {
+    progress.xp = Math.max(0, progress.xp - xpCombatPourNiveau(progress.level));
+    progress.level++;
+  }
+  if (progress.level !== previousLevel) jcDirty = true;
+  if (progress.level >= plafondEntrainementCombat()) {
+    progress.xp = 0;
+    etat.combatTraining = null;
+    exploTabDirty = true;
+  }
+}
+
+function combatProgressHtml(kittyIndex, showName) {
+  const kitty = etat.kittiesData[kittyIndex];
+  return '<div class="combat-progress" data-combat-kitty="' + kittyIndex + '">'
+    + '<span class="combat-progress-ring" role="progressbar" aria-label="Combat XP" aria-valuemin="0">'
+    + '<span class="combat-progress-portrait"><img src="' + echapperAttributHtml(kitty.visage) + '" alt=""></span></span>'
+    + '<div>' + (showName ? '<div><strong>' + echapperAttributHtml(kitty.nom) + '</strong></div>' : '')
+    + '<strong class="combat-level"></strong><div class="combat-xp"></div>'
+    + '<div class="combat-exercise-status"></div></div></div>';
+}
+
+function libelleBonusEquipement(item) {
+  return [item.attack ? "+" + item.attack + " Attack" : "", item.defense ? "+" + item.defense + " Defense" : ""].filter(Boolean).join(" · ");
+}
+
+function equipementFighterHtml(kittyIndex) {
+  const kitty = etat.kittiesData[kittyIndex];
+  const bonus = CatInc.equipment.bonuses(kitty);
+  const fighting = kittyIsInCombat(kittyIndex);
+  return '<section class="fighter-equipment" aria-label="Fighter equipment"><h3>Equipment</h3>'
+    + '<p>Equipment bonus: +' + bonus.attack + ' Attack · +' + bonus.defense + ' Defense</p>'
+    + CatInc.equipment.slots.map(function(slot) {
+      const held = kitty.equipment && kitty.equipment[slot];
+      const item = CatInc.equipment.definition(held);
+      const label = slot === "weapon" ? "Weapon" : "Protection";
+      const choices = Object.entries(CatInc.equipment.definitions()).filter(function(entry) {
+        return entry[1].slot === slot && (entry[0] !== "reinforcedDaggers" || CatInc.combat.learned(etat)
+          || CatInc.equipment.stock(etat,entry[0]) > 0 || entry[0] === held);
+      });
+      return '<section class="detail-job-bonus fighter-equipment-slot" data-equipment-slot="' + slot + '"><h4>' + label + '</h4>'
+        + (item ? '<img class="equipment-item-icon" src="' + item.iconPath + '" alt=""><strong>' + item.name + '</strong><p>' + libelleBonusEquipement(item) + '</p>'
+          + '<button type="button" class="btn-inv-action"' + (fighting ? ' disabled' : '') + ' onclick="retirerEquipementFighter(' + kittyIndex + ',\'' + slot + '\')">Unequip ' + item.name + '</button>'
+          : '<p>No ' + label.toLowerCase() + ' equipped.</p>')
+        + choices.map(function(entry) {
+          const id = entry[0], candidate = entry[1];
+          if (id === held) return '';
+          const count = CatInc.equipment.stock(etat, id);
+          return '<div class="equipment-item-actions"><span>' + candidate.name + ' · ' + libelleBonusEquipement(candidate) + ' · In Bag: ' + count + '</span>'
+            + '<button type="button" class="btn-inv-action"' + (count && !fighting ? ' onclick="equiperFighter(' + kittyIndex + ',\'' + id + '\')"' : ' disabled') + '>Equip ' + candidate.name + '</button>'
+            + '<button type="button" class="btn-inv-action" onclick="ouvrirAtelierEquipement(\'' + id + '\')">Craft at ' + (slot === "weapon" ? "Forge" : "Tannery") + '</button></div>';
+        }).join('') + '</section>';
+    }).join('') + '</section>';
+}
+
+function equiperFighter(kittyIndex, id) {
+  if (!CatInc.equipment.equip(etat, kittyIndex, id)) return false;
+  inventaireDirty = true; sauvegarder(); rendu(); renduManagement();
+  return true;
+}
+
+function retirerEquipementFighter(kittyIndex, slot) {
+  if (!CatInc.equipment.unequip(etat, kittyIndex, slot)) return false;
+  inventaireDirty = true; sauvegarder(); rendu(); renduManagement();
+  return true;
+}
+
+function ouvrirAtelierEquipement(id) {
+  const recipe = campGameplayData.workRecipes[id];
+  if (!recipe || recipe.mode !== "craft") return;
+  changerOnglet("work", {semanticCommit: false}); filtrerWork(recipe.family);
+}
+
+function renduEntrainementCombat() {
+  const panel = domParId("combat-training");
+  if (!panel) return;
+  panel.hidden = carteZoneSelectionnee !== "woodlandEntrance.training" || !entrainementCombatDisponible();
+  if (panel.hidden) return;
+  ecrireAttributDynamique(panel, "aria-label", nomExerciceCombat());
+  if (etat.combatTraining) combatTrainingKittySelectionne = etat.combatTraining.kittyIndex;
+  const fighterIndex = combatTrainingKittySelectionne;
+  const kitty = etat.kittiesData[fighterIndex];
+  let html = '<h3 class="explo-nom">' + nomExerciceCombat() + '</h3>'
+    + '<p class="explo-description">Earn Combat XP up to level '
+    + plafondEntrainementCombat() + '.</p>';
+  if (!kitty) {
+    html += '<button type="button" class="jc-slot-empty combat-training-slot" data-combat-training-slot onclick="ouvrirSelectionEntrainementCombat()">Select a combat Cat</button>';
+  }
+  else {
+    const running = kittyIsCombatTraining(fighterIndex);
+    html += '<div class="jc-slot-wrap"><button type="button" class="jc-slot-filled combat-training-slot" data-combat-training-slot'
+      + (running ? ' disabled' : ' onclick="ouvrirSelectionEntrainementCombat()"')
+      + ' aria-label="' + (running ? 'Assigned combat Cat: ' : 'Change combat Cat: ') + echapperAttributHtml(kitty.nom) + '">'
+      + combatProgressHtml(fighterIndex, true) + '</button>';
+    if (!running) html += '<button type="button" class="jc-slot-remove" aria-label="Remove selected combat Cat" onclick="retirerSelectionEntrainementCombat()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>';
+    html += '</div>';
+    if (kittyIsCombatTraining(fighterIndex)) {
+      html += '<button type="button" class="btn-lancer-explo" onclick="arreterEntrainementCombat()">Stop exercise</button>';
+    } else {
+      const available = fighterEligibleExercice(fighterIndex) && !kittyIsUnavailableForNewAssignment(fighterIndex);
+      html += '<button type="button" class="btn-lancer-explo"' + (available ? '' : ' disabled')
+        + ' onclick="lancerEntrainementCombat(combatTrainingKittySelectionne)">Start exercise</button>';
+    }
+  }
+  panel.innerHTML = html;
+  actualiserEntrainementCombatDynamique(panel);
+}
+
+function actualiserEntrainementCombatDynamique(root) {
+  (root || document).querySelectorAll(".combat-progress").forEach(function(el) {
+    const ki = Number(el.dataset.combatKitty);
+    const kitty = etat.kittiesData[ki];
+    if (!kitty || !kitty.combatProgress) return;
+    const progress = kitty.combatProgress;
+    const displayedXp = Math.floor(progress.xp);
+    const capped = progress.level >= plafondEntrainementCombat();
+    const needed = xpCombatPourNiveau(progress.level);
+    const ring = el.querySelector(".combat-progress-ring");
+    ecrireTexte(el.querySelector(".combat-level"), "Combat Level " + progress.level);
+    ecrireTexte(el.querySelector(".combat-xp"), capped ? "Exercise limit reached" : displayedXp + " / " + needed + " Combat XP");
+    ecrireTexte(el.querySelector(".combat-exercise-status"), kittyIsCombatTraining(ki)
+      ? "Practicing · " + CONFIG.combatTraining.xpPerSecond + " Combat XP/s"
+      : capped ? "Stopped · Combat Level " + plafondEntrainementCombat() + " limit" : "Stopped · " + kittyAllocationLabel(ki).text);
+    ecrireVariableStyle(ring, "--combat-progress", (capped ? 100 : Math.min(100, progress.xp / needed * 100)) + "%");
+    ecrireAttributDynamique(ring, "aria-valuemax", capped ? 1 : needed);
+    ecrireAttributDynamique(ring, "aria-valuenow", capped ? 1 : Math.min(needed, displayedXp));
+    ecrireAttributDynamique(ring, "aria-valuetext", capped ? "Exercise limit reached" : displayedXp + " of " + needed + " Combat XP");
+    const card = document.querySelector('.kitty-carte[data-kitty-index="' + ki + '"]');
+    if (card) {
+      const alloc = kittyAllocationLabel(ki);
+      const status = card.querySelector(".kitty-statut");
+      ecrireTexte(status, alloc.text);
+      ecrirePropriete(status, "className", "kitty-statut " + alloc.cls);
+      ecrireAttributDynamique(card, "aria-label", kitty.nom + ", " + nomRoleChaton(kitty) + ", level " + kitty.niveau + ", " + alloc.text);
+    }
+  });
+}
+
 function kittyIsLearningBook(kittyIdx) {
   return !!(etat.learningEnCours && etat.learningEnCours.kittyIndex === kittyIdx);
 }
@@ -1050,7 +1581,7 @@ function kittyIsBusy(kittyIdx) {
     && kittyIsDemolishingCamp(kittyIdx);
   const ameliorationCamp = typeof kittyIsUpgradingCamp === "function"
     && kittyIsUpgradingCamp(kittyIdx);
-  return estIngenieur(kitty) || estSpecialistePermanentNonAssignable(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx) || kittyIsLearningPerk(kittyIdx) || constructionMaisonCamp || constructionBatimentCamp || reparationCamp || demolitionCamp || ameliorationCamp;
+  return kittyIsInCombat(kittyIdx) || kittyIsCombatTraining(kittyIdx) || estIngenieur(kitty) || estSpecialistePermanentNonAssignable(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx) || kittyIsLearningPerk(kittyIdx) || constructionMaisonCamp || constructionBatimentCamp || reparationCamp || demolitionCamp || ameliorationCamp;
 }
 
 function isAvailableForAutoAssign(ki, currentSlots) {
@@ -1170,6 +1701,8 @@ function totalAlloue() {
     if (Number.isInteger(ki)) managersAlloues.add(ki);
   });
   total += managersAlloues.size;
+  if (etat.combatTraining) total++;
+  if (CatInc.combat.result(etat.hollowTreeEncounter)?.outcome === "running") total += etat.hollowTreeEncounter.fighters.length;
   if (etat.formationEnCours) total++;
   if (etat.formationIngenieurEnCours) total++;
   if (etat.learningEnCours && Number.isInteger(etat.learningEnCours.kittyIndex)) total++;
@@ -1235,7 +1768,8 @@ function kittyPeutEtreForceParWork(kittyIdx) {
 }
 
 function kittyHasNonReplaceableAction(kittyIdx) {
-  return estSpecialistePermanentNonAssignable(kittyIdx)
+  return kittyIsInCombat(kittyIdx) || kittyIsCombatTraining(kittyIdx)
+    || estSpecialistePermanentNonAssignable(kittyIdx)
     || estIngenieur(etat.kittiesData[kittyIdx])
     || kittyIsOnExpedition(kittyIdx)
     || kittyIsOnZoneExplo(kittyIdx)
@@ -1279,6 +1813,9 @@ function normaliserOccupationsChatons() {
       preflight: Boolean(options && options.preflight === true)
     });
   };
+  if (CatInc.combat.result(etat.hollowTreeEncounter)?.outcome === "running") {
+    etat.hollowTreeEncounter.fighters.forEach(function(f) { claim(f.kittyIndex); });
+  }
   if (etat.exploZoneEnCours) {
     var zoneBefore = etat.exploZoneEnCours.kittyIndices;
     var zoneAfter = Array.isArray(zoneBefore) ? zoneBefore.filter(function(ki) {
@@ -1343,6 +1880,13 @@ function normaliserOccupationsChatons() {
     typeof normaliserDemolitionsCampPrototype === "function"
     && normaliserDemolitionsCampPrototype(claimTransactionExistante)
   ) changed = true;
+  // Free, repeatable practice yields to every already-running paid/timed
+  // transaction; releasing it never discards the Cat's earned combat progress.
+  if (etat.combatTraining && (!entrainementCombatDisponible()
+      || !fighterEligibleExercice(etat.combatTraining.kittyIndex) || !claim(etat.combatTraining.kittyIndex))) {
+    etat.combatTraining = null;
+    changed = true;
+  }
   Object.keys(etat.managers || {}).forEach(function(famille) {
     var ki = etat.managers[famille];
     if (ki === null || ki === undefined) return;
@@ -1380,6 +1924,8 @@ var ACTION_DISPLAY = { fishcatting: "Anchovy", grilledAnchovy: "Grilled Anchovy"
 
 function kittyAllocationLabel(kittyIdx) {
   const kittyForLabel = etat.kittiesData[kittyIdx];
+  if (kittyIsInCombat(kittyIdx)) return { text: "Fighting: Hollow tree", cls: "kitty-statut-explo" };
+  if (kittyIsCombatTraining(kittyIdx)) return { text: "Practicing: Training clearing", cls: "kitty-statut-training" };
   const missionZoneLabel = function(type, zoneId) { return type + ": " + (zoneId || "Unknown zone"); };
   if (typeof estBernardoSuperviseur === "function" && estBernardoSuperviseur(kittyForLabel)) {
     return { text: "Supervising Camp", cls: "kitty-statut-work" };
@@ -1608,6 +2154,10 @@ function attentionsExploration() {
   Object.keys(etat.resultatsExplorationZones || {}).forEach(function(zoneId) {
     if (zoneParId(zoneId)) attentions.push({ kind: "zone-result", zoneId: zoneId, section: null, entityId: zoneId });
   });
+  const combat = CatInc.combat.result(etat.hollowTreeEncounter);
+  if (combat && combat.outcome !== "running") {
+    attentions.push({kind:"combat-result", zoneId:CONFIG.hollowTreeCombat.zoneId, section:null, entityId:"hollow-tree"});
+  }
   return attentions;
 }
 
@@ -3057,7 +3607,7 @@ function actualiserAffichageHousingCamp() {
     valeur.classList.toggle("camp-housing-value", true);
     valeur.classList.toggle("camp-housing-value-full", modele.full);
   }
-  summary.setAttribute("aria-label", "Cats: " + modele.current + " / " + modele.capacity
+  ecrireAttributDynamique(summary, "aria-label", "Cats: " + modele.current + " / " + modele.capacity
     + ". Show Housing Capacity details");
   renduDetailsHousingCamp();
 }
@@ -3066,10 +3616,9 @@ function actualiserAffichageAppealCamp() {
   const summary = document.getElementById("camp-appeal-summary");
   if (summary) {
     const appeal = formaterNombreAppealUi(scoreAttractiviteCamp().total, 6);
-    if (!summary.classList.contains("camp-profile-stat-action")) summary.textContent = "Appeal " + appeal;
-    summary.setAttribute("aria-label", "Appeal " + appeal + ". Show Appeal details");
-    const wrap = summary.closest(".camp-appeal-wrap");
-    if (wrap) wrap.hidden = !appealCampDebloque();
+    if (!summary.classList.contains("camp-profile-stat-action")) ecrireTexte(summary, "Appeal " + appeal);
+    ecrireAttributDynamique(summary, "aria-label", "Appeal " + appeal + ". Show Appeal details");
+    ecrirePropriete(summary.closest(".camp-appeal-wrap"), "hidden", !appealCampDebloque());
   }
   renduDetailsAttractiviteCamp();
 }
@@ -3231,24 +3780,41 @@ function definirSourceImageRuntime(image, source) {
   return true;
 }
 
+// Every [data-bernardo-cat-face] node is static markup, so the document scan
+// only runs again when the canonical Live source itself changes.
+let portraitsBernardoSourceAppliquee = "";
+
 function actualiserPortraitsBernardoCanoniques() {
   const src = sourceVisageChatLive(visageChatLiveParId("cat-faces-bernardo"));
-  if (!src) return;
+  if (!src || src === portraitsBernardoSourceAppliquee) return;
   document.querySelectorAll("[data-bernardo-cat-face]").forEach(function(image) {
     definirSourceImageRuntime(image, src);
   });
+  portraitsBernardoSourceAppliquee = src;
 }
 
 function cheminVisageCanonique(value) {
   return String(value || "").split("?")[0].replace(/\\/g, "/");
 }
 
+// Path index derived from the frozen Live catalogue; rebuilt only if the
+// catalogue array itself is replaced. First match wins, as with .find().
+let indexVisagesChatsLiveSource = null;
+let indexVisagesChatsLiveParChemin = new Map();
+
 function visageCanoniquePourChatProfil(kitty) {
   if (!kitty || !kitty.visage) return null;
-  const path = cheminVisageCanonique(kitty.visage);
-  return catalogueVisagesChatsLive().find(function(face) {
-    return face && typeof face.id === "string" && cheminVisageCanonique(face.runtimePath) === path;
-  }) || null;
+  const faces = catalogueVisagesChatsLive();
+  if (faces !== indexVisagesChatsLiveSource) {
+    indexVisagesChatsLiveParChemin = new Map();
+    faces.forEach(function(face) {
+      if (!face || typeof face.id !== "string") return;
+      const chemin = cheminVisageCanonique(face.runtimePath);
+      if (!indexVisagesChatsLiveParChemin.has(chemin)) indexVisagesChatsLiveParChemin.set(chemin, face);
+    });
+    indexVisagesChatsLiveSource = faces;
+  }
+  return indexVisagesChatsLiveParChemin.get(cheminVisageCanonique(kitty.visage)) || null;
 }
 
 function avatarsEligiblesProfilCamp() {
@@ -3292,7 +3858,7 @@ function appliquerImageProfilCamp(image, selected) {
     ? selected.face.runtimePath + "?v=live-r" + selected.face.revision
     : CAMP_PROFILE_NEUTRAL_AVATAR;
   definirSourceImageRuntime(image, src);
-  image.alt = selected ? selected.kitty.nom : "";
+  ecrirePropriete(image, "alt", selected ? selected.kitty.nom : "");
 }
 
 function renduPickerAvatarProfilCamp(entries, selectedId) {
@@ -3331,14 +3897,14 @@ function actualiserAffichageProfilCamp() {
   ecrireTexte(document.getElementById("camp-profile-summary-name"), profile.name);
   const summaryLevel = document.getElementById("camp-profile-summary-level");
   ecrireTexte(summaryLevel, "Lv. " + progression.level);
-  if (summaryLevel) summaryLevel.hidden = !appealUnlocked;
+  if (summaryLevel && summaryLevel.hidden !== !appealUnlocked) summaryLevel.hidden = !appealUnlocked;
   const summaryCats = document.getElementById("camp-profile-summary-cats");
   ecrireTexte(summaryCats, "Cats " + recruited);
   if (summaryCats) summaryCats.classList.toggle("is-full", housing.full);
   ecrireTexte(document.getElementById("camp-profile-summary-appeal"), "Appeal " + formaterNombreAppealUi(appeal, 6));
   const summaryAppeal = document.getElementById("camp-profile-summary-appeal");
-  if (summaryAppeal) summaryAppeal.hidden = !appealUnlocked;
-  summary.setAttribute("aria-label", "Open Camp Profile. " + profile.name
+  if (summaryAppeal && summaryAppeal.hidden !== !appealUnlocked) summaryAppeal.hidden = !appealUnlocked;
+  ecrireAttributDynamique(summary, "aria-label", "Open Camp Profile. " + profile.name
     + (appealUnlocked ? ", Level " + progression.level : "")
     + ", " + recruited + " of " + housing.capacity + " Cats housed"
     + (appealUnlocked ? ", Appeal " + formaterNombreAppealUi(appeal, 6) : ""));
@@ -3347,15 +3913,15 @@ function actualiserAffichageProfilCamp() {
 
   ecrireTexte(document.getElementById("camp-profile-panel-level"), progression.level);
   const panelLevel = document.getElementById("camp-profile-panel-level-wrap");
-  if (panelLevel) panelLevel.hidden = !appealUnlocked;
+  if (panelLevel && panelLevel.hidden !== !appealUnlocked) panelLevel.hidden = !appealUnlocked;
   ecrireTexte(document.getElementById("camp-profile-panel-cats"), recruited + " / " + housing.capacity);
   ecrireTexte(document.getElementById("camp-profile-panel-appeal"), formaterNombreAppealUi(appeal, 6));
   const panelAppeal = document.getElementById("camp-profile-panel-appeal-wrap");
-  if (panelAppeal) panelAppeal.hidden = !appealUnlocked;
+  if (panelAppeal && panelAppeal.hidden !== !appealUnlocked) panelAppeal.hidden = !appealUnlocked;
   const panelStats = document.getElementById("camp-profile-stats");
   if (panelStats) panelStats.classList.toggle("is-pre-appeal", !appealUnlocked);
   const panelProgress = document.getElementById("camp-profile-progress");
-  if (panelProgress) panelProgress.hidden = !appealUnlocked;
+  if (panelProgress && panelProgress.hidden !== !appealUnlocked) panelProgress.hidden = !appealUnlocked;
   ecrireTexte(document.getElementById("camp-profile-panel-xp"), progression.xp + " / " + progression.nextThreshold);
   ecrireTexte(
     document.getElementById("camp-profile-panel-bonus"),
@@ -3363,11 +3929,10 @@ function actualiserAffichageProfilCamp() {
   );
   const progress = document.getElementById("camp-profile-panel-progress");
   if (progress) {
-    progress.setAttribute("aria-label", "Camp XP toward Level " + (progression.level + 1));
-    progress.setAttribute("aria-valuemax", progression.stepCost);
-    progress.setAttribute("aria-valuenow", progression.stepProgress);
-    const fill = progress.querySelector("i");
-    if (fill) fill.style.width = progressPercent + "%";
+    ecrireAttributDynamique(progress, "aria-label", "Camp XP toward Level " + (progression.level + 1));
+    ecrireAttributDynamique(progress, "aria-valuemax", progression.stepCost);
+    ecrireAttributDynamique(progress, "aria-valuenow", progression.stepProgress);
+    ecrireStyle(progress.querySelector("i"), "width", progressPercent + "%");
   }
   const input = document.getElementById("camp-profile-name-input");
   const profileModal = document.getElementById("camp-profile-modal");
@@ -4165,6 +4730,9 @@ let preferencesAncienneSauvegarde = null;
 let rattrapageAfkEnCours = false;
 let suspensionAfkConfirmee = false;
 let suspensionAfkDebutTs = null;
+// Wall-clock point up to which elapsed time is already owned, by the last live
+// tick or by the canonical AFK catch-up. In memory only; never saved.
+let tempsComptabiliseJusquaTs = null;
 let migrationSauvegardeAPersister = false;
 let campPrototypeRestaurationAutoritaire = false;
 
@@ -4262,16 +4830,30 @@ function conserverSauvegardeRecuperation(raw, raison) {
   }
 }
 
+// Live ticks normally follow one another within scheduler jitter. Device sleep
+// or a suspended event loop can skip them without any hidden/pagehide/freeze
+// signal; an unsimulated interval of at least the canonical minimum absence is
+// still an absence, owned by the same AFK law as an announced suspension.
+function debutAbsenceSilencieuse(maintenant) {
+  return Number.isFinite(tempsComptabiliseJusquaTs)
+    && maintenant - tempsComptabiliseJusquaTs >= ABSENCE_MIN_MS
+    ? tempsComptabiliseJusquaTs
+    : null;
+}
+
 function sauvegarder() {
   if (sauvegardeVerrouillee) return;
   if (typeof synchroniserEtatCampDepuisPrototype === "function") {
     synchroniserEtatCampDepuisPrototype();
   }
-  // Autosaves may still fire before a browser freezes a hidden page. Keep the
-  // first suspension timestamp authoritative so they cannot erase the AFK gap.
-  etat.dernierTimestamp = Number.isFinite(suspensionAfkDebutTs)
+  // Autosaves may still fire before a browser freezes a hidden page, or before
+  // the first tick after a silent device sleep. Keep the start of the
+  // unsimulated interval authoritative so they cannot erase the AFK gap.
+  const maintenant = Date.now();
+  const debutAbsence = Number.isFinite(suspensionAfkDebutTs)
     ? suspensionAfkDebutTs
-    : Date.now();
+    : debutAbsenceSilencieuse(maintenant);
+  etat.dernierTimestamp = debutAbsence !== null ? debutAbsence : maintenant;
   localStorage.setItem(SAVE_KEY, saveCore.serialiserEtat(etat));
 }
 
@@ -4747,12 +5329,36 @@ function dailyQuetesDebloquees() {
   return Array.isArray(etat.itemsAppris) && etat.itemsAppris.includes("dailyPurpose");
 }
 
+// Intl formatters are expensive to construct and these run from tick(). They
+// are created once; a construction failure is cached so the ISO fallback stays.
+let formatteurDateParis;
+let formatteurDateHeureParis;
+
+function formatteurIntlParis(avecHeure) {
+  if (avecHeure ? formatteurDateHeureParis === undefined : formatteurDateParis === undefined) {
+    let formatteur = null;
+    try {
+      formatteur = new Intl.DateTimeFormat("en-CA", avecHeure ? {
+        timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+      } : {
+        timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit"
+      });
+    } catch (e) {
+      formatteur = null;
+    }
+    if (avecHeure) formatteurDateHeureParis = formatteur;
+    else formatteurDateParis = formatteur;
+  }
+  const formatteur = avecHeure ? formatteurDateHeureParis : formatteurDateParis;
+  if (!formatteur) throw new Error("Europe/Paris date formatting is unavailable.");
+  return formatteur;
+}
+
 function cleDateParis(timestamp) {
   const date = new Date(Number.isFinite(timestamp) ? timestamp : Date.now());
   try {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit"
-    }).formatToParts(date);
+    const parts = formatteurIntlParis(false).formatToParts(date);
     const values = {};
     parts.forEach(function(part) { values[part.type] = part.value; });
     return values.year + "-" + values.month + "-" + values.day;
@@ -4764,10 +5370,7 @@ function cleDateParis(timestamp) {
 function partsDateParis(timestamp) {
   const date = new Date(Number.isFinite(timestamp) ? timestamp : Date.now());
   try {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
-    }).formatToParts(date);
+    const parts = formatteurIntlParis(true).formatToParts(date);
     const values = {};
     parts.forEach(function(part) { values[part.type] = Number(part.value); });
     return values;
@@ -4922,6 +5525,8 @@ let objectifPrincipalId = null;
 let objectifGuideSelectionneId = null;
 let objectifsGuideStructureKey = "";
 let objectifsCampReplies = false;
+// One live MediaQueryList instead of a new one on every tick.
+let requeteMobileObjectifs = null;
 const NOMS_DESTINATIONS_GUIDE = {
   gang: "Recruitment",
   camp: "Base Camp",
@@ -5174,8 +5779,8 @@ function renduObjectifs() {
     if (!bouton) return;
     bouton.classList.toggle("obj-guide-recommande", index === 0);
     bouton.classList.toggle("obj-guide-selectionne", obj.id === objectifGuideSelectionneId);
-    if (obj.id === objectifGuideSelectionneId) bouton.setAttribute("aria-current", "step");
-    else bouton.removeAttribute("aria-current");
+    if (obj.id === objectifGuideSelectionneId) ecrireAttributDynamique(bouton, "aria-current", "step");
+    else if (bouton.hasAttribute("aria-current")) bouton.removeAttribute("aria-current");
     ecrireTexte(bouton.querySelector(".obj-guide-destination"), (index === 0 ? "Recommended · " : "") + destination);
     ecrireTexte(bouton.querySelector(".obj-guide-lien"), guide.action || ("Open " + destination + " →"));
     const ariaLabel = "Go to objective: " + obj.label + ". " + (guide.action || ("Open " + destination));
@@ -5183,17 +5788,17 @@ function renduObjectifs() {
     mettreAJourProgressionObjectif(obj, bouton, guide);
   });
 
-  const estMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (!requeteMobileObjectifs) requeteMobileObjectifs = window.matchMedia("(max-width: 768px)");
+  const estMobile = requeteMobileObjectifs.matches;
   ecrireTexte(document.getElementById("objectifs-titre"), estMobile
     ? "Goal " + (selectedIndex + 1) + "/" + actifs.length + ": " + selected.label
     : "Current goals · " + actifs.length);
-  const titreGuide = document.getElementById("objectifs-titre");
-  if (titreGuide) titreGuide.setAttribute("aria-label", "Toggle tutorial guide");
+  ecrireAttributDynamique(document.getElementById("objectifs-titre"), "aria-label", "Toggle tutorial guide");
   ecrireTexte(document.getElementById("objectif-guide-compteur"), (selectedIndex + 1) + " / " + actifs.length);
   const precedent = document.getElementById("objectif-guide-precedent");
   const suivant = document.getElementById("objectif-guide-suivant");
-  if (precedent) precedent.disabled = actifs.length < 2;
-  if (suivant) suivant.disabled = actifs.length < 2;
+  ecrirePropriete(precedent, "disabled", actifs.length < 2);
+  ecrirePropriete(suivant, "disabled", actifs.length < 2);
   ecrireTexte(document.getElementById("objectif-guide-secondaires"), "Completed goals are saved in Logs");
 }
 
@@ -5304,6 +5909,10 @@ function actualiserBadgeOnglet(id, visible) {
   if (!bouton) return;
   const nouveau = visible && !ongletDejaVisite(id);
   basculerClasse(bouton, "onglet-nouveau", nouveau);
+  // While a tab alert is shown, its indicator owns the accessible label and
+  // title (and composes "(new)" itself). Writing them here too would flip both
+  // attributes twice on every tick.
+  if (bouton.classList.contains("onglet-alerte") || bouton.classList.contains("onglet-formation-alerte")) return;
 
   const labelElement = bouton.querySelector(".onglet-label");
   const label = labelElement ? labelElement.textContent.trim() : id;
@@ -5500,21 +6109,20 @@ function renduRessources(u) {
       if (valeur) {
         valeur.classList.toggle("ressource-valeur-stockage", true);
         valeur.classList.toggle("ressource-valeur-stockage-full", modele.full);
-        valeur.setAttribute("aria-label", modele.accessibleText);
+        ecrireAttributDynamique(valeur, "aria-label", modele.accessibleText);
         const ligne = valeur.closest(".ressource[data-tooltip]");
         if (ligne) {
-          ligne.dataset.storageFull = modele.full ? "true" : "false";
-          ligne.dataset.storageStock = modele.amountText;
-          ligne.dataset.storageCapacity = modele.capacityText;
-          ligne.setAttribute("aria-label", modele.accessibleText);
+          ecrireAttributDynamique(ligne, "data-storage-full", modele.full ? "true" : "false");
+          ecrireAttributDynamique(ligne, "data-storage-stock", modele.amountText);
+          ecrireAttributDynamique(ligne, "data-storage-capacity", modele.capacityText);
+          ecrireAttributDynamique(ligne, "aria-label", modele.accessibleText);
         }
       }
     } else {
       ecrireTexte(valeur, formaterNombre(entry[1]));
-      if (valeur) {
-        valeur.classList.remove("ressource-valeur-stockage", "ressource-valeur-stockage-full");
-        valeur.removeAttribute("aria-label");
-      }
+      basculerClasse(valeur, "ressource-valeur-stockage", false);
+      basculerClasse(valeur, "ressource-valeur-stockage-full", false);
+      if (valeur && valeur.hasAttribute("aria-label")) valeur.removeAttribute("aria-label");
     }
   });
   actualiserAffichageProfilCamp();
@@ -5577,7 +6185,7 @@ function actualiserIndicateurWorkBoost(boostEl, boostActif, workCue, boostRestan
   const workTabBadge = domParId("work-boost-tab-badge");
   if (workTab) workTab.classList.toggle("work-boost-tab-attention", Boolean(boostActif && workCue));
   if (workTabBadge) {
-    workTabBadge.hidden = !boostActif;
+    if (workTabBadge.hidden !== !boostActif) workTabBadge.hidden = !boostActif;
     ecrireHTML(workTabBadge, boostActif
       ? (workCue
         ? interfaceIconHtml("power") + " Bird Boost! ×" + BIRD_WORK_BOOST_BASE_MULTIPLIER + " · "
@@ -5704,10 +6312,10 @@ function renduVisiteurCampRecrutement() {
     : (enCours ? "Approaching · " + formaterTemps(tempsRestantSequence()) : "Waiting for Bernardo");
   const statutArrivee = document.getElementById("camp-recruit-arrival-status");
   ecrireTexte(statutArrivee, enCours ? formaterTemps(tempsRestantSequence()) : "");
-  if (statutArrivee) statutArrivee.hidden = !enCours;
+  ecrirePropriete(statutArrivee, "hidden", !enCours);
   if (enCours) renduDetailsDureeArriveeCamp();
   else fermerDetailsDureeArriveeCamp(false);
-  visiteur.setAttribute("aria-label", prochainNom + " · " + statut);
+  ecrireAttributDynamique(visiteur, "aria-label", prochainNom + " · " + statut);
   visiteur.classList.toggle("camp-recruit-visitor-arrived", !enCours);
   visiteur.classList.toggle("camp-recruit-visitor-ready", !enCours && (!logementSature || inviteStoryCapacitePret));
   if (enCours || !logementSature) masquerMessageCapaciteRecrutementCamp();
@@ -5763,8 +6371,8 @@ function fermerDetailsDureeArriveeCamp(restaurerFocus) {
   const panneau = typeof document !== "undefined"
     ? document.getElementById("camp-recruit-arrival-details") : null;
   const etaitOuvert = Boolean(panneau && !panneau.hidden);
-  if (panneau) panneau.hidden = true;
-  if (bouton) bouton.setAttribute("aria-expanded", "false");
+  ecrirePropriete(panneau, "hidden", true);
+  ecrireAttributDynamique(bouton, "aria-expanded", "false");
   if (restaurerFocus && etaitOuvert && bouton && !bouton.hidden
       && typeof bouton.focus === "function") bouton.focus();
 }
@@ -5860,6 +6468,10 @@ document.addEventListener("scroll", positionnerStatsAttrapagePopover, true);
 
 // ── 9c. Work resources (separate Gathering and Processing views)
 const WORK_RECIPE_PROFILES = Object.freeze({
+  "hollow-tree-forge": { rawAction: "forge", procAction: "forge", procMultAction: "forge", rawUnlocked: function() { return etat.itemsAppris.includes("workshopPlans") && CatInc.combat.learned(etat); }, procUnlocked: function() { return etat.itemsAppris.includes("workshopPlans") && CatInc.combat.learned(etat); } },
+  "workshop-forge": { rawAction: "forge", procAction: "forge", procMultAction: "forge", rawUnlocked: function() { return etat.itemsAppris.includes("workshopPlans"); }, procUnlocked: function() { return etat.itemsAppris.includes("workshopPlans"); } },
+  "workshop-metal": { rawAction: "recoverMetal", procAction: "smeltMetal", procMultAction: "smeltMetal", rawUnlocked: function() { return etat.itemsAppris.includes("workshopPlans"); }, procUnlocked: function() { return etat.itemsAppris.includes("workshopPlans"); } },
+  "workshop-leather": { rawAction: "recoverHides", procAction: "tanLeather", procMultAction: "tanLeather", rawUnlocked: function() { return etat.itemsAppris.includes("workshopPlans"); }, procUnlocked: function() { return etat.itemsAppris.includes("workshopPlans"); } },
   "wood-tier1": { rawAction: "woodcatting", procAction: "sawmill", procMultAction: "sawmill", bloqueeKey: "scieriBloquee", rawUnlocked: function(u) { return u.cathering; }, procUnlocked: function(u) { return u.scierie; }, legacyRawResourceId: "cardboardPieces", rawTotalKey: "cardboardPiecesTotalRecolte", legacyOutputResourceId: "cardboardPlanks", procTotalKey: "cardboardPlanksTotalProduit" },
   "wood-tier2": { rawAction: "basicWoodcatting", procAction: "basicSawmill", procMultAction: "sawmill", bloqueeKey: "basicSawmillBloquee", rawUnlocked: function(u) { return u.basicWood; }, procUnlocked: function(u) { return u.basicSawmill; }, legacyRawResourceId: "basicWood", rawTotalKey: "basicWoodTotalRecolte", legacyOutputResourceId: "basicWoodPlanks", procTotalKey: "basicWoodPlanksTotalProduit" },
   "food-tier1": { rawAction: "grasscatting", procAction: "catchen", procMultAction: "catchen", bloqueeKey: "catchenBloquee", rawUnlocked: function(u) { return u.grasscat; }, procUnlocked: function(u) { return u.catchen; }, legacyRawResourceId: "catnip", rawTotalKey: "catnipTotalRecolte" },
@@ -5871,6 +6483,22 @@ const WORK_RECIPE_PROFILES = Object.freeze({
 const RESOURCE_PAIRS = Object.keys(campGameplayData.workRecipes || {}).map(function(recipeId) {
   const recipe = campGameplayData.workRecipes[recipeId];
   const profile = WORK_RECIPE_PROFILES[recipe.unlockProfile];
+  if (recipe.mode === "craft") {
+    const output = CatInc.equipment.definition(recipe.output.equipmentId);
+    const inputs = recipe.inputs.map(function(input) {
+      const resource = resourceApi.definition(input.resourceId);
+      return {res: input.resourceId, label: resource.name, icon: resource.iconPath, baseQuantity: input.quantity, costAdjusted: false};
+    });
+    return Object.assign({}, profile, {
+      recipeId: recipeId, mode: "craft", family: recipe.family, tier: recipe.tier,
+      rawRes: inputs[0].res, rawCfg: {secondesParUnite: 1}, rawLabel: "Shared materials", rawIcon: inputs[0].icon,
+      procRes: recipe.output.equipmentId, procLabel: output.name, procIcon: output.iconPath,
+      procCfg: {secondsPerCycle: recipe.output.processSeconds, secondsPerInput: recipe.output.processSeconds},
+      procSecUnite: "secondsPerCycle", procSecRaw: "secondsPerInput", outputQuantity: 1,
+      buildingTypeId: recipe.production.buildingTypeId, minimumBuildingTier: recipe.production.minimumBuildingTier,
+      inputs: inputs
+    });
+  }
   const input = resourceApi.definition(recipe.input.resourceId);
   const output = resourceApi.definition(recipe.output.resourceId);
   return Object.assign({}, profile, {
@@ -5897,12 +6525,18 @@ const RESOURCE_PAIRS = Object.keys(campGameplayData.workRecipes || {}).map(funct
 });
 
 const WORK_FAMILIES = {
+  forge: { label: "Forge", gatheringManager: null, processingManager: null },
   wood: { label: "Wood", gatheringScope: "Wood resources", gatheringManager: "wood", processingScope: "Sawmill and planks", processingManager: "sawmill" },
   food: { label: "Food", gatheringScope: "Raw food", gatheringManager: "food", processingScope: "Catchen and prepared food", processingManager: "catchen" },
-  rock: { label: "Rocks", gatheringScope: "Raw stone", gatheringManager: "rock", processingScope: "Pawsonry and bricks", processingManager: "pawsonry" }
+  rock: { label: "Rocks", gatheringScope: "Raw stone", gatheringManager: "rock", processingScope: "Pawsonry and bricks", processingManager: "pawsonry" },
+  metal: { label: "Metal", gatheringManager: null, processingManager: null },
+  leather: { label: "Leather", gatheringManager: null, processingManager: null }
 };
 
 const WORK_BUILDING_BY_FAMILY = Object.freeze({
+  forge: "forge",
+  metal: "foundry",
+  leather: "tannery",
   wood: "sawmill",
   food: "catchen",
   rock: "pawsonry"
@@ -5910,6 +6544,15 @@ const WORK_BUILDING_BY_FAMILY = Object.freeze({
 
 function recetteWorkContenuDebloque(pair, u) {
   return Boolean(pair && pair.rawUnlocked(u) && pair.procUnlocked(u));
+}
+
+function stockSortieRecette(pair) {
+  return pair.mode === "craft" ? CatInc.equipment.stock(etat, pair.procRes) : resourceApi.balance(etat, pair.procRes);
+}
+
+function fabricationAttendMateriaux(pair, slot) {
+  return pair.mode === "craft" && !(slot.phaseProgress > 0 && slot.phaseProgress < 1)
+    && !CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[pair.recipeId]);
 }
 
 function capaciteRecetteWork(pair, u) {
@@ -6176,10 +6819,10 @@ function initialiserWorkStructure() {
     return '<div id="famille-' + familyId + '" class="work-recipe-family">'
       + '<header class="work-recipe-family-header">'
       +   '<div><span class="pair-family-kicker">Production family</span><h2>' + family.label + '</h2></div>'
-      +   '<section id="work-managers-' + familyId + '" class="work-recipe-managers" aria-label="' + family.label + ' managers" style="display:none">'
+      +   (family.gatheringManager ? '<section id="work-managers-' + familyId + '" class="work-recipe-managers" aria-label="' + family.label + ' managers" style="display:none">'
       +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Gathering Manager</span></div><div id="manager-slot-' + family.gatheringManager + '" class="manager-slot-conteneur"></div></div>'
       +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Processing Manager</span></div><div id="manager-slot-' + family.processingManager + '" class="manager-slot-conteneur"></div></div>'
-      +   '</section>'
+      +   '</section>' : '')
       + '</header>'
       + '<div class="work-recipe-slots" id="work-recipe-slots-' + familyId + '">'
       +   slotsHtml
@@ -6219,6 +6862,10 @@ function progressionsSlotRecette(slot, pair) {
   // derive the phase percentages from the slot so the paused Processing value
   // remains visible while the slot waits for another Cat.
   if (!slot || !pair) return empty;
+  if (pair.mode === "craft") {
+    const value = Math.max(0, Math.min(1, Number(slot.phaseProgress) || 0));
+    return {gathering: 0, processing: value, phase: value, overall: value};
+  }
   const gathered = Math.max(0, Number(slot.gatheredInputs && slot.gatheredInputs[pair.rawRes]) || 0);
   const target = quantiteInputEffective(pair, pair.inputs[0]);
   const gathering = slot.phase === "processing"
@@ -6235,6 +6882,14 @@ function progressionsSlotRecette(slot, pair) {
   };
 }
 
+function intrantsPartagesRecetteHtml(pair) {
+  return '<section class="work-recipe-resource work-recipe-resource-input"><span class="work-recipe-node-kicker">MATERIALS</span>'
+    + pair.inputs.map(function(input) {
+      return '<div class="work-craft-input"><img src="' + input.icon + '" alt=""><strong>' + input.label + '</strong><span data-craft-input="' + input.res + '">'
+        + libelleNombreDecimal(resourceApi.balance(etat, input.res), 1) + ' / ' + input.baseQuantity + '</span></div>';
+    }).join('') + '<small>From shared stock. Used when the item is delivered.</small></section>';
+}
+
 function workSummaryManagerHtml(label, managerFamily) {
   const kitty = managerKittyForFamily(managerFamily);
   const managerValue = kitty
@@ -6243,7 +6898,14 @@ function workSummaryManagerHtml(label, managerFamily) {
   return '<span class="work-summary-manager"><small>' + label + '</small>' + managerValue + '</span>';
 }
 
-function raisonPauseRecette(pair, capacite, stockage) {
+function raisonPauseRecette(pair, capacite, stockage, slot) {
+  if (pair && pair.mode === "craft" && capacite && capacite.available
+      && (!slot || !(slot.phaseProgress > 0) || slot.phaseProgress >= 1)
+      && !CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[pair.recipeId])) {
+    return "Missing shared materials: " + pair.inputs.map(function(input) {
+      return input.baseQuantity + " " + input.label;
+    }).join(" + ") + ".";
+  }
   return capacite && !capacite.available
     ? capacite.reason
     : (stockage && stockage.plein
@@ -6252,9 +6914,9 @@ function raisonPauseRecette(pair, capacite, stockage) {
       : "");
 }
 
-function raisonPauseResumeWork(pair, capacite, stockage) {
+function raisonPauseResumeWork(pair, capacite, stockage, slot) {
   if ((!capacite || capacite.available) && stockage && stockage.plein) return "Storage full";
-  return raisonPauseRecette(pair, capacite, stockage);
+  return raisonPauseRecette(pair, capacite, stockage, slot);
 }
 
 function renduWorkSupervision(summary, unlockedFamilies) {
@@ -6265,13 +6927,14 @@ function renduWorkSupervision(summary, unlockedFamilies) {
       const pair = paireRecette(slot.recipeId);
       const kitty = pair && slot.kittyIndex !== null ? etat.kittiesData[slot.kittyIndex] : null;
       const stockage = pair ? etatStockageRessource(pair.procRes) : null;
-      const pause = pair ? raisonPauseResumeWork(pair, capaciteRecetteWork(pair, unlocks()), stockage) : "";
+      const pause = pair ? raisonPauseResumeWork(pair, capaciteRecetteWork(pair, unlocks()), stockage, slot) : "";
       const status = !pair ? "Empty slot" : pause ? "Paused · " + pause : !kitty ? "Waiting for a Cat" : phaseActiveRecette(slot) === "processing" ? "Processing" : "Gathering";
       const rate = kitty && !pause ? libelleNombreDecimal(tauxProductionSlotRecette(pair, slot) * 60, 2) + "/min" : "";
-      stateParts.push(familyId, slotIdx, slot.recipeId, slot.kittyIndex, slot.phase, pause, rate, pair ? Number(etat[pair.procRes]) || 0 : 0);
+      stateParts.push(familyId, slotIdx, slot.recipeId, slot.kittyIndex, slot.phase, pause, rate, pair ? stockSortieRecette(pair) : 0);
       return '<button type="button" class="work-summary-row work-supervision-slot' + (!pair ? ' is-empty' : '') + (pause ? ' is-paused' : '')
         + '" data-work-family="' + familyId + '" data-work-slot="' + slotIdx + '" data-recipe-phase="' + slot.phase
-        + '" data-output-stock="' + (pair ? Number(etat[pair.procRes]) || 0 : 0)
+        + '" data-output-stock="' + (pair ? stockSortieRecette(pair) : 0)
+        + '" data-craft-waiting="' + (pair ? fabricationAttendMateriaux(pair, slot) : false)
         + '" data-output-capacity="' + (stockage && ressourceSoumiseStockage(pair.procRes) ? stockage.capacite : Infinity) + '" onclick="ouvrirSlotDepuisResume(\'' + familyId + '\',' + slotIdx + ')">'
         + '<span class="work-summary-recipe">' + (pair ? '<img src="' + pair.procIcon + '" alt="">' : '<span class="work-summary-icon-empty" aria-hidden="true"></span>')
         + '<span><small>Slot ' + (slotIdx + 1) + '</small><strong>' + (pair ? pair.procLabel : 'Choose a recipe') + '</strong></span></span>'
@@ -6324,7 +6987,7 @@ function renduWorkSummary(unlockedFamilies) {
     });
 
     let managerHtml = "";
-    if (jobCenterActif) {
+    if (jobCenterActif && family.gatheringManager) {
       const gatherManager = managerKittyForFamily(family.gatheringManager);
       const processManager = managerKittyForFamily(family.processingManager);
       stateParts.push(familyId + "-managers",
@@ -6404,7 +7067,7 @@ function renduSlotRecette(familyId, slotIdx) {
   const pair = paireRecette(slot.recipeId);
   const capacite = pair ? capaciteRecetteWork(pair, unlocks()) : null;
   const stockage = pair ? etatStockageRessource(pair.procRes) : null;
-  const pauseReason = raisonPauseRecette(pair, capacite, stockage);
+  const pauseReason = raisonPauseRecette(pair, capacite, stockage, slot);
   const kitty = slot.kittyIndex === null ? null : etat.kittiesData[slot.kittyIndex];
   const progress = progressionsSlotRecette(slot, pair);
   const focusReserveForRender = synchroniserReserveManualFocus();
@@ -6414,10 +7077,11 @@ function renduSlotRecette(familyId, slotIdx) {
     ? workManualFocus.phase
     : "none";
   const stateKey = ["cat-ink-straight", slot.recipeId || "-", slot.kittyIndex, slot.phase,
+    pair && pair.mode === "craft" ? CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[pair.recipeId]) : "",
     Math.floor(progress.gathering * 100), Math.floor(progress.processing * 100), Math.floor(progress.overall * 100),
     pair ? Math.floor((Number(slot.gatheredInputs[pair.rawRes]) || 0) * 10) : 0,
     kitty ? kitty.niveau : -1, batimentFonctionnelCamp("jobCenter").available ? 1 : 0,
-    pair ? Math.floor((Number(etat[pair.procRes]) || 0) * 100) : 0,
+    pair ? Math.floor((stockSortieRecette(pair)) * 100) : 0,
     pair ? multiplicateurCoutFamille(pair.procMultAction) : 1,
     pair ? multiplicateurFamille(pair.rawAction) : 1,
     pair ? multiplicateurFamille(pair.procMultAction) : 1,
@@ -6430,7 +7094,10 @@ function renduSlotRecette(familyId, slotIdx) {
   if (el.dataset.recipeState === stateKey) return;
   el.dataset.recipeState = stateKey;
   el.dataset.recipePhase = slot.phase;
-  el.dataset.outputStock = pair ? Number(etat[pair.procRes]) || 0 : 0;
+  el.dataset.craftWaiting = pair ? String(fabricationAttendMateriaux(pair, slot)) : "false";
+  el.dataset.craftInputsReady = pair && pair.mode === "craft"
+    ? String(CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[pair.recipeId])) : "";
+  el.dataset.outputStock = pair ? stockSortieRecette(pair) : 0;
   el.dataset.outputCapacity = stockage && ressourceSoumiseStockage(pair.procRes) ? stockage.capacite : Infinity;
   el.classList.toggle("work-recipe-slot-paused", Boolean(pauseReason));
   el.classList.toggle("work-recipe-slot-waiting", !kitty);
@@ -6448,7 +7115,7 @@ function renduSlotRecette(familyId, slotIdx) {
   const gathered = Math.min(target, Math.max(0, Number(slot.gatheredInputs[pair.rawRes]) || 0));
   const durations = kitty ? dureesAffichageRecette(pair, kitty, familyId, slotIdx) : null;
   const gatherDuration = durations ? durations.gathering : Infinity;
-  const outputPerCycle = kitty ? kittyProcessProductionMultiplier(kitty) : 1;
+  const outputPerCycle = pair.mode === "craft" ? 1 : (kitty ? kittyProcessProductionMultiplier(kitty) : 1);
   const outputRate = kitty && durations && durations.cycle > 0 ? outputPerCycle / durations.cycle : 0;
   const processingDuration = durations ? durations.processing : Infinity;
   const fullCycleDuration = durations ? durations.cycle : Infinity;
@@ -6505,7 +7172,7 @@ function renduSlotRecette(familyId, slotIdx) {
     + '</div>'
     + '<div class="work-recipe-flow">'
     + '<section class="work-recipe-cat">' + catHtml + '</section>'
-    + '<section class="work-recipe-resource work-recipe-resource-input' + (gatherFocusable ? ' work-manual-focus-available' : '') + (gatherFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="gathering"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%">' + gatherInfo + manualFocusBadgeHtml(gatherFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span class="work-recipe-gathered">' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small class="work-recipe-input-details">' + (kitty ? formaterTemps(gatherDuration) : '') + '</small>' + stageGauge + '</section>'
+    + (pair.mode === "craft" ? intrantsPartagesRecetteHtml(pair) : '<section class="work-recipe-resource work-recipe-resource-input' + (gatherFocusable ? ' work-manual-focus-available' : '') + (gatherFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="gathering"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%">' + gatherInfo + manualFocusBadgeHtml(gatherFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span class="work-recipe-gathered">' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small class="work-recipe-input-details">' + (kitty ? formaterTemps(gatherDuration) : '') + '</small>' + stageGauge + '</section>')
     + '<section class="work-recipe-resource work-recipe-resource-output' + (processFocusable ? ' work-manual-focus-available' : '') + (processFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="processing"' + produceTrigger + ' style="--fill:' + Math.round(progress.processing * 100) + '%">' + processInfo + manualFocusBadgeHtml(processFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">PROCESSING</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small class="work-recipe-output-details">' + formaterTemps(processingDuration) + ' · ' + libelleNombreDecimal(outputPerCycle, 2) + '</small>' : '<small class="work-recipe-output-details"></small>') + stageGauge + (!headerStorageFull ? pauseHtml : '') + '</section>'
     + '</div>';
   if (_workPopupContext && _workPopupContext.familyId === familyId && _workPopupContext.slotIdx === slotIdx) {
@@ -6528,9 +7195,9 @@ function actualiserIndicateursExploration() {
   const labelElement = bouton.querySelector(".onglet-label");
   const label = labelElement ? labelElement.textContent.trim() : "Explore";
   const nouveau = bouton.classList.contains("onglet-nouveau");
-  bouton.setAttribute("aria-label", label + (enAttente ? " (attention needed)" : (nouveau ? " (new)" : "")));
-  if (enAttente) bouton.title = label + " — Attention needed";
-  else if (nouveau) bouton.title = label + " — New";
+  ecrireAttributDynamique(bouton, "aria-label", label + (enAttente ? " (attention needed)" : (nouveau ? " (new)" : "")));
+  if (enAttente) ecrirePropriete(bouton, "title", label + " — Attention needed");
+  else if (nouveau) ecrirePropriete(bouton, "title", label + " — New");
   else if (bouton.hasAttribute("title")) bouton.removeAttribute("title");
 }
 
@@ -6542,11 +7209,13 @@ function actualiserIndicateurFormationJob() {
   basculerClasse(bouton, "onglet-formation-alerte", enAttente);
   const labelElement = bouton.querySelector(".onglet-label");
   const label = labelElement ? labelElement.textContent.trim() : "Jobs";
+  // Compose with actualiserBadgeOnglet's "(new)" state instead of
+  // overwriting it, so both writers agree and nothing changes per tick.
   const labelAccessible = label + (enAttente
     ? " (" + nombrePret + " training" + (nombrePret === 1 ? "" : "s") + " ready to validate)"
-    : "");
+    : (bouton.classList.contains("onglet-nouveau") ? " (new)" : ""));
   if (bouton.getAttribute("aria-label") !== labelAccessible) bouton.setAttribute("aria-label", labelAccessible);
-  if (enAttente) bouton.title = label + " - Training ready to validate";
+  if (enAttente && bouton.title !== label + " - Training ready to validate") bouton.title = label + " - Training ready to validate";
   else if (!bouton.classList.contains("onglet-nouveau") && bouton.hasAttribute("title")) bouton.removeAttribute("title");
 }
 
@@ -6571,9 +7240,9 @@ function actualiserIndicateurApprentissageInventaire() {
   const label = labelElement ? labelElement.textContent.trim() : "Inventory";
   const labelAccessible = label + (enAttente
     ? " (" + nombrePret + " book" + (nombrePret === 1 ? "" : "s") + " ready to learn)"
-    : "");
+    : (bouton.classList.contains("onglet-nouveau") ? " (new)" : ""));
   if (bouton.getAttribute("aria-label") !== labelAccessible) bouton.setAttribute("aria-label", labelAccessible);
-  if (enAttente) bouton.title = label + " - Book ready to learn";
+  if (enAttente && bouton.title !== label + " - Book ready to learn") bouton.title = label + " - Book ready to learn";
   else if (!bouton.classList.contains("onglet-nouveau") && bouton.hasAttribute("title")) bouton.removeAttribute("title");
 }
 
@@ -6601,6 +7270,7 @@ function tauxGatheringRecette(pair, kitty) {
 }
 
 function dureeGatheringRecette(pair, kitty) {
+  if (pair && pair.mode === "craft") return 0;
   if (!pair || !kitty) return Infinity;
   const rawRate = tauxGatheringRecette(pair, kitty);
   const input = pair.inputs[0];
@@ -6733,6 +7403,9 @@ function renduWorkPairs(u) {
   setDisplay("filtre-work-wood", u.cathering);
   setDisplay("filtre-work-food", u.grasscat);
   setDisplay("filtre-work-rock", u.pebblecat || u.rockcat);
+  setDisplay("filtre-work-metal", etat.itemsAppris.includes("workshopPlans"));
+  setDisplay("filtre-work-forge", etat.itemsAppris.includes("workshopPlans"));
+  setDisplay("filtre-work-leather", etat.itemsAppris.includes("workshopPlans"));
   const filtresBar = document.querySelector(".work-filtres");
   ecrireStyle(filtresBar, "display", u.cathering ? "" : "none");
   const workSubnav = document.querySelector(".work-subnav");
@@ -6764,10 +7437,11 @@ function renduWorkPairs(u) {
   const unlockedFamilies = ["wood"];
   if (u.grasscat) unlockedFamilies.push("food");
   if (u.pebblecat || u.rockcat) unlockedFamilies.push("rock");
+  if (etat.itemsAppris.includes("workshopPlans")) unlockedFamilies.push("metal", "leather", "forge");
   const availableFilters = ["all"].concat(unlockedFamilies);
   if (!availableFilters.includes(workFiltre)) workFiltre = "all";
   document.body.dataset.workFilter = workFiltre;
-  ["all", "wood", "food", "rock"].forEach(function(familyId) {
+  ["all"].concat(Object.keys(WORK_FAMILIES)).forEach(function(familyId) {
     const button = domParId("filtre-work-" + familyId);
     if (!button) return;
     const active = familyId === workFiltre;
@@ -6778,12 +7452,13 @@ function renduWorkPairs(u) {
   const summaryVisible = workFiltre === "all";
   ecrireStyle(domParId("btn-unaffect-all"), "display", summaryVisible ? "" : "none");
   ecrireStyle(domParId("work-summary-all"), "display", summaryVisible ? "grid" : "none");
-  ["wood", "food", "rock"].forEach(function(familyId) {
+  Object.keys(WORK_FAMILIES).forEach(function(familyId) {
     const familyEl = domParId("famille-" + familyId);
     const visible = familyId === workFiltre && unlockedFamilies.includes(familyId);
     const familyHeader = familyEl && familyEl.querySelector(".work-recipe-family-header");
     ecrireStyle(familyEl, "display", visible ? "grid" : "none");
-    const jobCenterActif = batimentFonctionnelCamp("jobCenter").available;
+    const jobCenterActif = Boolean(WORK_FAMILIES[familyId].gatheringManager)
+      && batimentFonctionnelCamp("jobCenter").available;
     ecrireStyle(domParId("work-managers-" + familyId), "display", visible && jobCenterActif ? "grid" : "none");
     basculerClasse(familyHeader, "work-recipe-family-header-no-manager", !visible || !jobCenterActif);
   });
@@ -6801,7 +7476,7 @@ function renduWorkPairs(u) {
     renduWorkSummary(unlockedFamilies);
   } else {
     const currentFamily = WORK_FAMILIES[workFiltre];
-    if (currentFamily && batimentFonctionnelCamp("jobCenter").available) {
+    if (currentFamily && currentFamily.gatheringManager && batimentFonctionnelCamp("jobCenter").available) {
       renderManagerSlot(currentFamily.gatheringManager);
       renderManagerSlot(currentFamily.processingManager);
     }
@@ -6810,7 +7485,7 @@ function renduWorkPairs(u) {
     });
   }
 
-  ["wood", "food", "rock"].forEach(function(familyId) {
+  Object.keys(WORK_FAMILIES).forEach(function(familyId) {
     const badge = domParId("work-warning-" + familyId);
     const firstRecipe = recettesDisponiblesFamille(familyId, u).slice(-1)[0] || null;
     const familyCapacity = firstRecipe ? capaciteRecetteWork(firstRecipe, u) : null;
@@ -7091,6 +7766,8 @@ function renduLaboratoire() {
   const el = document.getElementById("laboratory-interface");
   if (!el || !etat.laboratoryConstruit) return;
   const training = etat.formationIngenieurEnCours;
+  const elapsed = training ? Math.min(training.duree, Math.max(0, (Date.now() - training.startTs) / 1000)) : 0;
+  const pct = training && training.duree ? Math.round(elapsed / training.duree * 100) : 100;
   const available = laboratoireKittysDisponibles();
   if (labEngineerKittySelectionne !== null
       && !available.some(function(entry) { return entry.index === labEngineerKittySelectionne; })) {
@@ -7116,8 +7793,8 @@ function renduLaboratoire() {
       html += '<span class="jc-slot-emoji">' + kittyIconHtml(kitty) + '</span>';
       html += '<div class="jc-slot-info"><span class="jc-slot-nom">' + (kitty ? echapperAttributHtml(kitty.nom) : "Cat") + '</span><span class="jc-slot-metier">Becoming Camp Engineer · Rank ' + (training.engineerRank || 1) + '...</span></div>';
       html += '</div><div class="inv-learning-barre jc-learning-barre">'
-        + '<div id="barre-lab-formation" class="inv-learning-progres"></div>'
-        + '<img id="lab-training-marker" class="inv-learning-marker" src="' + echapperAttributHtml(kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '">'
+        + '<div id="barre-lab-formation" class="inv-learning-progres" style="width:' + pct + '%"></div>'
+        + '<span id="lab-training-marker" class="inv-learning-marker" style="left:' + pct + '%"><img src="' + echapperAttributHtml(kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '"></span>'
         + '</div><div class="jc-timer lab-jc-timer"></div></div>';
     } else {
       const duree = laboratoireIngenieurDuree();
@@ -7145,8 +7822,6 @@ function renduLaboratoire() {
   }
 
   if (training) {
-    const elapsed = Math.min(training.duree, Math.max(0, (Date.now() - training.startTs) / 1000));
-    const pct = training.duree ? Math.round(elapsed / training.duree * 100) : 100;
     ecrireStyle(domParId("barre-lab-formation"), "width", pct + "%");
     ecrireStyle(domParId("lab-training-marker"), "left", pct + "%");
     ecrireTexte(el.querySelector(".lab-jc-timer"), formaterTemps(Math.max(0, training.duree - elapsed)));
@@ -7243,7 +7918,8 @@ function dureeApprentissagePerkMs(node) {
 function advancedTrainingKitties() {
   const metierOrder = Object.keys(METIERS);
   const roster = etat.kittiesData.reduce(function(acc, k, i) {
-    if (k && k.metier && METIERS[k.metier] && k.metier !== "camp-engineer") acc.push({ k: k, i: i });
+    if (k && k.metier && METIERS[k.metier] && k.metier !== "camp-engineer"
+        && (!METIERS[k.metier].combat || perkNodesV2PourJob(k.metier).length > 0)) acc.push({ k: k, i: i });
     return acc;
   }, []);
   roster.sort(function(a, b) {
@@ -7264,10 +7940,18 @@ function etatPerkV2(node) {
   if (etat.perkLearningEnCours && etat.perkLearningEnCours.perkId === node.id) return "learning";
   const prerequisitesOk = node.prerequisites.every(perkV2Effectif);
   if (!prerequisitesOk) return "locked";
+  const kitty = tcSpecKittySelectionne !== null ? etat.kittiesData[tcSpecKittySelectionne] : null;
+  if (node.minCombatLevel && (!kitty || kitty.metier !== node.jobId
+      || !Number.isSafeInteger(kitty.combatProgress?.level)
+      || kitty.combatProgress.level < node.minCombatLevel)) return "locked";
   const canAfford = Object.keys(node.costs).every(function(resourceId) {
     return Number(etat[resourceId]) >= Number(node.costs[resourceId]);
   });
   return canAfford ? "available" : "unaffordable";
+}
+
+function accesApprentissagePerkV2(kitty) {
+  return {jobId: kitty && kitty.metier, combatLevel: kitty?.combatProgress?.level};
 }
 
 function noeudPerkV2(perkId) {
@@ -7282,7 +7966,7 @@ function renduAdvancedTraining() {
 
   const roster = advancedTrainingKitties();
   const rosterKey = roster.map(function(entry) {
-    return entry.i + ":" + entry.k.metier + ":" + (entry.k.jobNiveau || 0);
+    return entry.i + ":" + entry.k.metier + ":" + (entry.k.jobNiveau || 0) + ":" + (entry.k.combatProgress?.level || 0);
   }).join(",");
   const selectedExists = roster.some(function(entry) { return entry.i === tcSpecKittySelectionne; });
   if (!selectedExists) tcSpecKittySelectionne = roster.length > 0 ? roster[0].i : null;
@@ -7315,7 +7999,7 @@ function renduAdvancedTraining() {
     const pickerLevel = jobLevelInfo(k.metier);
     html += '<button type="button" class="tc-cat-picker" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')" aria-label="Change the cat selected for specialization">';
     html += '<span class="tc-cat-icon">' + kittyIconHtml(k) + '</span>';
-    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + (pickerMetier ? pickerMetier.emoji + ' ' + echapperAttributHtml(pickerMetier.nom) : echapperAttributHtml(k.metier)) + ' · Specialization Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
+    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + (pickerMetier ? pickerMetier.emoji + ' ' + echapperAttributHtml(pickerMetier.nom) : echapperAttributHtml(k.metier)) + (pickerMetier?.combat ? ' · Combat Level ' + (k.combatProgress?.level || 1) : '') + ' · Specialization Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
     html += '<span class="tc-mobile-picker-action">Change</span></button>';
   } else {
     html += '<button type="button" class="tc-cat-picker tc-cat-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Select a cat with a job</span></button>';
@@ -7379,7 +8063,9 @@ function renduSphereGrid(jobId) {
   var renderedHeight = Math.round(canvasHeight * responsiveScale);
 
   var parts = [];
-  var sphereFogClass = SPHERE_FOG_MOTION_ENABLED ? ' sphere-fog-motion' : '';
+  var sphereFogLayer = sphereFogWebgl();
+  var sphereFogClass = (SPHERE_FOG_MOTION_ENABLED ? ' sphere-fog-motion' : '')
+    + (sphereFogLayer && sphereFogLayer.ready() ? ' sphere-fog-webgl' : '');
   parts.push('<svg width="' + renderedWidth + '" height="' + renderedHeight + '" viewBox="0 0 ' + canvasWidth + ' ' + canvasHeight + '" data-canvas-width="' + canvasWidth + '" data-canvas-height="' + canvasHeight + '" data-render-scale="' + responsiveScale + '" xmlns="http://www.w3.org/2000/svg" class="sphere-svg" aria-label="Specialization Perk tree">');
 
   // Read-only edges are derived from the canonical prerequisite IDs.
@@ -7456,6 +8142,7 @@ function renduSphereGrid(jobId) {
     + '<div class="sphere-detail-nom" id="sphere-detail-nom">Select a perk to see its description.</div>'
     + '<div class="sphere-detail-desc" id="sphere-detail-desc"></div>'
     + '</div>';
+  monterBrouillardSphere(sphereFogLayer, containerEl.querySelector('.sphere-tree-viewport'));
   if (selectionPreservee) {
     _sphereSelectionnee = null;
     clickerSphere(selectionPreservee);
@@ -7550,13 +8237,20 @@ function clickerSphere(sphereId) {
             : '<button class="sphere-learn-btn sphere-learn-disabled" disabled>Not enough resources</button>')
         + '</div>';
     } else if (actualEtat === 'locked') {
-      learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Locked — learn every prerequisite first.</span></div>';
+      learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">' + (sphere?.minCombatLevel
+        ? 'Locked — meet the Combat Level and learned perk requirements.'
+        : 'Locked — learn every prerequisite first.') + '</span></div>';
     } else if (actualEtat === 'granted') {
       learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Granted with this job.</span></div>';
     } else if (actualEtat === 'learned') {
       learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Learned.</span></div>';
     }
-    descEl.innerHTML = (sphere ? '<p class="sphere-desc-texte">' + echapperAttributHtml(sphere.description) + '</p>' : '') + learnHtml;
+    const requirementsHtml = sphere?.minCombatLevel
+      ? '<p class="sphere-desc-texte">Requires Combat Level ' + sphere.minCombatLevel
+        + sphere.prerequisites.map(function(id) {
+          return ' · ' + echapperAttributHtml(noeudPerkV2(id)?.name || id);
+        }).join('') + '.</p>' : '';
+    descEl.innerHTML = (sphere ? '<p class="sphere-desc-texte">' + echapperAttributHtml(sphere.description) + '</p>' : '') + requirementsHtml + learnHtml;
   }
 }
 
@@ -7579,12 +8273,13 @@ function apprendrePerkV2(perkId) {
     progressionPerksV2(),
     perkId,
     { cannedCatFood: etat.cannedCatFood },
-    { jobId: kitty.metier }
+    accesApprentissagePerkV2(kitty)
   );
   if (!result.ok) {
     const messages = {
       job: "This perk does not belong to the selected Cat's job.",
       prerequisites: "Learn every prerequisite first.",
+      "combat-level": "This perk requires a higher Combat Level. Practice in the Training clearing.",
       cost: "Not enough Canned Cat Food to learn this perk.",
       learned: "This perk is already effective."
     };
@@ -7630,7 +8325,8 @@ function terminerApprentissagePerk() {
   if (!action || !perksV2Api) return false;
   if (Date.now() - action.startTs < action.duree) return false;
   const result = perksV2Api.completeLearn(
-    progressionPerksV2(), action.perkId, { jobId: action.jobId }
+    progressionPerksV2(), action.perkId,
+    {jobId: action.jobId, combatLevel: etat.kittiesData[action.kittyIndex]?.combatProgress?.level}
   );
   etat.perkLearningEnCours = null;
   if (!result.ok && result.reason !== "learned") {
@@ -8411,6 +9107,11 @@ function renduManagement() {
   gauche.innerHTML += "<div class='detail-identity-meta' hidden><span class='kitty-statut " + identityAllocation.cls + "'>"
     + echapperAttributHtml(identityAllocation.text) + "</span></div>";
 
+  if (unlocks().exploration && explorationCampFonctionnelle()
+      && projectionActivitesExploration().active.some(function(a) { return a.indices.includes(kittySelectionnee); })) {
+    gauche.innerHTML += '<button type="button" class="btn-unaffect-all kitty-view-activity" onclick="ouvrirActiviteKitty(' + kittySelectionnee + ')">View activity</button>';
+  }
+
   // Right: conditional sections
   const droite = document.createElement("div");
   droite.className = "detail-droite";
@@ -8494,6 +9195,10 @@ function renduManagement() {
               + (exploratorDoubleChance(kittySelectionnee) > 0 ? "<div class='detail-job-bonus'><span class='bonus-var'>" + Math.round(exploratorDoubleChance(kittySelectionnee) * 100) + "%</span> chance to double scouting reward (perk)</div>" : "")
               + (exploratorTripleChance(kittySelectionnee) > 0 ? "<div class='detail-job-bonus'><span class='bonus-var'>" + Math.round(exploratorTripleChance(kittySelectionnee) * 100) + "%</span> chance to upgrade a doubled reward to triple (perk)</div>" : "")
               + (exploratorLuckyFoodChance(kittySelectionnee) > 0 ? "<div class='detail-job-bonus'><span class='bonus-var'>" + Math.round(exploratorLuckyFoodChance(kittySelectionnee) * 100) + "%</span> chance to preserve scouting Canned Cat Food stock (perk)</div>" : "")
+          : METIERS[k.metier] && METIERS[k.metier].combat
+            ? combatProgressHtml(kittySelectionnee) + equipementFighterHtml(kittySelectionnee)
+              + jobPerksV2Html(k.metier, "detail-job-perk")
+              + "<div class='bonus-sub'>Combat progression is separate from Camp level and food XP.</div>"
           : k.metier === "builder"
             ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + perksV2Api.assignedCampActionLevelSpeedMultiplier(progressionPerksV2(), k.metier, "construction", k.niveau).toFixed(2) + "</span> Construction / Repair / Tier Upgrade Speed<div class='bonus-sub'>+2% multiplicative speed per Cat level · while assigned</div></div>"
               + jobPerksV2Html("builder", "detail-job-perk")
@@ -8501,6 +9206,7 @@ function renduManagement() {
       ) : "";
       const _jlvl = jobLevelInfo(k.metier);
       const tcJobLvl = batimentFonctionnelCamp("jobCenter", 2).available && k.metier && !estIngenieur(k)
+        && (!(METIERS[k.metier] && METIERS[k.metier].combat) || perkNodesV2PourJob(k.metier).length > 0)
         ? "<div class='detail-level-row'><span class='detail-level-num'>Specialization Level " + _jlvl.cur + " / " + _jlvl.max + "</span></div>"
         : "";
       gauche.innerHTML +=
@@ -8520,6 +9226,7 @@ function renduManagement() {
   corps.appendChild(gauche);
   if (hasContent) corps.appendChild(droite);
   detail.appendChild(corps);
+  actualiserEntrainementCombatDynamique(detail);
   notificationsController.refreshContainer();
   if (typeof campTutorialActualiserInterface === "function") campTutorialActualiserInterface();
 }
@@ -8637,6 +9344,8 @@ function rendu() {
   renduRessources(u);
   renduSequence();
   const ongletActif = document.body.dataset.ongletActif || "gang";
+
+  if (ongletActif === "gang" || ongletActif === "explorations") actualiserEntrainementCombatDynamique();
   if (ongletActif === "camp")         renduCampPrototype();
   if (ongletActif === "work")         renduWorkPairs(u);
   if (ongletActif === "buildings")    renduBuildings(u);
@@ -8663,9 +9372,11 @@ function renduDynamique() {
   renduDialogueRapideCamp();
   const ongletActif = document.body.dataset.ongletActif || "gang";
 
+  if (ongletActif === "gang" || ongletActif === "explorations") actualiserEntrainementCombatDynamique();
+
   // These two sections are intentionally direct-DOM/timer updates and are
   // needed even when the visible tab is not one of the gameplay panels.
-  renduRessources(u);
+  avecCapaciteStockageCampMemorisee(function() { renduRessources(u); });
   renduSequence();
 
   // Completion and unlock paths mark their section dirty. Promote those
@@ -8692,7 +9403,9 @@ function renduDynamique() {
   if (ongletActif === "buildings")    renduBuildings(u);
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
-  if (ongletActif === "inventaire")   renduInventaire(u);
+  if (ongletActif === "inventaire") {
+    avecCapaciteStockageCampMemorisee(function() { renduInventaire(u); });
+  }
   if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("renduDynamique", diagnosticStart, { activeTab: ongletActif });
 }
 
@@ -8753,13 +9466,16 @@ function actualiserProgressionSlotRecette(familyId, slotIdx) {
 
   // Only crossing the already-rendered storage limit changes the structure.
   // Ordinary stock/progress values remain targeted updates, with no access query.
-  if (((Number(etat[pair.procRes]) || 0) >= Number(el.dataset.outputCapacity))
+  if (((stockSortieRecette(pair)) >= Number(el.dataset.outputCapacity))
         !== (Number(el.dataset.outputStock) >= Number(el.dataset.outputCapacity))) return false;
 
   // A phase change also changes which controls can receive Manual Focus. Let
   // the structural renderer rebuild that slot once; ordinary progress stays
   // entirely in place.
   if (el.dataset.recipePhase !== slot.phase) return false;
+  if (pair.mode === "craft" && el.dataset.craftInputsReady
+      !== String(CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[pair.recipeId]))) return false;
+  if (pair.mode === "craft" && el.dataset.craftWaiting !== String(fabricationAttendMateriaux(pair, slot))) return false;
 
   const progress = progressionsSlotRecette(slot, pair);
   const input = pair.inputs[0];
@@ -8777,13 +9493,17 @@ function actualiserProgressionSlotRecette(familyId, slotIdx) {
   ecrireVariableStyle(ringEl, "--prog", progress.overall);
   ecrireAttributDynamique(ringEl, "aria-valuenow", ringProgress);
   ecrireTexte(inputEl.querySelector(".work-recipe-gathered"), libelleNombreDecimal(gathered, 1) + " / " + libelleNombreDecimal(target, 1));
+  if (pair.mode === "craft") pair.inputs.forEach(function(material) {
+    ecrireTexte(inputEl.querySelector('[data-craft-input="' + material.res + '"]'),
+      libelleNombreDecimal(resourceApi.balance(etat, material.res), 1) + " / " + material.baseQuantity);
+  });
   ecrireTexte(outputEl.querySelector(".work-recipe-output-progress"), outputProgress);
   const durations = dureesAffichageRecette(pair, kitty, familyId, slotIdx);
   ecrireTexte(
     inputEl.querySelector(".work-recipe-input-details"),
     formaterTemps(durations.gathering)
   );
-  const outputPerCycle = kittyProcessProductionMultiplier(kitty);
+  const outputPerCycle = pair.mode === "craft" ? 1 : kittyProcessProductionMultiplier(kitty);
   ecrireTexte(
     outputEl.querySelector(".work-recipe-output-details"),
     formaterTemps(durations.processing) + " · " + libelleNombreDecimal(outputPerCycle, 2)
@@ -8795,7 +9515,7 @@ function actualiserProgressionWorkSummary() {
   const summary = domParId("work-summary-all");
   if (!summary || workFiltre !== "all") return true;
   let stable = true;
-  ["wood", "food", "rock"].forEach(function(familyId) {
+  Object.keys(WORK_FAMILIES).forEach(function(familyId) {
     slotsRecettesAssignables(familyId).forEach(function(slot, slotIdx) {
       if (!slot.recipeId || slot.kittyIndex === null) return;
       const pair = paireRecette(slot.recipeId);
@@ -8804,7 +9524,8 @@ function actualiserProgressionWorkSummary() {
       const ring = row && row.querySelector(".work-summary-ring");
       if (!row) { stable = false; return; }
       if (row.dataset.recipePhase !== slot.phase
-          || ((Number(etat[pair.procRes]) || 0) >= Number(row.dataset.outputCapacity))
+          || (pair.mode === "craft" && row.dataset.craftWaiting !== String(fabricationAttendMateriaux(pair, slot)))
+          || ((stockSortieRecette(pair)) >= Number(row.dataset.outputCapacity))
             !== (Number(row.dataset.outputStock) >= Number(row.dataset.outputCapacity))) {
         stable = false;
         return;
@@ -8845,7 +9566,7 @@ let workFiltre = "all";  // "all" | "wood" | "food" | "rock"
 function appliquerFiltreWork(filtre) {
   workFiltre = filtre || "all";
   document.body.dataset.workFilter = workFiltre;
-  ["all", "wood", "food", "rock"].forEach(function(f) {
+  ["all"].concat(Object.keys(WORK_FAMILIES)).forEach(function(f) {
     const el = document.getElementById("filtre-work-" + f);
     if (el) {
       el.classList.toggle("btn-filtre-work-actif", f === workFiltre);
@@ -8879,6 +9600,540 @@ let _zoneInfoKey          = null; // cache key to skip innerHTML rebuild when no
 let _tcKey                = null; // same pattern for Job Center Tier 2 training
 let explorationMobileVue  = "map";
 let explorationMobileTypeMission = "campaigns";
+let explorationWorldMapOuverte = false;
+let worldMapScrollPosition = null;
+let explorationActivitesVue = null;
+const explorationActivitesSectionsOuvertes = { available: true, completed: false };
+let explorationActivitesRetour = null;
+let explorationActivitesListeRetour = null;
+let explorationActivitesTimers = [];
+const explorationContextesRegions = {};
+
+// A presentation projection of canonical state, independent of the DEV preview.
+function lieuActiviteExploration(zoneId) {
+  const region = Object.values(REGIONS).find(function(r) { return r.zones[zoneId]; });
+  if (!region || !regionExplorationAccessible(region.id)) return null;
+  const zone = region.zones[zoneId];
+  const revealed = function(z) { return z.type === "home" || zoneEstExploree(z.id, true); };
+  const decouvert = revealed(zone);
+  const visible = decouvert || Object.values(region.zones).some(function(z) {
+    return revealed(z) && explorationGeometry.zonesAdjacent(zone, z);
+  });
+  return visible ? { region: region, zone: zone, decouvert: decouvert } : null;
+}
+
+function projectionActivitesExploration() {
+  const vues = { active: [], ready: [], places: [] };
+  function ajouter(vue, type, id, zoneId, nom, statut, indices, timer) {
+    const lieu = lieuActiviteExploration(zoneId);
+    if (!lieu || (type !== "zone" && !lieu.decouvert)) return;
+    vues[vue].push({ key: type + ":" + id, type: type, id: id, zoneId: zoneId,
+      regionId: lieu.region.id, regionNom: lieu.region.nom,
+      zoneNom: lieu.decouvert ? lieu.zone.nom : "Unknown zone",
+      nom: nom, statut: statut, indices: indices || [], timer: timer });
+  }
+  etat.exploEnCours.forEach(function(action) {
+    const def = CONFIG.campaigns[action.id];
+    if (def) ajouter("active", "campaign", def.id, def.zone, def.nom, "Campaign in progress", action.kittyIndices, action);
+  });
+  Object.keys(etat.scoutingsEnCours).forEach(function(id) {
+    const def = CONFIG.scoutings[id], action = etat.scoutingsEnCours[id];
+    if (def) ajouter("active", "scouting", id, def.zone, def.nom,
+      scoutingDebloquee(def) ? "Scouting · auto-repeats" : "Scouting · final run", [action.kittyIndex],
+      { startTs: action.startTs, duree: action.duree === undefined ? def.duree : action.duree });
+  });
+  if (etat.exploZoneEnCours) {
+    const action = etat.exploZoneEnCours;
+    ajouter("active", "zone", action.zoneId, action.zoneId, "Zone exploration", "Exploration in progress", action.kittyIndices, action);
+  }
+  if (etat.combatTraining && entrainementCombatDisponible()) {
+    ajouter("active", "training", "dummy", "woodlandEntrance.training", nomExerciceCombat(), "Practicing", [etat.combatTraining.kittyIndex]);
+  }
+  const combat = CatInc.combat.result(etat.hollowTreeEncounter);
+  if (combat) {
+    ajouter(combat.outcome === "running" ? "active" : "ready", "encounter", "hollow-tree", CONFIG.hollowTreeCombat.zoneId,
+      "Hollow Tree encounter", libelleResultatAffrontement(combat.outcome), etat.hollowTreeEncounter.fighters.map(function(f) { return f.kittyIndex; }));
+  } else if (affrontementArbreDisponible() && !CatInc.combat.learned(etat)) {
+    ajouter("places", "encounter", "hollow-tree", CONFIG.hollowTreeCombat.zoneId, "Hollow Tree encounter", "Combat Level 5, daggers and leather recommended");
+  }
+  Object.keys(etat.resultatsCampaigns).forEach(function(id) {
+    const def = CONFIG.campaigns[id], result = etat.resultatsCampaigns[id];
+    if (def) ajouter("ready", "campaign", id, def.zone, def.nom,
+      result.success ? "Success · reward ready" : "Failed · review result", result.kittyIndices);
+  });
+  Object.keys(etat.resultatsExplorationZones).forEach(function(id) {
+    const result = etat.resultatsExplorationZones[id];
+    ajouter("ready", "zone", id, id, "Zone exploration", result.success ? "Success · ready to reveal" : "Failed · review result", result.kittyIndices);
+  });
+  Object.keys(etat.butinsScouting).forEach(function(id) {
+    const def = CONFIG.scoutings[id];
+    if (def && butinScoutingReclamable(etat.butinsScouting[id])) {
+      ajouter("ready", "scouting", id, def.zone, def.nom, "Scouting loot ready");
+    }
+  });
+  Object.values(CONFIG.campaigns).forEach(function(def) {
+    const completee = etat.campaignsCompletees.includes(def.id);
+    if (!completee) {
+      if (def.unlockAfterCampaign && !etat.campaignsCompletees.includes(def.unlockAfterCampaign)) return;
+      if (def.unlockAfterStory && !storyEstVue(def.unlockAfterStory)) return;
+      if (def.requiredItem && !etat.itemsAcquis.includes(def.requiredItem)) return;
+      if (def.lockedReason && !def.unlockAfterStory) return;
+    }
+    ajouter("places", "campaign", def.id, def.zone, def.nom,
+      completee ? "Campaign completed" : "Campaign");
+  });
+  Object.values(CONFIG.scoutings).forEach(function(def) {
+    if (scoutingDebloquee(def) || etat.scoutingsEnCours[def.id] || butinScoutingReclamable(etat.butinsScouting[def.id])) {
+      ajouter("places", "scouting", def.id, def.zone, def.nom, "Scouting");
+    }
+  });
+  if (rencontreBrambleDisponible()) {
+    ajouter("places", "training", "dummy", "woodlandEntrance.training", "Training clearing",
+      entrainementCombatDisponible() ? nomExerciceCombat() + " · Combat Level " + plafondEntrainementCombat() + " limit" : "Talk to Bramble");
+  }
+  // One row per activity. Running state wins over its idle service or pending loot.
+  const occupees = new Set(vues.active.map(function(row) { return row.key; }));
+  const uniques = new Map();
+  [].concat(vues.active, vues.ready, vues.places).forEach(function(row) {
+    if (uniques.has(row.key)) return;
+    const statutActivite = occupees.has(row.key) ? "busy"
+      : row.type === "campaign" && etat.campaignsCompletees.includes(row.id) ? "inactive" : "free";
+    uniques.set(row.key, Object.assign({}, row, { statutActivite: statutActivite }));
+  });
+  vues.activities = Array.from(uniques.values());
+  return vues;
+}
+
+function capturerContexteExploration() {
+  const principal = document.getElementById("contenu-principal");
+  const panneau = document.getElementById("contenu-" + (document.body.dataset.ongletActif || "explorations"));
+  return { regionId: etat.regionCourante, zoneId: carteZoneSelectionnee,
+    world: explorationWorldMapOuverte, mobile: explorationMobileVue, type: explorationMobileTypeMission,
+    onglet: document.body.dataset.ongletActif, focus: document.activeElement,
+    scroll: principal ? principal.scrollTop : window.scrollY, panneauScroll: panneau ? panneau.scrollTop : 0,
+    worldScroll: document.getElementById("world-map-viewport").scrollTop };
+}
+
+function restaurerPositionExploration(contexte, focus) {
+  requestAnimationFrame(function() {
+    if (focus && !focus.isConnected) {
+      focus = focus.id ? document.getElementById(focus.id)
+        : contexte.onglet === "gang" ? document.querySelector(".kitty-view-activity") : null;
+    }
+    if (focus && focus.isConnected) focus.focus({ preventScroll: true });
+    const principal = document.getElementById("contenu-principal");
+    if (principal) principal.scrollTop = contexte.scroll;
+    else window.scrollTo(0, contexte.scroll);
+    const panneau = document.getElementById("contenu-" + (contexte.onglet || "explorations"));
+    if (panneau) panneau.scrollTop = contexte.panneauScroll;
+    document.getElementById("world-map-viewport").scrollTop = contexte.worldScroll;
+  });
+}
+
+function ouvrirActivitesExploration() {
+  if (!unlocks().exploration || !explorationCampFonctionnelle() || !autoriserActionTableOperationsCamp()) return false;
+  if (!explorationActivitesVue && explorationActivitesListeRetour) return retourContexteActivitesExploration();
+  if (!explorationActivitesVue) {
+    explorationActivitesRetour = capturerContexteExploration();
+    explorationActivitesListeRetour = null;
+    if (!explorationWorldMapOuverte) explorationContextesRegions[etat.regionCourante] = explorationActivitesRetour;
+  }
+  explorationActivitesVue = "activities";
+  renduExplorations(unlocks());
+  document.getElementById("exploration-activities-button").focus();
+  return true;
+}
+
+function libelleProgressionActiviteExploration(row) {
+  if (row.timer) {
+    return formaterTempsStat(Math.ceil(Math.max(0, row.timer.duree - (Date.now() - row.timer.startTs) / 1000)))
+      + (row.type === "scouting" ? " · " + (row.statut.includes("auto-repeats") ? "repeats" : "final run") : " remaining");
+  }
+  if (row.type === "training" && row.statutActivite === "busy" && etat.combatTraining) {
+    const progress = etat.kittiesData[etat.combatTraining.kittyIndex].combatProgress;
+    return "Combat Lv. " + progress.level + " · " + Math.floor(progress.xp) + " / " + xpCombatPourNiveau(progress.level) + " XP";
+  }
+  if (row.type === "encounter") return row.statut;
+  if (row.statutActivite === "inactive") return "Completed";
+  if (row.statut.includes("Failed") || row.statut.includes("Success") || row.statut === "Scouting loot ready") return row.statut;
+  return "Available";
+}
+
+// Ratio for the In progress bar; null when the activity has no measurable end.
+function ratioProgressionActiviteExploration(row) {
+  if (row.timer) return Math.min(1, Math.max(0, (Date.now() - row.timer.startTs) / 1000 / row.timer.duree));
+  if (row.type === "training" && etat.combatTraining) {
+    const progress = etat.kittiesData[etat.combatTraining.kittyIndex].combatProgress;
+    return Math.min(1, progress.xp / xpCombatPourNiveau(progress.level));
+  }
+  return null;
+}
+
+// Sections present the canonical projection: an activity that runs and already holds
+// loot (auto-repeating Scouting) is listed in both Ready and In progress.
+function sectionsActivitesExploration(projection) {
+  const unique = function(rows) {
+    const vues = new Set();
+    return rows.filter(function(row) { return !vues.has(row.key) && vues.add(row.key); });
+  };
+  const ready = unique(projection.ready);
+  const actives = unique(projection.active).map(function(row) { return Object.assign({}, row, { statutActivite: "busy" }); });
+  const pris = new Set(ready.concat(actives).map(function(row) { return row.key; }));
+  const libres = projection.activities.filter(function(row) { return !pris.has(row.key); });
+  return [
+    { id: "ready", titre: "Ready", rows: ready },
+    { id: "progress", titre: "In progress", rows: actives },
+    { id: "available", titre: "Available", rows: libres.filter(function(row) { return row.statutActivite !== "inactive"; }), repliable: true, regions: true },
+    { id: "completed", titre: "Completed", rows: libres.filter(function(row) { return row.statutActivite === "inactive"; }), repliable: true }
+  ].filter(function(section) { return section.rows.length; });
+}
+
+function ligneActiviteExplorationHtml(row, section) {
+  const type = {campaign:"Campaign", scouting:"Scouting", zone:"Exploration", training:"Training", encounter:"Encounter"}[row.type];
+  const lieu = section.regions ? row.zoneNom : row.regionNom + " / " + row.zoneNom;
+  const cats = row.indices.filter(function(i) { return !!etat.kittiesData[i]; });
+  const ratio = section.id === "progress" ? ratioProgressionActiviteExploration(row) : null;
+  return '<article class="exploration-activity" data-activity-key="' + echapperAttributHtml(row.key) + '" data-activity-section="' + section.id + '" data-activity-status="' + (row.statutActivite || "ready") + '">'
+    + '<div class="exploration-activity-identity"><h4 class="text-action">' + echapperAttributHtml(row.nom) + '</h4>'
+    + '<p class="text-secondary" title="' + echapperAttributHtml(type + " · " + lieu) + '">' + echapperAttributHtml(type + " · " + lieu) + '</p></div>'
+    + '<div class="exploration-activity-cats">' + cats.map(function(i) {
+      return '<span class="exploration-activity-cat">' + portraitSelectionKittyHtml(etat.kittiesData[i], "")
+        + '<span class="text-secondary">' + echapperAttributHtml(etat.kittiesData[i].nom) + '</span></span>';
+    }).join("") + '</div>'
+    + '<div class="exploration-activity-progress text-secondary"><span class="exploration-activity-progress-label">' + echapperAttributHtml(libelleProgressionActiviteExploration(row)) + '</span>'
+    + (ratio === null ? '' : '<div class="conteneur-barre"><div class="barre barre-explo" style="width:' + Math.round(ratio * 100) + '%"></div></div>') + '</div>'
+    + '<button type="button" class="btn-unaffect-all" onclick="ouvrirActiviteExploration(\'' + echapperAttributHtml(row.key) + '\')" aria-label="Open activity: ' + echapperAttributHtml(row.nom + ", " + row.regionNom + ", " + row.zoneNom) + '">Open</button></article>';
+}
+
+function sectionActivitesExplorationHtml(section) {
+  let corps;
+  if (section.regions) {
+    const regions = [];
+    section.rows.forEach(function(row) {
+      let groupe = regions.find(function(g) { return g.id === row.regionId; });
+      if (!groupe) regions.push(groupe = { id: row.regionId, nom: row.regionNom, rows: [] });
+      groupe.rows.push(row);
+    });
+    corps = regions.map(function(groupe) {
+      return '<div class="exploration-activity-region"><h4 class="exploration-activity-region-title text-metadata">' + echapperAttributHtml(groupe.nom) + '</h4>'
+        + groupe.rows.map(function(row) { return ligneActiviteExplorationHtml(row, section); }).join("") + '</div>';
+    }).join("");
+  } else {
+    corps = section.rows.map(function(row) { return ligneActiviteExplorationHtml(row, section); }).join("");
+  }
+  const titre = '<h3 class="exploration-activity-section-title">' + section.titre
+    + ' <span class="text-secondary">(' + section.rows.length + ')</span></h3>';
+  if (!section.repliable) {
+    return '<section class="exploration-activity-section" data-activity-section="' + section.id + '">' + titre + corps + '</section>';
+  }
+  return '<details class="exploration-activity-section" data-activity-section="' + section.id + '"'
+    + (explorationActivitesSectionsOuvertes[section.id] ? ' open' : '')
+    + ' ontoggle="explorationActivitesSectionsOuvertes[\'' + section.id + '\'] = this.open"><summary>' + titre + '</summary>' + corps + '</details>';
+}
+
+function synchroniserActivitesExploration() {
+  const projection = projectionActivitesExploration();
+  const ouvert = !!explorationActivitesVue;
+  document.getElementById("exploration-activities").hidden = !ouvert;
+  document.getElementById("contenu-explorations").classList.toggle("exploration-activities-open", ouvert);
+  const retour = document.getElementById("exploration-context-back");
+  retour.hidden = ouvert || !explorationActivitesRetour;
+  retour.textContent = explorationActivitesListeRetour ? "Back to Activities" : "Back to Gang";
+  if (!ouvert) return projection;
+  const liste = document.getElementById("exploration-activity-list");
+  const sections = sectionsActivitesExploration(projection);
+  const signature = JSON.stringify(sections);
+  if (liste.dataset.signature !== signature) {
+    liste.dataset.signature = signature;
+    liste.innerHTML = sections.map(sectionActivitesExplorationHtml).join("")
+      || '<p class="explo-vide">No activities yet.</p>';
+    explorationActivitesTimers = [];
+    sections.forEach(function(section) {
+      section.rows.forEach(function(row) {
+        if (!row.timer && !(row.type === "training" && row.statutActivite === "busy")) return;
+        const el = Array.from(liste.querySelectorAll('[data-activity-section="' + section.id + '"].exploration-activity'))
+          .find(function(node) { return node.dataset.activityKey === row.key; });
+        if (el) explorationActivitesTimers.push({ row: row, label: el.querySelector(".exploration-activity-progress-label"), bar: el.querySelector(".barre-explo") });
+      });
+    });
+  }
+  actualiserActivitesExplorationDynamique();
+  return projection;
+}
+
+function actualiserActivitesExplorationDynamique() {
+  if (!explorationActivitesVue) return;
+  explorationActivitesTimers.forEach(function(entry) {
+    ecrireTexte(entry.label, libelleProgressionActiviteExploration(entry.row));
+    if (entry.bar) ecrireStyle(entry.bar, "width", Math.round(ratioProgressionActiviteExploration(entry.row) * 100) + "%");
+  });
+}
+
+function ouvrirActiviteExploration(cle, depuisGang) {
+  if (!unlocks().exploration || !explorationCampFonctionnelle() || !autoriserActionTableOperationsCamp()) return false;
+  const projection = projectionActivitesExploration();
+  const row = [].concat(projection.active, projection.ready, projection.places).find(function(a) { return a.key === cle; });
+  if (!row) return false; // Recheck real access and discovery at the point of navigation.
+  if (depuisGang) {
+    explorationActivitesRetour = capturerContexteExploration();
+    explorationActivitesListeRetour = null;
+  } else if (explorationActivitesVue) {
+    const ligne = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.exploration-activity') : null;
+    explorationActivitesListeRetour = { vue: explorationActivitesVue, contexte: capturerContexteExploration(), key: cle,
+      section: ligne && ligne.dataset.activityKey === cle ? ligne.dataset.activitySection : null };
+  }
+  if (!explorationWorldMapOuverte && !explorationActivitesVue && !depuisGang) {
+    explorationContextesRegions[etat.regionCourante] = capturerContexteExploration();
+  }
+  explorationActivitesVue = null;
+  explorationWorldMapOuverte = false;
+  explorationDevRegionId = null;
+  explorationDevRegions = null;
+  etat.regionCourante = row.regionId;
+  carteZoneSelectionnee = row.zoneId;
+  explorationMobileVue = "zone";
+  explorationMobileTypeMission = row.type === "scouting" ? "scoutings" : "campaigns";
+  carteDirty = true;
+  exploTabDirty = true;
+  changerOnglet("explorations", { semanticCommit: false, preserverContexte: true });
+  renduExplorations(unlocks());
+  sauvegarder();
+  requestAnimationFrame(function() {
+    const cible = row.type === "campaign" ? document.querySelector('[data-campaign-id="' + row.id + '"]')
+      : row.type === "scouting" ? document.querySelector('[data-scouting-id="' + row.id + '"]')
+      : document.getElementById(row.type === "zone" ? "section-explo-mission" : row.type === "encounter" ? "hollow-tree-combat" : entrainementCombatDisponible() ? "combat-training" : "exploration-bramble-encounter");
+    if (cible) { cible.setAttribute("tabindex", "-1"); cible.focus(); cible.scrollIntoView({ block: "center" }); }
+  });
+  return true;
+}
+
+function ouvrirActiviteKitty(kittyIndex) {
+  const row = projectionActivitesExploration().active.find(function(a) { return a.indices.includes(kittyIndex); });
+  return row ? ouvrirActiviteExploration(row.key, true) : false;
+}
+
+function retourContexteActivitesExploration() {
+  if (!explorationActivitesRetour) return false;
+  if (!explorationActivitesVue && explorationActivitesListeRetour) {
+    explorationActivitesVue = explorationActivitesListeRetour.vue;
+    renduExplorations(unlocks());
+    const cible = explorationActivitesListeRetour;
+    const lignes = Array.from(document.querySelectorAll('.exploration-activity')).filter(function(el) { return el.dataset.activityKey === cible.key; });
+    const row = lignes.find(function(el) { return el.dataset.activitySection === cible.section; }) || lignes[0];
+    if (row) { const replie = row.closest('details'); if (replie) replie.open = true; }
+    restaurerPositionExploration(cible.contexte, row ? row.querySelector("button") : document.getElementById("exploration-activities-button"));
+    return true;
+  }
+  const contexte = explorationActivitesRetour;
+  if (!regionExplorationAccessible(contexte.regionId)) return false;
+  explorationActivitesVue = null;
+  explorationActivitesRetour = null;
+  explorationActivitesListeRetour = null;
+  etat.regionCourante = contexte.regionId;
+  carteZoneSelectionnee = contexte.zoneId;
+  explorationWorldMapOuverte = contexte.world;
+  explorationMobileVue = contexte.mobile;
+  explorationMobileTypeMission = contexte.type;
+  carteDirty = true; exploTabDirty = true;
+  changerOnglet(contexte.onglet || "explorations", { semanticCommit: false, preserverContexte: true });
+  renduExplorations(unlocks());
+  sauvegarder();
+  restaurerPositionExploration(contexte, contexte.focus);
+  return true;
+}
+
+function ouvrirCarteRegionExploration() {
+  if (!ouvrirRegionExploration(etat.regionCourante)) return false;
+  explorationMobileVue = "map";
+  synchroniserNavigationExplorationMobile();
+  requestAnimationFrame(function() { document.getElementById("exploration-region-title").focus(); });
+  return true;
+}
+
+function ouvrirWorldMap() {
+  if (!worldMapDebloquee() || !autoriserActionTableOperationsCamp()) return false;
+  if (!explorationWorldMapOuverte && !explorationActivitesVue) explorationContextesRegions[etat.regionCourante] = capturerContexteExploration();
+  explorationActivitesVue = null;
+  explorationActivitesRetour = null;
+  explorationActivitesListeRetour = null;
+  explorationWorldMapOuverte = true;
+  explorationMobileVue = "map";
+  renduExplorations(unlocks());
+  document.getElementById("exploration-world-map-button").focus();
+  requestAnimationFrame(function() {
+    // The overview grows with the page; centre the current region on first opening.
+    const current = document.querySelector('.world-map-region[aria-current="location"]');
+    if (!explorationWorldMapOuverte || !current || worldMapScrollPosition !== null) return;
+    worldMapScrollPosition = 0;
+    current.scrollIntoView({ block: "center" });
+  });
+  return true;
+}
+
+function ouvrirRegionExploration(regionId) {
+  if (!regionExplorationAccessible(regionId) || !regionParId(regionId) || !autoriserActionTableOperationsCamp()) return false;
+  if (!explorationWorldMapOuverte && !explorationActivitesVue) explorationContextesRegions[etat.regionCourante] = capturerContexteExploration();
+  if (explorationWorldMapOuverte) worldMapScrollPosition = document.getElementById("world-map-viewport").scrollTop;
+  explorationActivitesVue = null;
+  explorationActivitesRetour = null;
+  explorationActivitesListeRetour = null;
+  etat.regionCourante = regionId;
+  explorationDevRegionId = null;
+  explorationDevRegions = null;
+  explorationWorldMapOuverte = false;
+  explorationMobileVue = "map";
+  explorationMobileTypeMission = "campaigns";
+  const region = regionParId(regionId);
+  const contexte = explorationContextesRegions[regionId];
+  carteZoneSelectionnee = contexte && region.zones[contexte.zoneId] ? contexte.zoneId
+    : region.startZone || Object.values(region.zones).find(function(zone) { return zone.type === "home"; })?.id || Object.keys(region.zones)[0];
+  if (contexte) {
+    explorationMobileVue = contexte.mobile;
+    explorationMobileTypeMission = contexte.type;
+  }
+  carteDirty = true;
+  exploTabDirty = true;
+  sauvegarder();
+  renduExplorations(unlocks());
+  const titre = document.getElementById("exploration-region-title");
+  if (contexte) restaurerPositionExploration(contexte, explorationMobileVue === "zone" && estExplorationMobile()
+    ? document.getElementById("exploration-mobile-zone-title") : titre);
+  else titre.focus();
+  return true;
+}
+
+function synchroniserWorldMap(projection) {
+  const ouverte = !explorationActivitesVue && explorationWorldMapOuverte && worldMapDebloquee();
+  const contenu = document.getElementById("contenu-explorations");
+  contenu.classList.toggle("exploration-world-map-open", ouverte);
+  const bouton = document.getElementById("exploration-world-map-button");
+  bouton.disabled = !worldMapDebloquee();
+  ["region-map", "world-map", "activities"].forEach(function(view) {
+    const actif = view === "activities" ? !!explorationActivitesVue : view === "world-map" ? ouverte : !ouverte && !explorationActivitesVue;
+    const button = document.getElementById("exploration-" + view + "-button");
+    button.classList.toggle("btn-filtre-work-actif", actif);
+    button.setAttribute("aria-pressed", actif ? "true" : "false");
+  });
+  document.getElementById("exploration-world-map-status").hidden = worldMapDebloquee();
+  ecrireTexte(document.getElementById("exploration-world-map-status"), worldMapDebloquee() ? "" : "Woodland Entrance locked: find the Compass, then claim the reward for Navigate through the woods.");
+  document.getElementById("exploration-world-map").hidden = !ouverte;
+  const region = regionParId(idRegionExplorationCourante());
+  if (region && !Object.prototype.hasOwnProperty.call(region.zones, carteZoneSelectionnee)) {
+    carteZoneSelectionnee = region.startZone || Object.values(region.zones).find(function(zone) { return zone.type === "home"; })?.id || Object.keys(region.zones)[0];
+    explorationMobileVue = "map";
+    carteDirty = true;
+    exploTabDirty = true;
+  }
+  ecrireTexte(document.getElementById("exploration-region-title"), region ? region.nom : "Explore");
+  const liste = document.getElementById("world-map-regions");
+  const nodes = explorationData.worldMap ? explorationData.worldMap.nodes : Object.values(REGIONS).map(function(region) {
+    return {id: region.id, nom: region.nom, mapImg: region.mapImg, regionId: region.id};
+  }).reverse();
+  const attentions = attentionsExploration().filter(function(a) { return !!lieuActiviteExploration(a.zoneId); });
+  // Per-region presence: the Cats on a running activity, plus results/loot that wait.
+  const resumes = {};
+  Object.keys(REGIONS).forEach(function(id) {
+    if (!regionExplorationAccessible(id)) return;
+    const cats = [];
+    projection.active.forEach(function(a) {
+      if (a.regionId !== id) return;
+      a.indices.forEach(function(i) { if (etat.kittiesData[i] && !cats.includes(i)) cats.push(i); });
+    });
+    const ready = projection.ready.filter(function(a) { return a.regionId === id; });
+    resumes[id] = { cats: cats, active: projection.active.filter(function(a) { return a.regionId === id; }).length,
+      ready: ready.length, loot: ready.filter(function(a) { return a.type === "scouting"; }).length,
+      attention: attentions.some(function(a) { return REGIONS[id].zones[a.zoneId]; }) };
+  });
+  const signature = etat.regionCourante + ":" + JSON.stringify(nodes) + JSON.stringify(resumes);
+  if (ouverte && liste.dataset.signature !== signature) {
+    const bernardo = etat.kittiesData.find(function(k) { return k && k.nom === "Bernardo"; }) || { nom: "Bernardo", visage: CAT_FACES.bernardo };
+    liste.innerHTML = '<svg class="world-map-trail" aria-hidden="true"></svg>' + nodes.map(function(node, index) {
+      const accessible = node.regionId && regionExplorationAccessible(node.regionId);
+      const current = accessible && etat.regionCourante === node.regionId;
+      const resume = accessible ? resumes[node.regionId] : null;
+      const cote = (nodes.length - 1 - index) % 2 ? "right" : "left";
+      const visibles = resume ? resume.cats.slice(0, 4) : [];
+      const details = resume ? [resume.active ? resume.active + " active" : "", resume.ready ? resume.ready + " ready" : "",
+        resume.loot ? resume.loot + " Scouting loot ready" : "", resume.attention ? "attention needed" : ""].filter(Boolean) : [];
+      return '<button type="button" class="world-map-region' + (resume && resume.ready ? ' has-ready' : '') + '" data-region-id="' + echapperAttributHtml(node.id) + '"'
+        + ' data-side="' + cote + '" data-state="' + (current ? 'current' : accessible ? 'open' : 'locked') + '"'
+        + (current ? ' aria-current="location"' : '')
+        + (accessible ? ' aria-label="Open ' + echapperAttributHtml(node.nom) + (current ? ', current region' : '') + (details.length ? ', ' + details.join(', ') : '')
+          + '" onclick="zoomerVersRegionExploration(this, \'' + echapperAttributHtml(node.regionId) + '\')"' : ' disabled') + '>'
+        + '<span class="world-map-thumbnail"><img src="' + echapperAttributHtml(node.mapImg) + '" alt="">'
+        + (accessible ? '' : '<span class="world-map-mist" aria-hidden="true"></span>')
+        + (current ? '<span class="world-map-token" aria-hidden="true">' + kittyIconHtml(bernardo) + '</span>' : '')
+        + (resume && resume.ready ? '<span class="world-map-ready-badge" aria-hidden="true"><img src="img/interface/reward.png" alt="">' + resume.ready + '</span>' : '')
+        + (visibles.length ? '<span class="world-map-cats" aria-hidden="true">' + visibles.map(function(i) {
+          return portraitSelectionKittyHtml(etat.kittiesData[i], "world-map-cat");
+        }).join("") + (resume.cats.length > visibles.length ? '<span class="world-map-cats-more">+' + (resume.cats.length - visibles.length) + '</span>' : '') + '</span>' : '')
+        + '</span>'
+        + '<span class="world-map-label"><strong>' + echapperAttributHtml(node.nom) + '</strong>'
+        + (current ? '<span class="world-map-region-status">You are here</span>' : accessible ? '' : '<span class="world-map-region-status">Coming later</span>')
+        + (resume && resume.attention ? '<span class="world-map-attention-summary">Attention needed</span>' : '') + '</span></button>';
+    }).join("");
+    liste.dataset.signature = signature;
+    observerSentierWorldMap(liste);
+    requestAnimationFrame(tracerSentierWorldMap);
+  }
+}
+
+let sentierWorldMapObserver = null;
+function observerSentierWorldMap(liste) {
+  if (sentierWorldMapObserver || typeof ResizeObserver !== "function") return;
+  sentierWorldMapObserver = new ResizeObserver(function() { tracerSentierWorldMap(); });
+  sentierWorldMapObserver.observe(liste);
+}
+
+// The trail is presentation only: a curve through the thumbnail centres, redrawn
+// when the list is rendered or resized (images loading, viewport changes).
+function tracerSentierWorldMap() {
+  const liste = document.getElementById("world-map-regions");
+  const svg = liste && liste.querySelector(".world-map-trail");
+  if (!svg || !liste.offsetWidth) return;
+  const base = liste.getBoundingClientRect();
+  const points = Array.from(liste.querySelectorAll(".world-map-region")).map(function(node) {
+    const r = node.querySelector(".world-map-thumbnail").getBoundingClientRect();
+    return { x: r.left - base.left + r.width / 2, y: r.top - base.top + r.height / 2, locked: node.dataset.state === "locked" };
+  });
+  let html = "";
+  for (let i = 0; i + 1 < points.length; i++) {
+    const a = points[i], b = points[i + 1], milieu = (a.y + b.y) / 2;
+    html += '<path class="world-map-trail-path' + (a.locked || b.locked ? ' is-locked' : '') + '" d="M' + a.x.toFixed(1) + ' ' + a.y.toFixed(1)
+      + ' C' + a.x.toFixed(1) + ' ' + milieu.toFixed(1) + ' ' + b.x.toFixed(1) + ' ' + milieu.toFixed(1) + ' ' + b.x.toFixed(1) + ' ' + b.y.toFixed(1) + '"></path>';
+  }
+  svg.setAttribute("viewBox", "0 0 " + liste.offsetWidth + " " + liste.offsetHeight);
+  if (svg.innerHTML !== html) svg.innerHTML = html;
+}
+
+let zoomWorldMapEnCours = false;
+function zoomerVersRegionExploration(bouton, regionId) {
+  if (zoomWorldMapEnCours) return false;
+  const reduit = !window.matchMedia || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduit || !regionExplorationAccessible(regionId)) return ouvrirRegionExploration(regionId);
+  zoomWorldMapEnCours = true;
+  const liste = document.getElementById("world-map-regions");
+  liste.classList.add("is-zooming");
+  bouton.classList.add("is-zooming");
+  let fait = false;
+  const terminer = function() {
+    if (fait) return;
+    fait = true;
+    zoomWorldMapEnCours = false;
+    liste.classList.remove("is-zooming");
+    bouton.classList.remove("is-zooming");
+    if (ouvrirRegionExploration(regionId)) {
+      const carte = document.getElementById("section-explo-map");
+      carte.classList.remove("exploration-region-zoom-in");
+      void carte.offsetWidth;
+      carte.classList.add("exploration-region-zoom-in");
+      carte.addEventListener("animationend", function() { carte.classList.remove("exploration-region-zoom-in"); }, { once: true });
+    }
+  };
+  bouton.querySelector(".world-map-thumbnail").addEventListener("animationend", terminer, { once: true });
+  setTimeout(terminer, 450);
+  return true;
+}
 
 function estExplorationMobile() {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
@@ -8895,6 +10150,13 @@ function campagnesAfficheesPourZone(zoneId) {
 function scoutingsAffichesPourZone(zoneId) {
   return Object.values(CONFIG.scoutings).filter(function(scouting) {
     return scouting.zone === zoneId && scoutingDebloquee(scouting);
+  });
+}
+
+// A zone with neither Campaigns nor Scoutings shows no empty mission tabs or lists.
+function zoneSansMissionsExploration(zoneId) {
+  return campagnesAfficheesPourZone(zoneId).length === 0 && !Object.values(CONFIG.scoutings).some(function(s) {
+    return s.zone === zoneId && (scoutingDebloquee(s) || !!etat.scoutingsEnCours[s.id] || butinScoutingReclamable(etat.butinsScouting[s.id]));
   });
 }
 
@@ -8933,7 +10195,7 @@ function synchroniserNavigationExplorationMobile() {
   ecrireTexte(document.getElementById("exploration-mobile-campaigns-count"), String(campagnes.length));
   ecrireTexte(document.getElementById("exploration-mobile-scoutings-count"), String(scoutings.length));
 
-  if (onglets) onglets.style.display = exploree ? "" : "none";
+  if (onglets) onglets.style.display = exploree && !zoneSansMissionsExploration(zone.id) ? "" : "none";
   if (boutonCampaigns) {
     const selectionne = explorationMobileTypeMission !== "scoutings";
     const enAttente = explorationRequiertAttention(zone.id, "campaigns");
@@ -9124,6 +10386,11 @@ function renderCampaignCards() {
 
   const zoneId = carteZoneSelectionnee;
   synchroniserNavigationExplorationMobile();
+  renduEntrainementCombat();
+  renduAffrontementArbre();
+  const rencontreBramble = document.getElementById("exploration-bramble-encounter");
+  if (rencontreBramble) rencontreBramble.hidden = zoneId !== "woodlandEntrance.training"
+    || !rencontreBrambleDisponible() || storyEstVue("storyBrambleVue");
 
   // No zone selected
   if (!zoneId) {
@@ -9218,7 +10485,7 @@ function renderCampaignCards() {
   return;
   }
 
-  if (campScoutGrid)  campScoutGrid.style.display  = "";
+  if (campScoutGrid)  campScoutGrid.style.display  = zoneSansMissionsExploration(zoneId) ? "none" : "";
   if (missionSection) missionSection.style.display = "none";
 
   // ── Campaigns for explored zone (or home) ──
@@ -9468,15 +10735,70 @@ function getCellGridStyle(cell, rows) {
   return 'grid-column:' + (cell.x + 2) + ';grid-row:' + (rows - cell.y + 1);
 }
 
-// Single rollback switch for the decorative fog drift. The static fog remains
-// the gameplay/fallback layer when this is false.
+// Map fog is one WebGL layer (js/ui/fog-renderer.js). The SVG mask below is
+// the fallback whenever WebGL is off, missing, lost or cannot read the fog art
+// (Chromium direct-file play); it keeps the former paced CSS drift.
+// Rollback switches: MAP_FOG_WEBGL_ENABLED (SVG everywhere) and
+// MAP_FOG_MOTION_ENABLED (no drift on either path).
+const MAP_FOG_WEBGL_ENABLED = true;
 const MAP_FOG_MOTION_ENABLED = true;
 const SPHERE_FOG_MOTION_ENABLED = true;
-// Keep the fog phase stable when selecting a zone rebuilds the map DOM. The
-// CSS animation uses this shared clock as a negative delay, so a click cannot
-// visibly reset or stop the continuous rightward drift.
+// Drift periods of the two fog strips. Both paths take the phase from the wall
+// clock, so rebuilding the map never resets or jumps the rightward drift.
 const MAP_FOG_ANIMATION_DURATION_MS = 90000;
 const MAP_FOG_SECONDARY_DURATION_MS = 140000;
+let carteFogLayer = null;
+// Perks backdrop fog on the shared WebGL module (#338): one persistent canvas,
+// moved into each rebuilt tree viewport behind the tree. Same art, 12 %
+// overscan, cover framing and 90 s alternate drift between -5 % and 5 % as the
+// CSS `::before`, which stays the fallback and is hidden only once the canvas
+// has the art. 2 fps is the paced CSS drift's cadence (#326: steps(180) / 90 s).
+const SPHERE_FOG_WEBGL_ENABLED = true;
+let sphereFogLayer = null;
+
+function sphereFogWebgl() {
+  if (!SPHERE_FOG_WEBGL_ENABLED || !window.CatInc || typeof CatInc.createFogLayer !== "function") return null;
+  if (!sphereFogLayer) {
+    const actualiser = function() {
+      const viewport = document.querySelector(".sphere-tree-viewport");
+      if (viewport) viewport.classList.toggle("sphere-fog-webgl", sphereFogLayer.ready());
+    };
+    sphereFogLayer = CatInc.createFogLayer({
+      kind: "cover",
+      textureUrl: "img/Maps/Perks fog.webp",
+      layers: [{inset: .12, opacity: 1, periodMs: 90000, from: {x: -.05, y: 0}, to: {x: .05, y: 0}, rest: {x: -.05, y: 0}}],
+      motion: SPHERE_FOG_MOTION_ENABLED,
+      framesPerSecond: 2,
+      maxCanvasSide: 1024,
+      onReady: actualiser,
+      onAvailabilityChange: actualiser
+    });
+  }
+  return sphereFogLayer.supported() ? sphereFogLayer : null;
+}
+
+function monterBrouillardSphere(layer, viewport) {
+  if (!layer || !viewport || !layer.mount(viewport)) return;
+  viewport.insertBefore(layer.canvas(), viewport.firstChild);
+}
+
+function carteFogWebgl() {
+  if (!MAP_FOG_WEBGL_ENABLED || !window.CatInc || typeof CatInc.createFogLayer !== "function") return null;
+  if (!carteFogLayer) {
+    carteFogLayer = CatInc.createFogLayer({
+      textureUrl: "img/Maps/Fog of War.webp",
+      periodsMs: [MAP_FOG_ANIMATION_DURATION_MS, MAP_FOG_SECONDARY_DURATION_MS],
+      motion: MAP_FOG_MOTION_ENABLED,
+      // A lost or restored context swaps between WebGL and the static mask at
+      // once, so a blank canvas never leaves hidden artwork uncovered.
+      onAvailabilityChange: function() {
+        carteDirty = true;
+        rendu();
+      }
+    });
+  }
+  return carteFogLayer.supported() ? carteFogLayer : null;
+}
 
 // Fog of war: a zone is revealed if it's Home, already explored, or any of its
 // cells is orthogonally adjacent to any cell of an already-explored zone.
@@ -9571,29 +10893,32 @@ function explorationFogMask(columns, rows, revealedCells) {
 function renduCarteGrille() {
   const el = document.getElementById("carte-grille");
   if (!el) return;
-  el.classList.toggle("carte-fog-motion", MAP_FOG_MOTION_ENABLED);
-  if (MAP_FOG_MOTION_ENABLED) {
-    const cycleMs = MAP_FOG_ANIMATION_DURATION_MS;
-    const phaseMs = Date.now() % cycleMs;
-    el.style.setProperty('--fog-animation-delay', '-' + phaseMs + 'ms');
-    const secondaryPhaseMs = Date.now() % MAP_FOG_SECONDARY_DURATION_MS;
-    el.style.setProperty('--fog-secondary-animation-delay', '-' + secondaryPhaseMs + 'ms');
-  }
   const region = regionParId(idRegionExplorationCourante()) || {};
   const ROWS = region.rows || 1, COLS = region.columns || 1;
   const explorateurOk = explorateurPresent();
   const mapImg = region.mapImg || null;
   el.style.setProperty('--map-columns', COLS);
+  // Only Home and explored zones reveal artwork; adjacency and pending
+  // mission results never do.
+  const revealedCells = [];
+  Object.values(zonesRegion()).forEach(function(zone) {
+    const revealed = zone.type === "home" || zoneEstExploree(zone.id);
+    if (revealed) revealedCells.push(...explorationGeometry.zoneCells(zone));
+  });
+  const fogWebgl = carteFogWebgl();
+  // The SVG fallback drifts with CSS; a negative delay resumes the shared phase.
+  const fogFallbackMotion = !fogWebgl && MAP_FOG_MOTION_ENABLED;
+  el.classList.toggle("carte-fog-motion", fogFallbackMotion);
+  if (fogFallbackMotion) {
+    el.style.setProperty('--fog-animation-delay', '-' + (Date.now() % MAP_FOG_ANIMATION_DURATION_MS) + 'ms');
+    el.style.setProperty('--fog-secondary-animation-delay', '-' + (Date.now() % MAP_FOG_SECONDARY_DURATION_MS) + 'ms');
+  }
 
+  // Fallback: the conservative SVG mask over the opaque fog art.
   function renduFogGlobal() {
     const unit = 100;
     const mapWidth = COLS * unit;
     const mapHeight = ROWS * unit;
-    const revealedCells = [];
-    Object.values(zonesRegion()).forEach(function(zone) {
-      const revealed = zone.type === "home" || zoneEstExploree(zone.id);
-      if (revealed) revealedCells.push(...explorationGeometry.zoneCells(zone));
-    });
     const mask = explorationFogMask(COLS, ROWS, revealedCells);
 
     return '<svg class="carte-fog-global" style="grid-column:2/' + (COLS + 2) + ';grid-row:1/' + (ROWS + 1) + ';width:calc(var(--map-cell)*' + COLS + ');height:calc(var(--map-cell)*' + ROWS + ')" viewBox="0 0 ' + mapWidth + ' ' + mapHeight + '" preserveAspectRatio="none" aria-hidden="true">'
@@ -9604,9 +10929,11 @@ function renduCarteGrille() {
       + '</mask>'
       + '<filter id="carte-fog-seam-softener" x="-2%" y="-1%" width="104%" height="102%" color-interpolation-filters="sRGB">'
       + '<feGaussianBlur in="SourceGraphic" stdDeviation="1.8 0"></feGaussianBlur>'
+      // Warm parchment tint of the shared slate fog art, in the filter the tracks already use.
+      + '<feColorMatrix type="matrix" values=".315 .62 .116 0 .27 .324 .637 .119 0 .18 .33 .649 .121 0 .02 0 0 0 1 0"></feColorMatrix>'
       + '</filter></defs>'
       + '<g mask="url(#carte-fog-global-mask)">'
-      + '<rect x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" fill="#74778f"></rect>'
+      + '<rect x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" fill="#c4ae87"></rect>'
       + '<g class="carte-fog-global-track" filter="url(#carte-fog-seam-softener)">'
       + '<image href="img/Maps/Fog of War.webp" x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" preserveAspectRatio="none"></image>'
       + '<image href="img/Maps/Fog of War.webp" x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" preserveAspectRatio="none" transform="translate(' + (mapWidth * 2) + ' 0) scale(-1 1)"></image>'
@@ -9687,7 +11014,6 @@ function renduCarteGrille() {
           + ' onclick="clicZoneCarte(\'' + zoneId + '\')"'
           + ' title="' + (locked ? "Train an Explorator to unlock" : "") + '">';
         if (isPrimary) {
-          if (inProgress) html += '<span class="carte-badge-encours">' + interfaceIconHtml("hourglass") + '</span>';
           if (attentionReady) html += '<span class="carte-badge-result exploration-attention-warning" title="Exploration attention needed" aria-label="Exploration attention needed"><span class="interface-symbol interface-warning" aria-hidden="true"></span></span>';
           if (scoutingRewardReady) html += '<span class="carte-badge-result carte-badge-reward" title="Scouting rewards ready to claim"><img src="img/interface/reward.png" alt=""></span>';
           if (exploree) {
@@ -9707,17 +11033,40 @@ function renduCarteGrille() {
         if (markerAnchor) {
           const markerLeft = markerAnchor.x / COLS * 100;
           const markerTop = (ROWS - markerAnchor.y) / ROWS * 100;
-          html += '<div class="carte-zone-state-layer" data-zone-marker-id="' + zoneId + '" data-zone-marker-state="' + (locked ? 'locked' : 'unknown') + '"'
+          html += '<div class="carte-zone-state-layer" data-zone-marker-id="' + zoneId + '" data-zone-marker-state="' + (locked ? 'locked' : inProgress ? 'progress' : 'unknown') + '"'
             + ' style="grid-column:2/' + (COLS + 2) + ';grid-row:1/' + (ROWS + 1) + ';--zone-marker-x:' + markerLeft + '%;--zone-marker-y:' + markerTop + '%" aria-hidden="true">'
-            + (locked ? '<span class="carte-zone-state-marker carte-icone">' + interfaceIconHtml("lock") + '</span>' : '<span class="carte-zone-state-marker carte-badge-inconnu">?</span>')
+            + (locked ? '<span class="carte-zone-state-marker carte-icone">' + interfaceIconHtml("lock") + '</span>'
+              : inProgress ? marqueurExplorationZoneHtml(etat.exploZoneEnCours)
+              : '<span class="carte-zone-state-marker carte-badge-inconnu">?</span>')
             + '</div>';
         }
       }
     }
   }
 
-  html += renduFogGlobal();
+  html += fogWebgl
+    ? '<div class="carte-fog-global carte-fog-webgl" style="grid-column:2/' + (COLS + 2) + ';grid-row:1/' + (ROWS + 1) + '" aria-hidden="true"></div>'
+    : renduFogGlobal();
   el.innerHTML = html;
+  // The same canvas and GPU resources survive every map rebuild.
+  if (fogWebgl) {
+    fogWebgl.mount(el.querySelector('.carte-fog-webgl'), COLS, ROWS, revealedCells.map(function(cell) {
+      return {column: cell.x, row: ROWS - cell.y};
+    }));
+  }
+}
+
+// Running zone exploration on the region map: the assigned Cats inside a progress ring.
+function progressionExplorationZone(action) {
+  return Math.min(1, Math.max(0, (Date.now() - action.startTs) / 1000 / action.duree));
+}
+
+function marqueurExplorationZoneHtml(action) {
+  const cats = action.kittyIndices.filter(function(i) { return !!etat.kittiesData[i]; });
+  return '<span id="carte-zone-progress" class="carte-zone-state-marker carte-zone-progress" style="--zone-progress:' + Math.round(progressionExplorationZone(action) * 100) + '%">'
+    + '<span class="carte-zone-progress-cats" data-count="' + Math.min(cats.length, 3) + '">'
+    + cats.slice(0, 3).map(function(i) { return '<span class="carte-zone-progress-cat">' + kittyIconHtml(etat.kittiesData[i]) + '</span>'; }).join('')
+    + '</span></span>';
 }
 
 function renduCarteDetail() {
@@ -9872,7 +11221,9 @@ function renduZoneInfo() {
   }, 0);
   const scoutingRewards = scoutingRewardIds.join(',');
   const key = (zoneId || '') + '|' + exploree + '|' + completedCamps + '|' + activeScouts
-    + '|' + pendingCampaignResults + '|' + pendingZoneResult + '|' + scoutingRewards;
+    + '|' + pendingCampaignResults + '|' + pendingZoneResult + '|' + scoutingRewards
+    + '|' + rencontreBrambleDisponible() + '|' + entrainementCombatDisponible() + '|' + !!etat.combatTraining
+    + '|' + (CatInc.combat.result(etat.hollowTreeEncounter)?.outcome || '') + '|' + CatInc.combat.learned(etat);
   if (key === _zoneInfoKey) return;
   _zoneInfoKey = key;
 
@@ -9902,13 +11253,21 @@ function renduZoneInfo() {
     return !!etat.scoutingsEnCours[scouting.id];
   }).length;
   const inactiveScoutingCount = Math.max(0, scoutingsZone.length - activeScoutingCount);
+  const serviceCombat = (zoneId === "woodlandEntrance.training" && rencontreBrambleDisponible())
+    || (zoneId === CONFIG.hollowTreeCombat.zoneId && affrontementArbreDisponible());
   let mobileSummary = '<span><strong>1</strong> Exploration mission</span>';
   if (zoneAccessible) {
-    if (campagnesZone.length === 0 && scoutingsZone.length === 0) {
+    if (campagnesZone.length === 0 && scoutingsZone.length === 0 && !serviceCombat) {
       mobileSummary = '<span class="zone-info-mobile-empty">Empty</span>';
     } else {
-      mobileSummary = '<span class="zone-info-mobile-done"><strong>' + campaignsDoneCount + '</strong> Campaign'
-        + (campaignsDoneCount === 1 ? '' : 's') + ' done</span>';
+      mobileSummary = campagnesZone.length ? '<span class="zone-info-mobile-done"><strong>' + campaignsDoneCount + '</strong> Campaign'
+        + (campaignsDoneCount === 1 ? '' : 's') + ' done</span>' : '';
+      if (serviceCombat) {
+        mobileSummary += '<span class="zone-info-mobile-active">' + (zoneId === CONFIG.hollowTreeCombat.zoneId
+          ? (CatInc.combat.learned(etat) ? 'Hollow Tree cleared' : CatInc.combat.result(etat.hollowTreeEncounter)
+            ? libelleResultatAffrontement(CatInc.combat.result(etat.hollowTreeEncounter).outcome) : 'Hollow Tree encounter') : entrainementCombatDisponible()
+          ? (etat.combatTraining ? 'Dummy exercise active' : 'Dummy exercise available') : 'Talk to Bramble') + '</span>';
+      }
       if (campaignsAvailableCount > 0) {
         mobileSummary += '<span class="zone-info-mobile-available"><strong>' + campaignsAvailableCount + '</strong> Campaign'
           + (campaignsAvailableCount === 1 ? '' : 's') + ' avail</span>';
@@ -9988,6 +11347,7 @@ function actualiserTimersExplorations() {
     const timerEl   = domParId("timer-explo-zone");
     ecrireStyle(barEl, "width", Math.round(progress * 100) + "%");
     ecrireTexte(timerEl, formaterTempsStat(Math.ceil(remaining)) + " remaining");
+    ecrireVariableStyle(domParId("carte-zone-progress"), "--zone-progress", Math.round(progress * 100) + "%");
   }
 
   // Scouting timers (direct DOM update)
@@ -10008,7 +11368,15 @@ function actualiserTimersExplorations() {
 
 function renduExplorations(u) {
   if (!u || !u.exploration || !explorationCampFonctionnelle()) return;
-
+  const projection = synchroniserActivitesExploration();
+  synchroniserWorldMap(projection);
+  if (explorationActivitesVue || explorationWorldMapOuverte && worldMapDebloquee()) {
+    // Consume structural notifications once while the region workspace is hidden.
+    // Opening a region always dirties both panels again before displaying them.
+    carteDirty = false;
+    exploTabDirty = false;
+    return;
+  }
   renduCarte(u);
 
   if (exploTabDirty) {
@@ -10021,6 +11389,7 @@ function renduExplorations(u) {
 
 function renduExplorationsDynamique(u) {
   if (!u || !u.exploration || !explorationCampFonctionnelle()) return;
+  if (explorationActivitesVue) { actualiserActivitesExplorationDynamique(); return; }
   actualiserTimersExplorations();
 }
 
@@ -10220,8 +11589,8 @@ function retirerKittySlot(campId, slotIndex) {
 // ── Zone exploration ─────────────────────────────────────────
 
 function explorationRetryFailures(kind, id) {
-  const catalog = kind === "zones" ? zonesRegion() : (kind === "campaigns" ? CONFIG.campaigns : null);
-  if (!catalog || !Object.prototype.hasOwnProperty.call(catalog, id)) return 0;
+  const activity = kind === "zones" ? zoneParId(id) : (kind === "campaigns" ? CONFIG.campaigns[id] : null);
+  if (!activity) return 0;
   const completed = (kind === "zones" ? etat.zonesExplorees : etat.campaignsCompletees) || [];
   const pending = (kind === "zones" ? etat.resultatsExplorationZones : etat.resultatsCampaigns) || {};
   if (completed.includes(id) || (pending[id] && pending[id].success)) return 0;
@@ -10367,6 +11736,7 @@ function revelerZoneExploree(zoneId) {
   carteDirty = true;
   exploTabDirty = true;
   verifierObjectifs(); sauvegarder(); rendu();
+  verifierStoryModals();
 }
 
 function reessayerExploZone(zoneId) {
@@ -10407,8 +11777,13 @@ function lancerExplo(id) {
   const slots = exploKittiesSelectionnees[id];
   const camp  = CONFIG.campaigns[id];
   if (!camp || !disponibiliteCampaign(camp).available || !slots || etat.resultatsCampaigns[id] || etat.exploEnCours.some(function(mission) { return mission.id === id; })) return;
+  // Campaign actions require real access, even when a DEV preview reveals the map.
+  const region = Object.values(REGIONS).find(function(candidate) { return candidate.zones[camp.zone]; });
+  if (!region || !regionExplorationAccessible(region.id)
+      || (region.zones[camp.zone].type !== "home" && !zoneEstExploree(camp.zone, true))
+      || etat.campaignsCompletees.includes(id)) return;
   const kittyIndices = slots.filter(function(x) { return x !== null; });
-  if (kittyIndices.length < camp.slots) return;
+  if (kittyIndices.length !== camp.slots) return;
   if (new Set(kittyIndices).size !== kittyIndices.length || kittyIndices.some(function(ki) {
     return !Number.isInteger(ki) || !etat.kittiesData[ki] || kittyIsBusy(ki);
   })) return;
@@ -10493,6 +11868,7 @@ function reessayerCampaign(campaignId) {
       exclusifyStagedKitty(kittyIndex, "campaign", campaignId);
     }
   });
+  carteDirty = true;
   exploTabDirty = true;
   sauvegarder(); rendu();
 }
@@ -10615,6 +11991,15 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       inventaireDirty = true;
       afficherNotification(granted + " " + resource.name + (granted === 1 ? "" : "s") + " obtained!");
       ajouterLog("event", granted + " " + resource.name + (granted === 1 ? "" : "s") + " added to inventory.");
+    }
+    return;
+  }
+  if (recompenseId === "workshopPlans") {
+    if (!etat.itemsAcquis.includes(recompenseId)) {
+      etat.itemsAcquis.push(recompenseId);
+      inventaireDirty = true;
+      afficherNotification("Starter Workshop Plans obtained! Study the bundle with Bernardo in your Bag.");
+      ajouterLog("unlock", "Starter Workshop Plans added to your Bag. No finished equipment received.");
     }
     return;
   }
@@ -10876,7 +12261,7 @@ function workResourceDetails(pair, slot, phase, familyId, slotIdx) {
     speedMultiplier *= manualFocusMultiplier();
   }
 
-  if (kitty && kitty.niveau > 0) {
+  if (kitty && kitty.niveau > 0 && pair.mode !== "craft") {
     const workerProduction = gather
       ? kittyGatherProductionMultiplier(kitty)
       : kittyProcessProductionMultiplier(kitty);
@@ -10892,7 +12277,7 @@ function workResourceDetails(pair, slot, phase, familyId, slotIdx) {
   const rawTime = gather ? Number(pair.rawCfg.secondesParUnite) : Number(pair.procCfg[pair.procSecUnite]);
   const adjustedTime = rawTime / (speedMultiplier * (gather ? productionMultiplier : 1));
   const target = quantiteInputEffective(pair, pair.inputs[0]);
-  const outputPerCycle = kitty ? kittyProcessProductionMultiplier(kitty) : 1;
+  const outputPerCycle = pair.mode === "craft" ? 1 : (kitty ? kittyProcessProductionMultiplier(kitty) : 1);
   return {
     pair: pair,
     kitty: kitty,
@@ -11311,6 +12696,10 @@ function apprendreLivre(itemId) {
   if (itemId === "sturdyHousePlans") {
     afficherNotification("Stone Storage Shed unlocked! Build it in Buildings.");
     ajouterLog("unlock", "Sturdy House Plans learned. Stone Storage Shed is now available in Buildings.");
+  }
+  if (itemId === "workshopPlans") {
+    afficherNotification("Starter Workshop Plans learned! Next: build the Foundry and Tannery at Camp.");
+    ajouterLog("unlock", "Starter Workshop Plans learned: Foundry, Tannery, Forge and their starter recipes.");
   }
   if (itemId === "dailyPurpose") {
     // Any quest state created by the old Study-time unlock was premature.
@@ -11877,7 +13266,8 @@ const RES_CATEGORIES = [
   { id: "food",     label: "Food"              },
   { id: "stone",    label: "Stone"             },
   { id: "training", label: "Training Materials"},
-  // metal: { id: "metal", label: "Metal" }
+  { id: "metal", label: "Metal" },
+  { id: "leather", label: "Leather" }
 ];
 
 function buildRessourcesList(u) {
@@ -11921,7 +13311,7 @@ function inventaireIllustre() {
 }
 
 function vueMajeureInventaire() {
-  if (["items", "books", "blueprints", "unique", "training"].includes(resCategorieFiltree)) return "items";
+  if (["items", "books", "blueprints", "unique", "equipment", "training"].includes(resCategorieFiltree)) return "items";
   if (resCategorieFiltree === "resources" || RES_CATEGORIES.some(cat => cat.id === resCategorieFiltree)) return "resources";
   return resCategorieFiltree === "boosts" ? "boosts" : "all";
 }
@@ -11938,7 +13328,11 @@ function itemsConnusParCategorieInventaire() {
     if (Array.isArray(ids)) ids.forEach(function(itemId) { itemIds.add(itemId); });
   });
   if (etat.learningEnCours && etat.learningEnCours.itemId) itemIds.add(etat.learningEnCours.itemId);
-  const groups = { books: [], blueprints: [], unique: [] };
+  const groups = { books: [], blueprints: [], unique: [], equipment: [] };
+  groups.equipment = Object.keys(CatInc.equipment.definitions()).filter(function(id) {
+    return (id === "reinforcedDaggers" ? CatInc.combat.learned(etat) : etat.itemsAppris.includes("workshopPlans")) || CatInc.equipment.stock(etat, id) > 0
+      || etat.kittiesData.some(function(kitty) { return Object.values(kitty.equipment || {}).includes(id); });
+  });
   itemIds.forEach(function(itemId) {
     const category = categorieItemInventaire(ITEMS[itemId]);
     if (category && groups[category]) groups[category].push(itemId);
@@ -11974,6 +13368,7 @@ function renderInventoryTabs(u) {
   if (hasBooks) availableTabs.push({ id: "books", label: "Books" });
   if (hasBlueprints) availableTabs.push({ id: "blueprints", label: "Blueprints" });
   if (hasUnique) availableTabs.push({ id: "unique", label: "Unique" });
+  if (itemGroups.equipment.length) availableTabs.push({id: "equipment", label: "Equipment"});
   if (hasBoosts) availableTabs.push({ id: "boosts", label: "Boosts" });
   availableCats.forEach(function(cat) { availableTabs.push(cat); });
 
@@ -11985,7 +13380,7 @@ function renderInventoryTabs(u) {
     : categoryTabs;
   const illustratedSecondaryTabs = availableTabs.filter(function(tab) {
     if (tab.id === "all") return false;
-    if (["books", "blueprints", "unique", "training"].includes(tab.id)) return revealed.items;
+    if (["books", "blueprints", "unique", "equipment", "training"].includes(tab.id)) return revealed.items;
     return true;
   });
   const validFilter = (illustrated ? illustratedSecondaryTabs.concat(majorTabs) : availableTabs).some(function(tab) { return tab.id === resCategorieFiltree; });
@@ -12040,24 +13435,18 @@ function actualiserVisibiliteInventaire() {
   const illustrated = inventaireIllustre();
   const major = vueMajeureInventaire();
   const revealed = categoriesMajeuresInventaireRevelees();
-  const afficheItems = revealed.items && (illustrated ? ["all", "items"].includes(major) : ["all", "books", "blueprints", "unique"].includes(resCategorieFiltree));
+  const afficheItems = revealed.items && (illustrated ? ["all", "items"].includes(major) : ["all", "books", "blueprints", "unique", "equipment"].includes(resCategorieFiltree));
   const afficheBoosts = revealed.boosts && ["all", "boosts"].includes(resCategorieFiltree);
-  const afficheResources = revealed.resources && (illustrated ? ["all", "resources"].includes(major) : !["books", "blueprints", "unique", "boosts"].includes(resCategorieFiltree));
+  const afficheResources = revealed.resources && (illustrated ? ["all", "resources"].includes(major) : !["books", "blueprints", "unique", "equipment", "boosts"].includes(resCategorieFiltree));
   const itemsSection = document.getElementById("section-items");
   const boostsSection = document.getElementById("section-boosts");
   const resourcesSection = document.getElementById("section-inv-resources");
-  if (itemsSection) {
-    itemsSection.style.display = afficheItems ? "" : "none";
-    itemsSection.setAttribute("aria-hidden", afficheItems ? "false" : "true");
-  }
-  if (boostsSection) {
-    boostsSection.style.display = afficheBoosts ? "" : "none";
-    boostsSection.setAttribute("aria-hidden", afficheBoosts ? "false" : "true");
-  }
-  if (resourcesSection) {
-    resourcesSection.style.display = afficheResources ? "" : "none";
-    resourcesSection.setAttribute("aria-hidden", afficheResources ? "false" : "true");
-  }
+  ecrireStyle(itemsSection, "display", afficheItems ? "" : "none");
+  ecrireAttributDynamique(itemsSection, "aria-hidden", afficheItems ? "false" : "true");
+  ecrireStyle(boostsSection, "display", afficheBoosts ? "" : "none");
+  ecrireAttributDynamique(boostsSection, "aria-hidden", afficheBoosts ? "false" : "true");
+  ecrireStyle(resourcesSection, "display", afficheResources ? "" : "none");
+  ecrireAttributDynamique(resourcesSection, "aria-hidden", afficheResources ? "false" : "true");
 }
 
 function renderResourcesSection(u) {
@@ -12079,9 +13468,9 @@ function renderResourcesSection(u) {
     }).map(function(resourceId) {
       return libelleRessourceCamp(resourceId);
     });
-    storageSummary.textContent = illustrated ? "Storage capacity: " + formaterNombre(capacite) + " per resource" : "Storage: " + formaterNombre(capacite) + " max per resource"
+    ecrireTexte(storageSummary, illustrated ? "Storage capacity: " + formaterNombre(capacite) + " per resource" : "Storage: " + formaterNombre(capacite) + " max per resource"
       + (pleines.length ? " · FULL: " + pleines.join(", ") : "")
-      + (depassements.length ? " · Over capacity: " + depassements.join(", ") : "");
+      + (depassements.length ? " · Over capacity: " + depassements.join(", ") : ""));
     storageSummary.classList.toggle("inventory-storage-summary-over", !illustrated && depassements.length > 0);
     storageSummary.classList.toggle("inventory-storage-summary-full", !illustrated && pleines.length > 0);
   }
@@ -12219,7 +13608,7 @@ function renderItemsList() {
         html += '<div id="inv-learning-label" class="inv-learning-label">' + actionLabel + '... ' + remaining + 's</div>';
         html += '<div class="inv-learning-barre">'
           + '<div id="inv-learning-progres" class="inv-learning-progres" style="width:' + pct + '%"></div>'
-          + '<img id="inv-learning-marker" class="inv-learning-marker" src="' + CAT_FACES.bernardo + '" alt="Bernardo">'
+          + '<span id="inv-learning-marker" class="inv-learning-marker" style="left:' + pct + '%"><img src="' + CAT_FACES.bernardo + '" alt="Bernardo"></span>'
           + '</div>';
         html += '</div>';
       } else if (etudie && item.learningGame) {
@@ -12274,6 +13663,18 @@ function renderItemsList() {
     html += uniqueIds.length > 0
       ? '<div class="inv-unique-grille">' + uniqueIds.map(carteUniqueItemHtml).join("") + '</div>'
       : '<p class="inv-vide inv-items-section-vide">No unique items yet.</p>';
+  }
+  if (["all", "items", "equipment"].includes(resCategorieFiltree) && itemGroups.equipment.length) {
+    html += '<div class="inv-items-section-titre">Equipment</div><div class="inv-unique-grille">'
+      + itemGroups.equipment.map(function(id) {
+        const item = CatInc.equipment.definition(id);
+        const equipped = etat.kittiesData.filter(function(kitty) { return Object.values(kitty.equipment || {}).includes(id); }).length;
+        const recipe = campGameplayData.workRecipes[id];
+        const costs = recipe.inputs.map(function(input) { return input.quantity + ' ' + resourceApi.definition(input.resourceId).name; }).join(' + ');
+        return '<article class="inv-unique-carte" data-equipment-id="' + id + '"><span class="inv-unique-icone"><img class="inv-item-sprite" src="' + item.iconPath + '" alt=""></span><strong>' + item.name + '</strong>'
+          + '<p>' + libelleBonusEquipement(item) + '</p><p>In Bag: ' + CatInc.equipment.stock(etat, id) + ' · Equipped: ' + equipped + '</p><p>' + costs + ' · ' + formaterTemps(recipe.output.processSeconds) + ' base</p>'
+          + '<button type="button" class="btn-inv-action" onclick="ouvrirAtelierEquipement(\'' + id + '\')">Craft at ' + (item.slot === "weapon" ? 'Forge' : 'Tannery') + '</button><p>Equip from the Fighter’s Gang details.</p></article>';
+      }).join('') + '</div>';
   }
   listeEl.innerHTML = html;
 }
@@ -12332,6 +13733,11 @@ const JOB_CENTER_JOB_INFO = Object.freeze({
     description: "Leads expeditions to discover and unlock new areas.",
     impact: "Exploration · Map, Campaigns and Scoutings",
     bonus: "Halves all mission times in Exploration"
+  },
+  fighter: {
+    description: "Learns to fight with daggers and leather protection.",
+    impact: "Combat · One Fighter in the gang",
+    bonus: "Starts at Combat Level 1. Camp levels and food XP do not increase Combat Level."
   },
   "camp-engineer": {
     description: "Improves the gang's passive AFK systems.",
@@ -12442,6 +13848,13 @@ function kittysSansMetier() {
 
 function metierDejaAttribue(metierId) {
   return etat.kittiesData.some(function(k) { return k.metier === metierId; });
+}
+
+function metierDisponiblePourFormation(metierId) {
+  const metier = METIERS[metierId];
+  return Boolean(metier && metierId !== "gang-leader" && !metier.engineer
+    && (!metier.unlockItem || etat.itemsAppris.includes(metier.unlockItem))
+    && (!metier.unlockStory || storyEstVue(metier.unlockStory)));
 }
 
 function ouvrirModalJC(mode, famille) {
@@ -12635,6 +14048,7 @@ function forcerKittyFormation(kittyIndex) {
 }
 
 function selectionnerMetierJC(metierId) {
+  if (!metierDisponiblePourFormation(metierId) || metierDejaAttribue(metierId)) return;
   if (!explorateurPresent() && metierId !== "explorator") return;
   jcMetierSelectionne = jcMetierSelectionne === metierId ? null : metierId;
   jcDirty = true;
@@ -12650,6 +14064,8 @@ function lancerFormation() {
   if (etat.formationEnCours || etat.formationTermineeEnAttente) return;
   if (jcFormationKittySelectionne === null || !jcMetierSelectionne
       || !kittyEligiblePourAffectationOrdinaire(jcFormationKittySelectionne)) return;
+  if (!metierDisponiblePourFormation(jcMetierSelectionne)
+      || etat.kittiesData[jcFormationKittySelectionne].metier !== null) return;
   if (!explorateurPresent() && jcMetierSelectionne !== "explorator") return;
   if (metierDejaAttribue(jcMetierSelectionne)) return;
   if (kittyIsUnavailableForNewAssignment(jcFormationKittySelectionne)) return;
@@ -12687,8 +14103,13 @@ function validerFormation() {
   const kitty = etat.kittiesData[formationValidee.kittyIndex];
   const m = METIERS[formationValidee.metier];
   if (!kitty || !m || (kitty.metier !== null && kitty.metier !== formationValidee.metier)) return false;
+  if (m.combat && (!metierDisponiblePourFormation(m.id)
+      || etat.kittiesData.some(function(other, index) {
+        return index !== formationValidee.kittyIndex && other.metier === m.id;
+      }))) return false;
   const managerValide = estMetierManager({ metier: formationValidee.metier });
   kitty.metier = formationValidee.metier;
+  if (m.combat && !kitty.combatProgress) kitty.combatProgress = { level: 1, xp: 0 };
   etat.formationTermineeEnAttente = null;
   afficherNotification(kitty.nom + " is now a " + m.nom + "!");
   ajouterLog("unlock", kitty.nom + " trained as " + m.nom + ".");
@@ -12767,9 +14188,13 @@ function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
   }
   if (estIngenieur(etat.kittiesData[kittyIdx]) || estBernardoSuperviseur(kittyIdx)
       || kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
-  if (retirerKittyDeSesRoles(kittyIdx) === false) return false;
   const slot = slotRecette(familyId, slotIdx);
   if (!slot || !slot.recipeId) return;
+  const pair = paireRecette(slot.recipeId);
+  if (!capaciteRecetteWork(pair, unlocks()).available) return false;
+  if (pair.mode === "craft" && !(slot.phaseProgress > 0)
+      && !CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[slot.recipeId])) return false;
+  if (retirerKittyDeSesRoles(kittyIdx) === false) return false;
   slot.kittyIndex = kittyIdx;
   jouerSonAffectation();
   fermerModalWorker(true);
@@ -12927,8 +14352,8 @@ function renduModalRecette() {
       + ' data-camp-tutorial-recipe-id="' + pair.recipeId + '"'
       + (selected ? ' aria-current="true"' : '') + '>'
       + '<span class="work-tier-badge work-tier-badge-tier-' + pair.tier + '">Tier ' + pair.tier + '</span>'
-      + '<span class="recipe-modal-formula"><span><img src="' + pair.rawIcon + '" alt=""><strong>' + libelleNombreDecimal(cost, 1) + ' ' + pair.rawLabel + '</strong></span><b>→</b><span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong></span></span>'
-      + '<small>' + (disabled ? echapperAttributHtml(capacite.reason) : 'The assigned Cat gathers the input, then processes the result.') + '</small></button>';
+      + '<span class="recipe-modal-formula"><span>' + (pair.mode === "craft" ? pair.inputs.map(function(input) { return input.baseQuantity + ' ' + input.label; }).join(' + ') : '<img src="' + pair.rawIcon + '" alt=""><strong>' + libelleNombreDecimal(cost, 1) + ' ' + pair.rawLabel + '</strong>') + '</span><b>→</b><span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong></span></span>'
+      + '<small>' + (disabled ? echapperAttributHtml(capacite.reason) : (pair.mode === "craft" ? 'Uses shared materials to craft one item. Materials are used on delivery.' : 'The assigned Cat gathers the input, then processes the result.')) + '</small></button>';
   }).join("");
   if (slot && slot.recipeId) html += '<button type="button" class="recipe-modal-clear" onclick="retirerRecetteSelectionnee()">Clear this recipe slot</button>';
   conteneur.innerHTML = html || '<p class="worker-modal-vide">No recipe available in this family yet.</p>';
@@ -13010,6 +14435,7 @@ function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
     && !slot.recipeId && Number.isInteger(slot.kittyIndex) && slot.kittyIndex >= 0;
   if (!assignmentTutorielAConserver) viderProgressionRecette(slot);
   slot.recipeId = recipeId;
+  if (pair.mode === "craft") slot.phase = "processing";
   campGuidanceActionCommit({
     type: "work.recipe-selected",
     familyId: familyId,
@@ -13243,6 +14669,12 @@ function assignerWorkerSlot(kittyIndex) {
   if (kittyIsInExplorationStaging(kittyIndex)) return;
   const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
   if (!slot || !slot.recipeId) return;
+  const assignedRecipe = paireRecette(slot.recipeId);
+  if (assignedRecipe && assignedRecipe.mode === "craft" && !(slot.phaseProgress > 0)
+      && !CatInc.equipment.inputsAvailable(etat, campGameplayData.workRecipes[slot.recipeId])) {
+    afficherNotification("Gather the required shared materials before assigning a Cat.");
+    return;
+  }
   const stage = campTutorialEtapeEffective();
   const tutorialSlotIdx = stage === "wood-slot-1-cat" ? 0
     : (stage === "wood-slot-2-cat" ? 1 : null);
@@ -13329,7 +14761,7 @@ function renduJobCenter(u) {
       html += '</div></div>';
       html += '<div class="inv-learning-barre jc-learning-barre">'
         + '<div id="barre-jc-formation" class="inv-learning-progres" style="width:' + Math.round(prog * 100) + '%"></div>'
-        + '<img id="jc-training-marker" class="inv-learning-marker" src="' + echapperAttributHtml(kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '">'
+        + '<span id="jc-training-marker" class="inv-learning-marker" style="left:' + Math.round(prog * 100) + '%"><img src="' + echapperAttributHtml(kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo) + '" alt="' + (kitty ? echapperAttributHtml(kitty.nom) : 'Cat') + '"></span>'
         + '</div>';
       html += '<div class="jc-timer">' + formaterTemps(restant) + '</div>';
       html += '</div>';
@@ -13362,7 +14794,7 @@ function renduJobCenter(u) {
       html += '<div class="jc-metiers">';
       const premierExploratorRequis = !explorateurPresent();
       Object.values(METIERS).filter(function(m) {
-        return m.id !== "gang-leader" && !m.engineer && (!m.unlockItem || etat.itemsAppris.includes(m.unlockItem));
+        return metierDisponiblePourFormation(m.id);
       }).sort(function(a, b) {
         if (a.id === "explorator") return -1;
         if (b.id === "explorator") return 1;
@@ -13666,6 +15098,7 @@ function workBoostMult() {
 function definitionMoteurRecette(pair) {
   const input = pair.inputs && pair.inputs[0];
   return {
+    mode: pair.mode,
     rawRes: pair.rawRes,
     rawTotalKey: pair.rawTotalKey,
     procTotalKey: pair.procTotalKey,
@@ -13694,6 +15127,9 @@ function modificateursRecette(pair, kitty) {
 function dureeRestanteCycleRecetteHeritee(pair, slot, modifiers) {
   if (!pair || !slot) return Infinity;
   modifiers = modifiers || {};
+  if (pair.mode === "craft") return (1 - Math.min(1, Number(slot.phaseProgress) || 0))
+    * pair.processingSeconds / ((modifiers.processingSpeed || 1)
+      * (modifiers.processingManualSpeed || 1) * (modifiers.globalSpeed || 1));
   const positive = function(value, fallback) {
     value = Number(value);
     return Number.isFinite(value) && value > 0 ? value : fallback;
@@ -13729,7 +15165,7 @@ function tauxPerformanceRecettePourKitty(pair, kitty, familyId, slotIdx) {
     phaseProgress: 0,
     gatheredInputs: {}
   }, modifiers);
-  const outputPerCycle = Number(modifiers.complexProduction);
+  const outputPerCycle = pair.mode === "craft" ? 1 : Number(modifiers.complexProduction);
   return Number.isFinite(cycleDuration) && cycleDuration > 0
     && Number.isFinite(outputPerCycle) && outputPerCycle > 0
     ? outputPerCycle / cycleDuration
@@ -13750,64 +15186,88 @@ function reglerSlotRecetteHeriteApresCycle(pair, slot, result) {
   return true;
 }
 
+let pairesRecettesParFamille = null;
+
+function paireRecettePourFamille(family, recipeId) {
+  if (!pairesRecettesParFamille) {
+    pairesRecettesParFamille = new Map();
+    RESOURCE_PAIRS.forEach(function(pair) {
+      const key = pair.family + "|" + pair.recipeId;
+      if (!pairesRecettesParFamille.has(key)) pairesRecettesParFamille.set(key, pair);
+    });
+  }
+  return pairesRecettesParFamille.get(family + "|" + recipeId);
+}
+
 function tickWorkRecipes(dt, manualFocusAutorise) {
   const resultats = {};
   const recettesTermineesParFamille = {};
   let slotsHeritesRegles = false;
-  RESOURCE_PAIRS.forEach(function(pair) { etat[pair.rawRes] = 0; });
-  Object.keys(etat.workRecipeSlots || {}).forEach(function(family) {
-    if (family === "wood" && !catheringDebloquee()) return;
-    (etat.workRecipeSlots[family] || []).forEach(function(slot, slotIdx) {
-      if (!slot || slot.kittyIndex === null || !slot.recipeId) return;
-      const pair = RESOURCE_PAIRS.find(function(candidate) {
-        return candidate.family === family && candidate.recipeId === slot.recipeId;
+  // Unlock flags only move from locked to unlocked while slots advance, so a
+  // recipe available with the flags read at the start of this pass stays
+  // available. A locked answer is re-read so a mid-pass unlock still counts.
+  let u = null;
+  const disponibiliteRecette = function(pair) {
+    if (!u) u = unlocks();
+    if (capaciteRecetteWork(pair, u).available) return true;
+    u = unlocks();
+    return capaciteRecetteWork(pair, u).available;
+  };
+  RESOURCE_PAIRS.forEach(function(pair) { if (pair.mode !== "craft") etat[pair.rawRes] = 0; });
+  avecCapaciteStockageCampMemorisee(function() {
+    Object.keys(etat.workRecipeSlots || {}).forEach(function(family) {
+      if (family === "wood" && !catheringDebloquee()) return;
+      (etat.workRecipeSlots[family] || []).forEach(function(slot, slotIdx) {
+        if (!slot || slot.kittyIndex === null || !slot.recipeId) return;
+        const pair = paireRecettePourFamille(family, slot.recipeId);
+        const kitty = etat.kittiesData[slot.kittyIndex];
+        if (!pair || !kitty) return;
+        if (!disponibiliteRecette(pair)) return;
+        if (etatStockageRessource(pair.procRes).plein) return;
+        const phaseAvant = phaseActiveRecette(slot);
+        const modifiers = Object.assign(
+          modificateursRecette(pair, kitty),
+          manualFocusAutorise
+            ? modificateursManualFocus(family, slotIdx, slot)
+            : { gatheringManualSpeed: 1, processingManualSpeed: 1 }
+        );
+        const enginePair = definitionMoteurRecette(pair);
+        const legacyOverflow = slotIdx >= nombreSlotsRecettesAssignables(family);
+        const legacyTime = legacyOverflow
+          ? dureeRestanteCycleRecetteHeritee(enginePair, slot, modifiers)
+          : dt;
+        // An overflow slot may finish its in-flight cycle, but never starts a new
+        // one even when an offline/accelerated tick carries a large time budget.
+        const slotDt = legacyOverflow ? Math.min(dt, legacyTime + 1e-9) : dt;
+        const result = avancerRecetteSlot(etat, enginePair, slot, slotDt, modifiers);
+        if (pair.rawRes === "cardboardPieces") {
+          slot.birdCardboardPieces = Math.max(0, Number(slot.birdCardboardPieces) || 0) + result.gathered;
+        }
+        if (manualFocusAutorise && workManualFocus
+            && workManualFocus.familyId === family
+            && workManualFocus.slotIdx === slotIdx
+            && (phaseActiveRecette(slot) !== phaseAvant || result.completedCycles > 0)) {
+          poursuivreFocusManuelWork(family, slotIdx);
+        }
+        if (legacyOverflow && reglerSlotRecetteHeriteApresCycle(enginePair, slot, result)) {
+          slotsHeritesRegles = true;
+        }
+        if (!resultats[pair.recipeId]) {
+          resultats[pair.recipeId] = { active: false, gathered: 0, produced: 0, completedCycles: 0, firstProducerIndex: null };
+        }
+        const aggregate = resultats[pair.recipeId];
+        aggregate.active = aggregate.active || result.active;
+        aggregate.gathered += result.gathered;
+        aggregate.produced += result.produced;
+        aggregate.completedCycles += result.completedCycles;
+        if (pair.mode === "craft" && result.produced > 0) inventaireDirty = true;
+        if (result.completedCycles > 0) {
+          recettesTermineesParFamille[family] = (recettesTermineesParFamille[family] || 0) + result.completedCycles;
+        }
+        if (aggregate.firstProducerIndex === null && result.firstProducerIndex !== null) {
+          aggregate.firstProducerIndex = result.firstProducerIndex;
+        }
       });
-      const kitty = etat.kittiesData[slot.kittyIndex];
-      if (!pair || !kitty) return;
-      if (!capaciteRecetteWork(pair, unlocks()).available) return;
-      if (etatStockageRessource(pair.procRes).plein) return;
-      const phaseAvant = phaseActiveRecette(slot);
-      const modifiers = Object.assign(
-        modificateursRecette(pair, kitty),
-        manualFocusAutorise
-          ? modificateursManualFocus(family, slotIdx, slot)
-          : { gatheringManualSpeed: 1, processingManualSpeed: 1 }
-      );
-      const enginePair = definitionMoteurRecette(pair);
-      const legacyOverflow = slotIdx >= nombreSlotsRecettesAssignables(family);
-      const legacyTime = legacyOverflow
-        ? dureeRestanteCycleRecetteHeritee(enginePair, slot, modifiers)
-        : dt;
-      // An overflow slot may finish its in-flight cycle, but never starts a new
-      // one even when an offline/accelerated tick carries a large time budget.
-      const slotDt = legacyOverflow ? Math.min(dt, legacyTime + 1e-9) : dt;
-      const result = avancerRecetteSlot(etat, enginePair, slot, slotDt, modifiers);
-      if (pair.rawRes === "cardboardPieces") {
-        slot.birdCardboardPieces = Math.max(0, Number(slot.birdCardboardPieces) || 0) + result.gathered;
-      }
-      if (manualFocusAutorise && workManualFocus
-          && workManualFocus.familyId === family
-          && workManualFocus.slotIdx === slotIdx
-          && (phaseActiveRecette(slot) !== phaseAvant || result.completedCycles > 0)) {
-        poursuivreFocusManuelWork(family, slotIdx);
-      }
-      if (legacyOverflow && reglerSlotRecetteHeriteApresCycle(enginePair, slot, result)) {
-        slotsHeritesRegles = true;
-      }
-      if (!resultats[pair.recipeId]) {
-        resultats[pair.recipeId] = { active: false, gathered: 0, produced: 0, completedCycles: 0, firstProducerIndex: null };
-      }
-      const aggregate = resultats[pair.recipeId];
-      aggregate.active = aggregate.active || result.active;
-      aggregate.gathered += result.gathered;
-      aggregate.produced += result.produced;
-      aggregate.completedCycles += result.completedCycles;
-      if (result.completedCycles > 0) {
-        recettesTermineesParFamille[family] = (recettesTermineesParFamille[family] || 0) + result.completedCycles;
-      }
-      if (aggregate.firstProducerIndex === null && result.firstProducerIndex !== null) {
-        aggregate.firstProducerIndex = result.firstProducerIndex;
-      }
     });
   });
   Object.keys(recettesTermineesParFamille).forEach(function(family) {
@@ -13839,6 +15299,13 @@ function tick() {
     if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("tick", diagnosticStart, { suspended: true });
     return;
   }
+  // Device sleep can stop ticks without any hidden/pagehide/freeze signal. The
+  // catch-up then owns the whole unsimulated interval, including this tick.
+  if (rattraperAbsenceSilencieuse()) {
+    if (diagnosticStart !== null) mobileInputDiagnostic.endTiming("tick", diagnosticStart, { silentAbsence: true });
+    return;
+  }
+  tempsComptabiliseJusquaTs = Date.now();
   // Cathouse reduction accumulation (speed-aware)
   if (etat.cathouses.length > 0) {
   }
@@ -13895,6 +15362,8 @@ function tick() {
   }
 
   appliquerManualFocusCamp(TICK_DT);
+  avancerAffrontementArbre(vitesse * TICK_DT);
+  avancerEntrainementCombat(vitesse * TICK_DT);
 
   // Check learning completion
   if (etat.learningEnCours) {
@@ -14131,6 +15600,7 @@ function appliquerProgressionHorsLigne() {
   const ecouleReelMs = Math.max(0, maintenant - dernierTimestamp);
   if (ecouleReelMs < ABSENCE_MIN_MS) {
     etat.dernierTimestamp = maintenant;
+    tempsComptabiliseJusquaTs = maintenant;
     return null;
   }
 
@@ -14145,6 +15615,8 @@ function appliquerProgressionHorsLigne() {
 
   const progressionAfk = calculerProgressionHorsLigne(ecouleReelMs);
   const dtSimTotal = progressionAfk.dureeSimuleeSec;
+  avancerAffrontementArbre(dtSimTotal);
+  avancerEntrainementCombat(dtSimTotal);
   // Timestamp-owned timers must discard the complete part of the wall-clock
   // gap that AFK simulation did not authorize, including time beyond the cap.
   const decalageMs = ecouleReelMs - (dtSimTotal * 1000);
@@ -14218,6 +15690,7 @@ function appliquerProgressionHorsLigne() {
   terminerDemolitionsCampPrototype(maintenantApresDecalage);
 
   etat.dernierTimestamp = maintenant;
+  tempsComptabiliseJusquaTs = maintenant;
   verifierObjectifs();
   sauvegarder();
 
@@ -14570,11 +16043,17 @@ function firstBoxTutorialBoiteDejaConstruite() {
   return nombreAssetsCampPossedesPourLoi("cardboardBox") > 0;
 }
 
-function firstBoxTutorialPeutCommencer() {
+// Cost-independent part of the start rule, so the Box quote can use it
+// without recursing through its own costs.
+function firstBoxTutorialConditionsDemarrage() {
   return maisonCampDebloquee("cardboardBox")
     && progressionCamp().firstBoxUnlockDialogueDismissed === true
     && !firstBoxTutorialBoiteDejaConstruite()
-    && !constructionsMaisonsCampActives().some(function(job) { return job.type === "cardboardBox"; })
+    && !constructionsMaisonsCampActives().some(function(job) { return job.type === "cardboardBox"; });
+}
+
+function firstBoxTutorialPeutCommencer() {
+  return firstBoxTutorialConditionsDemarrage()
     && ressourcesMaisonCampSuffisantes("cardboardBox")
     && kittyDisponibleConstructionMaisonCamp();
 }
@@ -15405,12 +16884,12 @@ function renduDialogueRapideCamp() {
   const id = file.length ? file[0] : null;
   const texte = campGroundRewardDialogue || (id && CAMP_QUICK_DIALOGUES[id]);
   const firstGroundRewardHelper = !campGroundRewardDialogue && id === "firstGroundReward";
-  element.hidden = !texte;
+  if (element.hidden !== !texte) element.hidden = !texte;
   element.classList.toggle("camp-quick-dialogue-tutorial-gate",
     !campGroundRewardDialogue && (id === "sawmillRepaired" || firstGroundRewardHelper));
   element.classList.toggle("camp-quick-dialogue-reward-help", firstGroundRewardHelper);
   if (continueButton) continueButton.hidden = false;
-  if (texte) copy.textContent = texte;
+  if (texte && copy.textContent !== texte) copy.textContent = texte;
 }
 
 function continuerDialogueRapideCamp(event) {
@@ -15824,6 +17303,50 @@ function premiereExpeditionStoryDisponible() {
   return explorationCampFonctionnelle() && !storyEstVue("storyFirstExpeditionVue");
 }
 
+function ouvrirWorldMapDepuisStory() {
+  const modal = document.getElementById("ecran-story-world-map");
+  if (terminerStoryReplayDepuisLogs(modal)) return;
+  fermerModal("ecran-story-world-map");
+  changerOnglet("explorations");
+  ouvrirWorldMap();
+}
+
+function rencontreBrambleDisponible() {
+  return DIALOGUE_DATA.scenes.some(function(scene) { return scene.id === "ecran-story-bramble"; })
+    && worldMapDebloquee() && etat.zonesExplorees.includes("woodlandEntrance.training");
+}
+
+function ouvrirRencontreBramble() {
+  if (!rencontreBrambleDisponible() || storyEstVue("storyBrambleVue")
+      || document.querySelector('[role="dialog"][aria-hidden="false"]')) return false;
+  afficherModal("ecran-story-bramble");
+  return true;
+}
+
+function apprendreFighterDepuisStory() {
+  const modal = document.getElementById("ecran-story-bramble");
+  if (terminerStoryReplayDepuisLogs(modal)) return false;
+  if (!modal || modal.getAttribute("aria-hidden") !== "false"
+      || modal.dataset.dialogueComplete !== "true" || !rencontreBrambleDisponible()) return false;
+  if (marquerStoryVue("storyBrambleVue")) {
+    ajouterLog("unlock", "Bramble's lesson unlocked Fighter training at the Job Center.");
+    afficherNotification("Fighter training unlocked at the Job Center.");
+  }
+  fermerModal("ecran-story-bramble");
+  jcDirty = true;
+  exploTabDirty = true;
+  sauvegarder();
+  renduStories();
+  if (batimentFonctionnelCamp("jobCenter").available) {
+    facilitiesMobileVue = "jobs";
+    selectionnerJobsWorkspace("training");
+    changerOnglet("facilities");
+  } else {
+    changerOnglet("camp");
+  }
+  return true;
+}
+
 let manualFocusExplanationTimer = null;
 let manualFocusExplanationDeadline = 0;
 
@@ -15896,7 +17419,7 @@ function ouvrirManualFocusDepuisStory() {
 
 function naviguerVersManualFocusWork() {
   let cible = null;
-  ["wood", "food", "rock"].some(function(familyId) {
+  Object.keys(WORK_FAMILIES).some(function(familyId) {
     const slots = slotsRecettesAssignables(familyId);
     let slotIdx = slots.findIndex(function(slot) { return slot.recipeId && slot.kittyIndex !== null; });
     if (slotIdx < 0) slotIdx = slots.findIndex(function(slot) { return !!slot.recipeId; });
@@ -16191,6 +17714,22 @@ function verifierStoryModals() {
     }
     return;
   }
+  if (worldMapDebloquee() && explorationCampFonctionnelle() && !storyEstVue("storyWorldMapVue")) {
+    const foregroundDialog = document.querySelector('[role="dialog"][aria-hidden="false"]');
+    if (!foregroundDialog) {
+      afficherModal("ecran-story-world-map");
+      const modal = document.getElementById("ecran-story-world-map");
+      if (modal && modal.getAttribute("aria-hidden") === "false") {
+        marquerStoryVue("storyWorldMapVue");
+        renduStories();
+      }
+    }
+    return;
+  }
+  if (rencontreBrambleDisponible() && !storyEstVue("storyBrambleVue")) {
+    ouvrirRencontreBramble();
+    return;
+  }
   const cannelle = Array.isArray(etat.kittiesData)
     ? etat.kittiesData.find(function(kitty) { return kitty && kitty.nom === "Cannelle"; }) : null;
   if (cannelle && cannelle.nom === "Cannelle" && !storyEstVue("storyCannelleRecruitVue")
@@ -16283,6 +17822,9 @@ const CAMP_PROTOTYPE_AUTO_ZOOM_MAX = 2;
 const CAMP_CAT_PORTRAIT_REFERENCE_SCALE = 0.7;
 const CAMP_CAT_PORTRAIT_MOBILE_LAYOUT_SCALE = 0.585;
 const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object.freeze({
+  forge: "forge",
+  foundry: "metal",
+  tannery: "leather",
   sawmill: "wood",
   catchen: "food",
   pawsonry: "rock"
@@ -16422,6 +17964,9 @@ function constructionBalanceCampPrototype(typeId, stateField) {
   });
 }
 const CAMP_BUILDING_CONSTRUCTION_CONFIG = Object.freeze({
+  forge: constructionBalanceCampPrototype("forge", null),
+  foundry: constructionBalanceCampPrototype("foundry", null),
+  tannery: constructionBalanceCampPrototype("tannery", null),
   operationsTable: constructionBalanceCampPrototype("operationsTable", null),
   jobCenter: constructionBalanceCampPrototype("jobCenter", "jobCenterConstruit"),
   laboratory: constructionBalanceCampPrototype("laboratory", "laboratoryConstruit"),
@@ -16503,6 +18048,60 @@ let campPrototypeZoomChoisiManuellement = false;
 let campPrototypeDernieresColonnesAuto = null;
 let campPrototypeDernierModeMobile = null;
 let campPrototypeAncrageCamera = null;
+let campPrototypeFinDefilementTimer = null;
+
+// Firefox repaints the zoomed board on every tick of a decorative Camp
+// animation; while the camera scrolls that doubles each frame's cost (#322).
+// Pause them for the gesture only, then resume where they stopped.
+function signalerDefilementCampPrototype(viewport) {
+  if (!viewport.classList.contains("camp-prototype-scrolling")) {
+    viewport.classList.add("camp-prototype-scrolling");
+  }
+  clearTimeout(campPrototypeFinDefilementTimer);
+  campPrototypeFinDefilementTimer = setTimeout(function() {
+    campPrototypeFinDefilementTimer = null;
+    viewport.classList.remove("camp-prototype-scrolling");
+  }, 180);
+}
+
+// Locked neighbour gardens share the WebGL fog module (#337): one persistent
+// canvas per garden draws the same two drifting copies of the Studio fog art
+// as the CSS layers (inset, opacity, path, period, direction). The visual keeps
+// its slate wash and organic mask; its CSS layers stay as the fallback and are
+// hidden only while the canvas actually has the art. Reduced motion rests at
+// the untransformed pose, like the CSS layers without their animation.
+const CAMP_FOG_WEBGL_ENABLED = true;
+const CAMP_FOG_LAYERS = [
+  {inset: .10, opacity: .9, periodMs: 32000, from: {x: -.06, y: -.03}, to: {x: .07, y: .035}},
+  {inset: .16, opacity: .32, periodMs: 47000, offsetMs: 19000, reverse: true,
+    from: {x: .07, y: -.035, scale: 1.05}, to: {x: -.06, y: .04, scale: 1.11}}
+];
+let campFogLayers = [];
+
+function monterBrouillardCampWebgl(viewport) {
+  if (!CAMP_FOG_WEBGL_ENABLED || campFogLayers.length || !window.CatInc || typeof CatInc.createFogLayer !== "function") return;
+  document.querySelectorAll(".camp-prototype-neighbor-fog-visual").forEach(function(visual) {
+    let layer = null;
+    const actualiser = function() {
+      visual.classList.toggle("camp-fog-webgl", Boolean(layer && layer.ready()));
+    };
+    layer = CatInc.createFogLayer({
+      kind: "cover",
+      textureUrl: "img/Maps/Camp Runtime/Effects/fog-of-war-camp-768.webp",
+      layers: CAMP_FOG_LAYERS,
+      // The paced CSS drift's cadence (#323: 8 steps per second). Measured
+      // (#337) at the same CPU as that drift; 24 fps cost Firefox about 20 %
+      // more of one core on an idle Camp for no visible gain at this speed.
+      framesPerSecond: 8,
+      maxCanvasSide: 1024,
+      // Same rule as the CSS drift (#322): hold still during a camera gesture.
+      isPaused: function() { return viewport.classList.contains("camp-prototype-scrolling"); },
+      onReady: actualiser,
+      onAvailabilityChange: actualiser
+    });
+    if (layer.mount(visual)) campFogLayers.push(layer);
+  });
+}
 let campDerivedMetricsVersion = 0;
 let campDerivedMetricsCache = null;
 let campRecruitmentCalculationCache = null;
@@ -16932,10 +18531,12 @@ function devisMaisonCamp(typeId) {
     definition && definition.law && definition.law.durationGrowth,
     definition && definition.law && definition.law.rounding
   );
-  const tutorialDuration = typeId === "cardboardBox"
-    && rank === 1
-    && typeof firstBoxTutorialStage === "function"
-    && ["place", "assign"].includes(firstBoxTutorialStage());
+  // The palette card is quoted before the tutorial starts, so the pending
+  // inactive stage already uses the tutorial duration it will commit.
+  const tutorialStage = typeId === "cardboardBox" && rank === 1
+    && typeof firstBoxTutorialStage === "function" ? firstBoxTutorialStage() : null;
+  const tutorialDuration = tutorialStage === "place" || tutorialStage === "assign"
+    || (tutorialStage === "inactive" && firstBoxTutorialConditionsDemarrage());
   return theoreticalCosts && costs ? {
     rank: rank,
     costs: costs,
@@ -17254,6 +18855,7 @@ function devisConstructionBatimentCamp(typeId) {
 }
 
 function contenuBatimentCampDebloque(typeId) {
+  if (["foundry", "tannery", "forge"].includes(typeId)) return conditionGameplayCampDebloquee(typeId);
   if (typeId === "operationsTable") return operationsTableDebloquee();
   if (typeId === "jobCenter") return jobCenterDebloquee();
   if (typeId === "laboratory") return laboratoryDebloquee();
@@ -17828,15 +19430,42 @@ function stockagesCampActifs() {
   });
 }
 
+// Storage capacity depends on Camp buildings, never on resource stocks, so a
+// pass that only advances production or renders (tick work, resource bar,
+// Inventory) can read it once. The memo lives only for that synchronous pass;
+// the inventory unlock is part of its key because gathering can flip it.
+let capaciteStockageCampMemo = null;
+
+function avecCapaciteStockageCampMemorisee(action) {
+  if (capaciteStockageCampMemo) return action();
+  capaciteStockageCampMemo = { inventaire: null, valeur: 0 };
+  try {
+    return action();
+  } finally {
+    capaciteStockageCampMemo = null;
+  }
+}
+
 function capaciteStockageCamp() {
-  return CAMP_STORAGE_BASE_CAPACITY + stockagesCampActifs().reduce(function(total, item) {
+  const memo = capaciteStockageCampMemo;
+  const inventaire = memo ? inventaireDebloque() : null;
+  if (memo && memo.inventaire === inventaire) return memo.valeur;
+  const valeur = CAMP_STORAGE_BASE_CAPACITY + stockagesCampActifs().reduce(function(total, item) {
     const tier = Math.max(1, Number(item.tier) || 1);
     return total + effetGameplayCampPourTier(item.type, tier, "storageCapacity",
       item.type === "storage" && tier === 1 ? CAMP_STORAGE_CAPACITY_PER_TIER : 0);
   }, 0);
+  if (memo) {
+    memo.inventaire = inventaire;
+    memo.valeur = valeur;
+  }
+  return valeur;
 }
 
 function etatStockageRessource(resourceId) {
+  if (CatInc.equipment.definition(resourceId)) return {
+    stock: CatInc.equipment.stock(etat, resourceId), capacite: Infinity, plein: false, depasse: false
+  };
   const stock = Math.max(0, Number(etat[resourceId]) || 0);
   const capacite = capaciteStockageCamp();
   return {
@@ -18170,25 +19799,6 @@ function itemAccessiblePourReparationCamp(item) {
   const connexions = connexionsCampPrototypeActuelles();
   const connexion = connexions.byItem && connexions.byItem[item.uid];
   return Boolean(connexion && connexion.clear);
-}
-
-function decorationAccessibleDepuisCamp(item) {
-  const type = item && typeCampPrototype(item.type);
-  if (!item || !type || type.category !== "decoration" || item.construit === false) return false;
-  const layoutBloquant = campPrototypeLayout.filter(function(entry) {
-    if (!entry) return false;
-    const entryType = typeCampPrototype(entry.type);
-    return entry.uid === item.uid || Boolean(entryType && entryType.category === "junk");
-  });
-  const connexions = evaluerConnexionsCampPrototype(layoutBloquant, campPrototypeTerrain);
-  const dimensions = dimensionsCampPrototype(item.type, item.rotation, item.tier);
-  return cibleAccessibleAvecConnexionsCamp({
-    x: item.x,
-    y: item.y,
-    width: dimensions.width,
-    height: dimensions.height,
-    cells: campPrototypeApi.cellulesOccupeesItem(item)
-  }, connexions);
 }
 
 function niveauMinimumCibleDemolition(cible) {
@@ -19471,6 +21081,7 @@ function animationCampPrototypeDisponible(type, rotation, functionalTier) {
 }
 
 function animationCampPrototypeEffective(type, rotation, functionalTier) {
+  if (typeof miniJeuRuntimeActif === "function" && miniJeuRuntimeActif()) return false;
   if (etat.campAnimationsEnabled === false) return false;
   const reducedMotion = typeof window !== "undefined" && window.matchMedia
     && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -19543,12 +21154,12 @@ function synchroniserAnimationCampPrototype(element, item, type, rotation, funct
   return true;
 }
 
-function actualiserAnimationsConditionnellesCampPrototype(typeId) {
+function actualiserAnimationsConditionnellesCampPrototype(typeId, inclurePermanentes) {
   document.querySelectorAll(".camp-prototype-item[data-camp-type]").forEach(function(element) {
     if (typeId && element.dataset.campType !== typeId) return;
     const type = typeCampPrototype(element.dataset.campType);
     const tier = Number(element.dataset.campVisualTier) || 1;
-    if (!type || modePresentationAnimationCampPrototype(type, tier) === "always") return;
+    if (!type || (!inclurePermanentes && modePresentationAnimationCampPrototype(type, tier) === "always")) return;
     const item = itemCampPrototype(element.dataset.campUid)
       || campPrototypeLayout.find(function(candidate) { return candidate.type === element.dataset.campType; });
     synchroniserAnimationCampPrototype(
@@ -20166,11 +21777,15 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
     + '<img src="' + pair.procIcon + '" alt="">'
     + '<span><small>RECIPE</small><strong>' + echapperAttributHtml(pair.procLabel) + '</strong></span>'
     + '<em>Change</em></button>';
+  const craftWaiting = fabricationAttendMateriaux(pair, slot);
+  const craftCosts = pair.mode === "craft" ? pair.inputs.map(function(input) { return input.baseQuantity + " " + input.label; }).join(" + ") : "";
+  const costsHtml = craftCosts ? '<p class="camp-production-status">Materials: ' + echapperAttributHtml(craftCosts) + '. Used on delivery.</p>' : '';
   if (!kitty) {
     return '<article class="camp-production-slot camp-production-slot-waiting" data-camp-production-slot="'
       + familyId + '-' + slotIdx + '" data-camp-production-recipe="' + echapperAttributHtml(pair.recipeId) + '" data-camp-production-kitty="">'
       + '<header><span>' + echapperAttributHtml(slotLabel) + '</span><strong>Waiting for a Cat</strong></header>'
       + recipeButton
+      + costsHtml
       + '<button type="button" class="camp-production-assign" data-camp-production-origin="worker" onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')" aria-label="Assign a Cat to ' + echapperAttributHtml(pair.procLabel) + '">Assign a Cat</button>'
       + '<p class="camp-production-status">Ready for an available Cat.</p>'
       + '</article>';
@@ -20182,7 +21797,7 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
     ? Math.max(0, (1 - progress.processing) * durations.processing)
     : Math.max(0, (1 - progress.gathering) * durations.gathering);
   const phaseLabel = slot.phase === "processing" ? "Processing" : "Gathering";
-  const timeLabel = Number.isFinite(phaseRemaining)
+  const timeLabel = craftWaiting ? "Paused · Missing shared materials: " + craftCosts : Number.isFinite(phaseRemaining)
     ? "Cycle " + formaterTemps(durations.cycle) + " · " + phaseLabel + " " + formaterTemps(phaseRemaining)
     : "Cycle time unavailable";
   const catName = echapperAttributHtml(kitty.nom);
@@ -20194,8 +21809,9 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
     + '>' + kittyIconHtml(kitty) + '</button>';
   return '<article class="camp-production-slot camp-production-slot-active" data-camp-production-slot="'
     + familyId + '-' + slotIdx + '" data-camp-production-recipe="' + echapperAttributHtml(pair.recipeId) + '" data-camp-production-kitty="' + slot.kittyIndex + '" data-camp-production-phase="' + echapperAttributHtml(slot.phase) + '">'
-    + '<header><span>' + echapperAttributHtml(slotLabel) + '</span><strong>Active</strong></header>'
+    + '<header><span>' + echapperAttributHtml(slotLabel) + '</span><strong data-camp-production-state>' + (craftWaiting ? 'Paused' : 'Active') + '</strong></header>'
     + recipeButton
+    + costsHtml
     + '<div class="camp-production-cat-row">'
     + '<div class="camp-production-cat-ring" data-camp-production-ring role="progressbar" aria-label="Full recipe cycle progress for ' + catName + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '" style="--prog:' + progress.overall + '">' + catFace + '</div>'
     + '<span class="camp-production-cat-name">' + catName + '</span>'
@@ -20572,8 +22188,10 @@ function renduCampProductionPanelDynamique(maintenant) {
       : Math.max(0, (1 - progress.gathering) * durations.gathering);
     const time = card.querySelector("[data-camp-production-time]");
     if (time) {
+      const craftWaiting = fabricationAttendMateriaux(pair, slot);
+      ecrireTexte(card.querySelector("[data-camp-production-state]"), craftWaiting ? "Paused" : "Active");
       const phaseLabel = slot.phase === "processing" ? "Processing" : "Gathering";
-      const timeLabel = Number.isFinite(phaseRemaining)
+      const timeLabel = craftWaiting ? "Paused · Missing shared materials: " + pair.inputs.map(function(input) { return input.baseQuantity + " " + input.label; }).join(" + ") : Number.isFinite(phaseRemaining)
         ? "Cycle " + formaterTemps(durations.cycle) + " · " + phaseLabel + " " + formaterTemps(phaseRemaining)
         : "Cycle time unavailable";
       ecrireTexte(time, timeLabel);
@@ -21327,7 +22945,7 @@ function ouvrirWorkDepuisCamp(event) {
   const menu = document.getElementById("camp-prototype-interaction-menu");
   const famille = menu && menu.dataset.workFamily;
   const buildingId = menu && menu.dataset.campBuildingId;
-  if (!["wood", "food", "rock"].includes(famille) || !buildingId) return false;
+  if (!Object.keys(WORK_FAMILIES).includes(famille) || !buildingId) return false;
   if (!campTutorialAutoriserIntent({
     type: "navigation-work", buildingId: buildingId, familyId: famille
   })) return false;
@@ -22040,12 +23658,12 @@ function actualiserStockBoutiqueMarketStall() {
   if (!stock) return;
   stock.querySelectorAll("[data-shop-resource]").forEach(function(entry) {
     const resource = entry.dataset.shopResource;
-    entry.hidden = resource === "cannelleTokens" && niveauCannelleShopOwner() < 10;
+    ecrirePropriete(entry, "hidden", resource === "cannelleTokens" && niveauCannelleShopOwner() < 10);
     if (entry.hidden) return;
     const icon = entry.querySelector("img");
     const source = iconeRessourceCamp(resource);
     if (icon.getAttribute("src") !== source) icon.setAttribute("src", source);
-    icon.alt = libelleRessourceCamp(resource);
+    ecrirePropriete(icon, "alt", libelleRessourceCamp(resource));
     ecrireTexte(entry.querySelector("span"), etat[resource] || 0);
   });
 }
@@ -22763,6 +24381,13 @@ function formaterDureeMinutesCamp(durationSeconds) {
   if (!Number.isFinite(duration) || duration <= 0) return "<1 min";
   if (duration < 60) return "<1 min";
   return Math.ceil(duration / 60) + " min";
+}
+
+function formaterDureePaletteCamp(durationSeconds) {
+  const duration = Number(durationSeconds) || 0;
+  return duration > 0 && duration < 60
+    ? formaterTemps(duration)
+    : Math.round(duration / 60) + " mins";
 }
 
 function campTaskPanelCostEntries(definition) {
@@ -23838,7 +25463,8 @@ function actualiserBadgesAmeliorationCamp() {
     const upgrade = item && item.construit === true
       ? prochaineAmeliorationCamp(item)
       : null;
-    badge.hidden = !ressourcesAmeliorationCampSuffisantes(upgrade);
+    const masque = !ressourcesAmeliorationCampSuffisantes(upgrade);
+    if (badge.hidden !== masque) badge.hidden = masque;
   });
 }
 
@@ -24448,6 +26074,18 @@ function validerDemolitionCampPrototype(uid, targetKind) {
   return true;
 }
 
+// Every Camp countdown below resolves its job from these canonical
+// collections, so none can exist while all of them are empty.
+function campPossedeTacheTemporisee() {
+  const camp = etat.camp || {};
+  const occupee = function(collection) {
+    return Boolean(collection) && typeof collection === "object" && Object.keys(collection).length > 0;
+  };
+  return occupee(camp.repairs) || occupee(camp.upgrades)
+    || occupee(camp.houseConstructions) || occupee(camp.constructions)
+    || campPrototypeDemolitionsActives().length > 0;
+}
+
 function renduCampPrototypeDynamique(maintenant) {
   if ((!DEV_MODE && !campDebloque()) || (document.body.dataset.ongletActif || "gang") !== "camp") return;
   const timestamp = Number.isFinite(maintenant) ? maintenant : Date.now();
@@ -24457,6 +26095,8 @@ function renduCampPrototypeDynamique(maintenant) {
   // This is intentionally cheap direct-DOM work and must not be throttled to
   // the demolition menu's once-per-second cadence.
   campPrototypeDerniereSecondeDemolition = Math.floor(timestamp / 1000);
+  // An idle Camp has no timer to refresh; skip the document scans entirely.
+  if (!campPossedeTacheTemporisee()) return;
   document.querySelectorAll("[data-camp-task-kitty-index]").forEach(function(worker) {
     const kittyIndex = Number(worker.dataset.campTaskKittyIndex);
     const tache = Number.isInteger(kittyIndex) ? tacheTemporeeCampPourKitty(kittyIndex) : null;
@@ -24465,43 +26105,43 @@ function renduCampPrototypeDynamique(maintenant) {
     const focusActive = manualFocusTacheCampActif(tache);
     const focusReserve = focusActive ? synchroniserReserveManualFocus() : 0;
     actualiserFocusVisuelTacheCamp(worker, focusReserve);
-    worker.style.setProperty("--camp-task-progress", (state.progress * 100).toFixed(2) + "%");
-    const timer = worker.querySelector("[data-camp-task-timer]");
-    if (timer) timer.textContent = formaterTemps(tempsRestantTacheCampAffiche(tache, state));
+    ecrireVariableStyle(worker, "--camp-task-progress", (state.progress * 100).toFixed(2) + "%");
+    ecrireTexte(worker.querySelector("[data-camp-task-timer]"),
+      formaterTemps(tempsRestantTacheCampAffiche(tache, state)));
   });
   document.querySelectorAll("[data-camp-repair-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
     const reparation = reparationCampPourBatiment(element.dataset.campRepairTimer);
     if (!reparation) return;
     const restant = Math.max(0, reparation.duree - (timestamp - reparation.startTs) / 1000);
-    element.textContent = formaterTemps(restant);
+    ecrireTexte(element, formaterTemps(restant));
   });
   const repairTimerMenu = document.querySelector("[data-camp-repair-menu-timer]");
   const repairMenu = document.getElementById("camp-prototype-interaction-menu");
   const reparationMenu = repairMenu
     && reparationCampPourBatiment(repairMenu.dataset.campBuildingId);
   if (repairTimerMenu && reparationMenu) {
-    repairTimerMenu.textContent = formaterTemps(Math.max(
+    ecrireTexte(repairTimerMenu, formaterTemps(Math.max(
       0,
       reparationMenu.duree - (timestamp - reparationMenu.startTs) / 1000
-    ));
+    )));
   }
   document.querySelectorAll("[data-camp-upgrade-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
     const amelioration = ameliorationCampPourItem(element.dataset.campUpgradeTimer);
     if (!amelioration) return;
-    element.textContent = formaterTemps(Math.max(
+    ecrireTexte(element, formaterTemps(Math.max(
       0,
       amelioration.duration - (timestamp - amelioration.startTs) / 1000
-    ));
+    )));
   });
   const upgradeTimerMenu = document.querySelector("[data-camp-upgrade-menu-timer]");
   const upgradeMenu = repairMenu && ameliorationCampPourItem(repairMenu.dataset.campUid);
   if (upgradeTimerMenu && upgradeMenu) {
-    upgradeTimerMenu.textContent = formaterTemps(Math.max(
+    ecrireTexte(upgradeTimerMenu, formaterTemps(Math.max(
       0,
       upgradeMenu.duration - (timestamp - upgradeMenu.startTs) / 1000
-    ));
+    )));
   }
   document.querySelectorAll("[data-camp-house-construction-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
@@ -24513,7 +26153,7 @@ function renduCampPrototypeDynamique(maintenant) {
       0,
       construction.duree - (timestamp - construction.startTs) / 1000
     );
-    element.textContent = formaterTemps(restant);
+    ecrireTexte(element, formaterTemps(restant));
   });
   document.querySelectorAll("[data-camp-building-construction-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
@@ -24521,10 +26161,10 @@ function renduCampPrototypeDynamique(maintenant) {
       element.dataset.campBuildingConstructionTimer
     );
     if (!construction) return;
-    element.textContent = formaterTemps(Math.max(
+    ecrireTexte(element, formaterTemps(Math.max(
       0,
       construction.duration - (timestamp - construction.startTs) / 1000
-    ));
+    )));
   });
   document.querySelectorAll("[data-camp-demolition-timer]").forEach(function(element) {
     if (element.matches("[data-camp-task-timer]")) return;
@@ -24534,10 +26174,11 @@ function renduCampPrototypeDynamique(maintenant) {
     );
     if (!demolition) return;
     const restant = Math.max(0, demolition.duree - (timestamp - demolition.startTs) / 1000);
-    element.textContent = formaterTemps(restant);
+    ecrireTexte(element, formaterTemps(restant));
     const cible = element.closest("[data-camp-demolition-label]");
     if (cible) {
-      cible.setAttribute(
+      ecrireAttributDynamique(
+        cible,
         "aria-label",
         cible.dataset.campDemolitionLabel
           + ", demolition in progress, " + formaterTemps(restant) + " remaining"
@@ -24551,10 +26192,10 @@ function renduCampPrototypeDynamique(maintenant) {
     menu.dataset.demolitionTargetKind
   );
   if (timerMenu && demolitionMenu) {
-    timerMenu.textContent = formaterTemps(Math.max(
+    ecrireTexte(timerMenu, formaterTemps(Math.max(
       0,
       demolitionMenu.duree - (timestamp - demolitionMenu.startTs) / 1000
-    ));
+    )));
   }
 }
 
@@ -24765,9 +26406,9 @@ function ajouterJonctionClotureCampPrototype(host, jonction) {
 }
 
 function rendreCloturesCampPrototype(zonesConquises) {
-  const host = document.getElementById("camp-prototype-fences");
-  if (!host) return;
-  host.innerHTML = "";
+  const hostLive = document.getElementById("camp-prototype-fences");
+  if (!hostLive) return;
+  const host = coucheCampHorsDocument(hostLive);
   const edges = aretesCloturesSystemeCampPrototype(zonesConquises)
     .concat(campPrototypeClotures.map(function(edge) { return Object.assign({ system: false }, edge); }));
   const dejaVues = new Set();
@@ -24818,6 +26459,7 @@ function rendreCloturesCampPrototype(zonesConquises) {
   aretesRendues.forEach(function(item) {
     ajouterPremierPlanAreteClotureCampPrototype(host, item.edge, item.type);
   });
+  validerCoucheCampHorsDocument(hostLive, host);
 }
 
 function rendreContinuationCloturesRiveCampPrototype(zonesConquises) {
@@ -24898,14 +26540,39 @@ function actualiserCloturesCampPrototype(zonesConquises) {
   actualiserMasquageJardinsVoisinsCampPrototype();
 }
 
+// Camp structural layers are built off-document, then committed to the live
+// board only when their markup changed (#321). Reopening an unchanged Camp
+// therefore keeps its existing images and layout instead of recreating them.
+// Cat Face framing attributes are applied by js/ui/cat-face-framing.js after
+// insertion and depend on live layout, so they are ignored by the comparison.
+function markupCoucheCampComparable(html) {
+  return String(html)
+    .replace(/\s?cat-face-runtime-framed/g, "")
+    .replace(/ data-cat-face-source="[^"]*"/g, "")
+    .replace(/\s?--cat-face-frame-(?:scale|x|y):\s?[^;"]*;?/g, "")
+    .replace(/ (?:class|style)=""/g, "");
+}
+
+function coucheCampHorsDocument(live) {
+  return live ? document.createElement(live.localName) : null;
+}
+
+function validerCoucheCampHorsDocument(live, horsDocument) {
+  if (!live || !horsDocument) return false;
+  if (markupCoucheCampComparable(live.innerHTML)
+      === markupCoucheCampComparable(horsDocument.innerHTML)) return false;
+  live.replaceChildren.apply(live, Array.from(horsDocument.childNodes));
+  return true;
+}
+
 function rendreTerrainCampPrototype(presencesCamp) {
-  const zones = document.getElementById("camp-prototype-territory-zones");
-  const ground = document.getElementById("camp-prototype-ground");
-  const terrain = document.getElementById("camp-prototype-terrain");
-  if (!zones || !ground || !terrain) return;
-  zones.innerHTML = "";
-  ground.innerHTML = "";
-  terrain.innerHTML = "";
+  const zonesLive = document.getElementById("camp-prototype-territory-zones");
+  const groundLive = document.getElementById("camp-prototype-ground");
+  const terrainLive = document.getElementById("camp-prototype-terrain");
+  if (!zonesLive || !groundLive || !terrainLive) return;
+  const zones = coucheCampHorsDocument(zonesLive);
+  const ground = coucheCampHorsDocument(groundLive);
+  const terrain = coucheCampHorsDocument(terrainLive);
   const presences = presencesCamp || indexerPresencesChatsCamp();
   const zonesConquises = new Set(campPrototypeTerrain.claimedZoneIds);
   const cellulesLibres = new Set(campPrototypeTerrain.clearedCells);
@@ -25075,6 +26742,9 @@ function rendreTerrainCampPrototype(presencesCamp) {
     terrain.appendChild(bouton);
   });
   rendreRecompensesAuSolCampPrototype(terrain, "terrain");
+  validerCoucheCampHorsDocument(zonesLive, zones);
+  validerCoucheCampHorsDocument(groundLive, ground);
+  validerCoucheCampHorsDocument(terrainLive, terrain);
 }
 
 function positionnerActionsPlacementCampPrototype(typeId, x, y, rotation, tier) {
@@ -25537,10 +27207,8 @@ function rendrePaletteCampPrototype() {
           }).join('')
         + '<span aria-hidden="true">·</span><span>1 Cat</span>'
         + '<span aria-hidden="true">·</span><span>'
-        + Math.round(((categorie === "house"
-          ? (devis && devis.duration)
-          : (devis && devis.duration)) || 0) / 60)
-        + " mins</span></span>"
+        + formaterDureePaletteCamp(devis && devis.duration)
+        + "</span></span>"
       : '');
     bouton.addEventListener("click", function() {
       if (categorie === "house" && !maisonCampConstructible(typeId)) {
@@ -26018,11 +27686,15 @@ function coinsPleinsCheminConstruit(type, x, y, contexteRenduRoutes) {
 
 function rendreItemsCampPrototype(presencesCamp) {
   campPrototypeDernierApercuPlacement = null;
-  const conteneur = document.getElementById("camp-prototype-items");
-  const cheminsConteneur = document.getElementById("camp-prototype-paths");
-  const groundingConteneur = document.getElementById("camp-prototype-grounding");
-  const statutsConnexion = document.getElementById("camp-prototype-connectivity-statuses");
-  if (!conteneur) return;
+  const conteneurLive = document.getElementById("camp-prototype-items");
+  const cheminsLive = document.getElementById("camp-prototype-paths");
+  const groundingLive = document.getElementById("camp-prototype-grounding");
+  const statutsLive = document.getElementById("camp-prototype-connectivity-statuses");
+  if (!conteneurLive) return;
+  const conteneur = coucheCampHorsDocument(conteneurLive);
+  const cheminsConteneur = coucheCampHorsDocument(cheminsLive);
+  const groundingConteneur = coucheCampHorsDocument(groundingLive);
+  const statutsConnexion = coucheCampHorsDocument(statutsLive);
   const presences = presencesCamp || indexerPresencesChatsCamp();
   // A normal-view render may happen while the pointer travels from an item to
   // its floating action. Keep that menu alive; Edit mode never exposes it.
@@ -26357,6 +28029,10 @@ function rendreItemsCampPrototype(presencesCamp) {
     }
   });
   rendreRecompensesAuSolCampPrototype(conteneur, "layout");
+  decorerArbreOiseauCamp(conteneur);
+  validerCoucheCampHorsDocument(conteneurLive, conteneur);
+  validerCoucheCampHorsDocument(cheminsLive, cheminsConteneur);
+  validerCoucheCampHorsDocument(groundingLive, groundingConteneur);
   const nouveauPlacement = campPrototypePlacementEnCours
     && campPrototypePlacementEnCours.mode === "new"
     ? campPrototypePlacementEnCours
@@ -26391,6 +28067,7 @@ function rendreItemsCampPrototype(presencesCamp) {
     const ghost = document.getElementById("camp-prototype-ghost");
     if (ghost) ghost.hidden = true;
   }
+  validerCoucheCampHorsDocument(statutsLive, statutsConnexion);
 }
 
 function renduCampPrototype() {
@@ -26478,7 +28155,7 @@ function localisationChatCamp(kittyIndex) {
       return slot && slot.kittyIndex === kittyIndex;
     });
   });
-  const batimentsWork = { wood: "sawmill", food: "catchen", rock: "pawsonry" };
+  const batimentsWork = WORK_BUILDING_BY_FAMILY;
   if (familleRecette && batimentsWork[familleRecette]) {
     return { kind: "type", type: batimentsWork[familleRecette] };
   }
@@ -28435,6 +30112,7 @@ function initialiserCampPrototype() {
   campPrototypeDernierModeMobile = typeof window !== "undefined" && window.innerWidth <= 768;
   chargerCampPrototype();
   campTutorialEnsurerNoeudInterface();
+  monterBrouillardCampWebgl(viewport);
   board.addEventListener("pointerdown", demarrerInteractionCampPrototype);
   board.addEventListener("pointermove", deplacerInteractionCampPrototype);
   board.addEventListener("pointerup", function(event) {
@@ -28474,6 +30152,7 @@ function initialiserCampPrototype() {
   viewport.addEventListener("touchend", terminerPincementCampPrototype);
   viewport.addEventListener("touchcancel", terminerPincementCampPrototype);
   viewport.addEventListener("scroll", function() {
+    signalerDefilementCampPrototype(viewport);
     bornerCameraHorizontaleMobileCampPrototype();
     memoriserAncrageCameraCampPrototype();
     positionnerUiFlottanteCampPrototype();
@@ -28603,12 +30282,12 @@ function changerOnglet(id, options) {
   const estMobile = window.matchMedia("(max-width: 768px)").matches;
   // On mobile, the Gang tab is the list landing view. Returning to it from
   // another tab must not reopen the kitty profile that was previously open.
-  if (id === "gang" && estMobile) {
+  if (id === "gang" && estMobile && !(options && options.preserverContexte)) {
     detailKittyMobileOuvert = false;
   }
   // Explorations is the map landing page on mobile. A zone workspace is
   // temporary, so returning to the tab always starts from the map.
-  if (id === "explorations" && estMobile) {
+  if (id === "explorations" && estMobile && !(options && options.preserverContexte)) {
     explorationMobileVue = "map";
     explorationMobileTypeMission = "campaigns";
   }
@@ -28912,14 +30591,23 @@ function ouvrirSessionMiniJeu(id) {
     document.body.classList.add("mini-game-runtime-active");
     document.body.dataset.activeMiniGame = id;
   }
+  // CSS pause cannot stop animated image decoding. Reconcile the existing
+  // layers once so the static Base owns the scenery during the mini-game.
+  actualiserAnimationsConditionnellesCampPrototype(null, true);
   return true;
+}
+
+function libererAnimationMiniJeu(id, animation) {
+  if (animation.raf !== null) cancelAnimationFrame(animation.raf);
+  animation.raf = null;
+  animation.effets.forEach(function(effet) { effet.cancel(); });
+  animation.effets = [];
+  if (miniJeuRuntime.animations.get(id) === animation) miniJeuRuntime.animations.delete(id);
 }
 
 function arreterAnimationMiniJeu(id) {
   const animation = miniJeuRuntime.animations.get(id);
-  if (!animation) return;
-  if (animation.raf !== null) cancelAnimationFrame(animation.raf);
-  miniJeuRuntime.animations.delete(id);
+  if (animation) libererAnimationMiniJeu(id, animation);
 }
 
 function demarrerAnimationMiniJeu(id, callback) {
@@ -28928,13 +30616,15 @@ function demarrerAnimationMiniJeu(id, callback) {
   const generation = miniJeuRuntime.generation;
   const animation = {
     raf: null,
+    effets: [],
     last: performance.now(),
     layoutVersion: -1
   };
 
   function frame(timestamp) {
+    animation.raf = null;
     if (!miniJeuRuntimeActif(id) || generation !== miniJeuRuntime.generation) {
-      miniJeuRuntime.animations.delete(id);
+      libererAnimationMiniJeu(id, animation);
       return;
     }
     const dt = Math.min(MINI_JEU_FRAME_DT_MAX, Math.max(0, (timestamp - animation.last) / 1000));
@@ -28943,10 +30633,10 @@ function demarrerAnimationMiniJeu(id, callback) {
     animation.layoutVersion = miniJeuRuntime.layoutVersion;
     const continuer = callback(dt, { layoutChanged: layoutChanged, timestamp: timestamp });
     if (continuer === false || !miniJeuRuntimeActif(id) || generation !== miniJeuRuntime.generation) {
-      miniJeuRuntime.animations.delete(id);
+      libererAnimationMiniJeu(id, animation);
       return;
     }
-    animation.raf = requestAnimationFrame(frame);
+    if (miniJeuRuntime.animations.get(id) === animation) animation.raf = requestAnimationFrame(frame);
   }
 
   animation.raf = requestAnimationFrame(frame);
@@ -28989,10 +30679,83 @@ window.addEventListener("pageshow", reinitialiserHorlogesMiniJeux);
 window.addEventListener("focus", reinitialiserHorlogesMiniJeux);
 window.addEventListener("resize", reinitialiserHorlogesMiniJeux, { passive: true });
 
+function transformCurseurMiniJeu(largeurPiste, pourcentage) {
+  const x = Math.max(0, Math.min(100, pourcentage)) / 100 * Math.max(0, largeurPiste || 0);
+  return "translate3d(" + x.toFixed(2) + "px, 0, 0) translateX(-50%)";
+}
+
 function positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage) {
   if (!cursor) return;
-  const x = Math.max(0, Math.min(100, pourcentage)) / 100 * Math.max(0, largeurPiste || 0);
-  cursor.style.transform = "translate3d(" + x.toFixed(2) + "px, 0, 0) translateX(-50%)";
+  cursor.style.transform = transformCurseurMiniJeu(largeurPiste, pourcentage);
+}
+
+// #324: Firefox repaints the whole page whenever script moves a cursor, even through
+// `transform`. A constant-speed cursor is therefore a Web Animations effect the
+// compositor plays. It belongs to the runtime animation `id` (started first), which
+// cancels it with the frame loop; the frame loop reads the position back from the
+// effect's own clock, so the judged position is the displayed one.
+function animerCurseurMiniJeu(id, cursor, options) {
+  const animation = miniJeuRuntime.animations.get(id);
+  const vitesse = Number(options && options.vitesse);
+  if (!animation || !cursor || typeof cursor.animate !== "function" || !(vitesse > 0)) return null;
+  const dureeMs = 100 / vitesse * 1000;
+  const rebond = options.rebond === true;
+  const effet = cursor.animate(options.images(), {
+    duration: dureeMs,
+    iterations: Infinity,
+    direction: rebond ? "alternate" : "normal",
+    easing: "linear"
+  });
+  animation.effets.push(effet);
+  return {
+    pourcentage: function() {
+      const progression = Math.max(0, Number(effet.currentTime) || 0) / dureeMs;
+      const cycle = Math.floor(progression);
+      const fraction = progression - cycle;
+      return (rebond && cycle % 2 === 1 ? 1 - fraction : fraction) * 100;
+    },
+    actualiserImages: function() {
+      if (effet.effect && typeof effet.effect.setKeyframes === "function") effet.effect.setKeyframes(options.images());
+    }
+  };
+}
+
+// Bouncing track cursor (Catch a Cat, Bird). `onFrame(pourcentage)` returns false to
+// stop. Browsers without Web Animations keep the scripted per-frame cursor.
+function animerCurseurPisteMiniJeu(id, cursor, vitesse, onFrame) {
+  const track = cursor ? cursor.closest(".bird-track") : null;
+  let largeurPiste = track ? track.clientWidth : 0;
+  let pourcentage = 0;
+  let direction = 1;
+  let curseur = null;
+  positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage);
+  const demarre = demarrerAnimationMiniJeu(id, function(dt, frameInfo) {
+    if (frameInfo.layoutChanged && track) {
+      largeurPiste = track.clientWidth;
+      if (curseur) curseur.actualiserImages();
+    }
+    if (curseur) {
+      pourcentage = curseur.pourcentage();
+    } else {
+      pourcentage += direction * vitesse * dt;
+      if (pourcentage >= 100) { pourcentage = 100; direction = -1; }
+      if (pourcentage <= 0) { pourcentage = 0; direction = 1; }
+      positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage);
+    }
+    return onFrame(pourcentage);
+  });
+  if (!demarre) return false;
+  curseur = animerCurseurMiniJeu(id, cursor, {
+    vitesse: vitesse,
+    rebond: true,
+    images: function() {
+      return [
+        { transform: transformCurseurMiniJeu(largeurPiste, 0) },
+        { transform: transformCurseurMiniJeu(largeurPiste, 100) }
+      ];
+    }
+  });
+  return true;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -29000,7 +30763,6 @@ function positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage) {
 // ════════════════════════════════════════════════════════════
 
 var _catCatchCursorPct = 0;
-var _catCatchDir = 1;
 var _catCatchActif = false;
 var _catCatchNom = "";
 const CAT_CATCH_SPEEDS = [60, 80, 100];
@@ -29026,7 +30788,6 @@ function ouvrirMiniJeuCatch() {
   _catCatchActif = true;
   renduSequence();
   _catCatchCursorPct = 0;
-  _catCatchDir = 1;
   ouvrirDialogueModal("cat-catch-minijeu", {
     dismissible: true,
     fermer: echouerMiniJeuCatch,
@@ -29034,17 +30795,9 @@ function ouvrirMiniJeuCatch() {
     returnFocusSelector: "#bouton-sequence"
   });
 
-  const cursor = document.getElementById("cat-catch-cursor");
-  const track = cursor ? cursor.closest(".bird-track") : null;
-  let largeurPiste = track ? track.clientWidth : 0;
-  positionnerCurseurMiniJeu(cursor, largeurPiste, _catCatchCursorPct);
-  demarrerAnimationMiniJeu("catch-cat", function(dt, frameInfo) {
+  animerCurseurPisteMiniJeu("catch-cat", document.getElementById("cat-catch-cursor"), vitesseCatch, function(pourcentage) {
     if (!_catCatchActif) return false;
-    if (frameInfo.layoutChanged && track) largeurPiste = track.clientWidth;
-    _catCatchCursorPct += _catCatchDir * vitesseCatch * dt;
-    if (_catCatchCursorPct >= 100) { _catCatchCursorPct = 100; _catCatchDir = -1; }
-    if (_catCatchCursorPct <= 0)   { _catCatchCursorPct = 0;   _catCatchDir =  1; }
-    positionnerCurseurMiniJeu(cursor, largeurPiste, _catCatchCursorPct);
+    _catCatchCursorPct = pourcentage;
     return true;
   });
 }
@@ -29257,6 +31010,16 @@ function scorePurrsuasionV2(quality, cursorPct, targetSize) {
   return 0;
 }
 
+// Splits a round into its two contributions: the dialogue choice and the paw timing.
+// Timing is read on the widest (good-answer) bands so it does not depend on the choice.
+function detailRoundPurrsuasionV2(quality, cursorPct, targetSize) {
+  const timing = scorePurrsuasionV2("good", cursorPct, targetSize);
+  const choice = {good: "Good answer", neutral: "Okay answer"}[quality] || "Weak answer";
+  const timingCopy = ["timing missed", "timing a bit off", "good timing", "perfect timing"][timing];
+  const aligned = (quality === "good") === (timing >= 2);
+  return choice + (aligned ? " and " : ", but ") + timingCopy + ".";
+}
+
 function geometriePurrsuasionV2(quality) {
   if (quality === "good") return {bronze: 1, silver: 0.55, gold: 0.2};
   if (quality === "neutral") return {bronze: 0.55, silver: 0.2, gold: -1};
@@ -29459,10 +31222,14 @@ function fondSegmentPurrsuasionV2(color, portion) {
     + color + " 0deg " + span.toFixed(2) + "deg, transparent " + span.toFixed(2) + "deg 360deg)";
 }
 
+function transformCurseurPurrsuasionV2(pourcentage) {
+  const angle = 180 + Math.max(0, Math.min(100, Number(pourcentage) || 0)) * 3.6;
+  return "translateX(-50%) rotate(" + angle.toFixed(2) + "deg)";
+}
+
 function positionnerCurseurPurrsuasionV2(cursor, pourcentage) {
   if (!cursor) return;
-  const angle = 180 + Math.max(0, Math.min(100, Number(pourcentage) || 0)) * 3.6;
-  cursor.style.transform = "translateX(-50%) rotate(" + angle.toFixed(2) + "deg)";
+  cursor.style.transform = transformCurseurPurrsuasionV2(pourcentage);
 }
 
 function choisirReponsePurrsuasionV2(quality, button) {
@@ -29498,12 +31265,27 @@ function choisirReponsePurrsuasionV2(quality, button) {
     roulette.hidden = false;
   }
   if (stop) stop.hidden = false;
-  positionnerCurseurPurrsuasionV2(document.getElementById("purrsuasion-v2-cursor"), 0);
+  const curseurRoulette = document.getElementById("purrsuasion-v2-cursor");
+  positionnerCurseurPurrsuasionV2(curseurRoulette, 0);
+  let roulement = null;
   demarrerAnimationMiniJeu(_purrsuasionV2.runtimeId, function(dt) {
     if (!_purrsuasionV2 || _purrsuasionV2.phase !== "roulette") return false;
+    if (roulement) {
+      _purrsuasionV2.cursorPct = roulement.pourcentage() % 100;
+      return true;
+    }
     _purrsuasionV2.cursorPct = (_purrsuasionV2.cursorPct + _purrsuasionV2.profile.speed * dt) % 100;
-    positionnerCurseurPurrsuasionV2(document.getElementById("purrsuasion-v2-cursor"), _purrsuasionV2.cursorPct);
+    positionnerCurseurPurrsuasionV2(curseurRoulette, _purrsuasionV2.cursorPct);
     return true;
+  });
+  roulement = animerCurseurMiniJeu(_purrsuasionV2.runtimeId, curseurRoulette, {
+    vitesse: _purrsuasionV2.profile.speed,
+    images: function() {
+      return [
+        { transform: transformCurseurPurrsuasionV2(0) },
+        { transform: transformCurseurPurrsuasionV2(100) }
+      ];
+    }
   });
   if (stop) stop.focus();
 }
@@ -29511,12 +31293,14 @@ function choisirReponsePurrsuasionV2(quality, button) {
 function arreterRoulettePurrsuasionV2() {
   if (!_purrsuasionV2 || _purrsuasionV2.phase !== "roulette") return;
   arreterAnimationMiniJeu(_purrsuasionV2.runtimeId);
+  // The compositor effect is gone; keep the cursor where the player stopped it.
+  positionnerCurseurPurrsuasionV2(document.getElementById("purrsuasion-v2-cursor"), _purrsuasionV2.cursorPct);
   const points = scorePurrsuasionV2(_purrsuasionV2.quality, _purrsuasionV2.cursorPct, _purrsuasionV2.profile.targetSize);
   const tier = points === 3 ? "gold" : points === 2 ? "silver" : points === 1 ? "bronze" : "miss";
-  terminerRoundPurrsuasionV2(tier, points);
+  terminerRoundPurrsuasionV2(tier, points, "", detailRoundPurrsuasionV2(_purrsuasionV2.quality, _purrsuasionV2.cursorPct, _purrsuasionV2.profile.targetSize));
 }
 
-function terminerRoundPurrsuasionV2(tier, points, message) {
+function terminerRoundPurrsuasionV2(tier, points, message, breakdown) {
   if (!_purrsuasionV2 || (_purrsuasionV2.phase !== "answer" && _purrsuasionV2.phase !== "roulette")) return;
   arreterAnimationMiniJeu(_purrsuasionV2.runtimeId);
   _purrsuasionV2.phase = "feedback";
@@ -29535,6 +31319,8 @@ function terminerRoundPurrsuasionV2(tier, points, message) {
   const award = document.getElementById("purrsuasion-v2-award");
   const reward = document.getElementById("purrsuasion-v2-reward");
   if (caption) caption.textContent = {gold: "Great speech!", silver: "Good answer!", bronze: "That could be better.", miss: "That won't convince anyone."}[tier];
+  const breakdownEl = document.getElementById("purrsuasion-v2-breakdown");
+  if (breakdownEl) breakdownEl.textContent = breakdown || "";
   if (callout) callout.hidden = false;
   if (award) award.textContent = "+" + points + " Recruitment";
   if (reward) {
@@ -29649,7 +31435,6 @@ document.addEventListener("keydown", function(event) {
 
 var _birdTimerId        = null;
 var _birdCursorPct      = 0;
-var _birdDir            = 1;
 var _birdMiniJeuPending = false;
 var _birdPresentCamp    = false;
 const BIRD_PITY_REDUCTION_PER_FAIL = 0.05;
@@ -29677,8 +31462,8 @@ function definirPresenceOiseauCamp(present) {
 function arbreAccessibleCamp() {
   const arbre = itemCampPrototypeParType("tree");
   // The first tree is part of the starting Camp layout. Bird scheduling must
-  // not wait for a junk-clear path when that landmark is already present.
-  if (arbre && decorationAccessibleDepuisCamp(arbre)) return true;
+  // not wait for a junk-clear path when that landmark is already present, so a
+  // built tree is enough; a path evaluation could never change this result.
   return Boolean(arbre && arbre.construit !== false);
 }
 
@@ -29696,7 +31481,13 @@ function actualiserIndicateursPremierOiseau() {
   const actif = premierOiseauIndicateursActifs();
   const onglet = document.getElementById("onglet-camp");
   if (onglet) onglet.classList.toggle("camp-tab-bird-attention", actif);
-  const arbre = document.querySelector('.camp-prototype-item[data-camp-type="tree"]');
+  decorerArbreOiseauCamp(document);
+}
+
+// The Garden Tree Bird decoration is applied to the live item and, before the
+// off-document item layer is compared (#321), to its rebuilt copy.
+function decorerArbreOiseauCamp(racine) {
+  const arbre = racine && racine.querySelector('.camp-prototype-item[data-camp-type="tree"]');
   if (arbre) {
     const present = birdPresentCamp();
     if (!arbre.dataset.campBirdBaseLabel) {
@@ -29705,6 +31496,8 @@ function actualiserIndicateursPremierOiseau() {
       arbre.dataset.campBirdBaseControls = arbre.getAttribute("aria-controls") || "";
     }
     arbre.classList.toggle("camp-bird-present", present);
+    arbre.classList.toggle("camp-actionable-attention", present
+      && !_birdMiniJeuPending && !miniJeuRuntimeActif("bird") && !campPrototypeModeEdition);
     if (present) {
       arbre.setAttribute("aria-label", arbre.dataset.campBirdBaseLabel + ", bird waiting, open bird mini-game");
       arbre.setAttribute("aria-haspopup", "dialog");
@@ -29876,9 +31669,9 @@ function appelerProchainOiseau() {
 function demarrerBirdMiniJeu() {
   if (!birdPresentCamp() || !catheringDebloquee() || !arbreAccessibleCamp()) return;
   if (!ouvrirSessionMiniJeu("bird")) return;
+  actualiserIndicateursPremierOiseau();
   var premiere = !etat.birdPremiereReussie;
   _birdCursorPct = 0;
-  _birdDir = 1;
   ouvrirDialogueModal("bird-minijeu", {
     focusSelector: ".bird-catch-btn",
     returnFocusSelector: '[data-camp-type="tree"]'
@@ -29892,6 +31685,8 @@ function demarrerBirdMiniJeu() {
   if (desc) desc.textContent = premiere
     ? "Take your time. Click CATCH! when the cursor reaches the bird. You can try again if you miss."
     : "Click CATCH! when the cursor reaches the bird.";
+  var attemptRule = document.getElementById("bird-attempt-rule");
+  if (attemptRule) attemptRule.textContent = premiere ? "RETRY ALLOWED" : "ONE ATTEMPT";
   var pityEl = document.getElementById("bird-pity");
   var pityCount = Number.isInteger(etat.birdPityEchecs) ? Math.max(0, etat.birdPityEchecs) : 0;
   if (pityEl) {
@@ -29902,16 +31697,8 @@ function demarrerBirdMiniJeu() {
     }
   }
   var speed = premiere ? 35 : 150 * multiplicateurPityOiseau();
-  const cursor = document.getElementById("bird-cursor");
-  const track = cursor ? cursor.closest(".bird-track") : null;
-  let largeurPiste = track ? track.clientWidth : 0;
-  positionnerCurseurMiniJeu(cursor, largeurPiste, _birdCursorPct);
-  demarrerAnimationMiniJeu("bird", function(dt, frameInfo) {
-    if (frameInfo.layoutChanged && track) largeurPiste = track.clientWidth;
-    _birdCursorPct += _birdDir * speed * dt;
-    if (_birdCursorPct >= 100) { _birdCursorPct = 100; _birdDir = -1; }
-    if (_birdCursorPct <= 0)   { _birdCursorPct = 0;   _birdDir =  1; }
-    positionnerCurseurMiniJeu(cursor, largeurPiste, _birdCursorPct);
+  animerCurseurPisteMiniJeu("bird", document.getElementById("bird-cursor"), speed, function(pourcentage) {
+    _birdCursorPct = pourcentage;
     return true;
   });
 }
@@ -29926,6 +31713,7 @@ function ouvrirBirdMiniJeu() {
   if (!storyEstVue("storyBirdVue")) {
     marquerStoryVue("storyBirdVue");
     _birdMiniJeuPending = true;
+    actualiserIndicateursPremierOiseau();
     afficherModal("ecran-story-bird");
     renduStories();
     return true;
@@ -30498,22 +32286,36 @@ function rattraperProgressionAfk() {
   }
 }
 
+function rattraperAbsenceSilencieuse() {
+  if (suspensionAfkConfirmee) return null;
+  const debutAbsence = debutAbsenceSilencieuse(Date.now());
+  if (debutAbsence === null) return null;
+  etat.dernierTimestamp = debutAbsence;
+  return rattraperProgressionAfk();
+}
+
 function sauvegarderAvantSuspension() {
   if (!sauvegardeVerrouillee && !redemarrageMajeurRequis) sauvegarder();
 }
 
 function marquerSuspensionAfk() {
   if (!suspensionAfkConfirmee) {
-    suspensionAfkDebutTs = Date.now();
+    const maintenant = Date.now();
+    // A hidden signal delivered only after a silent sleep still owns that
+    // earlier unsimulated interval instead of letting timers absorb it.
+    const debutSilencieux = debutAbsenceSilencieuse(maintenant);
+    suspensionAfkDebutTs = debutSilencieux !== null ? debutSilencieux : maintenant;
     suspensionAfkConfirmee = true;
   }
   sauvegarderAvantSuspension();
 }
 
 function rattraperApresSuspensionAfk() {
+  // A return signal without a preceding suspension may still follow a silent
+  // sleep; reconcile it before the Bird or any render reads wall-clock timers.
+  if (!suspensionAfkConfirmee) return rattraperAbsenceSilencieuse();
   if (
-    !suspensionAfkConfirmee
-    || rattrapageAfkEnCours
+    rattrapageAfkEnCours
     || sauvegardeVerrouillee
     || redemarrageMajeurRequis
   ) return null;
@@ -30547,7 +32349,8 @@ window.addEventListener("pageshow", function() {
 
 // Some mobile browsers restore focus without dispatching pageshow. Focus alone
 // is not an AFK signal: it may also follow a full-screen in-page overlay such
-// as temporary Camp placement. Only a preceding hidden/pagehide/freeze event authorizes the
+// as temporary Camp placement. Only a preceding hidden/pagehide/freeze event,
+// or an interval in which ticks genuinely did not run, authorizes the
 // catch-up, so visible gameplay always stays at full active speed.
 window.addEventListener("focus", function() {
   if (document.visibilityState !== "hidden") {

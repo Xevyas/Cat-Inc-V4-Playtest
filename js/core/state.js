@@ -199,12 +199,13 @@ function creerEtatInitial() {
   sequenceEnCours:         false,
   sequenceDebutTs:         0,
   sequenceDuree:           0,
-  // Raw catch-time already consumed by the active cycle. The last two fields
-  // let the browser integrate speed changes as segments instead of applying
-  // a newly-built house to time that was consumed before it existed.
+  // Raw catch-time already consumed by the active cycle. The last update time
+  // lets the browser integrate speed changes as segments instead of applying
+  // a newly-built house to time that was consumed before it existed. The live
+  // segment speed (`sequenceVitesseDerniere`) is runtime-only: it can include
+  // DEV debug speed, so it is derived when absent and never saved.
   sequenceProgressBrute:    0,
   sequenceDerniereMajTs:   0,
-  sequenceVitesseDerniere: 1,
   prochainVisageChaton:    null,
   randomCatFaceRotationUsedIds: [],
   clicCount:               0,
@@ -243,6 +244,9 @@ function creerEtatInitial() {
 
   // Two recipe slots per family replace the former independent workers.
   workRecipeSlots: {
+    forge: makeWorkRecipeSlots(2),
+    metal: makeWorkRecipeSlots(2),
+    leather: makeWorkRecipeSlots(2),
     wood: makeWorkRecipeSlots(2),
     food: makeWorkRecipeSlots(2),
     rock: makeWorkRecipeSlots(2)
@@ -267,6 +271,9 @@ function creerEtatInitial() {
   laboratoryDebloque:       false,
   laboratoryConstruit:      false,
   engineerRankUpgradesDebloques: false,
+  equipmentStock: {}, // Unassigned crafted items; equipped items live on Cats.
+  combatTraining:     null,   // { kittyIndex }; progress lives only on the Cat.
+  hollowTreeEncounter: null, // Starting combat stats + elapsed seconds, including an unclaimed result.
   formationEnCours:    null,   // { kittyIndex, metier, startTs, duree }
   formationIngenieurEnCours: null, // { kittyIndex, metier, startTs, duree }
   // Daily quests unlocked by learning The Daily Purpose. The date key is
@@ -339,4 +346,216 @@ function creerEtatInitial() {
     creerEtatInitial: creerEtatInitial,
     remplacerEtat: remplacerEtat
   });
+})(typeof window !== "undefined" ? window : globalThis);
+
+(function(root) {
+  "use strict";
+  const CatInc = root.CatInc = root.CatInc || {};
+  const slots = Object.freeze(["weapon", "protection"]);
+  function definitions() { return CatInc.data.campGameplay.equipment || {}; }
+  function definition(id) {
+    return Object.prototype.hasOwnProperty.call(definitions(), id) ? definitions()[id] : null;
+  }
+  function stock(state, id) {
+    const count = state && state.equipmentStock && state.equipmentStock[id];
+    return Number.isSafeInteger(count) && count >= 0 ? count : 0;
+  }
+  function inputsAvailable(state, recipe) {
+    return !!recipe && recipe.mode === "craft" && Array.isArray(recipe.inputs) && recipe.inputs.length > 0
+      && recipe.inputs.every(function(input) {
+        const resource = CatInc.resources.definition(input.resourceId);
+        return resource && resource.storageMode === "camp-storage"
+          && Number.isFinite(input.quantity) && input.quantity > 0
+          && CatInc.resources.balance(state, input.resourceId) >= input.quantity;
+      });
+  }
+  // The completion transaction owns both the debit and the one delivered item.
+  // Resetting progress here also makes a repeated completion a no-op.
+  function completeCraft(state, slot) {
+    const recipe = slot && CatInc.data.campGameplay.workRecipes[slot.recipeId];
+    const item = recipe && recipe.mode === "craft" && recipe.output && definition(recipe.output.equipmentId);
+    if (!item || !state || !slot || !Number.isInteger(slot.kittyIndex)
+        || !state.kittiesData[slot.kittyIndex] || slot.phase !== "processing"
+        || !Number.isFinite(slot.phaseProgress) || slot.phaseProgress !== 1 || !inputsAvailable(state, recipe)
+        || stock(state, recipe.output.equipmentId) >= Number.MAX_SAFE_INTEGER) return false;
+    recipe.inputs.forEach(function(input) {
+      CatInc.resources.debit(state, input.resourceId, input.quantity);
+    });
+    if (!state.equipmentStock) state.equipmentStock = {};
+    state.equipmentStock[recipe.output.equipmentId] = stock(state, recipe.output.equipmentId) + 1;
+    slot.phaseProgress = 0;
+    return true;
+  }
+  function equip(state, kittyIndex, id) {
+    const kitty = Number.isInteger(kittyIndex) && state.kittiesData[kittyIndex];
+    const item = definition(id);
+    if (!kitty || kitty.metier !== "fighter" || !item || stock(state, id) < 1
+        || (CatInc.combat && CatInc.combat.occupies(state, kittyIndex))) return false;
+    const held = kitty.equipment && kitty.equipment[item.slot];
+    if (held === id || (held && (!definition(held) || definition(held).slot !== item.slot
+        || stock(state, held) >= Number.MAX_SAFE_INTEGER))) return false;
+    if (!kitty.equipment) kitty.equipment = {};
+    state.equipmentStock[id] = stock(state, id) - 1;
+    if (held) state.equipmentStock[held] = stock(state, held) + 1;
+    kitty.equipment[item.slot] = id;
+    return true;
+  }
+  function unequip(state, kittyIndex, slot) {
+    const kitty = Number.isInteger(kittyIndex) && state.kittiesData[kittyIndex];
+    const id = kitty && kitty.equipment && kitty.equipment[slot];
+    if (!slots.includes(slot) || !definition(id) || stock(state, id) >= Number.MAX_SAFE_INTEGER
+        || (CatInc.combat && CatInc.combat.occupies(state, kittyIndex))) return false;
+    if (!state.equipmentStock) state.equipmentStock = {};
+    state.equipmentStock[id] = stock(state, id) + 1;
+    delete kitty.equipment[slot];
+    return true;
+  }
+  function bonuses(kitty) {
+    const result = {attack: 0, defense: 0};
+    if (!kitty || kitty.metier !== "fighter") return result;
+    slots.forEach(function(slot) {
+      const item = definition(kitty.equipment && kitty.equipment[slot]);
+      if (item && item.slot === slot) {
+        result.attack += item.attack;
+        result.defense += item.defense;
+      }
+    });
+    return result;
+  }
+  CatInc.equipment = Object.freeze({slots, definitions, definition, stock, inputsAvailable, completeCraft, equip, unequip, bonuses});
+})(typeof window !== "undefined" ? window : globalThis);
+
+(function(root) {
+  "use strict";
+  const CatInc = root.CatInc = root.CatInc || {};
+  function config() { return CatInc.data.config.CONFIG.hollowTreeCombat; }
+  // Saves created before enemy snapshots keep their original encounter,
+  // including a pending victory. New balance applies only to new attempts.
+  const legacyEnemyStats = Object.freeze({hp:36, attack:7, defense:1, attackSeconds:2.5});
+  function enemyStats() {
+    const enemy = config().enemy;
+    return {hp:enemy.hp, attack:enemy.attack, defense:enemy.defense, attackSeconds:enemy.attackSeconds};
+  }
+  const cached = new WeakMap();
+  function learned(state) { return state.itemsAppris.includes(config().rewardId); }
+  function trainingCap(state) {
+    return learned(state) ? config().advancedMaxLevel : CatInc.data.config.CONFIG.combatTraining.beginnerMaxLevel;
+  }
+  function snapshot(state, kittyIndex) {
+    const kitty = state.kittiesData[kittyIndex];
+    const level = kitty.combatProgress.level;
+    const equipment = CatInc.equipment.bonuses(kitty);
+    return { kittyIndex: kittyIndex, jobId: kitty.metier,
+      maxHp: config().fighter.baseHp + config().fighter.hpPerLevel * (level - 1),
+      attack: config().fighter.baseAttack + level + equipment.attack
+        + CatInc.perksV2.combatAttackBonus(state.perksV2, kitty.metier),
+      defense: config().fighter.defense + equipment.defense,
+      attackSeconds: config().fighter.attackSeconds,
+      powerStrike: CatInc.perksV2.combatAttackMultiplier(state.perksV2, kitty.metier, 3) };
+  }
+  // Replay the small deterministic encounter from its immutable starting stats.
+  // Only elapsed simulated seconds and explicit abandonment are saved: HP,
+  // attack counts, occupation and the result are derived from the same attempt.
+  function result(attempt) {
+    if (!attempt) return null;
+    const prior = cached.get(attempt);
+    if (prior && prior.elapsed === attempt.elapsed && prior.abandoned === attempt.abandoned) return prior.value;
+    const fighters = attempt.fighters.map(function(f) { return Object.assign({}, f, { hp: f.maxHp, attacks: 0 }); });
+    const stats = attempt.enemyStats || legacyEnemyStats;
+    const enemy = Object.assign({}, config().enemy, stats, { maxHp: stats.hp, attacks: 0 });
+    // `events` lists every hit of the latest resolved instant, so simultaneous
+    // attacks all stay visible; `last` remains the final one of them.
+    let time = 0, outcome = "running", last = null, events = [];
+    // Each successful hit does at least one damage. Even the minimum-strength
+    // team resolves this first encounter well before the bounded save horizon.
+    while (outcome === "running") {
+      const alive = fighters.filter(function(f) { return f.hp > 0; });
+      const next = Math.min(enemy.attackSeconds * (enemy.attacks + 1),
+        ...alive.map(function(f) { return f.attackSeconds * (f.attacks + 1); }));
+      if (next > attempt.elapsed + 1e-9) break;
+      time = next;
+      events = [];
+      // Equal-time attacks resolve in stable team order, followed by the enemy.
+      alive.forEach(function(f) {
+        if (enemy.hp <= 0 || f.attackSeconds * (f.attacks + 1) > next + 1e-9) return;
+        f.attacks++;
+        const power = f.attacks % 3 === 0 ? f.powerStrike : 1;
+        const damage = Math.max(1, Math.round(Math.max(1, f.attack - enemy.defense) * power));
+        enemy.hp = Math.max(0, enemy.hp - damage);
+        last = { at: time, source: f.kittyIndex, target: "enemy", damage: damage, power: power > 1 };
+        events.push(last);
+      });
+      if (enemy.hp === 0) { outcome = "won"; break; }
+      if (enemy.attackSeconds * (enemy.attacks + 1) <= next + 1e-9) {
+        enemy.attacks++;
+        const target = fighters.find(function(f) { return f.hp > 0; });
+        const damage = Math.max(1, enemy.attack - target.defense);
+        target.hp = Math.max(0, target.hp - damage);
+        last = { at: time, source: "enemy", target: target.kittyIndex, damage: damage, power: false };
+        events.push(last);
+      }
+      if (fighters.every(function(f) { return f.hp === 0; })) outcome = "lost";
+    }
+    if (outcome === "running" && attempt.abandoned === true) outcome = "abandoned";
+    const value = { outcome: outcome, fighters: fighters, enemy: enemy, last: last, events: events,
+      elapsed: outcome === "running" ? attempt.elapsed : time };
+    cached.set(attempt, { elapsed: attempt.elapsed, abandoned: attempt.abandoned, value: value });
+    return value;
+  }
+  function occupies(state, kittyIndex) {
+    const attempt = state.hollowTreeEncounter;
+    return !!(attempt && attempt.fighters.some(function(f) { return f.kittyIndex === kittyIndex; })
+      && result(attempt).outcome === "running");
+  }
+  function advance(state, dt) {
+    const attempt = state.hollowTreeEncounter;
+    if (!attempt || !Number.isFinite(dt) || dt <= 0 || result(attempt).outcome !== "running") return false;
+    attempt.elapsed = Math.min(3600, attempt.elapsed + dt);
+    const resolved = result(attempt);
+    if (resolved.outcome === "running") return false;
+    attempt.elapsed = resolved.elapsed;
+    return true;
+  }
+  function claim(state) {
+    const resolved = result(state.hollowTreeEncounter);
+    if (!resolved || resolved.outcome === "running") return false;
+    if (resolved.outcome === "won" && !learned(state)) {
+      if (!state.itemsAcquis.includes(config().rewardId)) state.itemsAcquis.push(config().rewardId);
+      state.itemsAppris.push(config().rewardId);
+    }
+    state.hollowTreeEncounter = null;
+    return true;
+  }
+  function validate(attempt, kitties) {
+    if (attempt === undefined || attempt === null) return true;
+    if (typeof attempt !== "object" || Array.isArray(attempt)
+        || Object.keys(attempt).some(function(k) { return !["elapsed", "fighters", "abandoned", "enemyStats"].includes(k); })
+        || !Number.isFinite(attempt.elapsed) || attempt.elapsed < 0 || attempt.elapsed > 3600
+        || (attempt.abandoned !== undefined && attempt.abandoned !== true)
+        || !Array.isArray(attempt.fighters) || !attempt.fighters.length) return false;
+    const stats = attempt.enemyStats;
+    if (stats !== undefined && (!stats || typeof stats !== "object" || Array.isArray(stats)
+        || Object.keys(stats).length !== 4
+        || !Number.isInteger(stats.hp) || stats.hp < 1 || stats.hp > 1000
+        || !Number.isInteger(stats.attack) || stats.attack < 1 || stats.attack > 100000
+        || !Number.isInteger(stats.defense) || stats.defense < 0 || stats.defense > 100000
+        || !Number.isFinite(stats.attackSeconds) || stats.attackSeconds < .1 || stats.attackSeconds > 60)) return false;
+    const combatJobs = Object.keys(CatInc.data.content.METIERS).filter(function(id) { return CatInc.data.content.METIERS[id].combat; });
+    if (attempt.fighters.length > combatJobs.length) return false;
+    const seenCats = new Set(), seenJobs = new Set();
+    return attempt.fighters.every(function(f) {
+      if (!f || typeof f !== "object" || Array.isArray(f)
+          || Object.keys(f).length !== 7
+          || !Number.isInteger(f.kittyIndex) || f.kittyIndex < 0 || !kitties[f.kittyIndex]
+          || seenCats.has(f.kittyIndex) || !combatJobs.includes(f.jobId) || seenJobs.has(f.jobId)
+          || !Number.isInteger(f.maxHp) || f.maxHp < 1 || f.maxHp > 100000
+          || !Number.isInteger(f.attack) || f.attack < 1 || f.attack > 200000
+          || !Number.isInteger(f.defense) || f.defense < 0 || f.defense > 100000
+          || f.attackSeconds !== config().fighter.attackSeconds || ![1, 1.5].includes(f.powerStrike)) return false;
+      seenCats.add(f.kittyIndex); seenJobs.add(f.jobId);
+      return true;
+    });
+  }
+  CatInc.combat = Object.freeze({ learned: learned, trainingCap: trainingCap, enemyStats: enemyStats,
+    snapshot: snapshot, result: result, occupies: occupies, advance: advance, claim: claim, validate: validate });
 })(typeof window !== "undefined" ? window : globalThis);

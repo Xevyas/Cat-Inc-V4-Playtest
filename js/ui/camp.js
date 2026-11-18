@@ -813,6 +813,20 @@
       asset: "img/Maps/Camp%20Runtime/Paths/Basic%20Trail_Camp_TopDown_Watercolor_Game_v1.png?v=0.0001"
     })
   };
+  // New constructed workshops use only their canonical Live Studio visuals.
+  Object.entries(GAMEPLAY_MANIFEST.definitions || {}).forEach(function(entry) {
+    const typeId = entry[0], definition = entry[1];
+    if (BASE_ITEM_TYPES[typeId] || definition.category !== "production-building"
+        || !definition.build || definition.build.entryMode !== "build") return;
+    if (!Object.values(RUNTIME_MANIFEST.assets || {}).some(function(asset) {
+      return asset.assetId === definition.assetId;
+    })) return;
+    BASE_ITEM_TYPES[typeId] = gameplayRuntimeItem(typeId, {
+      id: typeId, label: definition.name,
+      width: definition.footprint.width, height: definition.footprint.height,
+      category: "building", rotatable: true, blocksMovement: true, access: []
+    });
+  });
   const LEGACY_TYPE_ALIASES = Object.freeze({
     kitchen: "catchen"
   });

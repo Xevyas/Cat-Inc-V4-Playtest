@@ -230,12 +230,12 @@ body.camp-prototype-editing .camp-prototype-item-masked-hit .camp-prototype-item
   inset: -22%;
   border: 4px solid rgba(255, 237, 156, .96);
   box-shadow: 0 0 0 8px rgba(255, 245, 199, .25), 0 0 34px rgba(255, 224, 111, .94);
-  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+  animation: camp-task-ready-pulse 1.15s steps(10) infinite;
 }
 .camp-quick-dialogue-tutorial-gate > button::after {
   inset: -42%;
   background: radial-gradient(circle, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
-  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-task-ready-glow 1.15s steps(10) infinite alternate;
 }
 .camp-supervisor-bernardo {
   position: absolute;
@@ -348,7 +348,7 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
   border: 4px solid rgba(255, 237, 156, .96);
   border-radius: 50%;
   box-shadow: 0 0 0 10px rgba(255, 245, 199, .25), 0 0 42px rgba(255, 224, 111, .94);
-  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+  animation: camp-task-ready-pulse 1.15s steps(10) infinite;
   pointer-events: none;
 }
 .camp-recruit-visitor-ready .camp-recruit-visitor-portrait::after {
@@ -358,11 +358,10 @@ body.camp-cat-icons-hidden .camp-supervisor-bernardo {
   z-index: 0;
   border-radius: 50%;
   background: radial-gradient(circle, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
-  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-task-ready-glow 1.15s steps(10) infinite alternate;
   pointer-events: none;
 }
-.camp-recruit-visitor-ready img,
-.camp-recruit-visitor-ready .camp-recruit-visitor-question {
+.camp-recruit-visitor-ready img {
   position: relative;
   z-index: 1;
 }
@@ -705,9 +704,13 @@ body.camp-prologue-reveal .camp-prototype-map {
   border: 4px solid rgba(255, 237, 156, .96);
   border-radius: 12px;
   box-shadow: 0 0 0 6px rgba(255, 245, 199, .25), 0 0 24px rgba(255, 224, 111, .94);
-  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+  animation: camp-task-ready-pulse 1.15s steps(10) infinite;
   pointer-events: none;
 }
+/* #339: any continuous animation makes Firefox composite the whole page on
+   every display refresh, even for opacity on the compositor (idle Camp about
+   57% of one core, 3% with these loops paused). The ready pulse and glow keep
+   their range and duration but advance in 10 paced steps per segment. */
 @keyframes camp-task-ready-pulse {
   0% { opacity: 1; }
   72%, 100% { opacity: .2; }
@@ -723,9 +726,11 @@ body.camp-prologue-reveal .camp-prototype-map {
   .camp-recruit-visitor-ready .camp-recruit-visitor-portrait::after,
   .camp-guided-junk-target::before,
   .camp-guided-junk-target::after,
+  .camp-actionable-attention::before,
+  .camp-actionable-attention::after,
   .camp-quick-dialogue-tutorial-gate > button::before,
   .camp-quick-dialogue-tutorial-gate > button::after {
-    animation: none;
+    animation: none !important;
   }
 }
 .camp-task-worker-timer {
@@ -1359,6 +1364,10 @@ body {
   outline-offset: 2px;
 }
 .work-recipe-resource img { width: 48px; height: 48px; object-fit: contain; }
+.work-craft-input { display: grid; justify-items: center; gap: 4px; min-width: 0; }
+.equipment-item-icon { width: 48px; height: 48px; object-fit: contain; }
+.equipment-item-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block: 8px; }
+.equipment-item-actions span { flex: 1 1 180px; }
 .work-recipe-resource::before {
   position: absolute;
   inset: 0;
@@ -2043,13 +2052,18 @@ body {
   white-space: nowrap;
 }
 /* Mini-games own the foreground. Pause expensive animated scenery behind
-   their translucent overlays, especially for iOS WebKit browsers. */
+   their translucent overlays, especially for iOS WebKit browsers. The WebGL
+   map fog pauses itself on the same body class. */
 body.mini-game-runtime-active .carte-fog-global-track,
 body.mini-game-runtime-active .carte-fog-secondary-track,
 body.mini-game-runtime-active .camp-prototype-neighbor-fog-visual::before,
 body.mini-game-runtime-active .camp-prototype-neighbor-fog-visual::after,
 body.mini-game-runtime-active .sphere-fog-primary-track,
 body.mini-game-runtime-active .sphere-fog-secondary-track,
+body.mini-game-runtime-active #contenu-camp,
+body.mini-game-runtime-active #contenu-camp *,
+body.mini-game-runtime-active #contenu-camp *::before,
+body.mini-game-runtime-active #contenu-camp *::after,
 body.mini-game-runtime-active .work-manual-focus-active::after {
   animation-play-state: paused !important;
 }
@@ -2381,6 +2395,8 @@ body[data-ui-theme="stylish"] #contenu-gang #detail-experience .barre {
   pointer-events: none;
 }
 .purrsuasion-v2-callout[hidden] { display: none; }
+.purrsuasion-v2-breakdown { display: block; margin-top: 4px; font-size: .72em; font-weight: 800; }
+.purrsuasion-v2-breakdown:empty { display: none; }
 .purrsuasion-v2-reward {
   display: block;
   width: max-content;
@@ -2930,8 +2946,16 @@ body[data-ui-theme="stylish"] #contenu-gang #detail-experience .barre {
   touch-action: pan-x pan-y;
 }
 .sphere-tree-viewport.sphere-fog-motion::before {
-  animation: sphere-viewport-fog-drift 90s linear infinite alternate;
+  /* #326: paced like the #323 drifts; steps stay under 1 px on desktop. */
+  animation: sphere-viewport-fog-drift 90s steps(180) infinite alternate;
   will-change: transform;
+}
+/* #338: the shared WebGL fog canvas replaces the CSS layer once it has the art. */
+.sphere-tree-viewport.sphere-fog-webgl::before {
+  content: none;
+}
+.sphere-tree-viewport > .fog-layer-canvas {
+  z-index: 0;
 }
 @keyframes sphere-viewport-fog-drift {
   from { transform: translate3d(-5%, 0, 0); }
@@ -3816,7 +3840,9 @@ body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
   color: #a56a16;
   background: rgba(232, 184, 63, .2);
   box-shadow: inset 0 0 0 2px rgba(231, 174, 44, .55), 0 0 12px rgba(231, 174, 44, .48);
-  animation: camp-bird-tab-pulse 2.8s ease-in-out infinite;
+  /* #326: filter pulses repaint the tab on every frame; 8 paced steps per
+     half-cycle keep the same brightness range at about 6 repaints a second. */
+  animation: camp-bird-tab-pulse 2.8s steps(8) infinite;
 }
 @keyframes camp-bird-tab-pulse {
   0%, 100% { filter: brightness(1); }
@@ -4524,6 +4550,16 @@ body:not(.camp-appeal-unlocked) .appeal-only { display: none !important; }
   background: #d8ccb9;
   isolation: isolate;
   scrollbar-width: thin;
+  /* #322: on low-DPI desktop Chrome keeps this scroller on the main thread
+     (LCD-text preference), repainting and re-rasterizing the whole visible
+     board every scroll frame. Composited scrolling keeps zoomed panning smooth. */
+  will-change: scroll-position;
+}
+/* #322: set by the viewport scroll listener for the active gesture only. */
+.camp-prototype-viewport.camp-prototype-scrolling *,
+.camp-prototype-viewport.camp-prototype-scrolling *::before,
+.camp-prototype-viewport.camp-prototype-scrolling *::after {
+  animation-play-state: paused;
 }
 .camp-prototype-map {
   position: relative;
@@ -4908,28 +4944,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   box-shadow: 0 3px 8px rgba(49, 32, 19, .28);
   object-fit: cover;
 }
-.camp-recruit-visitor-question {
-  position: absolute;
-  left: calc(50% + clamp(15px, 1.7vw, 22px));
-  top: clamp(-8px, -.5vw, -4px);
-  display: none;
-  place-items: center;
-  width: clamp(18px, 1.8vw, 25px);
-  aspect-ratio: 1;
-  border: 2px solid #fff9ed;
-  border-radius: 50%;
-  background: #c35b2c;
-  color: #fff9ed;
-  box-shadow: 0 3px 7px rgba(49, 32, 19, .34);
-  font-size: clamp(.72rem, 1.1vw, 1rem);
-  font-weight: 1000;
-  line-height: 1;
-  pointer-events: none;
-}
-.camp-recruit-visitor-arrived .camp-recruit-visitor-question {
-  display: grid;
-  animation: camp-recruit-question-pop .38s cubic-bezier(.2, .85, .25, 1.25) both;
-}
 .camp-recruit-capacity-message {
   position: absolute;
   left: 50%;
@@ -4951,10 +4965,6 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   pointer-events: none;
 }
 .camp-recruit-capacity-message[hidden] { display: none; }
-@keyframes camp-recruit-question-pop {
-  from { opacity: 0; transform: translateY(4px) scale(.65); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 .camp-prototype-map-preparing {
   visibility: hidden;
 }
@@ -5022,7 +5032,7 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   display: block;
   width: 32%;
   height: 42%;
-  background: url("img/Buildings/Camp%20Runtime/junk-flower-bush/tier-1/revision-3/down.png") center bottom / contain no-repeat;
+  background: url("img/Buildings/Camp%20Runtime/junk-flower-bush/tier-1/revision-3/down.webp") center bottom / contain no-repeat;
 }
 .camp-prototype-shrub-left {
   left: 8%;
@@ -5095,12 +5105,21 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
 .camp-prototype-neighbor-fog-visual::before {
   inset: -10%;
   opacity: .9;
-  animation: camp-neighbor-fog-drift-primary 32s linear infinite alternate;
+  /* #323: Firefox repaints the whole page on every frame this drift moves, even
+     when it reports the animation as composited. Paced steps of under 1 px at
+     zoom 3 (8 per second) keep the drift visually continuous at a fraction of
+     the paint cost. */
+  animation: camp-neighbor-fog-drift-primary 32s steps(256) infinite alternate;
 }
 .camp-prototype-neighbor-fog-visual::after {
   inset: -16%;
   opacity: .32;
-  animation: camp-neighbor-fog-drift-secondary 47s linear -19s infinite alternate-reverse;
+  animation: camp-neighbor-fog-drift-secondary 47s steps(376) -19s infinite alternate-reverse;
+}
+/* #337: the shared WebGL fog canvas draws both layers once it has the art. */
+.camp-prototype-neighbor-fog-visual.camp-fog-webgl::before,
+.camp-prototype-neighbor-fog-visual.camp-fog-webgl::after {
+  content: none;
 }
 .camp-prototype-neighbor-fog-red {
   left: 0;
@@ -5256,7 +5275,8 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   width: clamp(22px, 3.8%, 32px);
   border-width: 3px;
   box-shadow: 0 0 0 3px rgba(255, 224, 122, .55), 0 2px 7px rgba(52, 43, 26, .3);
-  animation: camp-first-box-access-pulse 1.25s ease-in-out infinite;
+  /* #339: paced like the ready pulse; 8 steps per half-cycle. */
+  animation: camp-first-box-access-pulse 1.25s steps(8) infinite;
 }
 @keyframes camp-first-box-access-pulse {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
@@ -6492,7 +6512,9 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   object-fit: contain;
   pointer-events: none;
   transform-origin: 50% 75%;
-  animation: camp-sleep-bubble-rise var(--camp-sleep-duration, 5s) ease-out
+  /* #339: paced (see camp-task-ready-pulse): about 13 steps a second while the
+     bubble rises, then 8 for the pop. Same path, scale, fade and duration. */
+  animation: camp-sleep-bubble-rise var(--camp-sleep-duration, 5s) steps(30)
     var(--camp-sleep-delay-a, 0s) infinite;
 }
 .camp-sleep-stream img:nth-child(2) {
@@ -6510,6 +6532,7 @@ body.camp-prototype-editing .camp-prototype-obstacle {
   43% {
     opacity: .9;
     transform: translate(var(--camp-sleep-drift, 3px), -76%) scale(1.08);
+    animation-timing-function: steps(8);
   }
   54% {
     opacity: 0;
@@ -11320,14 +11343,20 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   width: 30px;
   height: 30px;
   padding: 4px;
-  object-fit: contain;
-  object-position: center;
+  overflow: hidden;
   transform: translate(-50%, -50%);
   background: #fffaf4;
   border: 2px solid var(--couleur-verte);
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(65, 42, 22, 0.24);
   transition: left 0.5s linear;
+}
+.inv-learning-marker > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 /* Resources grid (inventory) */
@@ -11449,6 +11478,217 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
 .barre-explo { background: #6b3fa0; }
 
 /* ── Carte d'exploration ──────────────────────────────────*/
+.exploration-region-navigation {
+  grid-column: 1 / -1;
+}
+.exploration-view-buttons { display: flex; flex-wrap: wrap; gap: var(--runtime-space-1); }
+.exploration-region-navigation button:disabled { opacity: .55; cursor: default; }
+.exploration-region-navigation button[hidden] { display: none; }
+#exploration-activities { grid-column: 1 / -1; min-width: 0; }
+#exploration-activities[hidden] { display: none; }
+.exploration-view-title {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+.exploration-activity-section + .exploration-activity-section { margin-top: var(--runtime-space-4); }
+.exploration-activity-section-title {
+  margin: 0; padding-bottom: var(--runtime-space-1); border-bottom: 2px solid #e4d9bd;
+  font-size: var(--font-size-action); font-weight: var(--font-weight-title);
+}
+.exploration-activity-section > summary { display: flex; align-items: center; gap: var(--runtime-space-2); cursor: pointer; list-style: none; }
+.exploration-activity-section > summary::-webkit-details-marker { display: none; }
+.exploration-activity-section > summary::before {
+  content: ""; flex: 0 0 auto; width: 0; height: 0; margin-bottom: var(--runtime-space-1);
+  border-block: 5px solid transparent; border-inline-start: 7px solid currentColor; transition: transform .15s ease;
+}
+.exploration-activity-section[open] > summary::before { transform: rotate(90deg); }
+.exploration-activity-section > summary > .exploration-activity-section-title { flex: 1 1 auto; }
+.exploration-activity-section > summary:focus-visible { outline: 3px solid rgba(212, 98, 42, .48); outline-offset: 2px; border-radius: 4px; }
+.exploration-activity-region-title { margin: var(--runtime-space-3) 0 0; color: var(--couleur-discrete); }
+.exploration-activity {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(110px, .7fr) minmax(150px, .8fr) 72px;
+  align-items: center;
+  column-gap: var(--runtime-space-4);
+  padding: var(--runtime-space-3) 0; border-bottom: 1px solid #e4d9bd;
+}
+.exploration-activity > div { min-width: 0; }
+.exploration-activity :is(h4,p) { margin: 0; }
+.exploration-activity-identity p { margin-top: var(--runtime-space-1); color: var(--couleur-discrete); }
+.exploration-activity-identity :is(h4,p) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exploration-activity-cats { display: flex; flex-wrap: wrap; align-items: center; gap: var(--runtime-space-2); }
+.exploration-activity-cat { display: inline-flex; align-items: center; gap: var(--runtime-space-1); min-width: 0; }
+.exploration-activity-cat > .text-secondary { overflow-wrap: anywhere; }
+.exploration-activity-progress { display: grid; gap: var(--runtime-space-1); font-variant-numeric: tabular-nums; }
+.exploration-activity-progress > .conteneur-barre { height: 6px; }
+@media (prefers-reduced-motion: reduce) {
+  .exploration-activity-section > summary::before, .exploration-activity-progress .barre { transition: none; }
+}
+@media (max-width: 768px) {
+  .exploration-activity { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--runtime-space-1) var(--runtime-space-3); padding: var(--runtime-space-2) 0; }
+  .exploration-activity-identity { grid-column: 1 / 3; grid-row: 1; }
+  .exploration-activity-identity p { white-space: normal; }
+  .exploration-activity-cats { grid-column: 1; grid-row: 2; gap: 2px; }
+  .exploration-activity-cats:empty { display: none; }
+  .exploration-activity-cats:empty + .exploration-activity-progress { grid-column: 1 / 3; }
+  .exploration-activity-cat > .text-secondary {
+    position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+  .exploration-activity-progress { grid-column: 2; grid-row: 2; }
+  .exploration-activity > button { grid-column: 3; grid-row: 1 / span 2; }
+}
+#exploration-world-map { grid-column: 1 / -1; }
+#exploration-world-map[hidden] { display: none; }
+/* World Map: large native-proportion thumbnails zigzag along a curved trail (#334). */
+#world-map-viewport {
+  border: 1px solid #e4d9bd;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, .55) 0, transparent 55%),
+    radial-gradient(ellipse at 75% 85%, rgba(214, 190, 140, .28) 0, transparent 60%),
+    linear-gradient(180deg, #f6edd6 0%, #efe3c4 100%);
+}
+#world-map-regions {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-sizing: border-box;
+  padding: 28px clamp(12px, 5%, 56px) 32px;
+}
+.world-map-trail { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.world-map-trail-path { fill: none; stroke: #b08a55; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 2 12; }
+.world-map-trail-path.is-locked { stroke: #c9b896; }
+.world-map-region {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(46%, 340px);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #4e3824;
+  font: inherit;
+  cursor: pointer;
+}
+.world-map-region + .world-map-region { margin-top: -36px; }
+.world-map-region[data-side="left"] { align-self: flex-start; margin-left: 4%; }
+.world-map-region[data-side="right"] { align-self: flex-end; margin-right: 4%; }
+.world-map-region:disabled { cursor: default; }
+.world-map-region:focus-visible { outline: none; }
+.world-map-region:focus-visible .world-map-thumbnail { outline: 3px solid #9a4e13; outline-offset: 4px; }
+.world-map-thumbnail {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(78, 56, 36, .22);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.world-map-thumbnail > img { display: block; width: 100%; height: auto; border-radius: 12px; }
+.world-map-region:not(:disabled):hover .world-map-thumbnail { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(78, 56, 36, .28); }
+.world-map-region[data-state="current"] .world-map-thumbnail { box-shadow: 0 0 0 4px #bb681f, 0 8px 20px rgba(78, 56, 36, .28); }
+.world-map-region[data-state="locked"] .world-map-thumbnail > img { filter: grayscale(.85) sepia(.15) brightness(1.08); }
+.world-map-mist {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 35% 40%, rgba(250, 245, 232, .75) 0, transparent 60%),
+    radial-gradient(ellipse at 70% 65%, rgba(250, 245, 232, .7) 0, transparent 55%),
+    rgba(243, 236, 220, .45);
+}
+.world-map-region.has-ready .world-map-thumbnail::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px rgba(255, 196, 64, .9), 0 0 22px 6px rgba(255, 190, 60, .75);
+  pointer-events: none;
+  animation: world-map-halo 2.4s ease-in-out infinite;
+}
+@keyframes world-map-halo { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.world-map-token, .world-map-ready-badge, .world-map-cats { position: absolute; z-index: 1; }
+.world-map-token {
+  top: -18px;
+  left: -14px;
+  width: 54px;
+  height: 54px;
+  box-sizing: border-box;
+  border: 3px solid #bb681f;
+  border-radius: 50%;
+  background: #fff8eb;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(60, 40, 20, .35);
+}
+.world-map-token > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.world-map-ready-badge {
+  top: -12px;
+  right: -10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px 3px 5px;
+  border-radius: 999px;
+  background: #fff8eb;
+  color: #45733a;
+  font-weight: var(--font-weight-title);
+  box-shadow: 0 2px 6px rgba(60, 40, 20, .3);
+}
+.world-map-ready-badge > img { width: 20px; height: 20px; }
+.world-map-cats { right: 8px; bottom: -14px; display: flex; flex-direction: row-reverse; }
+.world-map-cats > .cat-selector-portrait {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #fff8eb;
+  border-radius: 50%;
+  background: #fff8eb;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(60, 40, 20, .3);
+}
+.world-map-cats > .cat-selector-portrait + .cat-selector-portrait { margin-right: -12px; }
+.world-map-cats > .cat-selector-portrait .kitty-icon { width: 100%; height: 100%; }
+.world-map-cats-more {
+  align-self: center;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fff8eb;
+  font-size: .7rem;
+  font-weight: var(--font-weight-title);
+}
+.world-map-label { display: grid; justify-items: center; gap: 2px; padding: 4px 12px; border-radius: 999px; background: #fffaee; }
+.world-map-label > strong { font-size: .9rem; }
+.world-map-region-status { color: #7b6952; font-size: .72rem; }
+.world-map-region[data-state="current"] .world-map-region-status { color: #995015; font-weight: bold; }
+.world-map-attention-summary { color: #995015; font-size: .72rem; font-weight: bold; }
+/* Zoom from the chosen thumbnail into its region map. */
+#world-map-regions.is-zooming > .world-map-region:not(.is-zooming) { opacity: .25; transition: opacity .25s ease; }
+.world-map-region.is-zooming { z-index: 2; }
+.world-map-region.is-zooming .world-map-thumbnail { animation: world-map-zoom-out .32s ease-in forwards; }
+@keyframes world-map-zoom-out { to { transform: scale(1.35); opacity: 0; } }
+#section-explo-map.exploration-region-zoom-in { animation: exploration-region-zoom-in .3s ease-out; }
+@keyframes exploration-region-zoom-in { from { transform: scale(.94); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .world-map-region.has-ready .world-map-thumbnail::after, .world-map-region.is-zooming .world-map-thumbnail,
+  #section-explo-map.exploration-region-zoom-in { animation: none; }
+  .world-map-thumbnail { transition: none; }
+}
+@media (max-width: 768px) {
+  #world-map-regions { padding: 24px 12px 28px; }
+  .world-map-region { width: 68%; }
+  .world-map-region + .world-map-region { margin-top: 22px; }
+  .world-map-region[data-side="left"] { margin-left: 0; }
+  .world-map-region[data-side="right"] { margin-right: 0; }
+  .world-map-token { width: 44px; height: 44px; top: -14px; left: -10px; }
+  .world-map-cats > .cat-selector-portrait { width: 30px; height: 30px; }
+}
+#contenu-explorations:is(.exploration-world-map-open, .exploration-activities-open) > :is(#section-explo-map, #exploration-mobile-zone-header, #section-explo-mission, #grille-campaigns-scoutings) { display: none !important; }
+
 #explo-map-section {
   display: flex;
   gap: 8px;
@@ -11520,6 +11760,103 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   margin-bottom: 4px;
 }
 .zone-info-item { font-size: 0.75rem; padding: 2px 0; }
+.combat-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.combat-training-slot { width: 100%; text-align: left; font-family: inherit; color: inherit; }
+.combat-training-slot .combat-progress { margin: 0; }
+.combat-training-slot:disabled { cursor: default; }
+
+.explo-modal-panneau.encounter-panel { width: min(680px, calc(100vw - 24px)); min-width: 0; max-width: none; max-height: calc(100dvh - 24px); overflow: hidden; box-sizing: border-box; }
+.encounter-body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.encounter-actions { flex: 0 0 auto; display: flex; justify-content: flex-end; }
+#hollow-tree-status { flex: 0 0 auto; margin: 0; text-align: center; font-size: 1.8rem; font-weight: var(--font-weight-title); }
+#hollow-tree-status[data-outcome="lost"] { color: #b23b35; }
+#hollow-tree-status[data-outcome="won"] { color: var(--couleur-verte); }
+/* The backdrop is the encounter zone cropped from its region artwork (static,
+   rasterized once); the cream veil keeps names and bar values readable. */
+.encounter-arena { display: flex; flex-direction: column; gap: 24px; padding: 16px 12px; position: relative; isolation: isolate; overflow: hidden; border-radius: var(--rayon-petit); }
+.encounter-arena::before { content: ""; position: absolute; inset: -12px; z-index: -2; background-image: var(--encounter-scene-image, none); background-size: var(--encounter-scene-size, cover); background-position: var(--encounter-scene-position, center); background-repeat: no-repeat; filter: blur(3px); }
+.encounter-arena::after { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255, 248, 235, .55); }
+.encounter-team { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 108px), 132px)); justify-content: center; align-items: start; gap: 18px 16px; }
+.encounter-allies { padding-top: 24px; border-top: 1px solid rgba(160, 82, 45, .25); }
+.encounter-combatant { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; text-align: center; position: relative; }
+.encounter-name { max-width: 100%; overflow-wrap: anywhere; }
+.encounter-portrait { width: 96px; height: 96px; max-width: 100%; position: relative; border-radius: 50%; background: var(--couleur-fond); border: 2px solid var(--couleur-marron); margin-bottom: 4px; }
+.encounter-portrait-art { display: block; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; }
+.encounter-portrait-art > img, .encounter-portrait-art > .kitty-icon { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+/* The enemy icon carries generous transparent margins: frame its head. */
+.encounter-enemies .encounter-portrait-art > img { transform: scale(1.35); transform-origin: 58% 40%; }
+.encounter-bar { width: 100%; height: 20px; border-radius: 6px; overflow: hidden; position: relative; display: grid; place-items: center; background: #e5e9e3; font-size: 12px; line-height: 1; font-weight: var(--font-weight-emphasis); font-variant-numeric: tabular-nums; }
+/* Fills scale on the compositor. HP eases down and leaves a lagging trail;
+   the attack fill follows the per-frame interpolation without transition. */
+.encounter-bar-fill, .encounter-bar-trail { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(var(--encounter-fill, 0)); }
+.encounter-bar-fill { background: #93cba4; }
+.encounter-hp .encounter-bar-fill { transition: transform 220ms ease-out; }
+.encounter-bar-trail { background: #f2c4a2; transition: transform 450ms ease-in 300ms; }
+.encounter-atk { background: #e3eaf0; }
+.encounter-atk .encounter-bar-fill { background: #8abce1; }
+.encounter-bar > span:last-child { position: relative; }
+.encounter-float { position: absolute; left: 50%; top: 6px; z-index: 2; pointer-events: none; font-size: 1.2rem; font-weight: var(--font-weight-title); line-height: 1; color: #b23b35; text-shadow: 0 1px 0 #fff, 0 0 4px rgba(255, 255, 255, .9); white-space: nowrap; animation: encounter-float-up 800ms ease-out forwards; }
+.encounter-float.is-power { font-size: 1.7rem; color: var(--couleur-accent); }
+.encounter-skill { position: absolute; bottom: 0; transform: translateY(100%); font-size: 13px; font-weight: var(--font-weight-title); color: var(--couleur-accent); white-space: nowrap; text-transform: uppercase; letter-spacing: .04em; }
+.encounter-combatant.is-attacking .encounter-portrait { border-color: #387bba; }
+.encounter-combatant.is-hit .encounter-portrait { box-shadow: 0 0 0 3px var(--couleur-accent); }
+.encounter-allies .encounter-combatant.is-attacking .encounter-portrait { animation: encounter-lunge-up 420ms ease-out; }
+.encounter-enemies .encounter-combatant.is-attacking .encounter-portrait { animation: encounter-lunge-down 420ms ease-out; }
+.encounter-combatant.is-hit .encounter-portrait { animation: encounter-shake 360ms ease-in-out; }
+.encounter-combatant.is-defeated .encounter-portrait { opacity: .45; }
+@keyframes encounter-lunge-up { 35% { transform: translateY(-14px) scale(1.04); } }
+@keyframes encounter-lunge-down { 35% { transform: translateY(14px) scale(1.04); } }
+@keyframes encounter-shake { 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+@keyframes encounter-float-up {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(.8); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -34px); }
+}
+@keyframes encounter-float-fade { 0%, 70% { opacity: 1; transform: translateX(-50%); } 100% { opacity: 0; transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .encounter-combatant.is-attacking .encounter-portrait, .encounter-combatant.is-hit .encounter-portrait { animation: none; }
+  .encounter-float { animation-name: encounter-float-fade; }
+  .encounter-hp .encounter-bar-fill, .encounter-bar-trail { transition: none; }
+}
+/* Read-only roster: the team is derived from availability, not picked. */
+.worker-modal-kitty.hollow-tree-fighter { cursor: default; }
+.worker-modal-kitty.hollow-tree-fighter:hover { background: none; }
+.hollow-tree-danger { display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 999px; vertical-align: middle; font-size: .75rem; font-weight: var(--font-weight-emphasis); }
+.hollow-tree-danger[data-danger="easy"] { color: #24764f; background: #e1f2e7; }
+.hollow-tree-danger[data-danger="close"] { color: #8a5a00; background: #fbefd0; }
+.hollow-tree-danger[data-danger="dangerous"] { color: #b23b35; background: #f8e1de; }
+.encounter-arena[data-density="crowded"] .encounter-team { grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 18px 10px; }
+.encounter-arena[data-density="crowded"] .encounter-portrait { width: 52px; height: 52px; }
+.encounter-arena[data-density="crowded"] .encounter-name { font-size: 12px; }
+.hollow-tree-defeat-advice:not([hidden]) { display: flex; align-items: flex-start; gap: 12px; margin: 16px 0; }
+.hollow-tree-defeat-advice > img { flex: 0 0 64px; object-fit: contain; }
+.hollow-tree-defeat-advice p { margin: 6px 0 0; }
+.combat-progress-ring {
+  display: block;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: 50%;
+  background: conic-gradient(var(--couleur-accent) var(--combat-progress, 0%), #e8ddd0 0);
+}
+.combat-progress-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fffdf9;
+}
+.combat-progress-portrait > img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .zone-info-mobile-summary,
 .zone-info-open-btn,
 .exploration-mobile-zone-header {
@@ -11607,7 +11944,8 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
      selection outline, lock and mission badges remain visible. */
   z-index: 5;
 }
-/* One masked fog layer covers every unrevealed part of the map. */
+/* One fog layer covers every unrevealed part of the map: a WebGL canvas
+   (js/ui/fog-renderer.js), or the static masked SVG fallback. */
 .carte-fog-global {
   align-self: stretch;
   justify-self: stretch;
@@ -11616,10 +11954,7 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   z-index: 4;
 }
 
-/* ── OPTIONAL ANIMATED FOG ────────────────────────────────────────────────
-   Rollback: set MAP_FOG_MOTION_ENABLED to false in jeu.js. The global strip
-   then stays static. Original + mirrored + original copies keep every join
-   seamless while the complete masked layer moves continuously to the right. */
+/* SVG fallback (no WebGL, or Chromium direct-file play): resting offsets. */
 .carte-fog-global-track {
   transform-box: fill-box;
   transform-origin: left top;
@@ -11631,13 +11966,15 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   transform-origin: left top;
   transform: translateX(-42%);
 }
+/* #323: SVG group transforms never run on Firefox's compositor, so each moved
+   frame repaints the page. Steps of under 1 px keep the drift continuous. */
 .carte-grille.carte-fog-motion .carte-fog-global-track {
-  animation: carte-fog-global-scroll 90s linear infinite;
+  animation: carte-fog-global-scroll 90s steps(1350) infinite;
   animation-delay: var(--fog-animation-delay, 0ms);
   will-change: transform;
 }
 .carte-grille.carte-fog-motion .carte-fog-secondary-track {
-  animation: carte-fog-global-scroll 140s linear infinite;
+  animation: carte-fog-global-scroll 140s steps(1400) infinite;
   animation-delay: var(--fog-secondary-animation-delay, 0ms);
   will-change: transform;
 }
@@ -11652,9 +11989,7 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .carte-grille.carte-fog-motion .carte-fog-global-track {
-    animation: none;
-  }
+  .carte-grille.carte-fog-motion .carte-fog-global-track,
   .carte-grille.carte-fog-motion .carte-fog-secondary-track {
     animation: none;
   }
@@ -11685,6 +12020,33 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   top: var(--zone-marker-y);
   transform: translate(-50%, -50%);
 }
+
+/* Running zone exploration: the assigned Cats inside a progress ring. */
+.carte-zone-progress {
+  display: grid;
+  place-items: center;
+  width: clamp(46px, calc(var(--map-cell, 90px) * .62), 74px);
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: 50%;
+  background: conic-gradient(var(--couleur-accent) var(--zone-progress, 0%), rgba(255, 248, 235, .85) 0);
+  box-shadow: 0 2px 8px rgba(60, 40, 20, .35);
+}
+.carte-zone-progress-cats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #fff8eb;
+  overflow: hidden;
+}
+.carte-zone-progress-cat { flex: 0 0 auto; width: 78%; aspect-ratio: 1; }
+.carte-zone-progress-cats:not([data-count="1"]) .carte-zone-progress-cat { width: 64%; }
+.carte-zone-progress-cat + .carte-zone-progress-cat { margin-left: -28%; }
+.carte-zone-progress-cat :is(img, .kitty-icon) { display: block; width: 100%; height: 100%; object-fit: contain; }
 
 /* Multi-cell zones: slightly larger icon and name */
 .carte-multicel .carte-icone { font-size: 1.3rem; }
@@ -11723,7 +12085,6 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
 .carte-avec-image.carte-verrouillee { background-color: transparent !important; }
 
 .carte-icone       { font-size: 1rem; line-height: 1; position: relative; z-index: 5; }
-.carte-badge-encours { position: absolute; top: 3px; right: 3px; font-size: 0.7rem; z-index: 5; }
 .carte-badge-scout {
   position: absolute;
   bottom: 6px;
@@ -13620,14 +13981,14 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   #contenu-explorations[aria-hidden="false"] {
     display: grid;
     grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     gap: 16px;
     align-content: start;
     padding: 20px 24px;
   }
   #section-explo-map {
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 2 / span 2;
     min-width: 0;
   }
   #section-explo-map #explo-map-section {
@@ -13639,7 +14000,7 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   #contenu-explorations > .exploration-mobile-zone-header {
     display: block;
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 2;
     min-width: 0;
     padding: 15px 16px;
     border: 1px solid #e8ddd0;
@@ -13723,7 +14084,7 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   #section-explo-mission,
   #grille-campaigns-scoutings {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 3;
     min-width: 0;
   }
   #grille-campaigns-scoutings {
@@ -15544,33 +15905,38 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   outline: 3px solid #ffe07a !important;
   outline-offset: 3px;
   box-shadow: 0 0 0 6px rgba(255, 224, 122, .58), 0 0 22px rgba(255, 206, 87, .86) !important;
-  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-catchen-tutorial-glow 1.15s steps(10) infinite alternate;
 }
 .camp-sawmill-tutorial-target:focus-visible {
   outline-color: #fff !important;
 }
-.camp-guided-junk-target {
+.camp-guided-junk-target,
+.camp-actionable-attention {
   z-index: 12 !important;
   isolation: isolate;
 }
 .camp-guided-junk-target::before,
-.camp-guided-junk-target::after {
+.camp-guided-junk-target::after,
+.camp-actionable-attention::before,
+.camp-actionable-attention::after {
   content: "";
   position: absolute;
   z-index: 0;
   border-radius: 18%;
   pointer-events: none;
 }
-.camp-guided-junk-target::before {
+.camp-guided-junk-target::before,
+.camp-actionable-attention::before {
   inset: -7px;
   border: 4px solid rgba(255, 237, 156, .96);
   box-shadow: 0 0 0 8px rgba(255, 245, 199, .25), 0 0 34px rgba(255, 224, 111, .94);
-  animation: camp-task-ready-pulse 1.15s ease-out infinite;
+  animation: camp-task-ready-pulse 1.15s steps(10) infinite;
 }
-.camp-guided-junk-target::after {
+.camp-guided-junk-target::after,
+.camp-actionable-attention::after {
   inset: -14px;
   background: radial-gradient(circle, transparent 0 38%, rgba(255, 241, 162, .62) 49%, rgba(255, 231, 126, .2) 61%, transparent 74%);
-  animation: camp-task-ready-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-task-ready-glow 1.15s steps(10) infinite alternate;
 }
 .camp-guided-junk-target .camp-prototype-obstacle-sprite {
   position: relative;
@@ -15580,13 +15946,13 @@ body:not([data-onglet-actif="camp"]) .daily-quests-hud { display: none !importan
   z-index: 13 !important;
   outline: 3px solid #ffe07a;
   outline-offset: 3px;
-  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-catchen-tutorial-glow 1.15s steps(10) infinite alternate;
 }
 .camp-first-box-house-cue {
   z-index: 13;
   outline: 3px solid #ffe07a !important;
   outline-offset: 3px;
-  animation: camp-catchen-tutorial-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-catchen-tutorial-glow 1.15s steps(10) infinite alternate;
 }
 .camp-prototype-terrain-cleared.camp-ground-reward-tutorial-cell,
 body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-reward-tutorial-cell {
@@ -15597,8 +15963,11 @@ body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared.camp-ground-re
   background: rgba(255, 239, 157, .3);
   box-shadow: 0 0 0 5px rgba(255, 224, 122, .42), 0 0 22px rgba(255, 206, 87, .9);
   opacity: 1;
-  animation: camp-ground-reward-cell-glow 1.15s ease-in-out infinite alternate;
+  animation: camp-ground-reward-cell-glow 1.15s steps(10) infinite alternate;
 }
+/* #326: drop-shadow and box-shadow re-blur the halo on every frame. These
+   guidance pulses keep their exact range but advance in 10 paced steps (about
+   9 repaints a second) instead of a continuous ease. */
 @keyframes camp-catchen-tutorial-glow {
   from { filter: drop-shadow(0 0 4px rgba(255, 206, 87, .62)); }
   to { filter: drop-shadow(0 0 18px rgba(255, 206, 87, 1)) brightness(1.08); }

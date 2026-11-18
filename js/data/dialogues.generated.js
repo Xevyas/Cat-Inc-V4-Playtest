@@ -94,6 +94,13 @@
       "initials": "M",
       "speakerKey": "mere"
     },
+    "bramble": {
+      "id": "bramble",
+      "name": "Bramble",
+      "side": "right",
+      "portrait": "img/Cat faces/bramble.png",
+      "speakerKey": "bramble"
+    },
     "bernardPresetAngry": {
       "id": "bernardo",
       "name": "Bernardo · Angry",
@@ -229,6 +236,10 @@
     {
       "id": "woodCathouseUnlocked",
       "text": "Now that's real wood. We can finally build a proper Wood Cathouse. Check Houses in the Camp."
+    },
+    {
+      "id": "hollowTreeDefeat",
+      "text": "Let's train our Fighter to Combat Level 5, craft daggers at the Forge and leather protection at the Tannery, then equip both in Gang."
     }
   ],
   "purrsuasion": {
@@ -1147,7 +1158,7 @@
           "speakerClass": "bernard",
           "speakerName": "Bernardo",
           "portraitClass": "bernard",
-          "html": "Then it must be our first priority, it will probably help us buidling things. We just need to find what..."
+          "html": "Then it must be our first priority, it will probably help us building things. We just need to find what..."
         },
         {
           "classes": [],
@@ -2784,6 +2795,109 @@
         "src": "img/Cat faces/naya.png",
         "alt": "Naya"
       }
+    },
+    {
+      "id": "ecran-story-world-map",
+      "name": "A Wider World",
+      "flag": "storyWorldMapVue",
+      "trigger": "Compass owned and Navigate through the woods reward claimed, with a functional Operation Table; shown once, including eligible older saves.",
+      "closeButton": {
+        "label": "Open World Map",
+        "handler": "ouvrirWorldMapDepuisStory()",
+        "actionSummary": "Open the World Map in Explore without starting a mission or granting a reward."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "The trail leads beyond the neighbourhood. Let's mark it on our map."
+        },
+        {
+          "classes": [],
+          "speakerClass": "mochi",
+          "speakerName": "Mochi",
+          "portraitClass": "mochi",
+          "html": "Can we mark the way home, too?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "luna",
+          "speakerName": "Luna",
+          "portraitClass": "luna",
+          "html": "That's why we brought the compass."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Every path we discover belongs here. One trail at a time."
+        }
+      ]
+    },
+    {
+      "id": "ecran-story-bramble",
+      "name": "A Lesson in the Woods",
+      "flag": "storyBrambleVue",
+      "trigger": "World Map accessible and the woodland Training clearing revealed; shown until Bramble's lesson is accepted, including eligible older saves.",
+      "closeButton": {
+        "label": "Learn Fighter training",
+        "handler": "apprendreFighterDepuisStory()",
+        "actionSummary": "Accept Bramble's lesson to unlock Fighter training at the existing Job Center; no Cat is trained and no equipment is granted."
+      },
+      "beats": [
+        {
+          "classes": [],
+          "speakerClass": null,
+          "speakerName": null,
+          "portraitClass": null,
+          "html": "A grey-brown Cat steps out from behind the training dummy. One ear has a small notch. He looks more curious than surprised."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bramble",
+          "speakerName": "Bramble",
+          "portraitClass": "bramble",
+          "html": "Visitors. I'm Bramble. Are you following the trail, or did you come to practise?"
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "We followed the trail. But if there's something out here we can't talk our way past, I'd like our gang to be ready."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bramble",
+          "speakerName": "Bramble",
+          "portraitClass": "bramble",
+          "html": "Then start with a Fighter. I'll teach you the basics so you can train one at your Job Center. Fighting takes practice of its own."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Would you like to come back with us? We have some very comfortable boxes."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bramble",
+          "speakerName": "Bramble",
+          "portraitClass": "bramble",
+          "html": "Tempting. But these woods are my home. Your Fighter will need daggers and leather protection. You'll have to make those yourselves."
+        },
+        {
+          "classes": [],
+          "speakerClass": "bernard",
+          "speakerName": "Bernardo",
+          "portraitClass": "bernard",
+          "html": "Then we'll begin with the training. Thank you, Bramble."
+        }
+      ]
     }
   ]
 });

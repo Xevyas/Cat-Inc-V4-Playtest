@@ -17,6 +17,12 @@
       "revision": 3
     },
     {
+      "id": "cat-faces-bramble",
+      "name": "Bramble",
+      "runtimePath": "img/Cat faces/bramble.png",
+      "revision": 1
+    },
+    {
       "id": "cat-faces-cannelle-3",
       "name": "Cannelle",
       "runtimePath": "img/Cat faces/cannelle-3.png",
@@ -223,6 +229,23 @@
           120.875525
         ],
         "radius": 115.368601
+      }
+    },
+    "img/Cat faces/bramble.png": {
+      "width": 256,
+      "height": 256,
+      "bounds": [
+        48,
+        54,
+        211,
+        201
+      ],
+      "circle": {
+        "center": [
+          127.6286,
+          124.399526
+        ],
+        "radius": 89.685822
       }
     },
     "img/Cat faces/cannelle-3.png": {

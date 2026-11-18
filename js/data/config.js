@@ -5,6 +5,19 @@
   CatInc.data = CatInc.data || {};
 
 const CONFIG = {
+  combatTraining: {
+    xpPerSecond: 1,
+    xpPerLevel: 300, // XP to leave level n = 300 * n (initial calibration).
+    beginnerMaxLevel: 5
+  },
+  hollowTreeCombat: {
+    zoneId: "woodlandEntrance.hollowTree",
+    rewardId: "hollowTreeLessons",
+    advancedMaxLevel: 10,
+    fighter: { baseHp: 20, hpPerLevel: 5, baseAttack: 2, defense: 0, attackSeconds: 2 },
+    enemy: { name: "Woodland Rat", hp: 50, attack: 7, defense: 4, attackSeconds: 2.5,
+      iconId: "other-woodland-rat", portraitPath: "img/Icons/woodland-rat.png" }
+  },
   cathouse: {
     coutBase:            5,
     croissance:          3,
