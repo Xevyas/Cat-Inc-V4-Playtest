@@ -56,7 +56,7 @@
       "id": "gangLeaderDailyReward1",
       "jobId": "gang-leader",
       "name": "Daily Reward I",
-      "description": "Raises the Daily Quest reward from 1 to 2 Canned Cat Food.",
+      "description": "Raises the Paw Print Diary reward from 1 to 2 Canned Cat Food every 3 paw prints.",
       "starting": false,
       "granted": false,
       "available": true,
@@ -83,7 +83,7 @@
       "id": "gangLeaderDailyReward2",
       "jobId": "gang-leader",
       "name": "Daily Reward II",
-      "description": "Raises the total Daily Quest reward from 2 to 3 Canned Cat Food.",
+      "description": "Raises the Paw Print Diary reward from 2 to 3 Canned Cat Food every 3 paw prints.",
       "starting": false,
       "granted": false,
       "available": true,
@@ -1747,7 +1747,7 @@
       "id": "builderHouseOptimization1",
       "jobId": "builder",
       "name": "House Optimization I",
-      "description": "Sets the repeatable House initial-construction cost exponent to 1.60.",
+      "description": "Sets the repeatable House initial-construction cost exponent to 1.70.",
       "starting": false,
       "granted": false,
       "available": true,
@@ -1761,7 +1761,7 @@
         {
           "effectId": "houseCostExponentOverride",
           "parameters": {
-            "exponent": 1.6
+            "exponent": 1.7
           }
         }
       ],
@@ -1774,7 +1774,7 @@
       "id": "builderHouseOptimization2",
       "jobId": "builder",
       "name": "House Optimization II",
-      "description": "Sets the repeatable House initial-construction cost exponent to 1.55 total.",
+      "description": "Sets the repeatable House initial-construction cost exponent to 1.65 total.",
       "starting": false,
       "granted": false,
       "available": true,
@@ -1788,7 +1788,7 @@
         {
           "effectId": "houseCostExponentOverride",
           "parameters": {
-            "exponent": 1.55
+            "exponent": 1.65
           }
         }
       ],
@@ -2215,7 +2215,7 @@
       "exponent": {
         "type": "number",
         "minimum": 1,
-        "maximum": 1.7
+        "maximum": 1.8
       }
     }
   },

@@ -292,10 +292,12 @@ function creerEtatInitial() {
   dailyScoutingStocks: {
     dateKey: "",
     remaining: {
-      raidSupermarketAgain: 3,
-      stealGasStationAgain: 2
+      raidSupermarketAgain: 1,
+      stealGasStationAgain: 1
     }
   },
+  // Paw Print Diary (ticket #349-E): paw prints in the current diary, 0 to 2.
+  pawPrints: 0,
   // Naya's Inn shares the canonical Paris calendar day with Daily Purpose.
   // Generated identities and consumption flags are durable; balances and
   // mission state remain in their existing authorities.

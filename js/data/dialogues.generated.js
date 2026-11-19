@@ -719,7 +719,7 @@
       "id": "ecran-story-cannelle-recruit",
       "name": "Cannelle's Proposition",
       "flag": "storyCannelleRecruitVue",
-      "trigger": "Cannelle's successful tenth-recruit confirmation closes.",
+      "trigger": "Cannelle's successful eleventh-recruit confirmation closes.",
       "closeButton": {
         "label": "Build Cannelle's shop",
         "handler": "terminerStoryRecrutementCannelle()",
@@ -2701,11 +2701,11 @@
       "id": "ecran-story-naya-recruit",
       "name": "Naya's Proposal",
       "flag": "storyNayaRecruitVue",
-      "trigger": "This scene currently has no documented automatic trigger.",
+      "trigger": "Naya's successful sixteenth-recruit confirmation closes.",
       "closeButton": {
         "label": "Build Naya's Inn",
         "handler": "terminerStoryRecrutementNaya()",
-        "actionSummary": "Close the dialogue and return to the current screen."
+        "actionSummary": "Unlock Naya's Inn in Camp Buildings."
       },
       "beats": [
         {

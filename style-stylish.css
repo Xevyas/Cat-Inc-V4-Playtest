@@ -827,8 +827,7 @@ body[data-ui-theme="stylish"] #contenu-work .btn-unaffect-all {
   color: #a95227;
   font-size: .72rem;
 }
-body[data-ui-theme="stylish"] #contenu-work #gang-leader-banner,
-body[data-ui-theme="stylish"] #contenu-work .work-discovery-hint {
+body[data-ui-theme="stylish"] #contenu-work #gang-leader-banner {
   margin: 0;
   padding: 6px 0;
   border: 0;

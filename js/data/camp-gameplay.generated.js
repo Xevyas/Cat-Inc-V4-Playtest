@@ -620,7 +620,9 @@
   },
   "generalRules": {
     "catLeveling": {
-      "xpGrowthExponent": 1.7
+      "xpBase": 1,
+      "xpLevelExponent": 1.2,
+      "xpGrowth": 1.1
     },
     "recruitment": {
       "authoredBaseSeconds": {
@@ -637,13 +639,40 @@
     },
     "afk": {
       "minimumAbsenceSeconds": 60,
-      "baseRatio": 0.25,
-      "baseMaxSeconds": 14400,
+      "baseRatio": 0.5,
+      "baseMaxSeconds": 36000,
       "engineerRank1CapMinutesPerLevel": 6,
       "engineerRank2RatioPercentPerLevel": 0.5,
       "maxRatio": 1
+    },
+    "missionOdds": {
+      "threshold": 0.25,
+      "exponent": 1.5,
+      "retryBonusPerFailure": 0.1,
+      "retryMaxFailures": 3
     }
   },
+  "progressionTiers": [
+    {
+      "id": "P0",
+      "name": "Neighborhood",
+      "regionIds": [
+        "startingNeighbourhood"
+      ],
+      "targetDays": 7,
+      "valueMultiplier": 1,
+      "referenceTeam": {
+        "entry": {
+          "cats": 1,
+          "level": 0
+        },
+        "exit": {
+          "cats": 13,
+          "level": 10
+        }
+      }
+    }
+  ],
   "purrsuasion": {
     "rounds": 3,
     "scores": {
@@ -1421,7 +1450,7 @@
         "baseCosts": {
           "cardboardPlanks": 1
         },
-        "growth": 1.7,
+        "growth": 1.8,
         "authoredRanks": {
           "1": {
             "cardboardPlanks": 1
@@ -1858,7 +1887,7 @@
         "baseCosts": {
           "basicWoodPlanks": 2
         },
-        "growth": 1.7,
+        "growth": 1.8,
         "authoredRanks": {
           "1": {
             "basicWoodPlanks": 2

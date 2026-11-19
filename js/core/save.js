@@ -422,6 +422,9 @@ function validerStructureSauvegarde(d) {
       }
     }
   }
+  if (d.pawPrints !== undefined && (!Number.isInteger(d.pawPrints) || d.pawPrints < 0)) {
+    return "Invalid Paw Print Diary.";
+  }
   if (d.dailyScoutingStocks !== undefined) {
     const stocks = d.dailyScoutingStocks;
     if (typeof stocks.dateKey !== "string" || stocks.dateKey.length > 20) return "Invalid daily scouting stock date.";
@@ -1230,6 +1233,7 @@ function analyserSauvegardeBrute(raw) {
     formationIngenieurTermineeEnAttente: etat.formationIngenieurTermineeEnAttente,
     dailyQuests:          etat.dailyQuests,
     dailyScoutingStocks:  etat.dailyScoutingStocks,
+    pawPrints:            etat.pawPrints,
     innDaily:              etat.innDaily,
     regionCourante:           etat.regionCourante,
     zonesExplorees:      etat.zonesExplorees,
@@ -1599,9 +1603,9 @@ function analyserSauvegardeBrute(raw) {
     dateKey: etat.dailyQuests.dateKey || "",
     remaining: {
       raidSupermarketAgain: legacyScoutingStocks && Number.isInteger(legacyScoutingStocks.raidSupermarketAgain)
-        ? legacyScoutingStocks.raidSupermarketAgain : 3,
+        ? legacyScoutingStocks.raidSupermarketAgain : 1,
       stealGasStationAgain: legacyScoutingStocks && Number.isInteger(legacyScoutingStocks.stealGasStationAgain)
-        ? legacyScoutingStocks.stealGasStationAgain : 2
+        ? legacyScoutingStocks.stealGasStationAgain : 1
     }
   };
   if (!etat.dailyScoutingStocks || typeof etat.dailyScoutingStocks !== "object") {
@@ -1611,8 +1615,10 @@ function analyserSauvegardeBrute(raw) {
   if (!etat.dailyScoutingStocks.remaining || typeof etat.dailyScoutingStocks.remaining !== "object") {
     etat.dailyScoutingStocks.remaining = {};
   }
-  if (!Number.isInteger(etat.dailyScoutingStocks.remaining.raidSupermarketAgain)) etat.dailyScoutingStocks.remaining.raidSupermarketAgain = 3;
-  if (!Number.isInteger(etat.dailyScoutingStocks.remaining.stealGasStationAgain)) etat.dailyScoutingStocks.remaining.stealGasStationAgain = 2;
+  if (!Number.isInteger(etat.dailyScoutingStocks.remaining.raidSupermarketAgain)) etat.dailyScoutingStocks.remaining.raidSupermarketAgain = 1;
+  if (!Number.isInteger(etat.dailyScoutingStocks.remaining.stealGasStationAgain)) etat.dailyScoutingStocks.remaining.stealGasStationAgain = 1;
+  // Paw Print Diary (ticket #349-E): older saves start an empty diary.
+  etat.pawPrints = Number.isInteger(d.pawPrints) && d.pawPrints >= 0 ? d.pawPrints % 3 : 0;
   if (Object.prototype.hasOwnProperty.call(etat.dailyQuests, "scoutingCannedCatFood")) {
     delete etat.dailyQuests.scoutingCannedCatFood;
   }

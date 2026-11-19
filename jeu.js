@@ -122,11 +122,14 @@ const CAMP_GENERAL_RULES = campGameplayData.generalRules;
 const CAMP_CAT_LEVELING_RULES = CAMP_GENERAL_RULES.catLeveling;
 const CAMP_RECRUITMENT_RULES = CAMP_GENERAL_RULES.recruitment;
 const CAMP_AFK_RULES = CAMP_GENERAL_RULES.afk;
+const CAMP_MISSION_ODDS_RULES = CAMP_GENERAL_RULES.missionOdds;
 const CAMP_UNIQUE_ITEM_DEFINITIONS = Object.freeze(campGameplayData.uniqueItems || {});
 const campTemplateData = globalThis.CatInc.data.campTemplates;
 const incrementorLawApi = globalThis.CatInc.incrementorLaw;
 const perksV2Api = globalThis.CatInc.perksV2;
 const campPanelDiagnostic = globalThis.CatInc.campPanelDiagnostic;
+const missionOdds = globalThis.CatInc.missionOdds.create(CAMP_MISSION_ODDS_RULES);
+const catLeveling = globalThis.CatInc.catLeveling;
 const mobileInputDiagnostic = globalThis.CatInc.mobileInputDiagnostic || Object.freeze({
   enabled: false,
   configure: function() { return false; },
@@ -1027,7 +1030,7 @@ function validerAffrontementArbre() {
   if (rattraperApresSuspensionAfk() || sauvegardeVerrouillee || redemarrageMajeurRequis || afkReloadProgramme) return false;
   const victory = CatInc.combat.result(etat.hollowTreeEncounter)?.outcome === "won";
   if (!CatInc.combat.claim(etat)) return false;
-  if (victory) ajouterLog("unlock", "Hollow Tree Lessons learned: Reinforced Daggers recipe and advanced dummy exercise (Combat Level 10).");
+  if (victory) ajouterLog("unlock", "Hollow Tree cleared: Reinforced Daggers recipe, dummy exercise to Combat Lv 10.");
   inventaireDirty = true; exploTabDirty = true; jcDirty = true;
   fermerVueAffrontementArbre(); sauvegarder(); rendu();
   return true;
@@ -1038,26 +1041,25 @@ function renduAffrontementArbre() {
   panel.hidden = carteZoneSelectionnee !== CONFIG.hollowTreeCombat.zoneId || !affrontementArbreDisponible();
   if (panel.hidden) return;
   const resolved = CatInc.combat.result(etat.hollowTreeEncounter);
-  let html = '<h3 class="explo-nom">Hollow Tree encounter</h3>';
+  let html = '<h3 class="explo-nom">Encounter</h3>';
   if (CatInc.combat.learned(etat)) {
-    html += '<p class="explo-description">The trail is clear. Hollow Tree Lessons learned: craft Reinforced Daggers at the Forge and practise up to Combat Level 10 at the Training clearing.</p>';
+    html += '<p class="explo-description">Cleared.</p>';
   } else if (resolved) {
     html += '<p class="explo-description">' + libelleResultatAffrontement(resolved.outcome) + '</p>'
       + '<button type="button" class="btn-lancer-explo" onclick="ouvrirVueAffrontementArbre()">'
       + (resolved.outcome === "running" ? 'Watch combat' : 'View result') + '</button>';
   } else {
     const danger = dangerAffrontementArbre();
-    if (danger) html = '<h3 class="explo-nom">Hollow Tree encounter <span class="hollow-tree-danger" data-danger="'
+    if (danger) html = '<h3 class="explo-nom">Encounter <span class="hollow-tree-danger" data-danger="'
       + danger.level + '">' + danger.label + '</span></h3>';
-    html += '<p class="explo-description">A territorial Woodland Rat guards the hollow tree.</p>'
-      + '<p class="explo-description">Recommended: Combat Level 5 · Paired Daggers · Leather Protection.</p>';
+    html += '<p class="explo-description">Recommended: Combat Level 5 · Paired Daggers · Leather Protection.</p>';
     const roster = etat.kittiesData.map(function(k, ki) { return {kitty:k, kittyIndex:ki}; }).filter(function(e) { return METIERS[e.kitty.metier]?.combat; });
     html += roster.length ? roster.map(function(entry) {
       const raison = raisonIndisponibiliteCombattant(entry.kittyIndex);
       return htmlLigneAffectationKitty({ kitty:entry.kitty, iconHtml:kittyIconHtml(entry.kitty), className:"hollow-tree-fighter",
         secondaryText:"Combat Level " + entry.kitty.combatProgress.level,
-        contextText:raison || "Ready to fight", disabled:!!raison });
-    }).join("") : '<p class="explo-description">Train a Fighter at the Job Center after meeting Bramble in the Training clearing.</p>';
+        contextText:raison || "", disabled:!!raison });
+    }).join("") : '<p class="explo-description">Meet Bramble, then train a Fighter at the Job Center.</p>';
     html += '<button type="button" class="btn-lancer-explo"' + (equipeAffrontementDisponible().length ? '' : ' disabled')
       + ' onclick="lancerAffrontementArbre()">Start encounter</button>';
   }
@@ -1207,7 +1209,7 @@ function actualiserVueAffrontementArbre() {
   });
   ecrirePropriete(domParId("hollow-tree-retreat"),"hidden",resolved.outcome !== "running");
   ecrirePropriete(domParId("hollow-tree-claim"),"hidden",resolved.outcome === "running");
-  ecrireTexte(domParId("hollow-tree-claim"),resolved.outcome === "won" ? "Claim lessons" : "Continue");
+  ecrireTexte(domParId("hollow-tree-claim"),resolved.outcome === "won" ? "Collect rewards" : "Continue");
   ecrirePropriete(domParId("hollow-tree-rewards"),"hidden",resolved.outcome !== "won");
   ecrireTexte(domParId("hollow-tree-rewards"),ITEMS.hollowTreeLessons.unlocksLabel);
 }
@@ -1260,7 +1262,7 @@ function renduModalCombattants() {
       attributes: entry.reason ? ' aria-disabled="true"'
         : attributsActivationClavier("Select " + kitty.nom + " for combat") + ' onclick="selectionnerCombattantModal(' + ki + ')"',
       secondaryText: "Combat Level " + (kitty.combatProgress ? kitty.combatProgress.level : 1),
-      contextText: entry.reason || "Free"
+      contextText: entry.reason || ""
     });
   }).join("");
   domParId("combat-assignment-list").innerHTML = html || '<p class="worker-modal-vide">No combat Cats yet.</p>';
@@ -1345,7 +1347,10 @@ function arreterEntrainementCombat() {
 function avancerEntrainementCombat(dt) {
   const action = etat.combatTraining;
   if (!action || !Number.isFinite(dt) || dt <= 0) return;
+  // A stop the panel did not witness (AFK, reload) keeps the Cat selected so
+  // the panel still explains why it stopped.
   if (!entrainementCombatDisponible() || !fighterEligibleExercice(action.kittyIndex)) {
+    combatTrainingKittySelectionne = action.kittyIndex;
     etat.combatTraining = null;
     exploTabDirty = true;
     return;
@@ -1361,6 +1366,7 @@ function avancerEntrainementCombat(dt) {
   if (progress.level !== previousLevel) jcDirty = true;
   if (progress.level >= plafondEntrainementCombat()) {
     progress.xp = 0;
+    combatTrainingKittySelectionne = action.kittyIndex;
     etat.combatTraining = null;
     exploTabDirty = true;
   }
@@ -1382,10 +1388,8 @@ function libelleBonusEquipement(item) {
 
 function equipementFighterHtml(kittyIndex) {
   const kitty = etat.kittiesData[kittyIndex];
-  const bonus = CatInc.equipment.bonuses(kitty);
   const fighting = kittyIsInCombat(kittyIndex);
   return '<section class="fighter-equipment" aria-label="Fighter equipment"><h3>Equipment</h3>'
-    + '<p>Equipment bonus: +' + bonus.attack + ' Attack · +' + bonus.defense + ' Defense</p>'
     + CatInc.equipment.slots.map(function(slot) {
       const held = kitty.equipment && kitty.equipment[slot];
       const item = CatInc.equipment.definition(held);
@@ -1436,11 +1440,9 @@ function renduEntrainementCombat() {
   if (etat.combatTraining) combatTrainingKittySelectionne = etat.combatTraining.kittyIndex;
   const fighterIndex = combatTrainingKittySelectionne;
   const kitty = etat.kittiesData[fighterIndex];
-  let html = '<h3 class="explo-nom">' + nomExerciceCombat() + '</h3>'
-    + '<p class="explo-description">Earn Combat XP up to level '
-    + plafondEntrainementCombat() + '.</p>';
+  let html = '<h3 class="explo-nom">' + nomExerciceCombat() + '</h3>';
   if (!kitty) {
-    html += '<button type="button" class="jc-slot-empty combat-training-slot" data-combat-training-slot onclick="ouvrirSelectionEntrainementCombat()">Select a combat Cat</button>';
+    html += '<button type="button" class="jc-slot-empty combat-training-slot" data-combat-training-slot onclick="ouvrirSelectionEntrainementCombat()">+ Fighter</button>';
   }
   else {
     const running = kittyIsCombatTraining(fighterIndex);
@@ -1919,9 +1921,6 @@ function normaliserOccupationsChatons() {
   return changed;
 }
 
-// Maps a worker action to the exact resource it produces, e.g. "génère des Cardboard Pieces"
-var ACTION_DISPLAY = { fishcatting: "Anchovy", grilledAnchovy: "Grilled Anchovy", woodcatting: "Cardboard Pieces", basicWoodcatting: "Basic Wood", grasscatting: "Catnip", pebblegathering: "Pebbles", rockgathering: "Rocks", sawmill: "Cardboard Planks", basicSawmill: "Basic Wood Planks", brickfactory: "Pebble Bricks", rockFactory: "Rock Bricks", catchen: "Catnip Salad" };
-
 function kittyAllocationLabel(kittyIdx) {
   const kittyForLabel = etat.kittiesData[kittyIdx];
   if (kittyIsInCombat(kittyIdx)) return { text: "Fighting: Hollow tree", cls: "kitty-statut-explo" };
@@ -2071,11 +2070,6 @@ function nouveautesExplorationNonVues() {
   return etat.explorationNouveautesNonVues;
 }
 
-function scoutingNouveauNonVu(scoutingId) {
-  return nouveautesExplorationNonVues().includes("scouting:" + scoutingId) && !!CONFIG.scoutings[scoutingId]
-    && scoutingDebloquee(CONFIG.scoutings[scoutingId]);
-}
-
 function enregistrerTransitionScoutingStory(flag) {
   const scoutings = Object.values(CONFIG.scoutings);
   const sortants = scoutings.filter(function(scouting) { return scouting.availableUntilStory === flag; });
@@ -2167,15 +2161,6 @@ function explorationRequiertAttention(zoneId, section) {
     if (section && attention.section !== section) return false;
     return true;
   });
-}
-
-function tirerRecompenseScouting(range) {
-  var roll = Math.random() * 100, cumul = 0;
-  for (var i = 0; i < range.length; i++) {
-    cumul += range[i].weight;
-    if (roll < cumul) return range[i].qty;
-  }
-  return range[range.length - 1].qty;
 }
 
 function butinScoutingVide() {
@@ -2292,7 +2277,7 @@ function terminerScouting(scoutingId) {
     // Success power is frozen for the active run. Later auto-repeats use the
     // cat's current power, matching the former restart behavior.
     var power = run === 0 && Number.isFinite(sc.power) ? sc.power : kittyEP(sc.kittyIndex);
-    var successChance = def.difficulte > 0 ? Math.min(1, power / def.difficulte) : 1;
+    var successChance = def.difficulte > 0 ? missionOdds.successChance(power, def.difficulte) : 1;
     var success = Math.random() < successChance;
     if (!success) {
       butin.failed += 1;
@@ -2587,10 +2572,10 @@ function masquerMessageCapaciteRecrutementCamp() {
   if (campRecruitCapacityMessageTimer) clearTimeout(campRecruitCapacityMessageTimer);
   campRecruitCapacityMessageTimer = null;
   if (message) {
-    message.hidden = true;
+    ecrirePropriete(message, "hidden", true);
     const plot = message.closest(".camp-prototype-house-plot")
       || document.querySelector(".camp-recruitment-house-plot");
-    if (plot) plot.classList.remove("camp-recruit-capacity-visible");
+    basculerClasse(plot, "camp-recruit-capacity-visible", false);
   }
 }
 
@@ -2668,16 +2653,26 @@ const FOOD_XP = Object.freeze(resourceApi.feedableDefinitions().reduce(function(
   return result;
 }, {}));
 const GATHER_LEVEL_MULTIPLIER = 1.05;
-// Global level ceiling. Keep this in one place so every XP source (food,
-// offline progression and future systems) shares the same maximum.
-const MAX_CAT_LEVEL = 100;
 
+// XP curve lives in js/core/cat-leveling.js (tickets #345, #349-D). Cats have
+// no global level ceiling: the exponential curve brakes progression
+// (balance_guide.md 8.4); only engineer ranks may declare a ceiling.
 function xpPourNiveau(n) {
-  return Math.max(n + 1, Math.ceil(Math.pow(n, CAMP_CAT_LEVELING_RULES.xpGrowthExponent)));
+  return catLeveling.xpForLevel(n, CAMP_CAT_LEVELING_RULES);
 }
 
-function productionParChaton(action) {
-  return 1;
+// Banks `gained` XP on Cat `k` and logs each level reached. Callers reject
+// Cats already at their ceiling. `onLevelUp` runs before each level's log.
+function appliquerXpChat(k, gained, onLevelUp) {
+  const niveauAvant = k.niveau;
+  const result = catLeveling.applyXp(k.niveau, k.xp, gained, niveauMaxChat(k), CAMP_CAT_LEVELING_RULES);
+  k.niveau = result.level;
+  k.xp = result.xp;
+  for (let niveau = niveauAvant + 1; niveau <= result.level; niveau++) {
+    if (onLevelUp) onLevelUp(niveau);
+    ajouterLog("event", k.nom + " reached Level " + niveau + "!");
+  }
+  return result.levelsGained;
 }
 
 // Production engine lives in js/core/production.js.
@@ -2761,11 +2756,9 @@ function rangIngenieurInfo(kitty) {
 
 function niveauMaxChat(kitty) {
   const info = rangIngenieurInfo(kitty);
-  // Engineer ranks may define a lower ceiling in the future, but no Cat can
-  // ever exceed the global cap.
-  return info && Number.isFinite(info.maxLevel)
-    ? Math.min(MAX_CAT_LEVEL, info.maxLevel)
-    : MAX_CAT_LEVEL;
+  // Ticket #349-D: no global ceiling; a Rank 2 Camp Engineer keeps its own
+  // Level 100 ceiling, which bounds its AFK ratio contribution.
+  return info && Number.isFinite(info.maxLevel) ? info.maxLevel : Infinity;
 }
 
 const CAMP_ACTION_SPEED_LEVEL_BASE = 1.02;
@@ -3352,10 +3345,6 @@ function scoreAttractiviteCamp() {
   return instantaneMetriquesDeriveesCamp().appeal;
 }
 
-function detailsAttractiviteCamp() {
-  return scoreAttractiviteCamp().items;
-}
-
 function formaterNombreAppealUi(value, maximumDecimals) {
   const decimals = Math.max(0, Number(maximumDecimals) || 0);
   return Number(value || 0).toFixed(decimals).replace(/\.?0+$/, "") || "0";
@@ -3657,17 +3646,6 @@ function positionnerPopoverTopBar(bouton, panneau, options) {
   panneau.style.transform = "none";
 }
 
-function actualiserAffichageNiveauCamp() {
-  const summary = document.getElementById("camp-level-summary");
-  if (!summary) return;
-  const progression = progressionNiveauCamp();
-  if (!summary.classList.contains("camp-profile-stat-action")) {
-    summary.textContent = "Camp Lv. " + progression.level;
-  }
-  summary.setAttribute("aria-label", "Camp Level " + progression.level + ". Show Camp Level details");
-  renduDetailsNiveauCamp();
-}
-
 function positionnerDetailsAttractiviteCamp() {
   positionnerPopoverTopBar(
     document.getElementById("camp-appeal-summary"),
@@ -3877,7 +3855,7 @@ function renduPickerAvatarProfilCamp(entries, selectedId) {
       + '" aria-pressed="' + (selected ? 'true' : 'false') + '" onclick="choisirAvatarProfilCamp(\''
       + echapperAttributHtml(entry.face.id) + '\')"><img src="' + echapperAttributHtml(faceSrc)
       + '" alt=""></button>';
-  }).join("") : '<p class="camp-profile-avatar-empty">Recruit a Cat with a canonical Cat Face to choose an avatar.</p>';
+  }).join("") : '<p class="camp-profile-avatar-empty">Recruit more Cats to unlock avatars.</p>';
 }
 
 function actualiserAffichageProfilCamp() {
@@ -4133,7 +4111,6 @@ function dureeBrute() {
   if (etat.chatons < 3) return 0;
   return calculRecrutementCamp().dureeArrivee;
 }
-function dureeEffective() { return Math.max(1, dureeBrute() / vitesseAttrapage()); }
 
 // Integrate the catch/recruit cooldown as a sequence of speed segments. This
 // is important when a house or manager is added during an active cycle: the
@@ -4277,7 +4254,7 @@ function renduPopupButinsScoutingZone(zoneId) {
   content.innerHTML = '<div class="scouting-accumulator scouting-reward-summary-accumulator">'
     + '<div class="scouting-runs"><span class="scouting-metric-label">Scouting Runs:</span><strong class="scouting-successful">Successful ' + totals.successful + '</strong><span class="scouting-failed">Failed ' + totals.failed + '</span></div>'
     + '<div class="scouting-luck"><span class="scouting-metric-label">Rewards Luck:</span><span>Regular ' + totals.regular + '</span><span class="scouting-lucky">Lucky ' + totals.lucky + '</span><strong class="scouting-super-lucky">Super Lucky ' + totals.superLucky + '</strong>' + extraLuck + '</div>'
-    + '<div class="scouting-rewards">' + (rewardsText || 'No rewards collected yet') + '</div>'
+    + '<div class="scouting-rewards">' + (rewardsText || '') + '</div>'
     + '</div>';
 }
 
@@ -4418,7 +4395,7 @@ function marquerSequencePrete() {
 
 function woodHouseCostExponent(canonicalGrowth) {
   const growth = Number(canonicalGrowth);
-  const baseGrowth = Number.isFinite(growth) && growth >= 1 ? growth : 1.7;
+  const baseGrowth = Number.isFinite(growth) && growth >= 1 ? growth : 1.8;
   return perksV2Api ? perksV2Api.houseCostExponent(progressionPerksV2(), baseGrowth) : baseGrowth;
 }
 
@@ -4555,11 +4532,6 @@ function formaterTemps(sec) {
   if (h > 0) return h + "h " + m + "m " + s + "s";
   if (m > 0) return m + "m " + s + "s";
   return s + "s";
-}
-
-function formaterSecondesBrutes(sec) {
-  if (!Number.isFinite(sec) || sec <= 0) return "";
-  return Math.max(1, Math.ceil(sec)) + "s";
 }
 
 function formaterCatchTime(ts) {
@@ -4720,7 +4692,6 @@ const V4_STORAGE_NAMESPACE = saveCore.STORAGE_NAMESPACE;
 const SAVE_KEY = saveCore.SAVE_KEY;
 const SAVE_RECOVERY_KEY = saveCore.SAVE_RECOVERY_KEY;
 const SAVE_VERSION = saveCore.SAVE_VERSION;
-const WORK_DETAILS_HINT_STORAGE_KEY = V4_STORAGE_NAMESPACE + ".workDetailsHintSeen";
 const validerStructureSauvegarde = saveCore.validerStructureSauvegarde;
 const analyserSauvegardeBrute = saveCore.analyserSauvegardeBrute;
 
@@ -4945,7 +4916,6 @@ function confirmerRedemarrageMajeur() {
   const preferences = preferencesAncienneSauvegarde || {};
   localStorage.removeItem(SAVE_KEY);
   STORIES.forEach(function(story) { localStorage.removeItem(story.flag); });
-  localStorage.removeItem(WORK_DETAILS_HINT_STORAGE_KEY);
   reinitialiserEtat();
   etat.volumeEffetsSonores = Number.isFinite(preferences.volumeEffetsSonores) ? preferences.volumeEffetsSonores : 0.3;
   etat.volumeMusique = Number.isFinite(preferences.volumeMusique) ? preferences.volumeMusique : 0.3;
@@ -4969,7 +4939,6 @@ function reset() {
   fermerModalSettings();
   localStorage.removeItem(SAVE_KEY);
   STORIES.forEach(function(s) { localStorage.removeItem(s.flag); });
-  localStorage.removeItem(WORK_DETAILS_HINT_STORAGE_KEY);
   sauvegardeVerrouillee = false;
   reinitialiserEtat();
   reinitialiserCampPrototypeNouvellePartie();
@@ -5167,7 +5136,7 @@ function rendreCreditsMusique() {
     source.href = credit.sourceUrl;
     source.target = "_blank";
     source.rel = "noopener noreferrer";
-    source.textContent = "Source ↗";
+    source.textContent = "Source";
     section.appendChild(source);
     container.appendChild(section);
   });
@@ -5476,23 +5445,43 @@ function quetesQuotidiennesCompletes(q) {
   return q && q.scoutingSuccesses >= 10 && q.catLevelUps >= 1 && q.birdCaught === true && q.recipesCompleted >= 10;
 }
 
+// Paw Print Diary (ticket #349-E, balance_guide.md 11.3): each fully completed
+// Daily Quest day adds one paw print; every third print pays the Daily Reward
+// amount (1, then 2 and 3 with the Daily Reward I and II perks).
+const PAW_PRINTS_PER_DIARY = 3;
+
 function recompenseQuetesQuotidiennes() {
   return perksV2Api ? perksV2Api.dailyRewardAmount(progressionPerksV2()) : 1;
 }
 
+// Paw prints already in the current diary (0 to 2).
+function empreintesCarnetPattes() {
+  const prints = Number(etat.pawPrints);
+  return Number.isInteger(prints) && prints > 0 ? prints % PAW_PRINTS_PER_DIARY : 0;
+}
+
 function reclamerRecompenseQuotidienne() {
-  if (!dailyQuetesDebloquees()) return;
+  if (!dailyQuetesDebloquees()) return false;
   initialiserQuetesQuotidiennes();
   const q = etat.dailyQuests;
-  if (!quetesQuotidiennesCompletes(q) || q.rewardClaimed) return;
+  if (!quetesQuotidiennesCompletes(q) || q.rewardClaimed) return false;
   const rewardQty = recompenseQuetesQuotidiennes();
+  const prints = empreintesCarnetPattes() + 1;
   q.rewardClaimed = true;
-  etat.cannedCatFood += rewardQty;
-  ajouterLog("event", "Daily quests complete. " + rewardQty + " Canned Cat Food received.");
-  afficherNotification("Daily reward claimed: " + rewardQty + " Canned Cat Food");
+  if (prints >= PAW_PRINTS_PER_DIARY) {
+    etat.pawPrints = 0;
+    etat.cannedCatFood += rewardQty;
+    ajouterLog("event", "Daily quests complete. Paw Print Diary filled: " + rewardQty + " Canned Cat Food received.");
+    afficherNotification("Paw Print Diary filled: " + rewardQty + " Canned Cat Food");
+  } else {
+    etat.pawPrints = prints;
+    ajouterLog("event", "Daily quests complete. Paw print added to the Paw Print Diary (" + prints + "/" + PAW_PRINTS_PER_DIARY + ").");
+    afficherNotification("Paw print added: " + prints + "/" + PAW_PRINTS_PER_DIARY);
+  }
   sauvegarder();
   rendu();
   renduObjectifs();
+  return true;
 }
 
 
@@ -5665,7 +5654,8 @@ function renduQuetesQuotidiennes() {
   if (!liste) return;
   const reward = document.getElementById("daily-quests-reward");
   const rewardQty = recompenseQuetesQuotidiennes();
-  const structureKey = [q.recipeFamily, q.scoutingSuccesses, q.catLevelUps, q.birdCaught, q.recipesCompleted, rewardQty, complete].join("|");
+  const prints = empreintesCarnetPattes();
+  const structureKey = [q.recipeFamily, q.scoutingSuccesses, q.catLevelUps, q.birdCaught, q.recipesCompleted, rewardQty, prints, complete].join("|");
   if (structureKey !== dailyQuestsHudStructureKey) {
     ecrireHTML(liste, lignes.map(function(ligne) {
       return '<div class="daily-quest-row' + (ligne.done ? ' daily-quest-done' : '') + '">' +
@@ -5674,9 +5664,19 @@ function renduQuetesQuotidiennes() {
       '</div>';
     }).join(""));
     if (reward) {
-      ecrireHTML(reward, '<span class="daily-reward-action"><img class="daily-reward-icon" src="img/resources/Canned Cat Food_Final.png" alt="Canned Cat Food">' +
+      const pawIcon = echapperAttributHtml(gameContentData.INTERFACE_ICON_PATHS["cat-paw"]);
+      let diary = "";
+      for (let index = 0; index < PAW_PRINTS_PER_DIARY; index += 1) {
+        diary += '<img class="paw-diary-print' + (index < prints ? ' is-filled' : '') + '" src="' + pawIcon + '" alt="">';
+      }
+      const diaryLabel = "Paw Print Diary: " + prints + " of " + PAW_PRINTS_PER_DIARY + " paw prints. Every "
+        + PAW_PRINTS_PER_DIARY + " paw prints give " + rewardQty + " Canned Cat Food.";
+      ecrireHTML(reward, '<span class="paw-diary" role="img" aria-label="' + echapperAttributHtml(diaryLabel) + '" title="' + echapperAttributHtml(diaryLabel) + '">' +
+        '<span class="paw-diary-label">Paw Print Diary</span>' + diary + '</span>' +
+        '<span class="daily-reward-action">' +
+        '<img class="daily-reward-icon" src="img/resources/Canned Cat Food_Final.png" alt="Canned Cat Food">' +
         '<strong class="daily-reward-quantity">×' + rewardQty + '</strong>' +
-        '<button id="daily-claim-reward" class="daily-claim-button" type="button" onclick="reclamerRecompenseQuotidienne()"' + (complete ? '' : ' disabled') + '>Claim reward</button></span>' +
+        '<button id="daily-claim-reward" class="daily-claim-button" type="button" onclick="reclamerRecompenseQuotidienne()"' + (complete ? '' : ' disabled') + '>Add paw print</button></span>' +
         '<span id="daily-reward-reset" class="daily-reward-reset"></span>');
     }
     dailyQuestsHudStructureKey = structureKey;
@@ -5845,10 +5845,6 @@ function allerObjectif(objectifId) {
     cible.classList.add("objectif-cible-highlight");
     setTimeout(function() { cible.classList.remove("objectif-cible-highlight"); }, 1700);
   }, 80);
-}
-
-function allerObjectifPrincipal() {
-  allerObjectif(objectifPrincipalId);
 }
 
 
@@ -6273,10 +6269,10 @@ function renduVisiteurCampRecrutement() {
   const route = document.getElementById("camp-recruit-route");
   if (!visiteur) return;
   const visible = campDebloque() && etat.chatons >= 3 && recrutementDepuisCampDebloque();
-  visiteur.hidden = !visible;
-  if (route) route.hidden = !visible;
+  ecrirePropriete(visiteur, "hidden", !visible);
+  ecrirePropriete(route, "hidden", !visible);
   if (!visible) {
-    if (route) route.classList.remove("camp-recruit-route-tutorial-attention");
+    basculerClasse(route, "camp-recruit-route-tutorial-attention", false);
     masquerMessageCapaciteRecrutementCamp();
     fermerDetailsDureeArriveeCamp(false);
     return;
@@ -6295,16 +6291,14 @@ function renduVisiteurCampRecrutement() {
   // residents remain centred beneath the porch, so both groups stay distinct.
   const gauche = 8 - 2 * progressionBornee * (1 - progressionBornee);
   const haut = 4 + 84 * progressionBornee;
-  visiteur.style.setProperty("--camp-recruit-left", gauche.toFixed(2) + "%");
-  visiteur.style.setProperty("--camp-recruit-top", haut.toFixed(2) + "%");
+  ecrireVariableStyle(visiteur, "--camp-recruit-left", gauche.toFixed(2) + "%");
+  ecrireVariableStyle(visiteur, "--camp-recruit-top", haut.toFixed(2) + "%");
   if (route) {
-    route.classList.toggle(
-      "camp-recruit-route-tutorial-attention",
-      Date.now() < campTutorialRouteAttentionUntil
-    );
+    basculerClasse(route, "camp-recruit-route-tutorial-attention",
+      Date.now() < campTutorialRouteAttentionUntil);
     route.querySelectorAll("[data-camp-recruit-paw-step]").forEach(function(patte) {
       const etape = Number(patte.dataset.campRecruitPawStep);
-      patte.classList.toggle("camp-recruit-paw-reached", progressionBornee >= etape);
+      basculerClasse(patte, "camp-recruit-paw-reached", progressionBornee >= etape);
     });
   }
   const statut = _recruitMiniJeuActif
@@ -6316,8 +6310,8 @@ function renduVisiteurCampRecrutement() {
   if (enCours) renduDetailsDureeArriveeCamp();
   else fermerDetailsDureeArriveeCamp(false);
   ecrireAttributDynamique(visiteur, "aria-label", prochainNom + " · " + statut);
-  visiteur.classList.toggle("camp-recruit-visitor-arrived", !enCours);
-  visiteur.classList.toggle("camp-recruit-visitor-ready", !enCours && (!logementSature || inviteStoryCapacitePret));
+  basculerClasse(visiteur, "camp-recruit-visitor-arrived", !enCours);
+  basculerClasse(visiteur, "camp-recruit-visitor-ready", !enCours && (!logementSature || inviteStoryCapacitePret));
   if (enCours || !logementSature) masquerMessageCapaciteRecrutementCamp();
 }
 
@@ -6776,14 +6770,12 @@ function libelleTempsManualFocus(reserve) {
 function actualiserBadgeManualFocus(badge, actif, reserve) {
   if (!badge) return;
   const visible = Boolean(actif) && reserve > 0;
-  badge.setAttribute("aria-hidden", visible ? "false" : "true");
-  badge.hidden = !visible;
-  const label = badge.querySelector(".work-manual-focus-label");
-  const timer = badge.querySelector(".work-manual-focus-time");
-  const fill = badge.querySelector(".work-manual-focus-fill");
-  if (label) label.textContent = libelleManualFocus();
-  if (timer) timer.textContent = libelleTempsManualFocus(reserve);
-  if (fill) fill.style.width = Math.min(100, reserve / manualFocusMaxSeconds() * 100) + "%";
+  ecrireAttributDynamique(badge, "aria-hidden", visible ? "false" : "true");
+  ecrirePropriete(badge, "hidden", !visible);
+  ecrireTexte(badge.querySelector(".work-manual-focus-label"), libelleManualFocus());
+  ecrireTexte(badge.querySelector(".work-manual-focus-time"), libelleTempsManualFocus(reserve));
+  ecrireStyle(badge.querySelector(".work-manual-focus-fill"), "width",
+    Math.min(100, reserve / manualFocusMaxSeconds() * 100) + "%");
 }
 
 function manualFocusBadgeHtml(actif, reserve) {
@@ -6818,7 +6810,7 @@ function initialiserWorkStructure() {
     }).join("");
     return '<div id="famille-' + familyId + '" class="work-recipe-family">'
       + '<header class="work-recipe-family-header">'
-      +   '<div><span class="pair-family-kicker">Production family</span><h2>' + family.label + '</h2></div>'
+      +   '<div><h2>' + family.label + '</h2></div>'
       +   (family.gatheringManager ? '<section id="work-managers-' + familyId + '" class="work-recipe-managers" aria-label="' + family.label + ' managers" style="display:none">'
       +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Gathering Manager</span></div><div id="manager-slot-' + family.gatheringManager + '" class="manager-slot-conteneur"></div></div>'
       +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Processing Manager</span></div><div id="manager-slot-' + family.processingManager + '" class="manager-slot-conteneur"></div></div>'
@@ -6887,7 +6879,7 @@ function intrantsPartagesRecetteHtml(pair) {
     + pair.inputs.map(function(input) {
       return '<div class="work-craft-input"><img src="' + input.icon + '" alt=""><strong>' + input.label + '</strong><span data-craft-input="' + input.res + '">'
         + libelleNombreDecimal(resourceApi.balance(etat, input.res), 1) + ' / ' + input.baseQuantity + '</span></div>';
-    }).join('') + '<small>From shared stock. Used when the item is delivered.</small></section>';
+    }).join('') + '</section>';
 }
 
 function workSummaryManagerHtml(label, managerFamily) {
@@ -6928,7 +6920,7 @@ function renduWorkSupervision(summary, unlockedFamilies) {
       const kitty = pair && slot.kittyIndex !== null ? etat.kittiesData[slot.kittyIndex] : null;
       const stockage = pair ? etatStockageRessource(pair.procRes) : null;
       const pause = pair ? raisonPauseResumeWork(pair, capaciteRecetteWork(pair, unlocks()), stockage, slot) : "";
-      const status = !pair ? "Empty slot" : pause ? "Paused · " + pause : !kitty ? "Waiting for a Cat" : phaseActiveRecette(slot) === "processing" ? "Processing" : "Gathering";
+      const status = !pair ? "" : pause ? "Paused · " + pause : !kitty ? "" : phaseActiveRecette(slot) === "processing" ? "Processing" : "Gathering";
       const rate = kitty && !pause ? libelleNombreDecimal(tauxProductionSlotRecette(pair, slot) * 60, 2) + "/min" : "";
       stateParts.push(familyId, slotIdx, slot.recipeId, slot.kittyIndex, slot.phase, pause, rate, pair ? stockSortieRecette(pair) : 0);
       return '<button type="button" class="work-summary-row work-supervision-slot' + (!pair ? ' is-empty' : '') + (pause ? ' is-paused' : '')
@@ -7024,7 +7016,7 @@ function renduWorkSummary(unlockedFamilies) {
       : "";
 
     return '<section class="work-summary-family work-summary-family-' + familyId + '">'
-      + '<header class="work-summary-header"><div><span>Production family</span><h2>' + family.label + '</h2></div><strong' + (active.length ? '' : ' class="is-empty"') + '>' + active.length + '/' + availableSlotCount + ' ACTIVE</strong></header>'
+      + '<header class="work-summary-header"><div><h2>' + family.label + '</h2></div><strong' + (active.length ? '' : ' class="is-empty"') + '>' + active.length + '/' + availableSlotCount + ' ACTIVE</strong></header>'
       + managerHtml
       + '<div class="work-summary-list">' + rowsHtml + emptyHtml + goToFamilyHtml + waitingHtml + '</div>'
       + '</section>';
@@ -7105,7 +7097,7 @@ function renduSlotRecette(familyId, slotIdx) {
   if (!pair) {
     el.innerHTML = '<div class="work-recipe-slot-top work-recipe-slot-top-empty"><span class="work-recipe-slot-number" aria-label="Recipe slot ' + (slotIdx + 1) + '">' + (slotIdx + 1) + '</span></div>'
       + '<button class="work-recipe-choose-empty" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')">'
-      + '<span class="work-recipe-choose-plus">+</span><strong>Choose a recipe</strong><small>Then assign a Cat to produce it</small></button>';
+      + '<span class="work-recipe-choose-plus">+</span><strong>Choose a recipe</strong></button>';
     if (_workPopupContext && _workPopupContext.familyId === familyId && _workPopupContext.slotIdx === slotIdx) hideResPopup();
     return;
   }
@@ -7303,15 +7295,6 @@ function tauxProductionSlotRecette(pair, slot) {
   return Number.isFinite(cycleDuration) && cycleDuration > 0 ? kittyProcessProductionMultiplier(kitty) / cycleDuration : 0;
 }
 
-function tauxProductionBrute(action) {
-  const pair = RESOURCE_PAIRS.find(function(candidate) { return candidate.rawAction === action; });
-  if (!pair) return 0;
-  return (etat.workRecipeSlots[pair.family] || []).reduce(function(total, slot) {
-    if (slot.recipeId !== pair.recipeId || slot.kittyIndex === null) return total;
-    return total + tauxGatheringRecette(pair, etat.kittiesData[slot.kittyIndex]);
-  }, 0);
-}
-
 function tauxProductionTransformee(pair) {
   return (etat.workRecipeSlots[pair.family] || []).reduce(function(total, slot) {
     return total + tauxProductionSlotRecette(pair, slot);
@@ -7332,57 +7315,6 @@ function tauxConsommationRessource() { return 0; }
 
 function tauxNetRessource(resourceKey, u) {
   return tauxProductionRessource(resourceKey, u) - tauxConsommationRessource(resourceKey, u);
-}
-
-function libelleTauxNetCourt(net) {
-  const parMin = net * 60;
-  if (Math.abs(parMin) < 0.005) return "0.00/m";
-  return (parMin > 0 ? "+" : "") + parMin.toFixed(2) + "/m";
-}
-
-function sourceProductionRessource(resourceKey) {
-  for (let i = 0; i < RESOURCE_PAIRS.length; i++) {
-    const pair = RESOURCE_PAIRS[i];
-    if (pair.rawRes === resourceKey) {
-      return { family: pair.family, action: pair.rawAction, recipeId: pair.recipeId, targetId: "work-recipe-slots-" + pair.family, label: pair.rawLabel };
-    }
-    if (pair.procRes === resourceKey) {
-      return { family: pair.family, action: pair.procAction, recipeId: pair.recipeId, targetId: "work-recipe-slots-" + pair.family, label: pair.procLabel };
-    }
-  }
-  return null;
-}
-
-function mettreEnEvidenceRessourceWork(source) {
-  if (!source) return;
-  setTimeout(function() {
-    const cible = domParId(source.targetId);
-    if (!cible) return;
-    cible.scrollIntoView({ behavior: "smooth", block: "center" });
-    cible.classList.remove("objectif-cible-highlight");
-    void cible.offsetWidth;
-    cible.classList.add("objectif-cible-highlight");
-    setTimeout(function() { cible.classList.remove("objectif-cible-highlight"); }, 1700);
-  }, 80);
-}
-
-function allerRessourceWork(resourceKey) {
-  const source = sourceProductionRessource(resourceKey);
-  if (!source) return;
-  filtrerWork(source.family);
-  mettreEnEvidenceRessourceWork(source);
-}
-
-function ouvrirAllocationRessource(resourceKey) {
-  const source = sourceProductionRessource(resourceKey);
-  if (!source) return;
-  filtrerWork(source.family);
-  const slots = slotsRecettesAssignables(source.family);
-  let slotIdx = slots.findIndex(function(slot) { return slot.recipeId === source.recipeId && slot.kittyIndex === null; });
-  if (slotIdx < 0) slotIdx = slots.findIndex(function(slot) { return !slot.recipeId; });
-  if (slotIdx < 0) { mettreEnEvidenceRessourceWork(source); return; }
-  if (!slots[slotIdx].recipeId) slots[slotIdx].recipeId = source.recipeId;
-  ouvrirModalWorkerRecette(source.family, slotIdx);
 }
 
 function renduWorkPairs(u) {
@@ -7414,12 +7346,6 @@ function renduWorkPairs(u) {
   const sectionEl = domParId("section-work-pairs");
   if (!u.cathering) { ecrireStyle(sectionEl, "display", "none"); return; }
   ecrireStyle(sectionEl, "display", "");
-  const indiceEl = domParId("work-discovery-hint");
-  if (indiceEl) ecrireStyle(
-    indiceEl,
-    "display",
-    localStorage.getItem(WORK_DETAILS_HINT_STORAGE_KEY) ? "none" : "flex"
-  );
 
   // Gang Leader passive speed banner
   const banner = domParId("gang-leader-banner");
@@ -7428,7 +7354,7 @@ function renduWorkPairs(u) {
     if (gl) {
       const mult = gangLeaderBonus();
       ecrireStyle(banner, "display", "");
-      ecrireHTML(banner, metierIconHtml("gang-leader") + " <strong class='kitty-nom'>" + echapperAttributHtml(gl.nom) + "</strong> is leading the gang: ×" + mult.toFixed(2) + " work speed (" + etat.kittiesData.length + " cats · <span class='kitty-nom'>" + echapperAttributHtml(gl.nom) + "</span> Lvl " + gl.niveau + ")");
+      ecrireHTML(banner, metierIconHtml("gang-leader") + " <strong class='kitty-nom'>" + echapperAttributHtml(gl.nom) + "</strong> leads the gang: ×" + mult.toFixed(2) + " work speed");
     } else {
       ecrireStyle(banner, "display", "none");
     }
@@ -7503,12 +7429,6 @@ function renduWorkPairs(u) {
   campTutorialActualiserInterface();
 }
 
-function fermerWorkDiscoveryHint() {
-  localStorage.setItem(WORK_DETAILS_HINT_STORAGE_KEY, "1");
-  const indiceEl = document.getElementById("work-discovery-hint");
-  if (indiceEl) ecrireStyle(indiceEl, "display", "none");
-}
-
 // Tapping or keyboard-activating a resource icon opens its detailed tooltip.
 (function() {
   const section = document.getElementById("section-work-pairs");
@@ -7537,7 +7457,6 @@ function fermerWorkDiscoveryHint() {
       row.classList.add("pair-info-ouverte");
       icon.setAttribute("aria-expanded", "true");
     }
-    fermerWorkDiscoveryHint();
     e.stopPropagation();
   });
   document.addEventListener("click", function() {
@@ -7624,10 +7543,10 @@ function actualiserJobsWorkspace() {
     const panel = domParId(view === "training" ? "jobs-training-panel" : "section-advanced-training");
     if (button) {
       button.classList.toggle("btn-filtre-work-actif", active);
-      button.setAttribute("aria-selected", active ? "true" : "false");
-      button.tabIndex = active ? 0 : -1;
+      ecrireAttributDynamique(button, "aria-selected", active ? "true" : "false");
+      ecrirePropriete(button, "tabIndex", active ? 0 : -1);
     }
-    if (panel) panel.hidden = !active;
+    ecrirePropriete(panel, "hidden", !active);
   });
 }
 
@@ -7647,10 +7566,10 @@ function actualiserSousOngletsFacilities(u) {
   const sousOngletsVisibles = !!u.laboratory;
   if (facilitiesMobileVue === "lab" && !u.laboratory) facilitiesMobileVue = "jobs";
 
-  nav.dataset.hasTabs = sousOngletsVisibles ? "true" : "false";
-  nav.dataset.tabCount = u.laboratory ? "2" : "1";
-  nav.setAttribute("aria-hidden", sousOngletsVisibles ? "false" : "true");
-  contenu.dataset.facilitiesView = facilitiesMobileVue;
+  ecrireAttributDynamique(nav, "data-has-tabs", sousOngletsVisibles ? "true" : "false");
+  ecrireAttributDynamique(nav, "data-tab-count", u.laboratory ? "2" : "1");
+  ecrireAttributDynamique(nav, "aria-hidden", sousOngletsVisibles ? "false" : "true");
+  ecrireAttributDynamique(contenu, "data-facilities-view", facilitiesMobileVue);
   document.body.classList.toggle("facilities-subtabs-actifs", sousOngletsVisibles);
 
   ["jobs", "lab"].forEach(function(view) {
@@ -7659,8 +7578,8 @@ function actualiserSousOngletsFacilities(u) {
     const actif = view === facilitiesMobileVue;
     bouton.classList.toggle("facilities-subtab-active", actif);
     bouton.classList.toggle("btn-filtre-work-actif", actif);
-    bouton.setAttribute("aria-selected", actif ? "true" : "false");
-    bouton.tabIndex = actif ? 0 : -1;
+    ecrireAttributDynamique(bouton, "aria-selected", actif ? "true" : "false");
+    ecrirePropriete(bouton, "tabIndex", actif ? 0 : -1);
   });
 
   const boutonLab = domParId("facilities-subtab-lab");
@@ -7785,7 +7704,7 @@ function renduLaboratoire() {
       html += '<div class="jc-slot-filled"><span class="jc-slot-emoji">' + kittyIconHtml(completedKitty) + '</span>';
       html += '<div class="jc-slot-info"><span class="jc-slot-nom">' + (completedKitty ? echapperAttributHtml(completedKitty.nom) : "Cat") + '</span>';
       html += '<span class="jc-slot-metier">Camp Engineer · Rank ' + (completed.engineerRank || 1) + ' learned!</span></div></div>';
-      html += '<button type="button" class="btn-jc-validate" onclick="validerFormationIngenieur()">' + CHECK_ICON + ' Validate formation</button>';
+      html += '<button type="button" class="btn-jc-validate" onclick="validerFormationIngenieur()">' + CHECK_ICON + ' Complete training</button>';
       html += '</div>';
     } else if (training) {
       const kitty = etat.kittiesData[training.kittyIndex];
@@ -7804,7 +7723,7 @@ function renduLaboratoire() {
         html += '<span class="jc-slot-emoji">' + kittyIconHtml(selected) + '</span><div class="jc-slot-info"><span class="jc-slot-nom">' + echapperAttributHtml(selected.nom) + '</span><span class="jc-slot-metier">Stray Cat</span></div></div>';
         html += '<button class="jc-slot-remove" aria-label="Remove ' + echapperAttributHtml(selected.nom) + ' from engineering training" onclick="labEngineerKittySelectionne=null;labDirty=true;renduLaboratoire();event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>';
       } else {
-        html += '<div class="jc-slot-empty" data-jc-modal-trigger="engineer"' + attributsActivationClavier("Select an unassigned cat for engineering training") + ' onclick="ouvrirModalJC(\'engineer\')"><span class="jc-slot-plus">+</span><span class="jc-slot-label">Select an unassigned cat</span></div>';
+        html += '<div class="jc-slot-empty" data-jc-modal-trigger="engineer"' + attributsActivationClavier("Select an unassigned cat for engineering training") + ' onclick="ouvrirModalJC(\'engineer\')"><span class="jc-slot-plus">+</span><span class="jc-slot-label">Cat</span></div>';
       }
 
       html += '<div class="jc-metiers">';
@@ -8002,15 +7921,13 @@ function renduAdvancedTraining() {
     html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + (pickerMetier ? pickerMetier.emoji + ' ' + echapperAttributHtml(pickerMetier.nom) : echapperAttributHtml(k.metier)) + (pickerMetier?.combat ? ' · Combat Level ' + (k.combatProgress?.level || 1) : '') + ' · Specialization Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
     html += '<span class="tc-mobile-picker-action">Change</span></button>';
   } else {
-    html += '<button type="button" class="tc-cat-picker tc-cat-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Select a cat with a job</span></button>';
+    html += '<button type="button" class="tc-cat-picker tc-cat-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Cat</span></button>';
   }
   html += '<div class="tc-workspace-grid">';
   html += '<section class="tc-sphere-column" aria-label="Selected cat specialization">';
   if (k) {
     if (selectedGrid.length) html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
     else html += '<p class="tc-empty">This job does not have a specialization sphere yet.</p>';
-  } else {
-    html += '<div class="tc-empty tc-empty-large">Select a cat to view its sphere.</div>';
   }
   html += '</section></div></div>';
   el.innerHTML = html;
@@ -8139,7 +8056,7 @@ function renduSphereGrid(jobId) {
     : '';
   containerEl.innerHTML = '<div class="sphere-tree-viewport sphere-fog-workspace' + sphereFogClass + '">' + zoomControls + '<div class="sphere-tree-scroll" tabindex="0" aria-label="Scrollable Specialization Perk tree">' + parts.join('') + '</div></div>'
     + '<div class="sphere-detail-panel" id="sphere-detail-panel">'
-    + '<div class="sphere-detail-nom" id="sphere-detail-nom">Select a perk to see its description.</div>'
+    + '<div class="sphere-detail-nom" id="sphere-detail-nom"></div>'
     + '<div class="sphere-detail-desc" id="sphere-detail-desc"></div>'
     + '</div>';
   monterBrouillardSphere(sphereFogLayer, containerEl.querySelector('.sphere-tree-viewport'));
@@ -8195,7 +8112,7 @@ function clickerSphere(sphereId) {
     _sphereSelectionnee = null;
     var nomEl  = document.getElementById('sphere-detail-nom');
     var descEl = document.getElementById('sphere-detail-desc');
-    if (nomEl)  nomEl.textContent  = 'Select a perk to see its description.';
+    if (nomEl)  nomEl.textContent  = '';
     if (descEl) descEl.textContent = '';
     return;
   }
@@ -8238,8 +8155,8 @@ function clickerSphere(sphereId) {
         + '</div>';
     } else if (actualEtat === 'locked') {
       learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">' + (sphere?.minCombatLevel
-        ? 'Locked — meet the Combat Level and learned perk requirements.'
-        : 'Locked — learn every prerequisite first.') + '</span></div>';
+        ? 'Locked: Combat Lv ' + sphere.minCombatLevel
+        : 'Locked') + '</span></div>';
     } else if (actualEtat === 'granted') {
       learnHtml = '<div class="sphere-cout"><span class="sphere-cout-label">Granted with this job.</span></div>';
     } else if (actualEtat === 'learned') {
@@ -8350,17 +8267,6 @@ function terminerApprentissagePerk() {
   _tcKey = null;
   jcDirty = true;
   return true;
-}
-
-function specialiserJobKitty(index) {
-  const kitty = etat.kittiesData[index];
-  if (!kitty || !kitty.metier) return;
-  kitty.jobNiveau = (kitty.jobNiveau || 0) + 1;
-  const jobNom = METIERS[kitty.metier] ? METIERS[kitty.metier].nom : kitty.metier;
-  afficherNotification(kitty.nom + "'s " + jobNom + " reached level " + kitty.jobNiveau + "!");
-  ajouterLog("event", kitty.nom + " specialized in " + jobNom + " — now Lv. " + kitty.jobNiveau + ".");
-  renduAdvancedTraining();
-  sauvegarder();
 }
 
 function jobLevelInfo(metier) {
@@ -8670,7 +8576,6 @@ function afficherFoodDistributionRecap(recap) {
   const recipients = recap.filter(function(entry) { return entry.foodUnits > 0; });
   if (!recipients.length) return;
 
-  const totalFoodUnits = recipients.reduce(function(total, entry) { return total + entry.foodUnits; }, 0);
   const totalXp = recipients.reduce(function(total, entry) { return total + entry.xp; }, 0);
   const totalLevelUps = recipients.reduce(function(total, entry) { return total + entry.levelUps; }, 0);
   const catsFedLabel = recipients.length + (recipients.length === 1 ? " Cat fed" : " Cats fed");
@@ -8687,8 +8592,6 @@ function afficherFoodDistributionRecap(recap) {
         + '<strong class="food-distribution-level' + (entry.levelUps ? "" : " none") + '">' + levelLabel + '</strong>'
         + '</div>';
     }).join("")
-    + '<div class="food-distribution-total">Total: ' + totalFoodUnits + (totalFoodUnits === 1 ? " food item" : " food items")
-    + ' · +' + totalXp + ' XP · +' + totalLevelUps + (totalLevelUps === 1 ? " level" : " levels") + '</div>'
     + '</div>';
 
   ouvrirDialogueModal("food-distribution-modal", {
@@ -8815,16 +8718,11 @@ function distribuerFood(mode) {
   function donnerXp(k, xp, recap) {
     const niveauMax = niveauMaxChat(k);
     if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) return;
-    k.xp += xp;
     if (recap) recap.xp += xp;
-    while (k.xp >= xpPourNiveau(k.niveau) && k.niveau < niveauMax) {
-      k.xp -= xpPourNiveau(k.niveau);
-      k.niveau++;
+    appliquerXpChat(k, xp, function() {
       totalLevelUps++;
       if (recap) recap.levelUps++;
-      ajouterLog("event", k.nom + " reached Level " + k.niveau + "!");
-    }
-    if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) k.xp = 0;
+    });
   }
 
   if (mode === 'egal') {
@@ -8839,12 +8737,14 @@ function distribuerFood(mode) {
   } else { // basniveau — level up lowest cats first (Option A)
     var budget = xpBudget;
     while (budget > 0) {
-      var best = null, bestScore = Infinity;
+      var best = null, bestNeeded = Infinity;
       etat.kittiesData.forEach(function(k) {
         if (!k || k.niveau >= niveauMaxChat(k)) return;
         var needed = xpPourNiveau(k.niveau) - k.xp;
-        var score  = k.niveau * 100000 + needed;
-        if (score < bestScore) { bestScore = score; best = k; }
+        // Lowest level first, then the cheapest next level.
+        if (!best || k.niveau < best.niveau || (k.niveau === best.niveau && needed < bestNeeded)) {
+          bestNeeded = needed; best = k;
+        }
       });
       if (!best) break;
       var needed = xpPourNiveau(best.niveau) - best.xp;
@@ -8901,8 +8801,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
       return {
         helpBody: "<strong>Bernardo has not learned the Gang Leader job yet.</strong>"
           + "<span>Increasing his level has no gameplay effect until he becomes Gang Leader.</span>",
-        levelBonuses: "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'>"
-          + "His level has no gameplay effect until he becomes Gang Leader.</span></div>"
+        levelBonuses: ""
       };
     }
     const workSpeed = gangLeaderBonus().toFixed(2);
@@ -8912,7 +8811,6 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
       levelBonuses: "<div class='xp-bonus-actifs'>"
         + "<span class='xp-bonus-ligne'><span class='bonus-var'>×" + workSpeed
         + "</span> Gang Leader Work Speed</span>"
-        + "<span class='xp-bonus-ligne'>Bernardo's level amplifies this bonus for all workers.</span>"
         + "</div>"
     };
   }
@@ -8921,7 +8819,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
     const nextShopLevel = SHOP_DATA.nextMerchandiseLevel(k.niveau);
     const nextShopCopy = nextShopLevel === null ? "All current merchandise unlocked" : "New items at Level " + nextShopLevel;
     return {
-      helpBody: "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks merchandise at the levels authored in Gameplay &amp; Balance.</span><span>" + nextShopCopy + "</span>",
+      helpBody: "<strong>Shop Owner Level " + k.niveau + "</strong><span>Cannelle unlocks new merchandise at higher levels.</span><span>" + nextShopCopy + "</span>",
       levelBonuses: "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'><span class='bonus-var'>Level " + k.niveau + "</span> Shop Owner progression</span><span class='xp-bonus-ligne'>" + nextShopCopy + "</span></div>"
     };
   }
@@ -8931,7 +8829,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
     return {
       helpBody: "<strong>" + specialistRole.label + " Level " + k.niveau + "</strong>"
         + (k.nom === "Naya"
-          ? "<span>Level up Naya to strengthen the Inn through its authored milestones.</span>"
+          ? "<span>Naya's level improves the Inn.</span>"
           : "<span>This permanent specialist has no ordinary Work, Camp, Manager or Exploration bonuses.</span>"),
       levelBonuses: "<div class='xp-bonus-actifs'>" + (k.nom === "Naya"
         ? nayaProgression
@@ -8965,8 +8863,7 @@ function presentationBonusNiveauExperience(k, engineerInfo) {
       + "<span>Process Production Bonus by " + processLevelPercent + "%</span>"
       + explorationPowerHelpLine
       + managerSpeedBonusHelpLine
-      + campActionSpeedHelpLine
-      + (k.nom === "Naya" ? "<span>The Inn also improves at Studio-authored Naya level milestones.</span>" : "");
+      + campActionSpeedHelpLine;
   const levelBonuses = k.niveau > 0 ? (
     isEngineer
       ? "<div class='xp-bonus-actifs'>" + campActionSpeedLine + "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? (k.niveau * engineerInfo.value) + "%" : (k.niveau * (engineerInfo ? engineerInfo.value : 6)) + " min") + "</span> " + (engineerInfo && engineerInfo.type === "afk-ratio-percent" ? "AFK Ratio Bonus" : "AFK Timer Bonus") + "</span></div>"
@@ -9139,7 +9036,7 @@ function renduManagement() {
       || !chefKissFeedTutorialAutoriseNourriture(kittySelectionnee, null, "auto", 0);
     const autoLevelBtn = atMaxLevel
       ? "<div class='xp-max-level'>Maximum level reached</div>"
-      : "<button class='btn-xp-auto'" + (autoBtnDisabled ? " disabled" : "") + " onclick='nourrirAutoNiveau(" + kittySelectionnee + ")'>Auto-feed to next level (<span class='xp-gain'>" + xpManquant + " XP needed</span>)</button>";
+      : "<button class='btn-xp-auto'" + (autoBtnDisabled ? " disabled" : "") + " onclick='nourrirAutoNiveau(" + kittySelectionnee + ")'>Auto-feed to next level (<span class='xp-gain'>" + formaterNombre(xpManquant) + " XP needed</span>)</button>";
     const experiencePresentation = presentationBonusNiveauExperience(k, engineerInfo);
     const experienceHelpBody = experiencePresentation.helpBody;
     const experienceHelp =
@@ -9153,7 +9050,7 @@ function renduManagement() {
     droite.innerHTML +=
       "<div class='detail-section' id='detail-experience'>" +
       "<div class='detail-section-titre detail-section-titre-with-help'>" + experienceHelp + "</div>" +
-      "<div class='detail-level-row'><span class='detail-level-num'>Level " + k.niveau + (Number.isFinite(maxLevel) ? " / " + maxLevel : "") + "</span><span class='detail-xp-counter'>" + (atMaxLevel ? "MAX XP" : k.xp + " / " + xpNext + " XP") + "</span></div>" +
+      "<div class='detail-level-row'><span class='detail-level-num'>Level " + k.niveau + (Number.isFinite(maxLevel) ? " / " + maxLevel : "") + "</span><span class='detail-xp-counter'>" + (atMaxLevel ? "MAX XP" : formaterNombre(k.xp) + " / " + formaterNombre(xpNext) + " XP") + "</span></div>" +
       "<div class='conteneur-barre'><div class='barre barre-verte' style='width:" + xpPct + "%'></div></div>" +
       levelBonuses +
       autoLevelBtn +
@@ -9198,7 +9095,6 @@ function renduManagement() {
           : METIERS[k.metier] && METIERS[k.metier].combat
             ? combatProgressHtml(kittySelectionnee) + equipementFighterHtml(kittySelectionnee)
               + jobPerksV2Html(k.metier, "detail-job-perk")
-              + "<div class='bonus-sub'>Combat progression is separate from Camp level and food XP.</div>"
           : k.metier === "builder"
             ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + perksV2Api.assignedCampActionLevelSpeedMultiplier(progressionPerksV2(), k.metier, "construction", k.niveau).toFixed(2) + "</span> Construction / Repair / Tier Upgrade Speed<div class='bonus-sub'>+2% multiplicative speed per Cat level · while assigned</div></div>"
               + jobPerksV2Html("builder", "detail-job-perk")
@@ -9654,7 +9550,7 @@ function projectionActivitesExploration() {
     ajouter(combat.outcome === "running" ? "active" : "ready", "encounter", "hollow-tree", CONFIG.hollowTreeCombat.zoneId,
       "Hollow Tree encounter", libelleResultatAffrontement(combat.outcome), etat.hollowTreeEncounter.fighters.map(function(f) { return f.kittyIndex; }));
   } else if (affrontementArbreDisponible() && !CatInc.combat.learned(etat)) {
-    ajouter("places", "encounter", "hollow-tree", CONFIG.hollowTreeCombat.zoneId, "Hollow Tree encounter", "Combat Level 5, daggers and leather recommended");
+    ajouter("places", "encounter", "hollow-tree", CONFIG.hollowTreeCombat.zoneId, "Hollow Tree encounter", "Combat Lv 5 recommended");
   }
   Object.keys(etat.resultatsCampaigns).forEach(function(id) {
     const def = CONFIG.campaigns[id], result = etat.resultatsCampaigns[id];
@@ -9756,7 +9652,7 @@ function libelleProgressionActiviteExploration(row) {
   if (row.type === "encounter") return row.statut;
   if (row.statutActivite === "inactive") return "Completed";
   if (row.statut.includes("Failed") || row.statut.includes("Success") || row.statut === "Scouting loot ready") return row.statut;
-  return "Available";
+  return "";
 }
 
 // Ratio for the In progress bar; null when the activity has no measurable end.
@@ -10015,7 +9911,7 @@ function synchroniserWorldMap(projection) {
     button.setAttribute("aria-pressed", actif ? "true" : "false");
   });
   document.getElementById("exploration-world-map-status").hidden = worldMapDebloquee();
-  ecrireTexte(document.getElementById("exploration-world-map-status"), worldMapDebloquee() ? "" : "Woodland Entrance locked: find the Compass, then claim the reward for Navigate through the woods.");
+  ecrireTexte(document.getElementById("exploration-world-map-status"), worldMapDebloquee() ? "" : "Locked: claim the Compass (Navigate through the woods).");
   document.getElementById("exploration-world-map").hidden = !ouverte;
   const region = regionParId(idRegionExplorationCourante());
   if (region && !Object.prototype.hasOwnProperty.call(region.zones, carteZoneSelectionnee)) {
@@ -10059,23 +9955,46 @@ function synchroniserWorldMap(projection) {
         + ' data-side="' + cote + '" data-state="' + (current ? 'current' : accessible ? 'open' : 'locked') + '"'
         + (current ? ' aria-current="location"' : '')
         + (accessible ? ' aria-label="Open ' + echapperAttributHtml(node.nom) + (current ? ', current region' : '') + (details.length ? ', ' + details.join(', ') : '')
-          + '" onclick="zoomerVersRegionExploration(this, \'' + echapperAttributHtml(node.regionId) + '\')"' : ' disabled') + '>'
-        + '<span class="world-map-thumbnail"><img src="' + echapperAttributHtml(node.mapImg) + '" alt="">'
-        + (accessible ? '' : '<span class="world-map-mist" aria-hidden="true"></span>')
+          + '" onclick="zoomerVersRegionExploration(this, \'' + echapperAttributHtml(node.regionId) + '\')"' : ' disabled aria-label="Undiscovered region"') + '>'
+        + '<span class="world-map-thumbnail">' + apercuRegionWorldMapHtml(accessible ? regionParId(node.regionId) : null, index)
         + (current ? '<span class="world-map-token" aria-hidden="true">' + kittyIconHtml(bernardo) + '</span>' : '')
         + (resume && resume.ready ? '<span class="world-map-ready-badge" aria-hidden="true"><img src="img/interface/reward.png" alt="">' + resume.ready + '</span>' : '')
         + (visibles.length ? '<span class="world-map-cats" aria-hidden="true">' + visibles.map(function(i) {
           return portraitSelectionKittyHtml(etat.kittiesData[i], "world-map-cat");
         }).join("") + (resume.cats.length > visibles.length ? '<span class="world-map-cats-more">+' + (resume.cats.length - visibles.length) + '</span>' : '') + '</span>' : '')
         + '</span>'
-        + '<span class="world-map-label"><strong>' + echapperAttributHtml(node.nom) + '</strong>'
-        + (current ? '<span class="world-map-region-status">You are here</span>' : accessible ? '' : '<span class="world-map-region-status">Coming later</span>')
-        + (resume && resume.attention ? '<span class="world-map-attention-summary">Attention needed</span>' : '') + '</span></button>';
+        // An undiscovered region gives nothing away: no name, no artwork.
+        + '<span class="world-map-label"><strong>' + (accessible ? echapperAttributHtml(node.nom) : '…') + '</strong>'
+        + (resume && resume.attention ? '<span class="world-map-attention-summary" aria-hidden="true"><span class="interface-symbol interface-warning"></span></span>' : '') + '</span></button>';
     }).join("");
     liste.dataset.signature = signature;
     observerSentierWorldMap(liste);
     requestAnimationFrame(tracerSentierWorldMap);
   }
+}
+
+// World Map preview: the region's own map artwork under the same static fog
+// mask as the region map, so a thumbnail never shows more than the player
+// explored. An undiscovered region (null) is fog only.
+function apercuRegionWorldMapHtml(region, index) {
+  const cols = region ? region.columns || 1 : 7, rows = region ? region.rows || 1 : 5;
+  const unit = 100, width = cols * unit, height = rows * unit;
+  const revealed = [];
+  if (region) Object.values(region.zones || {}).forEach(function(zone) {
+    if (zone.type === "home" || zoneEstExploree(zone.id)) revealed.push(...explorationGeometry.zoneCells(zone));
+  });
+  const id = "world-map-fog-" + index;
+  const mask = explorationFogMask(cols, rows, revealed).replace(/carte-fog-frontier-softener/g, id + "-soft");
+  return '<svg class="world-map-preview" viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">'
+    + '<defs><filter id="' + id + '-soft" filterUnits="userSpaceOnUse" x="-10" y="-10" width="' + (width + 20) + '" height="' + (height + 20) + '">'
+    + '<feGaussianBlur stdDeviation="1.2"></feGaussianBlur></filter>'
+    + '<filter id="' + id + '-tint" color-interpolation-filters="sRGB">'
+    + '<feColorMatrix type="matrix" values=".315 .62 .116 0 .27 .324 .637 .119 0 .18 .33 .649 .121 0 .02 0 0 0 1 0"></feColorMatrix></filter>'
+    + '<mask id="' + id + '" maskUnits="userSpaceOnUse" x="0" y="0" width="' + width + '" height="' + height + '">' + mask + '</mask></defs>'
+    + (region && region.mapImg ? '<image href="' + echapperAttributHtml(region.mapImg) + '" x="0" y="0" width="' + width + '" height="' + height + '" preserveAspectRatio="none"></image>' : '')
+    + '<g mask="url(#' + id + ')"><rect width="' + width + '" height="' + height + '" fill="#c4ae87"></rect>'
+    + '<image href="img/Maps/Fog of War.webp" x="0" y="0" width="' + width + '" height="' + height + '" preserveAspectRatio="none" filter="url(#' + id + '-tint)"></image></g>'
+    + '</svg>';
 }
 
 let sentierWorldMapObserver = null;
@@ -10122,6 +10041,9 @@ function zoomerVersRegionExploration(bouton, regionId) {
     zoomWorldMapEnCours = false;
     liste.classList.remove("is-zooming");
     bouton.classList.remove("is-zooming");
+    // The player may leave the World Map during the zoom (e.g. Gang > View
+    // activity); the late fallback must not pull them back to this region.
+    if (!explorationWorldMapOuverte) return;
     if (ouvrirRegionExploration(regionId)) {
       const carte = document.getElementById("section-explo-map");
       carte.classList.remove("exploration-region-zoom-in");
@@ -10190,7 +10112,8 @@ function synchroniserNavigationExplorationMobile() {
   if (coordonnee) coordonnee.style.display = exploree ? "" : "none";
   ecrireTexte(titre, exploree ? zone.nom : "Unknown zone");
   ecrireTexte(statut, exploree ? "Explored" : (explorateurPresent() ? "Available" : "Locked"));
-  ecrireTexte(description, zone.description || "");
+  // An unexplored zone keeps its secret: no description until it is explored.
+  ecrireTexte(description, exploree && zone.description || "");
   if (statut) statut.classList.toggle("exploration-mobile-zone-status-explored", exploree);
   ecrireTexte(document.getElementById("exploration-mobile-campaigns-count"), String(campagnes.length));
   ecrireTexte(document.getElementById("exploration-mobile-scoutings-count"), String(scoutings.length));
@@ -10411,11 +10334,10 @@ function renderCampaignCards() {
     const resultatZone = etat.resultatsExplorationZones[zoneId];
     html += '<div class="explo-card">';
     html += '<div class="explo-nom">' + interfaceIconHtml("magnifying-glass") + ' Explore this zone</div>';
-    if (zone.description) html += '<div class="explo-description zone-description">' + zone.description + '</div>';
     html += '<div class="explo-meta">' + interfaceIconHtml("difficulty") + ' Difficulty ' + zone.difficulte + ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' ' + formaterTempsStat(zone.duree) + ' &nbsp;&middot;&nbsp; ' + KITTY_ICON + ' ' + zone.slots + ' slot(s)</div>';
     if (resultatZone) {
       if (resultatZone.success) {
-        html += '<button class="explo-result-action explo-result-reveal" onclick="revelerZoneExploree(\'' + zoneId + '\')">' + interfaceIconHtml("magnifying-glass") + ' Reveal the explored zone</button>';
+        html += '<button class="explo-result-action explo-result-reveal" onclick="revelerZoneExploree(\'' + zoneId + '\')">' + interfaceIconHtml("magnifying-glass") + ' Reveal zone</button>';
       } else {
         html += '<button class="explo-result-action explo-result-failure" onclick="reessayerExploZone(\'' + zoneId + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">Try again</button>';
       }
@@ -10431,9 +10353,8 @@ function renderCampaignCards() {
     } else {
       if (!carteExploSlots[zoneId]) carteExploSlots[zoneId] = new Array(zone.slots).fill(null);
       const slots     = carteExploSlots[zoneId];
-      const power     = explorationRetryPower("zones", zoneId, slots.reduce(function(s, ki) { return s + (ki !== null && etat.kittiesData[ki] ? kittyEP(ki) : 0); }, 0));
+      const power     = slots.reduce(function(s, ki) { return s + (ki !== null && etat.kittiesData[ki] ? kittyEP(ki) : 0); }, 0);
       const allFilled = slots.every(function(k) { return k !== null; });
-      const chance    = power > 0 ? Math.min(100, Math.round(power / zone.difficulte * 100)) : 0;
       html += '<div class="explo-slots">';
       for (let si = 0; si < zone.slots; si++) {
         const ki = slots[si];
@@ -10445,7 +10366,7 @@ function renderCampaignCards() {
         if (ki === null) {
           html += '<div class="' + slotWrapperClass + '">';
           html += '<div class="explo-slot explo-slot-empty' + slotRequiredClass + '" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier(slotAssignmentLabel) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-          html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>' + slotRequiredLabel;
+          html += '<div class="explo-slot-plus">+</div></div>' + slotRequiredLabel;
           html += '</div>';
         } else {
           const k = etat.kittiesData[ki];
@@ -10468,9 +10389,8 @@ function renderCampaignCards() {
         var zoneBaseDuree = zoneHalves ? zone.duree / 2 : zone.duree;
         var zoneEffDuree = dureeEffectiveExploration(zoneBaseDuree);
         var zoneTimeNote = (zoneHalves || zoneEffDuree !== zoneBaseDuree) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(zoneEffDuree) + '</strong>' + (zoneHalves ? ' (' + zoneHalvesLabel + ')' : '') : '';
-        html += '<div class="explo-power-display">Exploration Power: ' + (Math.round(power * 100) / 100) + ' / ' + zone.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + zoneTimeNote + '</div>';
+        html += '<div class="explo-power-display">Exploration Power: ' + (Math.round(power * 100) / 100) + ' / ' + zone.difficulte + ' &#x2014; ' + htmlChanceMission(power, zone.difficulte, explorationRetryFailures("zones", zoneId)) + ' success' + zoneTimeNote + '</div>';
       } else {
-        html += '<div class="explo-power-display explo-power-hint">Assign cats to start the exploration.</div>';
       }
       html += explorationRetryHint("zones", zoneId);
       const requiredExploratorAssigned = zone.slots === 0 || estExplorateurDeZone(slots[0]);
@@ -10515,14 +10435,16 @@ function renderCampaignCards() {
         ? ""
         : (availability.demoUnavailable
           ? "Not available in demo"
-          : (campaignLocked && camp.lockedDescription ? camp.lockedDescription : camp.description));
+          // A locked campaign already shows its lock reason; a second sentence
+          // saying the same thing (or spoiling what is inside) adds nothing.
+          : (campaignLocked && availability.reason ? "" : camp.description));
       html += '<div class="explo-card' + (campaignLocked && !completed ? ' explo-card-locked' : '')
         + '" data-campaign-id="' + echapperAttributHtml(camp.id) + '">';
       html += '<div class="explo-nom">' + camp.nom + '</div>';
       if (campaignDescription) html += '<div class="explo-description">' + campaignDescription + '</div>';
 
       if (completed) {
-        html += '<div class="explo-complete">' + CHECK_ICON + ' Completed' + (camp.demoUnavailable ? '' : ' &#x2014; ' + recompenseLabel(camp)) + '</div>';
+        html += '<div class="explo-complete">' + CHECK_ICON + ' Completed' + (!camp.demoUnavailable && RECOMPENSE_LIVRES[camp.recompense] && !etat.itemsAppris.includes(camp.recompense) ? ' &middot; Learn in Inventory' : '') + '</div>';
       } else if (campaignLocked) {
         if (!availability.demoUnavailable) {
           html += '<div class="explo-locked-reason"><span class="interface-symbol interface-warning" aria-hidden="true"></span> ' + retirerEmojisInterface(availability.reason) + '</div>';
@@ -10530,7 +10452,7 @@ function renderCampaignCards() {
       } else if (resultatCampaign) {
         if (resultatCampaign.success) {
           html += renduRecompensesCampaignEnAttente(resultatCampaign.recompenses);
-          html += '<button class="explo-result-action explo-result-reward" onclick="recupererRecompenseCampaign(\'' + camp.id + '\')"><img class="interface-icon" src="img/interface/reward.png" alt=""> Claim campaign reward</button>';
+          html += '<button class="explo-result-action explo-result-reward" onclick="recupererRecompenseCampaign(\'' + camp.id + '\')"><img class="interface-icon" src="img/interface/reward.png" alt=""> Claim</button>';
         } else {
           html += '<button class="explo-result-action explo-result-failure" onclick="reessayerCampaign(\'' + camp.id + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">Try again</button>';
         }
@@ -10539,25 +10461,23 @@ function renderCampaignCards() {
         const remaining = Math.max(0, inProgress.duree - elapsed);
         const progress  = Math.min(1, elapsed / inProgress.duree);
         const names     = inProgress.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
-        const power     = Number.isFinite(inProgress.power) ? inProgress.power : explorationRetryPower("campaigns", camp.id, inProgress.kittyIndices.reduce(function(s, i) { return s + kittyEP(i); }, 0));
-        const chance    = Math.min(100, Math.round(power / camp.difficulte * 100));
-        html += '<div class="explo-meta">' + interfaceIconHtml("difficulty") + ' Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; ' + KITTY_ICON + ' ' + echapperAttributHtml(names) + ' &nbsp;&middot;&nbsp; ' + chance + '% success</div>';
+        const power     = puissanceExplorationLancee(inProgress);
+        html += '<div class="explo-meta">' + interfaceIconHtml("difficulty") + ' Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; ' + KITTY_ICON + ' ' + echapperAttributHtml(names) + ' &nbsp;&middot;&nbsp; ' + htmlChanceMission(power, camp.difficulte, explorationRetryFailures("campaigns", camp.id)) + ' success</div>';
         html += '<div class="conteneur-barre"><div class="barre barre-explo" id="explo-barre-' + camp.id + '" style="width:' + Math.round(progress * 100) + '%"></div></div>';
         html += '<div class="explo-timer" id="explo-timer-' + camp.id + '">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining</div>';
       } else {
-        const selPower  = explorationRetryPower("campaigns", camp.id, slots.reduce(function(s, ki) { return s + (ki !== null && etat.kittiesData[ki] ? kittyEP(ki) : 0); }, 0));
+        const selPower  = slots.reduce(function(s, ki) { return s + (ki !== null && etat.kittiesData[ki] ? kittyEP(ki) : 0); }, 0);
         const allFilled = slots.every(function(x) { return x !== null; });
         const campaignTravelers = voyageursAubergeSelectionnes("campaign", camp.id);
         const campaignTravelerBonus = bonusVoyageursAuberge(campaignTravelers);
         const previewPower = selPower + campaignTravelerBonus.power;
-        const chance    = previewPower > 0 ? Math.min(100, Math.round(previewPower / camp.difficulte * 100)) : 0;
-        html += '<div class="explo-meta">' + interfaceIconHtml("difficulty") + ' Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' ' + formaterTempsStat(camp.duree) + ' &nbsp;&middot;&nbsp; To be discovered</div>';
+        html += '<div class="explo-meta">' + interfaceIconHtml("difficulty") + ' Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' ' + formaterTempsStat(camp.duree) + '</div>';
         html += '<div class="explo-slots">';
         for (let si = 0; si < camp.slots; si++) {
           const ki = slots[si];
           if (ki === null) {
             html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="campaign:' + camp.id + ':' + si + '"' + attributsActivationClavier("Assign a cat to " + camp.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
-            html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
+            html += '<div class="explo-slot-plus">+</div></div>';
           } else {
             const k = etat.kittiesData[ki];
             html += '<div class="explo-slot-wrap">';
@@ -10582,9 +10502,8 @@ function renderCampaignCards() {
           var campTimeNote = (campHalves || campaignTravelerBonus.durationMultiplier < 1 || campEffDuree !== campBaseDuree) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(campEffDuree) + '</strong>' + (campHalves ? ' (' + campHalvesLabel + ')' : '') : '';
           html += '<div class="explo-power-display">Exploration Power: ' + (Math.round(selPower * 100) / 100)
             + (campaignTravelerBonus.power ? ' + ' + campaignTravelerBonus.power + ' = ' + (Math.round(previewPower * 100) / 100) : '')
-            + ' / ' + camp.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + campTimeNote + '</div>';
+            + ' / ' + camp.difficulte + ' &#x2014; ' + htmlChanceMission(previewPower, camp.difficulte, explorationRetryFailures("campaigns", camp.id)) + ' success' + campTimeNote + '</div>';
         } else {
-          html += '<div class="explo-power-display explo-power-hint">Click a slot to assign a cat.</div>';
         }
         html += explorationRetryHint("campaigns", camp.id);
         if (explorationAutoAssignDisponible()) {
@@ -10649,12 +10568,11 @@ function renderCampaignCards() {
           scoutHtml += '</div>';
           scoutHtml += '</div>';
           scoutHtml += '<div class="conteneur-barre"><div class="barre barre-explo" id="scout-barre-' + sc.id + '" style="width:' + Math.round(prog * 100) + '%"></div></div>';
-          scoutHtml += '<div class="explo-timer" id="scout-timer-' + sc.id + '">' + formaterTempsStat(Math.ceil(remaining)) + (available ? ' remaining &#x21BA; auto-repeats' : ' remaining &middot; final run') + '</div>';
+          scoutHtml += '<div class="explo-timer" id="scout-timer-' + sc.id + '">' + formaterTempsStat(Math.ceil(remaining)) + (available ? ' &#x21BA;' : ' remaining &middot; final run') + '</div>';
         } else if (available) {
           var stagedKi  = scoutingsStagingKitty[sc.id];
           var stagedK   = (stagedKi !== undefined) ? etat.kittiesData[stagedKi] : null;
           var selPower  = stagedKi !== undefined ? kittyEP(stagedKi) : 0;
-          var chance    = selPower > 0 ? Math.min(100, Math.round(selPower / sc.difficulte * 100)) : 0;
           scoutHtml += '<div class="explo-slots">';
           if (stagedKi !== undefined) {
             scoutHtml += '<div class="explo-slot-wrap">';
@@ -10669,7 +10587,7 @@ function renderCampaignCards() {
             scoutHtml += '</div>';
           } else {
             scoutHtml += '<div class="explo-slot explo-slot-empty" data-explo-trigger="scouting:' + sc.id + '"' + attributsActivationClavier("Assign a cat to " + sc.nom) + ' onclick="ouvrirModalScouting(\'' + sc.id + '\')">';
-            scoutHtml += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
+            scoutHtml += '<div class="explo-slot-plus">+</div></div>';
           }
           scoutHtml += '</div>';
           scoutHtml += htmlVoyageursAubergeMission("scouting", sc.id, selPower, sc.difficulte, sc.duree);
@@ -10682,12 +10600,10 @@ function renderCampaignCards() {
             var scoutHalvesLabel = stagedK && stagedK.metier === 'explorator' ? 'Explorator' : 'Exploration perk';
             var scoutTimeNote = (scoutHalves || scoutingTravelerBonus.durationMultiplier < 1 || scoutEffDuree !== scoutBaseDuree) ? ' &nbsp;&middot;&nbsp; ' + interfaceIconHtml("hourglass") + ' <strong>' + formaterTempsStat(scoutEffDuree) + '</strong>' + (scoutHalves ? ' (' + scoutHalvesLabel + ')' : '') : '';
             var scoutPreviewPower = selPower + scoutingTravelerBonus.power;
-            chance = scoutPreviewPower > 0 ? Math.min(100, Math.round(scoutPreviewPower / sc.difficulte * 100)) : 0;
             scoutHtml += '<div class="explo-power-display">Exploration Power: ' + selPower
               + (scoutingTravelerBonus.power ? ' + ' + scoutingTravelerBonus.power + ' = ' + scoutPreviewPower : '')
-              + ' / ' + sc.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + scoutTimeNote + '</div>';
+              + ' / ' + sc.difficulte + ' &#x2014; ' + htmlChanceMission(scoutPreviewPower, sc.difficulte, 0) + ' success' + scoutTimeNote + '</div>';
           } else {
-            scoutHtml += '<div class="explo-power-display explo-power-hint">Click a slot to assign a cat.</div>';
           }
           if (explorationAutoAssignDisponible()) {
             scoutHtml += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'scouting\',\'' + sc.id + '\')">Auto Assign</button>';
@@ -10711,9 +10627,9 @@ function renderCampaignCards() {
           scoutHtml += '<div class="scouting-accumulator">';
           scoutHtml += '<div class="scouting-runs"><span class="scouting-metric-label">Scouting Runs:</span><strong class="scouting-successful">Successful ' + butin.successful + '</strong><span class="scouting-failed">Failed ' + butin.failed + '</span></div>';
           scoutHtml += '<div class="scouting-luck"><span class="scouting-metric-label">Rewards Luck:</span><span>Regular ' + butin.regular + '</span><span class="scouting-lucky">Lucky ' + butin.lucky + '</span><strong class="scouting-super-lucky">Super Lucky ' + butin.superLucky + '</strong>' + (doubledVisible ? '<strong class="scouting-doubled">Doubled ' + butin.doubled + '</strong>' : '') + (tripledVisible ? '<strong class="scouting-tripled">Tripled ' + (butin.tripled || 0) + '</strong>' : '') + '</div>';
-          scoutHtml += '<div class="scouting-rewards">' + (rewardsText || 'No rewards collected yet') + '</div>';
+          scoutHtml += '<div class="scouting-rewards">' + (rewardsText || '') + '</div>';
           if (butinScoutingReclamable(butin)) {
-            scoutHtml += '<button class="explo-result-action explo-result-reward" onclick="recupererButinScouting(\'' + sc.id + '\')"><img class="interface-icon" src="img/interface/reward.png" alt=""> Claim scouting rewards</button>';
+            scoutHtml += '<button class="explo-result-action explo-result-reward" onclick="recupererButinScouting(\'' + sc.id + '\')"><img class="interface-icon" src="img/interface/reward.png" alt=""> Claim</button>';
           }
           scoutHtml += '</div>';
         }
@@ -11069,91 +10985,6 @@ function marqueurExplorationZoneHtml(action) {
     + '</span></span>';
 }
 
-function renduCarteDetail() {
-  const el = document.getElementById("carte-zone-detail");
-  if (!el) return;
-  const zoneId = carteZoneSelectionnee;
-  if (!zoneId) {
-    el.innerHTML = '<p class="carte-hint">Click a zone to see details.</p>';
-    return;
-  }
-  const zone    = zoneParId(zoneId);
-  if (!zone) { el.innerHTML = ""; return; }
-  const exploree   = zoneEstExploree(zoneId);
-  const inProgress = !!(etat.exploZoneEnCours && etat.exploZoneEnCours.zoneId === zoneId);
-  let html = '<div class="carte-detail-panneau">';
-  html += '<div class="carte-detail-titre">' + zone.nom + '</div>';
-  if (zone.type === "home") {
-    html += '<p class="carte-detail-statut exploree">' + CHECK_ICON + ' Home — always accessible.</p>';
-    html += '</div>'; el.innerHTML = html; return;
-  }
-  html += '<div class="carte-detail-stats">';
-  html += '<span>' + interfaceIconHtml("difficulty") + ' Difficulty: ' + zone.difficulte + '</span>';
-  html += '<span>' + interfaceIconHtml("hourglass") + ' Duration: ' + formaterTempsStat(zone.duree) + '</span>';
-  html += '<span>' + KITTY_ICON + ' ' + zone.slots + ' slot' + (zone.slots > 1 ? 's' : '') + '</span>';
-  html += '</div>';
-  if (exploree) {
-    html += '<p class="carte-detail-statut exploree">' + CHECK_ICON + ' Explored — missions coming soon.</p>';
-  } else if (inProgress) {
-    const ez = etat.exploZoneEnCours;
-    const elapsed   = (Date.now() - ez.startTs) / 1000;
-    const remaining = Math.max(0, ez.duree - elapsed);
-    const prog      = Math.min(1, elapsed / ez.duree);
-    const names     = ez.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
-    html += '<p class="carte-detail-desc">' + KITTY_ICON + ' ' + echapperAttributHtml(names) + ' are exploring...</p>';
-    html += '<div class="conteneur-barre"><div class="barre barre-explo" id="barre-explo-zone" style="width:' + Math.round(prog * 100) + '%"></div></div>';
-    html += '<div class="explo-timer" id="timer-explo-zone">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining</div>';
-  } else {
-    if (!carteExploSlots[zoneId]) carteExploSlots[zoneId] = new Array(zone.slots).fill(null);
-    const slots    = carteExploSlots[zoneId];
-    const power    = explorationRetryPower("zones", zoneId, slots.reduce(function(s, ki) { return s + (ki !== null && etat.kittiesData[ki] ? kittyEP(ki) : 0); }, 0));
-    const allFilled = slots.every(function(k) { return k !== null; });
-    const chance   = power > 0 ? Math.min(100, Math.round(power / zone.difficulte * 100)) : 0;
-    html += '<div class="explo-slots">';
-    for (let si = 0; si < zone.slots; si++) {
-      const ki = slots[si];
-      const requiredExploratorSlot = si === 0;
-      const slotWrapperClass = requiredExploratorSlot ? 'explo-slot-required-wrap' : '';
-      const slotRequiredClass = requiredExploratorSlot ? ' explo-slot-required' : '';
-      const slotRequiredLabel = requiredExploratorSlot ? '<div class="explo-slot-required-label">Explorator</div>' : '';
-      const slotAssignmentLabel = (requiredExploratorSlot ? "Assign an Explorator to " : "Assign a cat to ") + zone.nom + ", slot " + (si + 1);
-      if (ki === null) {
-        html += '<div class="' + slotWrapperClass + '">' + slotRequiredLabel;
-        html += '<div class="explo-slot explo-slot-empty' + slotRequiredClass + '" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier(slotAssignmentLabel) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-        html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
-        html += '</div>';
-      } else {
-        const k = etat.kittiesData[ki];
-        html += '<div class="explo-slot-wrap ' + slotWrapperClass + '">' + slotRequiredLabel;
-        html += '<div class="explo-slot explo-slot-filled' + slotRequiredClass + '" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-        html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
-        html += '<div class="explo-slot-kitty-info">';
-        html += '<span class="explo-slot-kitty-nom">' + echapperAttributHtml(k ? k.nom : "?") + '</span>';
-        html += '<span class="explo-slot-kitty-power">' + interfaceIconHtml("power") + ' EP ' + kittyEP(ki) + '</span>';
-        html += '</div>';
-        html += '</div>';
-        html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "cat") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>';
-        html += '</div>';
-      }
-    }
-    html += '</div>';
-    if (power > 0) {
-      html += '<div class="explo-power-display">Exploration Power: ' + (Math.round(power * 100) / 100) + ' / ' + zone.difficulte + ' — <strong>' + chance + '%</strong> success</div>';
-    } else {
-      html += '<div class="explo-power-display explo-power-hint">Assign cats to start the exploration.</div>';
-    }
-    html += explorationRetryHint("zones", zoneId);
-    const requiredExploratorAssigned = zone.slots === 0 || estExplorateurDeZone(slots[0]);
-    const canLaunch = allFilled && requiredExploratorAssigned && !etat.exploZoneEnCours;
-    if (!etat.exploZoneEnCours && explorationAutoAssignDisponible()) {
-      html += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'zone\',\'' + zoneId + '\')">Auto Assign</button>';
-    }
-    html += '<button class="btn-lancer-explo"' + (canLaunch ? '' : ' disabled') + ' onclick="lancerExploZone()">Explore ➤</button>';
-  }
-  html += '</div>';
-  el.innerHTML = html;
-}
-
 function renduCarte(u) {
   const el = document.getElementById("explo-map-section");
   if (!el) return;
@@ -11163,7 +10994,6 @@ function renduCarte(u) {
     _zoneInfoKey = null;
     el.innerHTML =
       '<div class="carte-grille-conteneur">' +
-        (etat.jobCenterConstruit && (!u || !u.explorateurPresent) ? '<p class="explo-map-hint">Train an <strong>Explorator</strong> in the Job Center to unlock other zones.</p>' : '') +
         '<div class="carte-grille" id="carte-grille"></div>' +
         '<div class="carte-col-lbls" id="carte-col-lbls"></div>' +
       '</div>' +
@@ -11227,12 +11057,12 @@ function renduZoneInfo() {
   if (key === _zoneInfoKey) return;
   _zoneInfoKey = key;
 
-  if (!zoneId) { el.innerHTML = '<p class="explo-vide">Select a zone to see its details.</p>'; return; }
+  if (!zoneId) { el.innerHTML = ""; return; }
   const zone = zoneParId(zoneId);
   if (!zone) { el.innerHTML = ""; return; }
 
   let html = '<div class="zone-info-titre">' + (exploree ? zone.nom : 'Unknown zone') + '</div>';
-  if (zone.description) html += '<div class="zone-description">' + zone.description + '</div>';
+  if (exploree && zone.description) html += '<div class="zone-description">' + zone.description + '</div>';
 
   const zoneAccessible = zone.type === "home" || exploree;
   const campagnesZone = campagnesAfficheesPourZone(zoneId);
@@ -11264,8 +11094,8 @@ function renduZoneInfo() {
         + (campaignsDoneCount === 1 ? '' : 's') + ' done</span>' : '';
       if (serviceCombat) {
         mobileSummary += '<span class="zone-info-mobile-active">' + (zoneId === CONFIG.hollowTreeCombat.zoneId
-          ? (CatInc.combat.learned(etat) ? 'Hollow Tree cleared' : CatInc.combat.result(etat.hollowTreeEncounter)
-            ? libelleResultatAffrontement(CatInc.combat.result(etat.hollowTreeEncounter).outcome) : 'Hollow Tree encounter') : entrainementCombatDisponible()
+          ? (CatInc.combat.learned(etat) ? 'Cleared' : CatInc.combat.result(etat.hollowTreeEncounter)
+            ? libelleResultatAffrontement(CatInc.combat.result(etat.hollowTreeEncounter).outcome) : 'Encounter') : entrainementCombatDisponible()
           ? (etat.combatTraining ? 'Dummy exercise active' : 'Dummy exercise available') : 'Talk to Bramble') + '</span>';
       }
       if (campaignsAvailableCount > 0) {
@@ -11362,7 +11192,7 @@ function actualiserTimersExplorations() {
     const barEl     = domParId("scout-barre-" + scoutingId);
     const timerEl   = domParId("scout-timer-" + scoutingId);
     ecrireStyle(barEl, "width", Math.round(progress * 100) + "%");
-    ecrireTexte(timerEl, formaterTempsStat(Math.ceil(remaining)) + (scoutingDebloquee(def) ? " remaining ↺ auto-repeats" : " remaining · final run"));
+    ecrireTexte(timerEl, formaterTempsStat(Math.ceil(remaining)) + (scoutingDebloquee(def) ? " ↺" : " remaining · final run"));
   });
 }
 
@@ -11595,25 +11425,110 @@ function explorationRetryFailures(kind, id) {
   const pending = (kind === "zones" ? etat.resultatsExplorationZones : etat.resultatsCampaigns) || {};
   if (completed.includes(id) || (pending[id] && pending[id].success)) return 0;
   const count = etat.explorationRetries && etat.explorationRetries[kind] && etat.explorationRetries[kind][id];
-  return Number.isInteger(count) && count > 0 ? Math.min(3, count) : 0;
+  return missionOdds.retryFailures(count);
 }
 
-function explorationRetryPower(kind, id, basePower) {
-  return basePower * (1 + explorationRetryFailures(kind, id) / 10);
+// Ticket #349-C: a launched run freezes the raw team power; the retry bonus
+// multiplies the final chance with the counter read at resolution, which only
+// changes when a run of the same activity resolves.
+function puissanceExplorationLancee(mission) {
+  return Number.isFinite(mission.power) ? mission.power : mission.kittyIndices.reduce(function(s, i) { return s + kittyEP(i); }, 0);
+}
+
+function explorationChance(kind, id, power, difficulty) {
+  return missionOdds.finalChance(power, difficulty, explorationRetryFailures(kind, id));
+}
+
+function formaterMultiplicateurRetry(failures) {
+  return '\u00d7' + (Math.round(missionOdds.retryMultiplier(failures) * 100) / 100);
 }
 
 function recordExplorationRetry(kind, id, success) {
   const failures = explorationRetryFailures(kind, id);
   if (!etat.explorationRetries) etat.explorationRetries = { zones: {}, campaigns: {} };
   if (success) delete etat.explorationRetries[kind][id];
-  else etat.explorationRetries[kind][id] = Math.min(3, failures + 1);
+  else etat.explorationRetries[kind][id] = missionOdds.nextRetryFailures(failures, false);
 }
 
 function explorationRetryHint(kind, id) {
   const failures = explorationRetryFailures(kind, id);
   if (!failures) return '';
-  const attempts = failures === 3 ? '3+' : String(failures);
-  return '<div class="explo-power-display explo-power-hint">' + attempts + ' failed attempt' + (failures === 1 ? '' : 's') + ' : +' + (failures * 10) + '% Team Power</div>';
+  const cap = missionOdds.rules.retryMaxFailures;
+  const attempts = failures === cap ? cap + '+' : String(failures);
+  return '<div class="explo-power-display explo-power-hint">' + attempts + ' failed attempt' + (failures === 1 ? '' : 's') + ' : retry bonus ' + formaterMultiplicateurRetry(failures) + ' chance</div>';
+}
+
+// Ticket #349-C: success chance with the retry gain in points and an
+// explanatory tooltip (mouse, touch and keyboard), guide 7.3.
+function texteInfoChanceMission(power, difficulty, failures) {
+  if (!(difficulty > 0)) return ['No difficulty: success is certain.'];
+  const basePercent = missionOdds.chancePercent(missionOdds.successChance(power, difficulty));
+  const lines = ['Team power ' + (Math.round(Number(power) * 100) / 100) + ' / difficulty ' + difficulty + ' \u2192 base chance ' + basePercent + '%'];
+  if (basePercent === 0) {
+    lines.push('Power must exceed ' + Math.round(missionOdds.rules.threshold * 100) + '% of the difficulty.');
+  } else if (missionOdds.retryFailures(failures) > 0) {
+    lines.push('Retry bonus ' + formaterMultiplicateurRetry(failures) + ' \u2192 ' + missionOdds.chancePercent(missionOdds.finalChance(power, difficulty, failures)) + '%');
+  }
+  return lines;
+}
+
+function htmlChanceMission(power, difficulty, failures) {
+  const basePercent = missionOdds.chancePercent(missionOdds.successChance(power, difficulty));
+  const finalPercent = missionOdds.chancePercent(missionOdds.finalChance(power, difficulty, failures));
+  const gain = finalPercent - basePercent;
+  const info = texteInfoChanceMission(power, difficulty, failures).join('\n');
+  return '<span class="mission-chance-info" tabindex="0" role="button" aria-label="Success chance ' + finalPercent + '%, show details" data-mission-chance-info="' + echapperAttributHtml(info) + '"'
+    + ' onmouseenter="afficherInfoChanceMission(this)" onmouseleave="masquerInfoChanceMission()" onfocus="afficherInfoChanceMission(this)" onblur="masquerInfoChanceMission()"'
+    + ' onclick="afficherInfoChanceMission(this);event.stopPropagation()"><strong>' + finalPercent + '%</strong>'
+    + (gain > 0 ? ' <span class="mission-chance-retry-gain">(+' + gain + ')</span>' : '') + '</span>';
+}
+
+let missionChanceInfoAnchor = null;
+
+function afficherInfoChanceMission(anchor) {
+  if (!anchor) return;
+  let popup = document.getElementById("mission-chance-info-popup");
+  if (!popup) {
+    popup = document.createElement("div");
+    popup.id = "mission-chance-info-popup";
+    popup.className = "jc-job-info-popup mission-chance-info-popup";
+    popup.setAttribute("role", "tooltip");
+    popup.setAttribute("aria-hidden", "true");
+    document.body.appendChild(popup);
+  }
+  if (missionChanceInfoAnchor && missionChanceInfoAnchor !== anchor) missionChanceInfoAnchor.removeAttribute("aria-describedby");
+  missionChanceInfoAnchor = anchor;
+  anchor.setAttribute("aria-describedby", "mission-chance-info-popup");
+  popup.innerHTML = String(anchor.getAttribute("data-mission-chance-info") || "").split("\n").map(function(line) {
+    return '<p>' + echapperAttributHtml(line) + '</p>';
+  }).join("");
+  popup.style.display = "block";
+  popup.setAttribute("aria-hidden", "false");
+  positionnerInfoMetierJC(anchor, popup);
+}
+
+function masquerInfoChanceMission(force) {
+  if (!force && window.matchMedia && window.matchMedia("(max-width: 768px)").matches) return;
+  const popup = document.getElementById("mission-chance-info-popup");
+  if (!popup) return;
+  popup.style.display = "none";
+  popup.setAttribute("aria-hidden", "true");
+  if (missionChanceInfoAnchor) missionChanceInfoAnchor.removeAttribute("aria-describedby");
+  missionChanceInfoAnchor = null;
+}
+
+if (typeof document !== "undefined" && document.addEventListener) {
+  document.addEventListener("click", function(event) {
+    const popup = document.getElementById("mission-chance-info-popup");
+    if (!popup || popup.style.display === "none") return;
+    const trigger = event.target && event.target.closest ? event.target.closest(".mission-chance-info") : null;
+    if (!trigger && !popup.contains(event.target)) masquerInfoChanceMission(true);
+  });
+  document.addEventListener("keydown", function(event) {
+    if (event.key !== "Escape") return;
+    const popup = document.getElementById("mission-chance-info-popup");
+    if (popup && popup.style.display !== "none") masquerInfoChanceMission(true);
+  });
 }
 
 function actualiserSelectionCarte() {
@@ -11677,7 +11592,7 @@ function lancerExploZone() {
     return;
   }
   var hasHalvesTime = slots.some(function(ki) { return ki !== null && scoutingHalveTime(ki); });
-  var launchPower = explorationRetryPower("zones", zoneId, slots.reduce(function(s, ki) { return s + kittyEP(ki); }, 0));
+  var launchPower = slots.reduce(function(s, ki) { return s + kittyEP(ki); }, 0);
   etat.exploZoneEnCours = { zoneId: zoneId, kittyIndices: slots.slice(), power: launchPower, startTs: Date.now(), duree: dureeEffectiveExploration(hasHalvesTime ? z.duree / 2 : z.duree) };
   if (estExplorationMobile()) {
     explorationMobileVue = "map";
@@ -11693,10 +11608,7 @@ function terminerExploZone() {
   const mission = etat.exploZoneEnCours;
   const zoneId = mission.zoneId;
   const z = zoneParId(zoneId);
-  const power = Number.isFinite(mission.power) ? mission.power : explorationRetryPower("zones", zoneId, mission.kittyIndices.reduce(function(s, i) {
-    return s + kittyEP(i);
-  }, 0));
-  const success = Boolean(z) && Math.random() < Math.min(1, power / z.difficulte);
+  const success = Boolean(z) && Math.random() < explorationChance("zones", zoneId, puissanceExplorationLancee(mission), z.difficulte);
   if (z) recordExplorationRetry("zones", zoneId, success);
   const names = mission.kittyIndices.map(function(i) {
     return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?";
@@ -11795,7 +11707,7 @@ function lancerExplo(id) {
   var visitorBonus = bonusVoyageursAuberge(visitors);
   var hasHalvesTime = kittyIndices.some(function(ki) { return scoutingHalveTime(ki); });
   var basePower = kittyIndices.reduce(function(s, ki) { return s + kittyEP(ki); }, 0);
-  var launchPower = explorationRetryPower("campaigns", id, basePower) + visitorBonus.power;
+  var launchPower = basePower + visitorBonus.power;
   var duration = dureeEffectiveExploration(
     hasHalvesTime ? camp.duree / 2 : camp.duree,
     visitorBonus.durationMultiplier
@@ -11810,10 +11722,7 @@ function terminerExplo(explo) {
   const camp = CONFIG.campaigns[explo.id];
   if (!camp || camp.demoUnavailable === true || (etat.resultatsCampaigns && etat.resultatsCampaigns[explo.id]) || etat.campaignsCompletees.includes(explo.id)) return;
 
-  const power   = Number.isFinite(explo.power) ? explo.power : explorationRetryPower("campaigns", explo.id, explo.kittyIndices.reduce(function(s, i) {
-    return s + kittyEP(i);
-  }, 0));
-  const success = Math.random() < Math.min(1, power / camp.difficulte);
+  const success = Math.random() < explorationChance("campaigns", explo.id, puissanceExplorationLancee(explo), camp.difficulte);
   recordExplorationRetry("campaigns", explo.id, success);
   const names   = explo.kittyIndices.map(function(i) {
     return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?";
@@ -12218,12 +12127,6 @@ function activerBoostCannelle(boostId) {
 let _resPopupTarget = null;
 let _workPopupContext = null;
 
-function workResourcePair(resource, phase) {
-  return RESOURCE_PAIRS.find(function(pair) {
-    return phase === "gather" ? pair.rawRes === resource : pair.procRes === resource;
-  }) || null;
-}
-
 function workMultiplierLabel(value) {
   return "×" + Number(value).toFixed(2);
 }
@@ -12524,14 +12427,6 @@ function filtrerResources(cat) {
       if (onglet) onglet.focus();
     });
   }
-}
-
-function actionCoutLabel(cout) {
-  return "";
-}
-
-function peutPayerAction(cout) {
-  return true;
 }
 
 function bernardoIndex() {
@@ -13597,8 +13492,7 @@ function renderItemsList() {
       html += '<div class="inv-item-detail" id="inv-item-detail-' + itemId + '">';
       html += '<p class="inv-item-desc">' + item.description + '</p>';
       if (appris) {
-        var unlocksTxt = item.unlocksLabel ? ' — ' + item.unlocksLabel : '';
-        html += '<div class="inv-item-appris">' + CHECK_ICON + ' Learned' + unlocksTxt + '</div>';
+        html += '<div class="inv-item-appris">' + CHECK_ICON + ' Learned</div>';
       } else if (etat.learningEnCours && etat.learningEnCours.itemId === itemId) {
         const elapsed = Date.now() - etat.learningEnCours.startTs;
         const pct = Math.min(100, Math.floor(elapsed / etat.learningEnCours.duree * 100));
@@ -13673,7 +13567,7 @@ function renderItemsList() {
         const costs = recipe.inputs.map(function(input) { return input.quantity + ' ' + resourceApi.definition(input.resourceId).name; }).join(' + ');
         return '<article class="inv-unique-carte" data-equipment-id="' + id + '"><span class="inv-unique-icone"><img class="inv-item-sprite" src="' + item.iconPath + '" alt=""></span><strong>' + item.name + '</strong>'
           + '<p>' + libelleBonusEquipement(item) + '</p><p>In Bag: ' + CatInc.equipment.stock(etat, id) + ' · Equipped: ' + equipped + '</p><p>' + costs + ' · ' + formaterTemps(recipe.output.processSeconds) + ' base</p>'
-          + '<button type="button" class="btn-inv-action" onclick="ouvrirAtelierEquipement(\'' + id + '\')">Craft at ' + (item.slot === "weapon" ? 'Forge' : 'Tannery') + '</button><p>Equip from the Fighter’s Gang details.</p></article>';
+          + '<button type="button" class="btn-inv-action" onclick="ouvrirAtelierEquipement(\'' + id + '\')">Craft at ' + (item.slot === "weapon" ? 'Forge' : 'Tannery') + '</button></article>';
       }).join('') + '</div>';
   }
   listeEl.innerHTML = html;
@@ -14743,7 +14637,7 @@ function renduJobCenter(u) {
       html += '<span class="jc-slot-nom">' + echapperAttributHtml(kitty ? kitty.nom : "?") + '</span>';
       html += '<span class="jc-slot-metier">' + (m ? m.nom : f.metier) + ' learned!</span>';
       html += '</div></div>';
-      html += '<button type="button" class="btn-jc-validate" onclick="validerFormation()">' + CHECK_ICON + ' Validate formation</button>';
+      html += '<button type="button" class="btn-jc-validate" onclick="validerFormation()">' + CHECK_ICON + ' Complete training</button>';
       html += '</div>';
     } else if (etat.formationEnCours) {
       const f = etat.formationEnCours;
@@ -14786,7 +14680,7 @@ function renduJobCenter(u) {
       } else {
         html += '<div class="jc-slot-empty" data-jc-modal-trigger="formation"' + attributsActivationClavier("Select an unassigned cat for job training") + ' onclick="ouvrirModalJC(\'formation\')">';
         html += '<span class="jc-slot-plus">+</span>';
-        html += '<span class="jc-slot-label">Select an unassigned cat</span>';
+        html += '<span class="jc-slot-label">Cat</span>';
         html += '</div>';
       }
 
@@ -14891,43 +14785,6 @@ function terminerSequence() {
 
 // ── 10b. Worker deallocation (bulk unassign)
 
-// ── 10c. Buildings, Purrks, Boosts
-function acheterCathouse() {
-  const cout = coutProchaineCathouse();
-  if (etat.cardboardPlanks < cout) return;
-  etat.cardboardPlanks -= cout;
-  etat.cathouses.push(Date.now());
-  afficherNotification("Cardboard Box built!");
-  ajouterLog("event", "Cardboard Box #" + etat.cathouses.length + " built!");
-  if (etat.cathouses.length === 1 && !storyEstVue("story4Vue")) {
-    marquerStoryVue("story4Vue");
-    afficherModal("ecran-story-4");
-    renduStories();
-  }
-  verifierObjectifs(); sauvegarder(); rendu();
-}
-
-function acheterCatHouse() {
-  const cout = coutProchaineCatHouse();
-  if (etat.basicWoodPlanks < cout) return;
-  etat.basicWoodPlanks -= cout;
-  etat.cathouseCount += 1;
-  afficherNotification("Wood Cathouse built!");
-  ajouterLog("event", "Wood Cathouse #" + etat.cathouseCount + " built!");
-  verifierObjectifs(); sauvegarder(); rendu();
-}
-
-function acheterStoneCathouse() {
-  const cout = coutProchaineStoneCathouse();
-  if (etat.basicWoodPlanks < cout.planks || etat.pebbleBricks < cout.bricks) return;
-  etat.basicWoodPlanks -= cout.planks;
-  etat.pebbleBricks    -= cout.bricks;
-  etat.stoneCathouseCount++;
-  afficherNotification("Basic Stone Cathouse built!");
-  ajouterLog("event", "Basic Stone Cathouse #" + etat.stoneCathouseCount + " built!");
-  verifierObjectifs(); sauvegarder(); rendu();
-}
-
 function acheterSolidStoneCathouse() {
   if (!solidStoneCathouseDebloquee()) return;
   const cout = coutProchaineSolidStoneCathouse();
@@ -14953,13 +14810,7 @@ function nourrir(kittyIdx, foodType) {
   const niveauAvant = k.niveau;
   const feedbackOrigins = capturerOriginesFeedbackNourriture('#detail-experience [data-food-type="' + foodType + '"]');
   etat[foodType] -= 1;
-  k.xp += xpGain;
-  while (k.xp >= xpPourNiveau(k.niveau) && k.niveau < niveauMax) {
-    k.xp -= xpPourNiveau(k.niveau);
-    k.niveau++;
-    ajouterLog("event", k.nom + " reached Level " + k.niveau + "!");
-  }
-  if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) k.xp = 0;
+  appliquerXpChat(k, xpGain);
   if (k.niveau > niveauAvant && typeof enregistrerNiveauQuotidien === "function") {
     enregistrerNiveauQuotidien(k.niveau - niveauAvant);
   }
@@ -14977,16 +14828,37 @@ function nourrir(kittyIdx, foodType) {
   }, guidanceDescriptor);
 }
 
+// Bound of the exact search: larger targets are first covered with the
+// richest foods (ticket #349-D: uncapped levels reach millions of XP).
+const PLAN_NOURRITURE_XP_EXACT_MAX = 2000;
+
 function calculerPlanNourritureAuto(xpCible) {
   const foods = Object.keys(FOOD_XP);
   const maxFoodXp = Math.max.apply(null, foods.map(function(foodType) { return FOOD_XP[foodType]; }));
-  const maxTotal = xpCible + maxFoodXp - 1;
+  const stocks = {};
+  foods.forEach(function(foodType) { stocks[foodType] = Math.max(0, Math.floor(Number(etat[foodType]) || 0)); });
+  const xpDisponible = foods.reduce(function(sum, foodType) { return sum + stocks[foodType] * FOOD_XP[foodType]; }, 0);
+  if (xpDisponible < xpCible) return null;
+  const prepaid = {};
+  let prepaidXp = 0;
+  if (xpCible > PLAN_NOURRITURE_XP_EXACT_MAX) {
+    foods.slice().sort(function(a, b) { return FOOD_XP[b] - FOOD_XP[a]; }).forEach(function(foodType) {
+      const units = Math.min(stocks[foodType],
+        Math.floor(Math.max(0, xpCible - PLAN_NOURRITURE_XP_EXACT_MAX - prepaidXp) / FOOD_XP[foodType]));
+      if (units <= 0) return;
+      prepaid[foodType] = units;
+      stocks[foodType] -= units;
+      prepaidXp += units * FOOD_XP[foodType];
+    });
+  }
+  const resteCible = xpCible - prepaidXp;
+  const maxTotal = resteCible + maxFoodXp - 1;
   let plans = new Array(maxTotal + 1).fill(null);
   plans[0] = { units: 0, quantities: {} };
 
   foods.forEach(function(foodType) {
     const xp = FOOD_XP[foodType];
-    const stock = Math.max(0, Number(etat[foodType]) || 0);
+    const stock = stocks[foodType];
     const maxUnits = Math.min(stock, Math.floor(maxTotal / xp));
     const nextPlans = plans.slice();
     for (let total = 0; total <= maxTotal; total++) {
@@ -15007,9 +14879,13 @@ function calculerPlanNourritureAuto(xpCible) {
     plans = nextPlans;
   });
 
-  for (let total = xpCible; total <= maxTotal; total++) {
+  for (let total = Math.max(0, resteCible); total <= maxTotal; total++) {
     if (plans[total]) {
-      return { xpTotal: total, surplus: total - xpCible, quantities: plans[total].quantities };
+      const quantities = Object.assign({}, prepaid);
+      Object.keys(plans[total].quantities).forEach(function(foodType) {
+        quantities[foodType] = (quantities[foodType] || 0) + plans[total].quantities[foodType];
+      });
+      return { xpTotal: prepaidXp + total, surplus: prepaidXp + total - xpCible, quantities: quantities };
     }
   }
   return null;
@@ -15033,13 +14909,7 @@ function nourrirAutoNiveau(kittyIdx) {
     Object.keys(plan.quantities).forEach(function(foodType) {
       etat[foodType] -= plan.quantities[foodType];
     });
-    k.xp += plan.xpTotal;
-    while (k.xp >= xpPourNiveau(k.niveau) && k.niveau < niveauMax) {
-      k.xp -= xpPourNiveau(k.niveau);
-      k.niveau++;
-      ajouterLog("event", k.nom + " reached Level " + k.niveau + "!");
-    }
-    if (Number.isFinite(niveauMax) && k.niveau >= niveauMax) k.xp = 0;
+    appliquerXpChat(k, plan.xpTotal);
     if (k.niveau > niveauAvant && typeof enregistrerNiveauQuotidien === "function") {
       enregistrerNiveauQuotidien(k.niveau - niveauAvant);
     }
@@ -15306,10 +15176,6 @@ function tick() {
     return;
   }
   tempsComptabiliseJusquaTs = Date.now();
-  // Cathouse reduction accumulation (speed-aware)
-  if (etat.cathouses.length > 0) {
-  }
-
   // Speed-up: advance timestamps so exploration timers consume real-time faster.
   // The catch/recruit sequence integrates its own effective speed segments in
   // actualiserProgressionSequence(), so it must not also be shifted here.
@@ -16271,11 +16137,6 @@ function confirmerChefKissFeedTutorial() {
   return campGuidanceActionCommit({ type: "tutorial.final-acknowledged" }, descriptor);
 }
 
-function campTutorialStageAuMoins(stage) {
-  return SAWMILL_TUTORIAL_STAGE_INDEX[campTutorialStage()]
-    >= SAWMILL_TUTORIAL_STAGE_INDEX[stage];
-}
-
 function campTutorialSlot(familyId, slotIdx) {
   return etat.workRecipeSlots && Array.isArray(etat.workRecipeSlots[familyId])
     ? etat.workRecipeSlots[familyId][slotIdx]
@@ -16454,11 +16315,6 @@ function campTutorialPickerCible() {
     familyId: "wood",
     slotIdx: campTutorialEtapeEffective() === "wood-slot-1-cat" ? 0 : 1
   };
-}
-
-function campTutorialRecipeEtape() {
-  return campTutorialEtapeEffective() === "wood-slot-1-recipe"
-    || campTutorialEtapeEffective() === "wood-slot-2-recipe";
 }
 
 function campTutorialRecipeCible() {
@@ -20187,14 +20043,6 @@ function normaliserDemolitionsCampPrototype(claimKitty) {
   return changed;
 }
 
-function chargerDemolitionsCampPrototype() {
-  const camp = assurerEtatCampPrincipal();
-  campPrototypeDemolitions = Array.isArray(camp.demolitions)
-    ? camp.demolitions.map(function(demolition) { return Object.assign({}, demolition); })
-    : [];
-  normaliserDemolitionsCampPrototype();
-}
-
 function placementCampPrototypePourItem(uid) {
   return campPrototypePlacementEnCours
     && (campPrototypePlacementEnCours.mode === "existing" || campPrototypePlacementEnCours.mode === "upgrade")
@@ -21767,7 +21615,6 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
       + '<header><span>' + echapperAttributHtml(slotLabel) + '</span><strong>Empty</strong></header>'
       + '<button type="button" class="camp-production-choose" data-camp-production-origin="recipe" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')" aria-label="Choose a recipe for ' + echapperAttributHtml(slotLabel) + '">'
       + '<span aria-hidden="true">+</span><strong>Choose a recipe</strong></button>'
-      + '<p class="camp-production-status">Choose a recipe, then assign a Cat.</p>'
       + '</article>';
   }
 
@@ -21779,7 +21626,7 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
     + '<em>Change</em></button>';
   const craftWaiting = fabricationAttendMateriaux(pair, slot);
   const craftCosts = pair.mode === "craft" ? pair.inputs.map(function(input) { return input.baseQuantity + " " + input.label; }).join(" + ") : "";
-  const costsHtml = craftCosts ? '<p class="camp-production-status">Materials: ' + echapperAttributHtml(craftCosts) + '. Used on delivery.</p>' : '';
+  const costsHtml = craftCosts ? '<p class="camp-production-status">Materials: ' + echapperAttributHtml(craftCosts) + '</p>' : '';
   if (!kitty) {
     return '<article class="camp-production-slot camp-production-slot-waiting" data-camp-production-slot="'
       + familyId + '-' + slotIdx + '" data-camp-production-recipe="' + echapperAttributHtml(pair.recipeId) + '" data-camp-production-kitty="">'
@@ -21787,7 +21634,6 @@ function campProductionSlotMarkup(familyId, slotIdx, slot) {
       + recipeButton
       + costsHtml
       + '<button type="button" class="camp-production-assign" data-camp-production-origin="worker" onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')" aria-label="Assign a Cat to ' + echapperAttributHtml(pair.procLabel) + '">Assign a Cat</button>'
-      + '<p class="camp-production-status">Ready for an available Cat.</p>'
       + '</article>';
   }
 
@@ -21865,8 +21711,7 @@ function carteSlotMaisonCamp(item, slotIdx, kittyIndex) {
     return '<article class="camp-house-slot camp-house-slot-empty" data-camp-house-slot="' + slotIdx + '">'
       + '<header><span>' + slotLabel + '</span><strong>Empty</strong></header>'
       + '<button type="button" class="camp-house-assign" data-camp-menu-action="allocate"'
-      + ' aria-label="Assign a Cat to ' + echapperAttributHtml(type.label) + '">Assign a Cat</button>'
-      + '<p>Choose any eligible Cat in the gang.</p></article>';
+      + ' aria-label="Assign a Cat to ' + echapperAttributHtml(type.label) + '">Assign a Cat</button></article>';
   }
   const kitty = etat.kittiesData[kittyIndex];
   const activity = kittyAllocationLabel(kittyIndex);
@@ -22356,8 +22201,8 @@ function libelleTacheCamp(tache, type) {
 function htmlMenuTacheCamp(tache, type) {
   const label = libelleTacheCamp(tache, type);
   return '<button type="button" class="camp-task-claim-action" role="menuitem"'
-    + ' data-camp-menu-action="claim" aria-label="Validate ' + echapperAttributHtml(label)
-    + '">' + CHECK_ICON + '<strong>Validate</strong></button>';
+    + ' data-camp-menu-action="claim" aria-label="Collect ' + echapperAttributHtml(label)
+    + '">' + CHECK_ICON + '<strong>Collect</strong></button>';
 }
 
 function validerTacheCampDepuisMenu() {
@@ -22868,9 +22713,9 @@ function ouvrirMenuDemolitionCampPrototype(targetUid, targetKind, options) {
         + Math.max(0, Number(reward.quantity) || 0) + '</span>'
       : '';
     menu.innerHTML = '<button type="button" class="camp-task-claim-action" role="menuitem"'
-      + ' data-camp-menu-action="claim" aria-label="Validate cleanup of '
+      + ' data-camp-menu-action="claim" aria-label="Collect cleanup of '
       + echapperAttributHtml(cible.label) + '">' + rewardHtml
-      + CHECK_ICON + '<strong>Validate</strong></button>';
+      + CHECK_ICON + '<strong>Collect</strong></button>';
   } else {
     menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action camp-semantic-action" role="menuitem"'
       + ' data-camp-menu-action="demolition"'
@@ -24071,8 +23916,8 @@ function htmlVoyageursAubergeMission(kind, id, basePower, difficulty, baseDurati
   const effective = nayaInnEffectiveConfig(niveauNayaAuberge());
   const effectivePower = Number(basePower) + bonus.power;
   const effectiveDuration = dureeEffectiveExploration(baseDuration, bonus.durationMultiplier);
-  const chance = effectivePower > 0 && Number(difficulty) > 0
-    ? Math.min(100, Math.round(effectivePower / Number(difficulty) * 100)) : 0;
+  const failures = kind === "campaign" ? explorationRetryFailures("campaigns", id) : 0;
+  const chance = Number(difficulty) > 0 ? missionOdds.chancePercent(missionOdds.finalChance(effectivePower, Number(difficulty), failures)) : 0;
   return '<section class="inn-travelers-mission" aria-label="Inn Travelers"><strong>Inn Travelers</strong><div>'
     + available.map(function(traveler) {
       const isSelected = selected.has(traveler.templateId);
@@ -24137,10 +23982,9 @@ function renduAubergeNaya() {
     const value = traveler.templateId === "helper"
       ? "+" + effectValue + " Exploration Power"
       : "-" + effectValue + "% Mission Duration";
-    const status = traveler.consumed ? "Committed today" : (traveler.invited ? "Invited — available in Exploration" : "Available to invite");
     html += '<section class="naya-inn-traveler naya-inn-rarity-' + traveler.rarity + '"><img class="naya-inn-visitor" src="'
       + echapperAttributHtml(traveler.face) + '" alt="Visiting Cat"><div><strong>' + rarityLabel + ' '
-      + (traveler.templateId === "helper" ? "Helper" : "Guide") + '</strong><p>' + value + '</p><small>' + status + '</small></div>'
+      + (traveler.templateId === "helper" ? "Helper" : "Guide") + '</strong><p>' + value + '</p></div>'
       + '<button type="button" onclick="inviterVoyageurAuberge(\'' + traveler.templateId + '\')"'
       + (traveler.consumed || traveler.invited ? ' disabled' : '') + '>'
       + (traveler.consumed ? "Used today" : (traveler.invited ? "Invited" : "Invite for today")) + '</button></section>';
@@ -24152,7 +23996,7 @@ function renduAubergeNaya() {
     const reason = raisonContratAuberge(contract);
     html += '<article class="naya-inn-contract naya-inn-contract-' + contract.rarity + '"><strong class="naya-inn-rarity">' + rarityLabel + '</strong>'
       + '<div class="naya-inn-exchange"><span>Give</span><div>' + ressourceAubergeHtml(contract.inputId, contract.inputQty) + '</div><b aria-hidden="true">→</b><span>Get</span>'
-      + ressourceAubergeHtml(contract.outputId, contract.outputQty) + '</div><small>' + reason + '</small>'
+      + ressourceAubergeHtml(contract.outputId, contract.outputQty) + '</div>' + (reason === "Available" ? '' : '<small>' + reason + '</small>')
       + '<button type="button" onclick="executerContratAuberge(' + index + ')"' + (reason === "Available" ? '' : ' disabled') + '>Trade</button></article>';
   });
   root.innerHTML = html + '</div>';
@@ -24170,7 +24014,6 @@ function renduInfoAubergeNaya() {
   const maxTierChance = maxTier <= 1 ? 100 : effective.maxTierChancePercent;
   const previousTierChance = maxTier <= 1 ? 0 : 100 - maxTierChance;
   root.innerHTML = '<strong>Naya\'s Inn · Level ' + level + '</strong>'
-    + '<span>Level up Naya to make the Inn stronger.</span>'
     + '<span class="naya-inn-info-kicker">Current stats</span>'
     + '<div class="naya-inn-stats" role="table" aria-label="Current Inn stats">'
     + '<div class="naya-inn-stats-row naya-inn-stats-head" role="row"><b role="columnheader">Rarity</b><span role="columnheader">Chance</span><span role="columnheader">Contract</span><span role="columnheader">Helper</span><span role="columnheader">Guide</span></div>'
@@ -24977,11 +24820,7 @@ function renduModalAllocationMaisonCamp() {
   if (!item || !type || !contenu) return;
   afficherTitreModalAffectationChat("camp-house-allocation-modal-title");
   const resume = document.getElementById("camp-house-allocation-modal-summary");
-  const occupant = campPrototypeAllocationHouseOccupantIndex === null
-    ? null : etat.kittiesData[campPrototypeAllocationHouseOccupantIndex];
-  if (resume) resume.textContent = occupant
-    ? "Choose a Cat to replace " + occupant.nom + ". Housing does not interrupt their current activity."
-    : "Choose a Cat for this empty place. Housing does not interrupt their current activity.";
+  if (resume) resume.textContent = "Housing does not interrupt their current activity.";
   const assignments = housingAssignmentsCamp();
   contenu.innerHTML = "";
   candidatsKittyAffectation(function(kitty) {
@@ -28264,10 +28103,6 @@ function normaliserImageVisageCamp(image) {
   if (framing) framing.frameImage(image);
 }
 
-function normaliserImageVisage(image) {
-  normaliserImageVisageCamp(image);
-}
-
 function configurerTimerTacheCamp(timer, tache) {
   if (!timer || !tache || !tache.job) return;
   const job = tache.job;
@@ -28342,11 +28177,11 @@ function ajouterTacheTemporeeChatsCamp(element, presences) {
   worker.dataset.campTaskWorkerCount = String(nombreWorkers);
   worker.style.setProperty("--camp-task-progress", (state.progress * 100).toFixed(2) + "%");
   worker.title = noms.join(", ") + " · " + presence.activity
-    + (state.readyToClaim ? " · Ready to validate" : "");
+    + (state.readyToClaim ? " · Ready to collect" : "");
   if (state.readyToClaim) {
     worker.type = "button";
     worker.dataset.touchActivationRoot = "true";
-    worker.setAttribute("aria-label", "Validate " + presence.activity + " with " + noms.join(", "));
+    worker.setAttribute("aria-label", "Collect " + presence.activity + " with " + noms.join(", "));
     worker.addEventListener("pointerdown", function(event) { event.stopPropagation(); });
     worker.addEventListener("click", function(event) {
       event.preventDefault();
@@ -30568,109 +30403,31 @@ function initialiserRessourcesAccessibles() {
 // 13a-bis. SHARED MINI-GAME RUNTIME
 // ════════════════════════════════════════════════════════════
 
-const MINI_JEU_FRAME_DT_MAX = 0.05;
-const miniJeuRuntime = {
-  actif: null,
-  generation: 0,
-  animations: new Map(),
-  layoutVersion: 0,
-  renduEnAttente: false
-};
-
-function miniJeuRuntimeActif(id) {
-  return id ? miniJeuRuntime.actif === id : miniJeuRuntime.actif !== null;
-}
-
-function ouvrirSessionMiniJeu(id) {
-  if (!id || miniJeuRuntime.actif) return false;
-  miniJeuRuntime.actif = id;
-  miniJeuRuntime.generation += 1;
-  miniJeuRuntime.layoutVersion += 1;
-  miniJeuRuntime.renduEnAttente = false;
-  if (document.body) {
-    document.body.classList.add("mini-game-runtime-active");
-    document.body.dataset.activeMiniGame = id;
-  }
+// The runtime lives in js/ui/minigame-runtime.js (CatInc.miniGameRuntime).
+// These adapters keep the historical global names used by every mini-game.
+const miniJeuRuntimeController = globalThis.CatInc.miniGameRuntime.createController({
+  document: document,
+  requestAnimationFrame: function(callback) { return requestAnimationFrame(callback); },
+  cancelAnimationFrame: function(handle) { cancelAnimationFrame(handle); },
+  now: function() { return performance.now(); },
   // CSS pause cannot stop animated image decoding. Reconcile the existing
   // layers once so the static Base owns the scenery during the mini-game.
-  actualiserAnimationsConditionnellesCampPrototype(null, true);
-  return true;
-}
-
-function libererAnimationMiniJeu(id, animation) {
-  if (animation.raf !== null) cancelAnimationFrame(animation.raf);
-  animation.raf = null;
-  animation.effets.forEach(function(effet) { effet.cancel(); });
-  animation.effets = [];
-  if (miniJeuRuntime.animations.get(id) === animation) miniJeuRuntime.animations.delete(id);
-}
-
-function arreterAnimationMiniJeu(id) {
-  const animation = miniJeuRuntime.animations.get(id);
-  if (animation) libererAnimationMiniJeu(id, animation);
-}
-
-function demarrerAnimationMiniJeu(id, callback) {
-  if (!miniJeuRuntimeActif(id) || typeof callback !== "function") return false;
-  arreterAnimationMiniJeu(id);
-  const generation = miniJeuRuntime.generation;
-  const animation = {
-    raf: null,
-    effets: [],
-    last: performance.now(),
-    layoutVersion: -1
-  };
-
-  function frame(timestamp) {
-    animation.raf = null;
-    if (!miniJeuRuntimeActif(id) || generation !== miniJeuRuntime.generation) {
-      libererAnimationMiniJeu(id, animation);
-      return;
+  onSessionOpen: function() { actualiserAnimationsConditionnellesCampPrototype(null, true); },
+  onSessionClose: function(id) {
+    if (id === "bird" && typeof definirPresenceOiseauCamp === "function") {
+      definirPresenceOiseauCamp(false);
     }
-    const dt = Math.min(MINI_JEU_FRAME_DT_MAX, Math.max(0, (timestamp - animation.last) / 1000));
-    const layoutChanged = animation.layoutVersion !== miniJeuRuntime.layoutVersion;
-    animation.last = timestamp;
-    animation.layoutVersion = miniJeuRuntime.layoutVersion;
-    const continuer = callback(dt, { layoutChanged: layoutChanged, timestamp: timestamp });
-    if (continuer === false || !miniJeuRuntimeActif(id) || generation !== miniJeuRuntime.generation) {
-      libererAnimationMiniJeu(id, animation);
-      return;
-    }
-    if (miniJeuRuntime.animations.get(id) === animation) animation.raf = requestAnimationFrame(frame);
-  }
+  },
+  render: function() { rendu(); }
+});
+const miniJeuRuntime = miniJeuRuntimeController.state;
 
-  animation.raf = requestAnimationFrame(frame);
-  miniJeuRuntime.animations.set(id, animation);
-  return true;
-}
-
-function fermerSessionMiniJeu(id) {
-  arreterAnimationMiniJeu(id);
-  if (!miniJeuRuntimeActif(id)) return;
-  if (id === "bird" && typeof definirPresenceOiseauCamp === "function") {
-    definirPresenceOiseauCamp(false);
-  }
-  miniJeuRuntime.actif = null;
-  miniJeuRuntime.generation += 1;
-  if (document.body) {
-    document.body.classList.remove("mini-game-runtime-active");
-    delete document.body.dataset.activeMiniGame;
-  }
-  const renduRequis = miniJeuRuntime.renduEnAttente;
-  miniJeuRuntime.renduEnAttente = false;
-  requestAnimationFrame(function() {
-    // One clean foreground refresh replaces every skipped background render.
-    if (renduRequis || !miniJeuRuntimeActif()) rendu();
-  });
-}
-
-function reinitialiserHorlogesMiniJeux() {
-  miniJeuRuntime.layoutVersion += 1;
-  const maintenant = performance.now();
-  miniJeuRuntime.animations.forEach(function(animation) {
-    animation.last = maintenant;
-  });
-}
+function miniJeuRuntimeActif(id) { return miniJeuRuntimeController.isActive(id); }
+function ouvrirSessionMiniJeu(id) { return miniJeuRuntimeController.openSession(id); }
+function arreterAnimationMiniJeu(id) { miniJeuRuntimeController.stopAnimation(id); }
+function demarrerAnimationMiniJeu(id, callback) { return miniJeuRuntimeController.startAnimation(id, callback); }
+function fermerSessionMiniJeu(id) { miniJeuRuntimeController.closeSession(id); }
+function reinitialiserHorlogesMiniJeux() { miniJeuRuntimeController.resetClocks(); }
 
 document.addEventListener("visibilitychange", function() {
   if (document.visibilityState === "visible") reinitialiserHorlogesMiniJeux();
@@ -30679,83 +30436,11 @@ window.addEventListener("pageshow", reinitialiserHorlogesMiniJeux);
 window.addEventListener("focus", reinitialiserHorlogesMiniJeux);
 window.addEventListener("resize", reinitialiserHorlogesMiniJeux, { passive: true });
 
-function transformCurseurMiniJeu(largeurPiste, pourcentage) {
-  const x = Math.max(0, Math.min(100, pourcentage)) / 100 * Math.max(0, largeurPiste || 0);
-  return "translate3d(" + x.toFixed(2) + "px, 0, 0) translateX(-50%)";
-}
-
-function positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage) {
-  if (!cursor) return;
-  cursor.style.transform = transformCurseurMiniJeu(largeurPiste, pourcentage);
-}
-
-// #324: Firefox repaints the whole page whenever script moves a cursor, even through
-// `transform`. A constant-speed cursor is therefore a Web Animations effect the
-// compositor plays. It belongs to the runtime animation `id` (started first), which
-// cancels it with the frame loop; the frame loop reads the position back from the
-// effect's own clock, so the judged position is the displayed one.
 function animerCurseurMiniJeu(id, cursor, options) {
-  const animation = miniJeuRuntime.animations.get(id);
-  const vitesse = Number(options && options.vitesse);
-  if (!animation || !cursor || typeof cursor.animate !== "function" || !(vitesse > 0)) return null;
-  const dureeMs = 100 / vitesse * 1000;
-  const rebond = options.rebond === true;
-  const effet = cursor.animate(options.images(), {
-    duration: dureeMs,
-    iterations: Infinity,
-    direction: rebond ? "alternate" : "normal",
-    easing: "linear"
-  });
-  animation.effets.push(effet);
-  return {
-    pourcentage: function() {
-      const progression = Math.max(0, Number(effet.currentTime) || 0) / dureeMs;
-      const cycle = Math.floor(progression);
-      const fraction = progression - cycle;
-      return (rebond && cycle % 2 === 1 ? 1 - fraction : fraction) * 100;
-    },
-    actualiserImages: function() {
-      if (effet.effect && typeof effet.effect.setKeyframes === "function") effet.effect.setKeyframes(options.images());
-    }
-  };
+  return miniJeuRuntimeController.animateCursor(id, cursor, options);
 }
-
-// Bouncing track cursor (Catch a Cat, Bird). `onFrame(pourcentage)` returns false to
-// stop. Browsers without Web Animations keep the scripted per-frame cursor.
 function animerCurseurPisteMiniJeu(id, cursor, vitesse, onFrame) {
-  const track = cursor ? cursor.closest(".bird-track") : null;
-  let largeurPiste = track ? track.clientWidth : 0;
-  let pourcentage = 0;
-  let direction = 1;
-  let curseur = null;
-  positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage);
-  const demarre = demarrerAnimationMiniJeu(id, function(dt, frameInfo) {
-    if (frameInfo.layoutChanged && track) {
-      largeurPiste = track.clientWidth;
-      if (curseur) curseur.actualiserImages();
-    }
-    if (curseur) {
-      pourcentage = curseur.pourcentage();
-    } else {
-      pourcentage += direction * vitesse * dt;
-      if (pourcentage >= 100) { pourcentage = 100; direction = -1; }
-      if (pourcentage <= 0) { pourcentage = 0; direction = 1; }
-      positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage);
-    }
-    return onFrame(pourcentage);
-  });
-  if (!demarre) return false;
-  curseur = animerCurseurMiniJeu(id, cursor, {
-    vitesse: vitesse,
-    rebond: true,
-    images: function() {
-      return [
-        { transform: transformCurseurMiniJeu(largeurPiste, 0) },
-        { transform: transformCurseurMiniJeu(largeurPiste, 100) }
-      ];
-    }
-  });
-  return true;
+  return miniJeuRuntimeController.animateTrackCursor(id, cursor, vitesse, onFrame);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -30975,66 +30660,18 @@ function scenariosPurrsuasionV2(catNumber) {
   return overrides[String(catNumber)] || PURRSUASION_V2_CONTENT.genericPool;
 }
 
+const purrsuasionRules = globalThis.CatInc.purrsuasion;
+
 function choisirScenariosPurrsuasionV2(catNumber) {
-  const pool = scenariosPurrsuasionV2(catNumber).slice();
-  for (let index = pool.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(Math.random() * (index + 1));
-    [pool[index], pool[other]] = [pool[other], pool[index]];
-  }
-  return pool.slice(0, 3).map(function(scenario) {
-    const variants = scenario.visitorLines;
-    return {
-      id: scenario.id,
-      visitor: variants[Math.floor(Math.random() * variants.length)],
-      replies: ["good", "neutral", "bad"].map(function(quality) {
-        return {quality: quality, text: scenario.replies[quality]};
-      })
-    };
-  });
+  return purrsuasionRules.chooseScenarios(scenariosPurrsuasionV2(catNumber), Math.random);
 }
 
-function bandesPurrsuasionV2(quality) {
-  if (quality === "good") return ["bronze", "silver", "gold"];
-  if (quality === "neutral") return ["bronze", "silver"];
-  return ["bronze"];
-}
-
-function scorePurrsuasionV2(quality, cursorPct, targetSize) {
-  const distance = Math.abs(Number(cursorPct) - 50);
-  const halfTarget = Math.max(1, Number(targetSize)) / 2;
-  const ratio = distance / halfTarget;
-  const bands = geometriePurrsuasionV2(quality);
-  if (ratio <= bands.gold) return 3;
-  if (ratio <= bands.silver) return 2;
-  if (ratio <= bands.bronze) return 1;
-  return 0;
-}
-
-// Splits a round into its two contributions: the dialogue choice and the paw timing.
-// Timing is read on the widest (good-answer) bands so it does not depend on the choice.
-function detailRoundPurrsuasionV2(quality, cursorPct, targetSize) {
-  const timing = scorePurrsuasionV2("good", cursorPct, targetSize);
-  const choice = {good: "Good answer", neutral: "Okay answer"}[quality] || "Weak answer";
-  const timingCopy = ["timing missed", "timing a bit off", "good timing", "perfect timing"][timing];
-  const aligned = (quality === "good") === (timing >= 2);
-  return choice + (aligned ? " and " : ", but ") + timingCopy + ".";
-}
-
-function geometriePurrsuasionV2(quality) {
-  if (quality === "good") return {bronze: 1, silver: 0.55, gold: 0.2};
-  if (quality === "neutral") return {bronze: 0.55, silver: 0.2, gold: -1};
-  return {bronze: 0.2, silver: -1, gold: -1};
-}
-
-function resultatPurrsuasionV2(total, profile) {
-  return { total: Number(total) || 0, required: profile.required, success: (Number(total) || 0) >= profile.required };
-}
-
-function progressionPurrsuasionV2(total, required) {
-  const score = Math.max(0, Number(total) || 0);
-  const goal = Math.max(1, Number(required) || 1);
-  return {score: score, required: goal, ratio: Math.min(1, score / goal)};
-}
+function bandesPurrsuasionV2(quality) { return purrsuasionRules.bands(quality); }
+function scorePurrsuasionV2(quality, cursorPct, targetSize) { return purrsuasionRules.score(quality, cursorPct, targetSize); }
+function detailRoundPurrsuasionV2(quality, cursorPct, targetSize) { return purrsuasionRules.roundDetail(quality, cursorPct, targetSize); }
+function geometriePurrsuasionV2(quality) { return purrsuasionRules.geometry(quality); }
+function resultatPurrsuasionV2(total, profile) { return purrsuasionRules.result(total, profile); }
+function progressionPurrsuasionV2(total, required) { return purrsuasionRules.progress(total, required); }
 
 function nomSimulePurrsuasionV2(profile) {
   return NOMS_KITTIES[profile.cat - 1] || ("Cat #" + profile.cat);
@@ -31682,18 +31319,16 @@ function demarrerBirdMiniJeu() {
     carte.classList.remove('bird-facile');
   }
   var desc = document.getElementById("bird-minijeu-desc");
-  if (desc) desc.textContent = premiere
-    ? "Take your time. Click CATCH! when the cursor reaches the bird. You can try again if you miss."
-    : "Click CATCH! when the cursor reaches the bird.";
+  if (desc) desc.textContent = "";
   var attemptRule = document.getElementById("bird-attempt-rule");
   if (attemptRule) attemptRule.textContent = premiere ? "RETRY ALLOWED" : "ONE ATTEMPT";
   var pityEl = document.getElementById("bird-pity");
   var pityCount = Number.isInteger(etat.birdPityEchecs) ? Math.max(0, etat.birdPityEchecs) : 0;
   if (pityEl) {
-    pityEl.hidden = premiere;
-    if (!premiere) {
-      var pityReduction = Math.round((1 - multiplicateurPityOiseau()) * 100);
-      pityEl.textContent = pityCount + " fails : " + pityReduction + "% speed reduced";
+    var pityReduction = Math.round((1 - multiplicateurPityOiseau()) * 100);
+    pityEl.hidden = premiere || pityReduction <= 0;
+    if (!pityEl.hidden) {
+      pityEl.textContent = "Cursor " + pityReduction + "% slower after " + pityCount + (pityCount === 1 ? " miss" : " misses");
     }
   }
   var speed = premiere ? 35 : 150 * multiplicateurPityOiseau();
@@ -31735,7 +31370,7 @@ function clickerBird() {
     : (_birdCursorPct >= 45 && _birdCursorPct <= 55);
   if (premiere && !success) {
     var desc = document.getElementById("bird-minijeu-desc");
-    if (desc) desc.textContent = "Almost! The first lesson is forgiving. Try CATCH! again when the cursor is closer.";
+    if (desc) desc.textContent = "Almost! Try again.";
     return;
   }
   arreterAnimationMiniJeu("bird");

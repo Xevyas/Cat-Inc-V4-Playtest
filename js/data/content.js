@@ -149,7 +149,7 @@ const ITEMS = {
     category: "blueprint",
     nom: "Hollow Tree Lessons",
     emoji: LIVRE_ICONE,
-    description: "Notes recovered from the hollow tree after clearing its guardian: a Reinforced Daggers recipe for the Forge and an advanced dummy exercise up to Combat Level 10. Already learned when the victory is claimed.",
+    description: "Notes recovered from the hollow tree after clearing its guardian: a Reinforced Daggers recipe for the Forge and an advanced dummy exercise up to Combat Level 10.",
     unlocksLabel: "Reinforced Daggers at the Forge; advanced dummy exercise up to Combat Level 10",
     actions: []
   },

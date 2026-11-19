@@ -1058,7 +1058,7 @@
           "weight": 75
         }
       ],
-      "dailyCannedCatFoodStock": 3,
+      "dailyCannedCatFoodStock": 1,
       "zone": "supermarket",
       "unlockCampaign": "infiltrateSupermarket"
     },
@@ -1086,7 +1086,7 @@
           "weight": 5
         }
       ],
-      "dailyCannedCatFoodStock": 2,
+      "dailyCannedCatFoodStock": 1,
       "zone": "gasStation",
       "unlockCampaign": "sneakBackEntrance"
     }

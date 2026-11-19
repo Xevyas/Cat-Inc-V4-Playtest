@@ -1004,6 +1004,44 @@
     })
   ]);
 
+  const release0107Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Paw Print Diary: each day you complete every Daily Quest adds a paw print, and every 3 paw prints give Canned Cat Food (more with the Daily Reward perks)."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([
+        "Offline progress now runs at 50% efficiency for up to 10 hours, instead of 20% for up to 4 hours.",
+        "Mission success chances follow a new curve: a team at a quarter of the difficulty or less cannot succeed, and a team matching the difficulty always succeeds.",
+        "Each failed Zone Exploration or Campaign now multiplies the final chance by 1.1, up to ×1.3 after three failures.",
+        "Cat levels follow a new XP curve: the first levels stay quick, later levels take much longer, and there is no longer a level 100 limit.",
+        "Supermarket and Gas Station Scoutings now give at most 1 Canned Cat Food per day.",
+        "Each new House now costs more (growth ×1.8); House Optimization lowers it to ×1.7, then ×1.65."
+      ])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Mission chances show the retry bonus in green, with a tooltip explaining the calculation.",
+        "The World Map shows only the zones you discovered: undiscovered regions stay in the fog and unexplored zones keep their description hidden.",
+        "Many redundant hints and status texts were removed for a cleaner interface.",
+        "The game does less screen work every tick, for smoother play."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "The World Map no longer bounces while zooming.",
+        "A stopped Combat training is now shown correctly after reloading.",
+        "Cannelle and Naya scenes now show the right details."
+      ])
+    }),
+    Object.freeze({ label: "Other", changes: Object.freeze([]) })
+  ]);
+
   const release0106Categories = Object.freeze([
     Object.freeze({
       label: "New Features",
@@ -1556,7 +1594,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0106",
+    baseVersion: "0.0107",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -1569,6 +1607,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0107",
+      date: "2026-11-19",
+      categories: release0107Categories
+    }),
     Object.freeze({
       version: "0.0106",
       date: "2026-11-18",
